@@ -14,15 +14,17 @@ The probe branch contains:
 
 - strict TypeScript + Vite;
 - one raw WebGL2 scene;
-- a small dynamic grid mesh;
+- a `16x16` dynamic grid mesh (`17x17` vertices);
 - pointer-local weighted deformation;
-- bounded pseudo-volume counter-bulge;
-- damped spring return;
-- procedural soft-material shading;
-- responsive contact shadow;
+- a small hold/press dent with a local counter-bulge;
+- distance-weighted response for cheap viscoelastic lag;
+- bounded pseudo-volume response during drag;
+- damped spring return plus one restrained release kick;
+- procedural soft-material shading with lagged, strain-aware sheen;
+- direction-aware responsive contact shadow;
 - `mini-games-kit` continuous-interaction semantics;
-- `ContinuousNoiseTexture` tactile audio;
-- FPS / frame-time / compression / velocity / displacement / squeeze diagnostics;
+- `ContinuousNoiseTexture` tactile audio plus a low-frequency release plop;
+- FPS / frame-time / compression / press-depth / velocity / displacement / squeeze diagnostics;
 - optional mesh overlay and mute control.
 
 The implementation contract and PASS/FAIL protocol live in `docs/SQUISH_FEEL_PROBE.md`.
@@ -54,6 +56,8 @@ npm run build
 
 Do not judge from one drag or a screenshot. Interact for at least 60 seconds, then perform 20+ deliberate presses/drags/releases at different speeds and directions.
 
-PASS requires the interaction to remain pleasant, responsive, materially soft rather than scale-like, stable in performance, and reusable without a real soft-body engine. One bounded correction pass is allowed after the first acceptance run.
+PASS requires the interaction to remain pleasant, responsive, materially soft rather than scale-like, stable in performance, and reusable without a real soft-body engine.
+
+The planned bounded feel-refinement pass has now been used. Do not add product scope to rescue the probe; further changes should be limited to concrete defects or tuning exposed by the final hands-on run.
 
 After acceptance, the result must be written back to the canonical Yandex Games decision ledger in `DanilaH/decisions`.
