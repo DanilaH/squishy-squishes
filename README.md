@@ -1,63 +1,114 @@
 # Squishy Squishes
 
-Bounded feel probe for the Squishy Lab / Maker thesis.
+Compact tactile maker / collection game for Yandex Games.
 
-The repository exists to answer one question:
+**Current status:** feel thesis PASSED; full-game direction is locked; **Vertical Slice 01 is the active implementation gate**.
 
-> Can a single soft object remain pleasant to squeeze 20+ times using cheap local mesh deformation, damped return, material response, and tactile audio without true soft-body physics or product-scope expansion?
+Immediate goal:
 
-This is not the full game prototype. A weak core is a **FAIL**, not a reason to add economy, progression, collection, multiple objects, or another mechanic.
+`select → pour → optional filling → mix/squish → mold/press → reveal → free squeeze → Collect → repeat`
 
-## Current implementation
+The slice deliberately uses the existing validated shape and renderer before production architecture or catalog scale.
 
-The probe branch contains:
+## Vertical Slice 01
 
-- strict TypeScript + Vite;
-- one raw WebGL2 scene;
-- a `16x16` dynamic grid mesh (`17x17` vertices);
-- pointer-local weighted deformation;
-- a small hold/press dent with a local counter-bulge;
-- distance-weighted response for cheap viscoelastic lag;
-- bounded pseudo-volume response during drag;
-- damped spring return plus one restrained release kick;
-- procedural soft-material shading with lagged, strain-aware sheen;
-- direction-aware responsive contact shadow;
-- `mini-games-kit` continuous-interaction semantics;
-- `ContinuousNoiseTexture` tactile audio plus a low-frequency release plop;
-- FPS / frame-time / compression / press-depth / velocity / displacement / squeeze diagnostics;
-- optional mesh overlay and mute control.
+Current content:
 
-The implementation contract and PASS/FAIL protocol live in `docs/SQUISH_FEEL_PROBE.md`.
+- one rounded soft-cube / superellipse shape;
+- Lavender/Grape, Strawberry/Pink, Lime/Mint palettes;
+- Smooth / Foam Beads modifier;
+- six deterministic variants;
+- minimal temporary UI over the current scene.
 
-## Shared dependency
+Canonical scope and acceptance: `docs/VERTICAL_SLICE_01.md`.
 
-The probe pins:
+Do not add Lab XP, second shape, final collection UI, Yandex integration, ads, cloud save or mass content until this complete loop has been tested and polished over repeated runs.
+
+## Product thesis
+
+Make desirable soft collectibles through a short tactile lab ritual, reveal them dramatically, squeeze the finished result, collect them, and unlock the next materially different recipe.
+
+Long-term loop:
+
+`choose recipe → pour/add → mix/squish → mold → reveal → optional finish/decorate → test squeeze → collect → unlock`
+
+The production bet is asymmetric: reusable shapes/interactions plus material/config combinations should create many desirable collectibles without bespoke mechanics.
+
+## Art direction
+
+**Premium tactile toy lab**:
+
+- dark plum / indigo studio environment;
+- bright semi-gloss designer-toy squishies;
+- tactile materials and strong silhouette contrast;
+- kawaii-lite rather than childlike;
+- restrained UI;
+- reveal hierarchy without generic mobile-game effect spam.
+
+## Documentation
+
+Start here:
+
+- `docs/VERTICAL_SLICE_01.md` — active implementation scope and acceptance gate
+- `docs/DECISIONS.md` — confirmed project decisions
+- `docs/IMPLEMENTATION_ROADMAP.md` — vertical-slice-first execution order
+- `docs/GAMEPLAY.md` — full intended loop and interaction grammar
+- `docs/PRODUCT.md` — product thesis and scope
+- `docs/CONTENT_AND_PROGRESSION.md` — future component/catalog/progression design
+- `docs/ART_DIRECTION.md` — visual identity
+- `docs/TECHNICAL_DIRECTION.md` — production architecture direction
+- `docs/REUSE_AND_EXTRACTION_PLAN.md` — shared-kit / previous-project reuse
+- `docs/ANALYTICS_AND_MONETIZATION.md` — later product analytics/ad posture
+- `docs/ASSET_PIPELINE.md` — later content production rules
+- `docs/QA_AND_ACCEPTANCE.md` — release-scale validation
+- `docs/PREIMPLEMENTATION_REVIEW.md` — resolved pre-development review
+
+Historical validation evidence:
+
+- `docs/SQUISH_FEEL_PROBE.md`
+- `docs/PROBE_RESULT.md`
+
+## Validated tactile core
+
+The runnable base came from the successful feel probe:
+
+- raw WebGL2;
+- 16×16 deforming grid;
+- local press/drag deformation and pseudo-volume response;
+- damped spring return / restrained rebound;
+- procedural material sheen and responsive shadow;
+- progress/velocity-driven tactile WebAudio;
+- no soft-body solver, physics engine or 3D model.
+
+## Shared production kit
+
+The accepted probe / first slice base is pinned to:
 
 `DanilaH/mini-games-kit@2da5b501a7e47fbe4b3683069b34f8e252116963`
 
-The kit repository is private, so `npm install` requires GitHub credentials that can read it. The probe intentionally does not copy those shared primitives into this repository.
+Productionization after slice PASS is planned against:
+
+`DanilaH/mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b`
+
+The dependency is private. Local installs / CI require GitHub credentials that can read it.
 
 ## Run
 
-Requirements: Node.js `>=20.19.0` and GitHub authentication for the private kit dependency.
+Requirements: Node.js `>=20.19.0` and GitHub authentication for the private kit.
 
 ```bash
 npm install
 npm run dev
 ```
 
-For a production build/type check:
+Production build/typecheck:
 
 ```bash
 npm run build
 ```
 
-## Acceptance
+## Scope rule
 
-Do not judge from one drag or a screenshot. Interact for at least 60 seconds, then perform 20+ deliberate presses/drags/releases at different speeds and directions.
+Do not turn the project into Cooking Mama, a shop/economy sim or a physics sandbox.
 
-PASS requires the interaction to remain pleasant, responsive, materially soft rather than scale-like, stable in performance, and reusable without a real soft-body engine.
-
-The planned bounded feel-refinement pass has now been used. Do not add product scope to rescue the probe; further changes should be limited to concrete defects or tuning exposed by the final hands-on run.
-
-After acceptance, the result must be written back to the canonical Yandex Games decision ledger in `DanilaH/decisions`.
+Right now the only thing that matters is whether the tiny full loop remains fun across several complete crafts. If it does, productionize and scale. If it does not, fix the weak beat instead of adding systems.
