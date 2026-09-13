@@ -61,7 +61,8 @@ body {
   filter: blur(22px);
   opacity: 0.72;
   pointer-events: none;
-  transition: opacity 120ms linear;
+  transition: transform 70ms linear, opacity 90ms linear;
+  will-change: transform, opacity;
 }
 
 .probe-canvas {
