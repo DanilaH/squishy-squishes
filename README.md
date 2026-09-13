@@ -2,17 +2,37 @@
 
 Compact tactile maker / collection game for Yandex Games.
 
-**Current status:** feel thesis **PASSED**; full-game specification is prepared for pre-development review. Implementation beyond the validated probe should not begin until `docs/PREIMPLEMENTATION_REVIEW.md` is resolved.
+**Current status:** feel thesis PASSED; full-game direction is locked; **Vertical Slice 01 is the active implementation gate**.
+
+Immediate goal:
+
+`select → pour → optional filling → mix/squish → mold/press → reveal → free squeeze → Collect → repeat`
+
+The slice deliberately uses the existing validated shape and renderer before production architecture or catalog scale.
+
+## Vertical Slice 01
+
+Current content:
+
+- one rounded soft-cube / superellipse shape;
+- Lavender/Grape, Strawberry/Pink, Lime/Mint palettes;
+- Smooth / Foam Beads modifier;
+- six deterministic variants;
+- minimal temporary UI over the current scene.
+
+Canonical scope and acceptance: `docs/VERTICAL_SLICE_01.md`.
+
+Do not add Lab XP, second shape, final collection UI, Yandex integration, ads, cloud save or mass content until this complete loop has been tested and polished over repeated runs.
 
 ## Product thesis
 
-Make desirable soft collectibles through a short tactile lab ritual, reveal them dramatically, squeeze the finished result, add it to a visible collection, and unlock the next materially different recipe.
+Make desirable soft collectibles through a short tactile lab ritual, reveal them dramatically, squeeze the finished result, collect them, and unlock the next materially different recipe.
 
-Core loop:
+Long-term loop:
 
-`choose recipe → pour/add → mix/squish → mold → reveal → finish/decorate → test squeeze → collect → unlock`
+`choose recipe → pour/add → mix/squish → mold → reveal → optional finish/decorate → test squeeze → collect → unlock`
 
-The production bet is asymmetric: a small set of reusable shapes and interaction grammars should create many visibly distinct collectibles through material/config combinations rather than bespoke mechanics.
+The production bet is asymmetric: reusable shapes/interactions plus material/config combinations should create many desirable collectibles without bespoke mechanics.
 
 ## Art direction
 
@@ -22,24 +42,26 @@ The production bet is asymmetric: a small set of reusable shapes and interaction
 - bright semi-gloss designer-toy squishies;
 - tactile materials and strong silhouette contrast;
 - kawaii-lite rather than childlike;
-- restrained translucent UI;
+- restrained UI;
 - reveal hierarchy without generic mobile-game effect spam.
 
 ## Documentation
 
 Start here:
 
-- `docs/PRODUCT.md` — product thesis, scope and player promise
-- `docs/GAMEPLAY.md` — complete loop and interaction grammar
-- `docs/CONTENT_AND_PROGRESSION.md` — component system, initial 24-recipe catalog and unlock model
-- `docs/ART_DIRECTION.md` — visual identity and presentation rules
-- `docs/TECHNICAL_DIRECTION.md` — architecture, state boundaries and performance strategy
-- `docs/REUSE_AND_EXTRACTION_PLAN.md` — what comes from `mini-games-kit` and Signal 2000, and what must stay local
-- `docs/ANALYTICS_AND_MONETIZATION.md` — compact event contract and ad principles
-- `docs/ASSET_PIPELINE.md` — low-burden content production rules
-- `docs/IMPLEMENTATION_ROADMAP.md` — phased execution and gates
-- `docs/PREIMPLEMENTATION_REVIEW.md` — decisions to confirm before coding
-- `docs/DECISIONS.md` — local project decision log
+- `docs/VERTICAL_SLICE_01.md` — active implementation scope and acceptance gate
+- `docs/DECISIONS.md` — confirmed project decisions
+- `docs/IMPLEMENTATION_ROADMAP.md` — vertical-slice-first execution order
+- `docs/GAMEPLAY.md` — full intended loop and interaction grammar
+- `docs/PRODUCT.md` — product thesis and scope
+- `docs/CONTENT_AND_PROGRESSION.md` — future component/catalog/progression design
+- `docs/ART_DIRECTION.md` — visual identity
+- `docs/TECHNICAL_DIRECTION.md` — production architecture direction
+- `docs/REUSE_AND_EXTRACTION_PLAN.md` — shared-kit / previous-project reuse
+- `docs/ANALYTICS_AND_MONETIZATION.md` — later product analytics/ad posture
+- `docs/ASSET_PIPELINE.md` — later content production rules
+- `docs/QA_AND_ACCEPTANCE.md` — release-scale validation
+- `docs/PREIMPLEMENTATION_REVIEW.md` — resolved pre-development review
 
 Historical validation evidence:
 
@@ -48,7 +70,7 @@ Historical validation evidence:
 
 ## Validated tactile core
 
-The current runnable code is the successful feel probe:
+The runnable base came from the successful feel probe:
 
 - raw WebGL2;
 - 16×16 deforming grid;
@@ -58,21 +80,19 @@ The current runnable code is the successful feel probe:
 - progress/velocity-driven tactile WebAudio;
 - no soft-body solver, physics engine or 3D model.
 
-This is evidence to build on, not a requirement to keep the probe's file structure unchanged.
-
 ## Shared production kit
 
-The probe itself is pinned to:
+The accepted probe / first slice base is pinned to:
 
 `DanilaH/mini-games-kit@2da5b501a7e47fbe4b3683069b34f8e252116963`
 
-Full-game planning targets the newer reviewed kit revision:
+Productionization after slice PASS is planned against:
 
 `DanilaH/mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b`
 
 The dependency is private. Local installs / CI require GitHub credentials that can read it.
 
-## Run the existing probe
+## Run
 
 Requirements: Node.js `>=20.19.0` and GitHub authentication for the private kit.
 
@@ -87,8 +107,8 @@ Production build/typecheck:
 npm run build
 ```
 
-## MVP rule
+## Scope rule
 
-Do not turn this into Cooking Mama, a shop/economy sim or a physics sandbox.
+Do not turn the project into Cooking Mama, a shop/economy sim or a physics sandbox.
 
-The first release should prove that a polished sequence of a few reusable tactile interactions + a high-CMF collectible system is enough. If a new feature does not strengthen the high-frequency craft/reveal/squeeze/collect loop enough to justify its complete production burden, leave it out.
+Right now the only thing that matters is whether the tiny full loop remains fun across several complete crafts. If it does, productionize and scale. If it does not, fix the weak beat instead of adding systems.
