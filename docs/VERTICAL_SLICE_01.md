@@ -1,7 +1,9 @@
 # Vertical Slice 01 — One Shape, Full Loop
 
-**Status:** CONFIRMED / NEXT IMPLEMENTATION GATE  
-**Date:** 2026-09-14
+**Status:** IMPLEMENTED / PENDING HANDS-ON  
+**Date:** 2026-09-14  
+**Implementation branch:** `feat/vertical-slice-01`  
+**PR:** `#3`
 
 ## Purpose
 
@@ -34,7 +36,7 @@ Filling:
 
 This gives **6 deterministic results** from one shape.
 
-The purpose is not six pieces of authored content. It is to prove that a tiny data-driven material axis creates perceptible variety without new gameplay code.
+The purpose is not six pieces of authored content. It is to prove that a tiny material axis creates perceptible variety without new gameplay code.
 
 ### Loop
 
@@ -50,7 +52,34 @@ variant select
 → variant select / repeat
 ```
 
-`Smooth` may skip the explicit filling-add beat. Every path must still arrive at the same mix/mold/reveal/test/collect flow.
+`Smooth` skips the explicit filling-add beat. Every path arrives at the same mix/mold/reveal/test/collect flow.
+
+## Current implementation
+
+The first implementation deliberately stays on the validated probe renderer instead of productionizing materials too early.
+
+Implemented:
+
+- 3 palette choices;
+- Smooth / Foam Beads choice;
+- hold-to-pour stage;
+- optional hold-to-add-beads stage;
+- mix progress driven by real squish metrics;
+- mold progress driven by real press/compression metrics;
+- short mold/reveal choreography;
+- unrestricted finished-object squeeze;
+- Collect → repeat;
+- tiny local `Made X / 6` discovered-variant persistence;
+- existing metrics / mesh / mute diagnostics retained as secondary controls.
+
+Intentional cheap approximations for this gate:
+
+- palette variation currently uses CSS filtering over the validated material rather than production shader palette uniforms;
+- Foam Beads currently uses a lightweight central visual overlay with coarse gesture response rather than true embedded particles/material deformation;
+- pour/filling presentation is procedural DOM/CSS rather than fluid simulation;
+- no final stage-specific audio layer has been added beyond the existing tactile squish/release audio.
+
+These are acceptable **only for the full-loop decision gate**. If the loop passes, productionization can replace the cheap visual approximations without changing the accepted choreography.
 
 ## Interaction budget
 
@@ -72,35 +101,19 @@ Required only:
 
 - 3 color swatches;
 - Smooth / Foam Beads choice;
-- Start / Collect affordance as needed;
+- Start / Collect affordance;
 - current short stage hint;
 - small stage progress indication;
-- tiny `made X/6` feedback is allowed;
-- existing DEV metrics/mesh/mute controls may remain available but visually secondary.
+- tiny `Made X / 6` feedback;
+- existing DEV metrics/mesh/mute controls visually secondary.
 
 Do not build the final recipe browser, collection screen, Lab Rank HUD, settings screen or polished navigation.
 
-## Visual implementation rule
-
-Build directly on the validated probe presentation.
-
-Allowed cheap additions:
-
-- simple vessel / mold frame;
-- procedural or DOM/CSS pour stream;
-- material color uniforms;
-- procedural bead/filling treatment;
-- short mold/reveal choreography;
-- stage-specific shadow/light response;
-- restrained completion/reveal FX.
-
-Do not create an asset pipeline or authored background pack before the loop passes.
-
 ## Persistence
 
-For slice testing, only tiny durable `made/discovered variant ids` state is useful.
+For slice testing, only tiny durable `made/discovered variant ids` state is used.
 
-Do not build the final save/cloud stack before the loop passes. Mid-craft reload may restart the current craft.
+Do not build the final save/cloud stack before the loop passes. Mid-craft reload restarts the current craft.
 
 ## Explicitly deferred
 
