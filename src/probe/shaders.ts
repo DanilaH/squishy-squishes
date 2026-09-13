@@ -20,6 +20,7 @@ precision highp float;
 in vec2 vUv;
 
 uniform vec2 uPointerUv;
+uniform vec2 uPressUv;
 uniform vec2 uStrainDirection;
 uniform float uCompression;
 uniform float uPressDepth;
@@ -63,7 +64,7 @@ void main() {
   sheen *= 0.09 + uCompression * 0.17 + uPressDepth * 0.035;
   base += vec3(0.95, 0.82, 1.0) * sheen;
 
-  float pressDistance = distance(vUv, uPointerUv);
+  float pressDistance = distance(vUv, uPressUv);
   float dent = exp(-pressDistance * pressDistance * 52.0) * uPressDepth;
   base *= 1.0 - dent * 0.065;
   float pressRing = exp(-pow(pressDistance - 0.115, 2.0) * 180.0) * uPressDepth;
