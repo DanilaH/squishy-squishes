@@ -1,8 +1,10 @@
 # Squishy Squishes — Gameplay Specification
 
-**Status:** PRE-DEVELOPMENT PROPOSAL
+**Status:** FULL-PRODUCT DIRECTION; CURRENT IMPLEMENTATION SUBSET IS `VERTICAL_SLICE_01.md`
 
 This document defines the intended gameplay grammar and state choreography. It deliberately avoids inventing seven bespoke mini-games around the word “crafting.”
+
+For the current implementation pass, `docs/VERTICAL_SLICE_01.md` is authoritative: one existing shape, three palettes, Smooth/Foam Beads, minimal UI, and the complete `select → pour → add → mix → mold → reveal → squeeze → collect` loop. Full progression/catalog/UI work below is future scope until that slice passes.
 
 ---
 
