@@ -17,22 +17,34 @@ export interface ProbeMetrics {
   fps: number;
   p95FrameMs: number;
   compression: number;
+  pressDepth: number;
   normalizedVelocity: number;
   maxDisplacement: number;
+  gestureX: number;
+  gestureY: number;
   active: boolean;
   squeezes: number;
 }
 
 type MetricsListener = (metrics: ProbeMetrics) => void;
 
-const GRID_CELLS = 10;
+const GRID_CELLS = 16;
 const GRAB_RADIUS = 0.92;
+const PRESS_RADIUS = 0.58;
 const MAX_POINTER_DISPLACEMENT = 0.72;
 const MAX_VERTEX_DISPLACEMENT = 0.72;
-const GRAB_STIFFNESS = 235;
+const GRAB_STIFFNESS_NEAR = 245;
+const GRAB_STIFFNESS_FAR = 92;
 const REST_STIFFNESS = 44;
 const DAMPING = 10.5;
 const BULGE_STRENGTH = 0.085;
+const PRESS_DENT_STRENGTH = 0.14;
+const PRESS_RING_BULGE = 0.045;
+const PRESS_COMPRESSION_WEIGHT = 0.22;
+const PRESS_ATTACK = 12;
+const PRESS_RELEASE = 18;
+const RELEASE_DRAG_KICK = 1.05;
+const RELEASE_PRESS_KICK = 0.24;
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 const clamp01 = (value: number): number => clamp(value, 0, 1);
@@ -103,6 +115,8 @@ export class SquishProbe {
   private readonly scaleUniform: WebGLUniformLocation;
   private readonly pointerUvUniform: WebGLUniformLocation;
   private readonly compressionUniform: WebGLUniformLocation;
+  private readonly pressDepthUniform: WebGLUniformLocation;
+  private readonly strainDirectionUniform: WebGLUniformLocation;
   private readonly wireframePassUniform: WebGLUniformLocation;
 
   private scaleX = 0.5;
@@ -112,6 +126,11 @@ export class SquishProbe {
   private grabStartY = 0;
   private pointerX = 0;
   private pointerY = 0;
+  private sheenX = 0;
+  private sheenY = 0;
+  private gestureX = 0;
+  private gestureY = 0;
+  private pressDepth = 0;
   private compression = 0;
   private previousCompression = 0;
   private previousSampleAt = performance.now();
@@ -144,6 +163,8 @@ export class SquishProbe {
     this.scaleUniform = requireUniform(gl, this.program, 'uScale');
     this.pointerUvUniform = requireUniform(gl, this.program, 'uPointerUv');
     this.compressionUniform = requireUniform(gl, this.program, 'uCompression');
+    this.pressDepthUniform = requireUniform(gl, this.program, 'uPressDepth');
+    this.strainDirectionUniform = requireUniform(gl, this.program, 'uStrainDirection');
     this.wireframePassUniform = requireUniform(gl, this.program, 'uWireframePass');
 
     const vao = gl.createVertexArray();
@@ -173,6 +194,8 @@ export class SquishProbe {
     gl.enableVertexAttribArray(1);
     gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 16, 8);
 
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.lineIndexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.lineIndices, gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.triangleIndexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.triangleIndices, gl.STATIC_DRAW);
     gl.bindVertexArray(null);
@@ -284,6 +307,8 @@ export class SquishProbe {
     this.pointerX = local.x;
     this.pointerY = local.y;
     this.maxGestureCompression = 0;
+    this.sheenX += (local.x - this.sheenX) * 0.55;
+    this.sheenY += (local.y - this.sheenY) * 0.55;
     this.canvas.classList.add('is-active');
 
     try {
@@ -304,15 +329,20 @@ export class SquishProbe {
 
   private readonly handlePointerEnd = (event: PointerEvent): void => {
     if (event.pointerId !== this.pointerId) return;
-    if (this.maxGestureCompression >= 0.08) this.squeezes += 1;
-    this.cancelInteraction();
+
+    const releaseEnergy = clamp01(Math.max(this.maxGestureCompression, this.pressDepth * PRESS_COMPRESSION_WEIGHT));
+    if (releaseEnergy >= 0.08) {
+      this.squeezes += 1;
+      this.applyReleaseImpulse();
+    }
+    this.cancelInteraction(releaseEnergy);
   };
 
   private readonly handleVisibilityChange = (): void => {
     if (document.hidden) this.cancelInteraction();
   };
 
-  private cancelInteraction(): void {
+  private cancelInteraction(releaseEnergy = 0): void {
     if (this.pointerId !== null) {
       try {
         this.canvas.releasePointerCapture(this.pointerId);
@@ -322,7 +352,37 @@ export class SquishProbe {
     }
     this.pointerId = null;
     this.canvas.classList.remove('is-active');
-    this.audio.release();
+    this.audio.release(releaseEnergy);
+  }
+
+  private applyReleaseImpulse(): void {
+    let displacementX = this.pointerX - this.grabStartX;
+    let displacementY = this.pointerY - this.grabStartY;
+    const magnitude = Math.hypot(displacementX, displacementY);
+    if (magnitude > MAX_POINTER_DISPLACEMENT) {
+      const scale = MAX_POINTER_DISPLACEMENT / magnitude;
+      displacementX *= scale;
+      displacementY *= scale;
+    }
+
+    for (const vertex of this.vertices) {
+      const localX = vertex.restX - this.grabStartX;
+      const localY = vertex.restY - this.grabStartY;
+      const distance = Math.hypot(localX, localY);
+      const dragInfluence = smoothstep01(1 - distance / GRAB_RADIUS) ** 2;
+      const pressInfluence = smoothstep01(1 - distance / PRESS_RADIUS) ** 2;
+
+      vertex.vx -= displacementX * dragInfluence * RELEASE_DRAG_KICK;
+      vertex.vy -= displacementY * dragInfluence * RELEASE_DRAG_KICK;
+
+      if (distance > 0.0001) {
+        const radialX = localX / distance;
+        const radialY = localY / distance;
+        const pressKick = this.pressDepth * pressInfluence * RELEASE_PRESS_KICK;
+        vertex.vx += radialX * pressKick;
+        vertex.vy += radialY * pressKick;
+      }
+    }
   }
 
   private pointerToLocal(event: PointerEvent): { x: number; y: number } {
@@ -370,10 +430,29 @@ export class SquishProbe {
       }
     }
 
+    const pressTarget = active ? 1 : 0;
+    const pressRate = active ? PRESS_ATTACK : PRESS_RELEASE;
+    const pressBlend = 1 - Math.exp(-pressRate * dt);
+    this.pressDepth += (pressTarget - this.pressDepth) * pressBlend;
+
+    const dragMagnitude = Math.hypot(displacementX, displacementY);
+    const dragCompression = active ? clamp01(dragMagnitude / MAX_POINTER_DISPLACEMENT) : 0;
     this.compression = active
-      ? clamp01(Math.hypot(displacementX, displacementY) / MAX_POINTER_DISPLACEMENT)
+      ? clamp01(Math.max(dragCompression, this.pressDepth * PRESS_COMPRESSION_WEIGHT))
       : 0;
     this.maxGestureCompression = Math.max(this.maxGestureCompression, this.compression);
+
+    const directionTargetX = active && dragMagnitude > 0.02 ? displacementX / dragMagnitude : 0;
+    const directionTargetY = active && dragMagnitude > 0.02 ? displacementY / dragMagnitude : 0;
+    const directionBlend = 1 - Math.exp(-(active ? 11 : 5) * dt);
+    this.gestureX += (directionTargetX - this.gestureX) * directionBlend;
+    this.gestureY += (directionTargetY - this.gestureY) * directionBlend;
+
+    const sheenTargetX = active ? this.pointerX : 0;
+    const sheenTargetY = active ? this.pointerY : 0;
+    const sheenBlend = 1 - Math.exp(-(active ? 9 : 3) * dt);
+    this.sheenX += (sheenTargetX - this.sheenX) * sheenBlend;
+    this.sheenY += (sheenTargetY - this.sheenY) * sheenBlend;
 
     const sample = sampleContinuousInteraction(
       this.compression,
@@ -394,40 +473,61 @@ export class SquishProbe {
       this.audio.update(sample.progress, sample.normalizedVelocity);
     }
 
-    const gestureMagnitude = Math.max(0.0001, Math.hypot(displacementX, displacementY));
+    const gestureMagnitude = Math.max(0.0001, dragMagnitude);
     const gestureDirX = displacementX / gestureMagnitude;
     const gestureDirY = displacementY / gestureMagnitude;
-    const damping = Math.exp(-DAMPING * dt);
     let frameMaxDisplacement = 0;
 
     for (const vertex of this.vertices) {
       let targetX = vertex.restX;
       let targetY = vertex.restY;
+      let responseInfluence = 0;
 
       if (active) {
-        const grabDistance = Math.hypot(vertex.restX - this.grabStartX, vertex.restY - this.grabStartY);
+        const localX = vertex.restX - this.grabStartX;
+        const localY = vertex.restY - this.grabStartY;
+        const grabDistance = Math.hypot(localX, localY);
         const influence = smoothstep01(1 - grabDistance / GRAB_RADIUS);
         const weightedInfluence = influence * influence;
+        const pressInfluence = smoothstep01(1 - grabDistance / PRESS_RADIUS) ** 2;
+        responseInfluence = Math.max(weightedInfluence, pressInfluence * 0.9);
 
         targetX += displacementX * weightedInfluence;
         targetY += displacementY * weightedInfluence;
+
+        targetX += -localX * pressInfluence * this.pressDepth * PRESS_DENT_STRENGTH;
+        targetY += -localY * pressInfluence * this.pressDepth * PRESS_DENT_STRENGTH;
+
+        if (grabDistance > 0.0001) {
+          const localRadialX = localX / grabDistance;
+          const localRadialY = localY / grabDistance;
+          const ringCenter = PRESS_RADIUS * 0.72;
+          const ringWidth = PRESS_RADIUS * 0.38;
+          const ring = smoothstep01(1 - Math.abs(grabDistance - ringCenter) / ringWidth);
+          const ringBulge = ring * this.pressDepth * PRESS_RING_BULGE * (1 - pressInfluence * 0.65);
+          targetX += localRadialX * ringBulge;
+          targetY += localRadialY * ringBulge;
+        }
 
         const radialLength = Math.max(0.0001, Math.hypot(vertex.restX, vertex.restY));
         const radialX = vertex.restX / radialLength;
         const radialY = vertex.restY / radialLength;
         const directionAlignment = Math.abs(radialX * gestureDirX + radialY * gestureDirY);
         const sideWeight = 1 - directionAlignment;
-        const bulge = this.compression * BULGE_STRENGTH * sideWeight * (1 - weightedInfluence * 0.75);
+        const bulge = dragCompression * BULGE_STRENGTH * sideWeight * (1 - weightedInfluence * 0.75);
         targetX += radialX * bulge;
         targetY += radialY * bulge;
       }
 
-      const targetStiffness = active ? GRAB_STIFFNESS : 0;
+      const targetStiffness = active
+        ? GRAB_STIFFNESS_FAR + (GRAB_STIFFNESS_NEAR - GRAB_STIFFNESS_FAR) * responseInfluence
+        : 0;
+      const localDamping = Math.exp(-(DAMPING * (0.88 + responseInfluence * 0.12)) * dt);
       const ax = (targetX - vertex.x) * targetStiffness + (vertex.restX - vertex.x) * REST_STIFFNESS;
       const ay = (targetY - vertex.y) * targetStiffness + (vertex.restY - vertex.y) * REST_STIFFNESS;
 
-      vertex.vx = (vertex.vx + ax * dt) * damping;
-      vertex.vy = (vertex.vy + ay * dt) * damping;
+      vertex.vx = (vertex.vx + ax * dt) * localDamping;
+      vertex.vy = (vertex.vy + ay * dt) * localDamping;
       vertex.x += vertex.vx * dt;
       vertex.y += vertex.vy * dt;
 
@@ -474,10 +574,12 @@ export class SquishProbe {
     gl.uniform2f(this.scaleUniform, this.scaleX, this.scaleY);
     gl.uniform2f(
       this.pointerUvUniform,
-      clamp01(this.pointerX * 0.5 + 0.5),
-      clamp01(this.pointerY * 0.5 + 0.5),
+      clamp01(this.sheenX * 0.5 + 0.5),
+      clamp01(this.sheenY * 0.5 + 0.5),
     );
     gl.uniform1f(this.compressionUniform, this.compression);
+    gl.uniform1f(this.pressDepthUniform, this.pressDepth);
+    gl.uniform2f(this.strainDirectionUniform, this.gestureX, this.gestureY);
 
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.triangleIndexBuffer);
@@ -486,7 +588,6 @@ export class SquishProbe {
 
     if (this.wireframe) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.lineIndexBuffer);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.lineIndices, gl.STATIC_DRAW);
       gl.uniform1i(this.wireframePassUniform, 1);
       gl.drawElements(gl.LINES, this.lineIndices.length, gl.UNSIGNED_SHORT, 0);
     }
@@ -500,7 +601,7 @@ export class SquishProbe {
   }
 
   private publishMetrics(now: number): void {
-    if (now - this.lastMetricsAt < 120) return;
+    if (now - this.lastMetricsAt < 50) return;
     this.lastMetricsAt = now;
 
     const sorted = [...this.frameTimes].sort((a, b) => a - b);
@@ -515,8 +616,11 @@ export class SquishProbe {
       fps: averageFrameMs > 0 ? 1000 / averageFrameMs : 0,
       p95FrameMs,
       compression: this.compression,
+      pressDepth: this.pressDepth,
       normalizedVelocity: this.normalizedVelocity,
       maxDisplacement: this.maxDisplacement,
+      gestureX: this.gestureX,
+      gestureY: this.gestureY,
       active: this.pointerId !== null,
       squeezes: this.squeezes,
     });
