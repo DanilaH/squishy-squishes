@@ -1,12 +1,11 @@
 # Squishy Squishes — Project Decision Log
 
-This file records product/architecture decisions that materially constrain the implementation. It is not a running task log.
+This file records product/architecture decisions that materially constrain implementation.
 
 Statuses:
 
-- **CONFIRMED** — supported by explicit user decision or completed evidence gate.
-- **PROPOSED** — recommended default awaiting pre-development confirmation.
-- **DEFERRED** — intentionally not decided until evidence exists.
+- **CONFIRMED** — explicit user decision or completed evidence gate.
+- **DEFERRED** — intentionally waits for evidence.
 
 ---
 
@@ -15,21 +14,9 @@ Statuses:
 **Status:** CONFIRMED  
 **Date:** 2026-09-14
 
-Decision:
+Build Squishy Lab / Maker rather than falling back to Custom Headphones.
 
-Build the full Squishy Lab / Maker product rather than falling back to Custom Headphones.
-
-Evidence:
-
-- bounded WebGL2 2D deformation probe worked without true soft-body physics;
-- original hands-on reaction was positive;
-- tactile audio was explicitly judged appropriate;
-- one bounded refinement pass made the result slightly better without rescuing a weak initial core;
-- `docs/PROBE_RESULT.md` records the exact evidence and limitations.
-
-Consequence:
-
-The project can spend effort on the complete crafting/reveal/collection product rather than more isolated squeeze R&D.
+The bounded WebGL2 probe produced positive hands-on feel without true soft-body physics. The first cheap implementation was already liked; tactile audio was explicitly judged appropriate; the single refinement pass made it slightly better without rescuing a weak core.
 
 ---
 
@@ -37,13 +24,7 @@ The project can spend effort on the complete crafting/reveal/collection product 
 
 **Status:** CONFIRMED
 
-Decision:
-
-Use 2D mesh deformation + shader/material response as the baseline. Do not adopt true soft-body physics or real-time 3D absent new evidence.
-
-Reason:
-
-The cheap path already passed the risky feel test; complexity now has to justify itself against a known-good simpler solution.
+Use local 2D mesh deformation + shader/material response as the baseline. Do not adopt true soft-body physics or real-time 3D absent new evidence.
 
 ---
 
@@ -51,219 +32,147 @@ The cheap path already passed the risky feel test; complexity now has to justify
 
 **Status:** CONFIRMED at direction level
 
-Decision:
+Dark plum/indigo studio, bright semi-gloss designer-toy squishies, material-rich presentation, kawaii-lite rather than childlike.
 
-Use a dark plum/indigo premium studio/lab environment with bright semi-gloss designer-toy squishies, kawaii-lite rather than childlike, restrained translucent UI and material-rich unlocks.
-
-Still open:
-
-- exact font;
-- exact palette tokens;
-- final store-thumbnail hero recipe;
-- amount of face/decal usage.
+Exact font/palette tokens/store hero remain deferred.
 
 ---
 
 ## D-004 — Crafting ritual
 
-**Status:** CONFIRMED at concept level
+**Status:** CONFIRMED at product level
 
-Decision:
+Canonical product grammar:
 
-Core ritual:
+`pour → add → mix/squish → mold → reveal → optional finish/decorate → test squeeze → collect`
 
-`pour → add → mix/squish → mold → reveal → decorate/finish → test squeeze → collect`
-
-Not every recipe must contain every optional step.
-
-Hard constraint:
-
-Reuse a small interaction grammar instead of building a separate mini-game per step.
+Reuse a small interaction grammar rather than inventing a mini-game per step.
 
 ---
 
 ## D-005 — High-CMF content model
 
-**Status:** CONFIRMED at model level
+**Status:** CONFIRMED
 
-Decision:
-
-Content is built primarily from:
+Perceived content is built primarily from:
 
 `shape × material/palette × filling × face/decal × decoration × finish`
 
-One generic deformation/render path should support the catalog.
-
-Still open:
-
-- exact launch count;
-- exact recipe names;
-- exact component combinations.
+Recipes should share deformation/gameplay code.
 
 ---
 
-## D-006 — MVP catalog target
+## D-006 — Launch catalog target
 
-**Status:** PROPOSED
+**Status:** CONFIRMED as target, not quota
 
-Decision proposal:
+Working launch target:
 
-Launch target: **6 base shapes × 4 curated recipes = 24 canonical squishies**.
+- about 6 base shapes;
+- about 24 strong curated recipes;
+- proposed families: Mochi/Dumpling, Soft Cube, Peach/Fruit Puff, Mushroom, Paw, Blob Creature;
+- Cloud/Pillow and Capsule/Pebble remain reserve.
 
-Proposed shapes:
-
-- Mochi/Dumpling
-- Soft Cube
-- Peach/Fruit Puff
-- Mushroom
-- Paw
-- Blob Creature
-
-Reserve Cloud/Pillow and Capsule/Pebble for later.
-
-Reason:
-
-Enough collection variety to prove the high-CMF thesis without turning launch into asset production.
+If production evidence says 18–20 excellent recipes beat 24 filler recipes, explicitly reduce scope.
 
 ---
 
 ## D-007 — Deterministic recipe creation
 
-**Status:** PROPOSED
+**Status:** CONFIRMED
 
-Decision proposal:
+The player intentionally chooses the result/recipe being made. Primary reward is transformation/material unlock, not random loot.
 
-Primary craft result is the recipe the player intentionally selected, not a random loot roll.
-
-Reason:
-
-- preserves maker fantasy;
-- differentiates portfolio from chest/unboxing project;
-- avoids duplicate/pity/economy complexity;
-- lets visual unlocks carry progression.
-
-Random cosmetic microvariation may remain presentation-only.
+Presentation-only cosmetic microvariation is allowed.
 
 ---
 
 ## D-008 — Progression without currency economy
 
-**Status:** PROPOSED
+**Status:** CONFIRMED direction / Lab XP DEFERRED
 
-Decision proposal:
+Confirmed:
 
-Use one lightweight Lab XP / Lab Rank track. First-time recipe completion gives strong progress; repeats give smaller progress. Rank deterministically unlocks new recipes/components.
+- no spendable currency;
+- no ingredient inventory;
+- no shop;
+- no customers/orders;
+- no machine-upgrade economy in MVP.
 
-Explicitly omit in MVP:
-
-- spendable currency;
-- ingredient inventory;
-- shop;
-- customers/orders;
-- machine upgrades.
-
-Exact XP thresholds are DEFERRED until vertical-slice craft timing exists.
+Leading later model remains one Lab XP / Lab Rank track with deterministic unlocks, but **do not implement it before Vertical Slice 01 passes**. Real loop duration/repeat desire should determine cadence.
 
 ---
 
-## D-009 — Stack: TypeScript + Vite + raw WebGL2 + DOM/CSS
+## D-009 — Stack
 
-**Status:** PROPOSED, strongly recommended by probe evidence
+**Status:** CONFIRMED
 
-Decision proposal:
+Strict TypeScript + Vite + raw WebGL2 hero + DOM/CSS UI.
 
-Keep raw WebGL2 for tactile/material hero rendering and use DOM/CSS for lightweight UI.
-
-Do not add Phaser/React/physics/3D by default.
-
-Framework escalation requires evidence that current approach has become a dominant production burden.
+Do not add Phaser/React/physics/3D by default. Escalation requires evidence that the simple stack became the dominant production burden.
 
 ---
 
-## D-010 — Full-game shared-kit pin
+## D-010 — Shared-kit production revision
 
-**Status:** PROPOSED
+**Status:** CONFIRMED for productionization / DEFERRED for slice
 
-Decision proposal:
+Full production work should move to:
 
-Move full-game work to reviewed `DanilaH/mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b`.
+`DanilaH/mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b`
 
-The validated probe stays historically associated with `2da5b501...`.
-
-Reason:
-
-The newer revision adds reviewed JSON persistence + Yandex runtime/bootstrap/browser blocker utilities needed by the full product.
+The accepted probe/slice may stay on its validated older pin until the full-loop gate passes. Do not introduce dependency churn merely to obtain platform/save utilities that the slice intentionally defers.
 
 ---
 
 ## D-011 — Previous-project reuse policy
 
-**Status:** CONFIRMED as planning policy
+**Status:** CONFIRMED
 
-Decision:
+Reuse generic mechanisms from `mini-games-kit` and selected patterns from Signal 2000; do not port the old product architecture wholesale.
 
-Reuse shared production mechanisms from `mini-games-kit` and adapt a few proven patterns from Signal 2000; do not port the old product architecture wholesale.
+Useful references:
 
-Useful local pattern references:
-
-- pure collection snapshots;
+- pure collection read models;
 - milestone priority resolver;
 - DEV-only scenario panel;
 - typed RU/EN dictionary;
 - conservative result-boundary ad policy;
-- art production discipline.
+- disciplined content/art production.
 
-Explicitly reject importing CHIPS, pity, pouches, Overcharge, Secrets, duplicate economy and Signal-specific scene orchestration.
+Do not import CHIPS, pity, pouches, Overcharge, Hidden Pocket/Secrets, duplicate economy or Signal-specific scene orchestration.
 
 ---
 
-## D-012 — Orientation support
+## D-012 — Orientation
 
-**Status:** PROPOSED / OPEN
+**Status:** CONFIRMED starting position
 
-Proposal:
-
-Support responsive desktop/mobile layouts including portrait if composition remains good, rather than inheriting landscape-only behavior from Signal 2000.
-
-Reason:
-
-The core is one centered tactile object with sparse UI, so portrait is structurally plausible.
-
-Fallback:
-
-If hands-on/device evidence shows portrait is materially worse, use shared orientation blocker and rotate gate.
+Support responsive desktop/mobile including portrait while composition remains good. If device evidence shows portrait is materially worse, use a simple orientation gate later.
 
 ---
 
 ## D-013 — Monetization posture
 
-**Status:** PROPOSED
+**Status:** CONFIRMED direction / implementation DEFERRED
 
-Proposal:
+Later:
 
-- interstitials only at natural post-collect boundaries;
-- conservative initial grace + craft-count/time gate;
-- at most one MVP rewarded offer, likely optional Lab XP bonus;
-- no sticky banner over the hero tactile scene by default;
+- interstitial only after Collect / between loops;
+- conservative first-session grace + craft-count/time gate;
+- at most one rewarded progression offer if useful;
+- no sticky banner over the tactile hero by default;
 - no monetization-created currency/economy.
 
-Exact cadence/reward values remain open until actual craft timing exists.
+Do not implement monetization before the complete loop cadence is measured.
 
 ---
 
 ## D-014 — Mid-craft persistence
 
-**Status:** PROPOSED
+**Status:** CONFIRMED
 
-Proposal:
-
-Do not persist every 5–15 second crafting gesture. On reload during an unfinished craft, restarting the craft is acceptable in MVP.
-
-Persist meaningful durable progression/result truth only.
-
-Reason:
-
-Do not pay transaction/recovery complexity for tiny transient state without evidence of user value.
+Do not persist every short crafting gesture. Reload during unfinished craft may restart that craft. Persist meaningful completed result/progression truth only.
 
 ---
 
@@ -271,14 +180,48 @@ Do not pay transaction/recovery complexity for tiny transient state without evid
 
 **Status:** DEFERRED / OUT OF MVP
 
-A component-mixing freeplay mode is architecturally plausible but should not be implemented until the curated 24-recipe loop has proved fun and the content system is actually composable.
+Component-mixing freeplay may be considered only after curated loop/content composability is proven.
 
 ---
 
 ## D-016 — Content-count truth
 
-**Status:** CONFIRMED as scope-control rule
+**Status:** CONFIRMED
 
-The number 24 is a target, not a quota that justifies filler.
+24 is a target, not a production quota. Never ship weak filler merely to hit the count.
 
-If runtime production evidence shows 18 excellent recipes are stronger than 24 repetitive ones, revise the catalog explicitly rather than shipping weak content.
+---
+
+## D-017 — Vertical-slice-first implementation order
+
+**Status:** CONFIRMED  
+**Date:** 2026-09-14
+
+Before production platform architecture, progression, final UI or catalog scale, build **one complete real loop on the existing probe base** and test/polish it repeatedly.
+
+Exact slice:
+
+- one current rounded soft-cube/superellipse shape;
+- three palettes: Lavender/Grape, Strawberry/Pink, Lime/Mint;
+- one binary filling modifier: Smooth / Foam Beads;
+- six deterministic variants;
+- minimal UI over the existing scene;
+- no Lab XP, ads, Yandex integration, cloud save, second shape or final collection UI.
+
+Loop:
+
+`select → pour → optional filling → mix/squish → mold/press → reveal → free squeeze → Collect → repeat`
+
+Acceptance is 5–10 complete loops and concrete hands-on correction. Do not scale content until the loop itself passes.
+
+Canonical scope: `docs/VERTICAL_SLICE_01.md`.
+
+---
+
+## D-018 — Vertical Slice 01 UI is intentionally temporary
+
+**Status:** CONFIRMED
+
+The first complete loop should use only the UI required to operate and judge it: color swatches, filling choice, short stage hint/progress, Start/Collect, optional `made X/6`, and secondary DEV controls.
+
+Do not make final navigation/collection/settings chrome before the loop earns it.
