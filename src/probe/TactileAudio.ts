@@ -39,8 +39,9 @@ export class TactileAudio {
     this.texture?.update(progress, velocity);
   }
 
-  release(): void {
+  release(intensity = 0): void {
     this.texture?.update(0, 0);
+    if (intensity > 0.08) this.playReleasePlop(intensity);
   }
 
   setMuted(muted: boolean): void {
@@ -56,5 +57,37 @@ export class TactileAudio {
     this.output = null;
     if (this.context) void this.context.close();
     this.context = null;
+  }
+
+  private playReleasePlop(intensity: number): void {
+    if (!this.context || !this.output || this.context.state !== 'running' || this.muted) return;
+
+    const strength = Math.min(1, Math.max(0, intensity));
+    const now = this.context.currentTime;
+    const duration = 0.11 + strength * 0.055;
+    const oscillator = this.context.createOscillator();
+    const filter = this.context.createBiquadFilter();
+    const gain = this.context.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(104 - strength * 16, now);
+    oscillator.frequency.exponentialRampToValueAtTime(58, now + duration);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(260, now);
+    filter.Q.setValueAtTime(0.7, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.016 + strength * 0.036, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    oscillator.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.output);
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.02);
+    oscillator.onended = () => {
+      oscillator.disconnect();
+      filter.disconnect();
+      gain.disconnect();
+    };
   }
 }
