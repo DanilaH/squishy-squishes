@@ -20,7 +20,9 @@ precision highp float;
 in vec2 vUv;
 
 uniform vec2 uPointerUv;
+uniform vec2 uStrainDirection;
 uniform float uCompression;
+uniform float uPressDepth;
 uniform bool uWireframePass;
 
 out vec4 outColor;
@@ -48,10 +50,24 @@ void main() {
   float edge = smoothstep(0.5, 1.0, shape);
   base *= 1.0 - edge * 0.26;
 
-  float sheenDistance = distance(vUv, uPointerUv);
-  float sheen = exp(-sheenDistance * sheenDistance * 18.0);
-  sheen *= 0.10 + uCompression * 0.16;
+  vec2 sheenDelta = vUv - uPointerUv;
+  float directionAmount = clamp(length(uStrainDirection), 0.0, 1.0);
+  vec2 strainDirection = directionAmount > 0.001 ? normalize(uStrainDirection) : vec2(1.0, 0.0);
+  vec2 strainNormal = vec2(-strainDirection.y, strainDirection.x);
+  float along = dot(sheenDelta, strainDirection);
+  float across = dot(sheenDelta, strainNormal);
+  float isotropicMetric = dot(sheenDelta, sheenDelta) * 18.0;
+  float strainedMetric = along * along * 11.0 + across * across * 24.0;
+  float sheenMetric = mix(isotropicMetric, strainedMetric, directionAmount * 0.78);
+  float sheen = exp(-sheenMetric);
+  sheen *= 0.09 + uCompression * 0.17 + uPressDepth * 0.035;
   base += vec3(0.95, 0.82, 1.0) * sheen;
+
+  float pressDistance = distance(vUv, uPointerUv);
+  float dent = exp(-pressDistance * pressDistance * 52.0) * uPressDepth;
+  base *= 1.0 - dent * 0.065;
+  float pressRing = exp(-pow(pressDistance - 0.115, 2.0) * 180.0) * uPressDepth;
+  base += vec3(0.30, 0.13, 0.34) * pressRing * 0.045;
 
   float centerGlow = exp(-dot(p, p) * 1.7) * 0.07;
   base += vec3(0.18, 0.08, 0.20) * centerGlow;
