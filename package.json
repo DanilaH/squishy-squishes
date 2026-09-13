@@ -1,0 +1,22 @@
+{
+  "name": "squishy-squishes",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@danilah/mini-games-kit": "github:DanilaH/mini-games-kit#2da5b501a7e47fbe4b3683069b34f8e252116963"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.2.2"
+  }
+}
