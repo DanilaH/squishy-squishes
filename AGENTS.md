@@ -16,6 +16,6 @@ Pin `DanilaH/mini-games-kit@2da5b501a7e47fbe4b3683069b34f8e252116963`. Use `samp
 
 Use strict TypeScript. Keep the frame loop allocation-light, bound dt and deformation amplitudes, and clean up pointer/audio state on cancel, visibility changes, and teardown.
 
-Acceptance is repeated-use: at least 60 seconds of interaction and 20+ deliberate presses/drags/releases. One bounded correction pass is allowed. Do not spend a second day rescuing the thesis without new evidence.
+Acceptance is repeated-use: at least 60 seconds of interaction and 20+ deliberate presses/drags/releases. The single bounded feel-refinement pass has now been used; further edits before PASS/FAIL are limited to concrete defects or tuning exposed by hands-on testing. Do not spend a second day rescuing the thesis without new evidence.
 
 After the probe, record PASS/FAIL and write material findings back to the canonical decision documents.
