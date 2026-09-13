@@ -15,7 +15,7 @@ root.innerHTML = `
       <button class="probe-button" type="button" data-action="mute" aria-pressed="false">Mute</button>
     </div>
     <pre class="metrics" aria-live="polite"></pre>
-    <p class="probe-hint">Press inside the object, drag in different directions, release, repeat 20+ times.</p>
+    <p class="probe-hint">Press, knead, drag, release. Try slow and sharp gestures 20+ times.</p>
   </main>
 `;
 
@@ -35,16 +35,29 @@ const renderMetrics = (metrics: ProbeMetrics): void => {
     `fps              ${metrics.fps.toFixed(1)}`,
     `p95 frame        ${metrics.p95FrameMs.toFixed(2)} ms`,
     `compression      ${metrics.compression.toFixed(3)}`,
+    `press depth      ${metrics.pressDepth.toFixed(3)}`,
     `velocity         ${metrics.normalizedVelocity.toFixed(3)}`,
     `max displacement ${metrics.maxDisplacement.toFixed(3)}`,
     `pointer active   ${metrics.active ? 'yes' : 'no'}`,
     `squeezes         ${metrics.squeezes}`,
   ].join('\n');
 
-  const scaleX = 1 + metrics.compression * 0.20;
-  const scaleY = 1 - metrics.compression * 0.08;
-  shadow.style.transform = `translate(-50%, -50%) scale(${scaleX.toFixed(3)}, ${scaleY.toFixed(3)})`;
-  shadow.style.opacity = String(0.72 + metrics.compression * 0.12);
+  const directionMagnitude = Math.hypot(metrics.gestureX, metrics.gestureY);
+  const angle = directionMagnitude > 0.05
+    ? Math.atan2(-metrics.gestureY, metrics.gestureX) * (180 / Math.PI)
+    : 0;
+  const shiftX = metrics.gestureX * metrics.compression * 9;
+  const shiftY = -metrics.gestureY * metrics.compression * 5;
+  const scaleAlong = 1 + metrics.compression * 0.18 + metrics.pressDepth * 0.025;
+  const scaleAcross = 1 - metrics.compression * 0.045 - metrics.pressDepth * 0.03;
+
+  shadow.style.transform = [
+    'translate(-50%, -50%)',
+    `translate(${shiftX.toFixed(2)}px, ${shiftY.toFixed(2)}px)`,
+    `rotate(${angle.toFixed(2)}deg)`,
+    `scale(${scaleAlong.toFixed(3)}, ${scaleAcross.toFixed(3)})`,
+  ].join(' ');
+  shadow.style.opacity = String(0.70 + metrics.compression * 0.14 + metrics.pressDepth * 0.035);
 };
 
 const probe = new SquishProbe(canvas, renderMetrics);
