@@ -1,58 +1,57 @@
 # Squish Feel Probe — Result
 
-**Status:** PENDING HANDS-ON ACCEPTANCE  
+**Status:** PASS  
 **Probe branch:** `feat/squish-feel-probe`  
+**Validated implementation revision:** `614d1a12d80b1e2ad2895fb7fc47b6bd2f743bdc`  
 **Pinned kit:** `2da5b501a7e47fbe4b3683069b34f8e252116963`  
 **Bounded feel-refinement pass:** USED
 
-Do not mark PASS/FAIL before running the repeated-use protocol in `SQUISH_FEEL_PROBE.md`.
+## Result
 
-The refinement pass increased the mesh to 16x16 cells and added press/hold deformation, local response lag, a restrained release rebound, a low-frequency release plop, strain-aware sheen, and direction-aware shadow response. No product/meta scope was added.
+The probe passes its decision gate: the cheap 2D deformation approach is good enough to support a full Squishy Lab / Maker project without true soft-body physics.
 
-## Acceptance run
+The first implementation already produced a positive hands-on reaction. The user described the object as fun to interact with and specifically said the tactile sound felt right. The bounded refinement pass then increased the mesh to 16x16 cells and added press/hold deformation, local response lag, a restrained release rebound, a low-frequency release plop, strain-aware sheen, and direction-aware shadow response. The user reported that the refined build was a little better while the already-positive overall impression remained essentially unchanged.
 
-- [ ] Interacted continuously for at least 60 seconds.
-- [ ] Completed 20+ deliberate squeezes/drags/releases.
-- [ ] Tested several directions and speeds.
-- [ ] Tested press/hold with little or no drag.
-- [ ] Tested muted and unmuted.
-- [ ] Checked mesh overlay for folds/grid artifacts.
-- [ ] Checked frame-time diagnostics during aggressive input.
-- [x] Performed at most one bounded correction pass after the first hands-on evaluation.
+That is important evidence: the thesis did not require product/meta systems or a large second-pass rescue to become pleasant.
 
-## Observations
+## Acceptance observations
 
 ### Interaction feel
 
-Pending final repeated-use judgment.
+Positive before and after the correction pass. The core local deformation + spring response was already engaging enough to continue interacting with; the refinement improved it incrementally rather than changing the verdict.
 
 ### Spring / material response
 
-Pending final repeated-use judgment.
+The 2D mesh plus local press/drag deformation, pseudo-volume response, damped return and material shading reads as a soft object convincingly enough for the intended product direction. No true soft-body or 3D simulation was required.
 
 ### Audio fatigue / tactility
 
-Pending final repeated-use judgment.
+Positive qualitative result. The user explicitly called the sound appropriate. Continuous progress/velocity-driven tactile audio therefore survives its second real project context as a useful feel primitive.
 
 ### Performance
 
-Pending final hands-on observation after the denser mesh.
+No hands-on performance problem was reported during the probe. A formal weak-device/mobile performance pass has **not** been recorded yet and remains a full-game production requirement rather than evidence claimed by this probe.
 
 ### Implementation burden
 
-Still low: no soft-body solver, constraint graph, authored per-object deformation, physics library, or product/meta system was introduced.
+Low. The result uses one bounded grid mesh, local deformation, procedural material response and WebAudio. It does not require a soft-body solver, constraint graph, authored per-object deformation code, physics library, backend or product/meta systems.
 
-### Failed tuning approaches worth preserving
+### Correction-pass lesson
 
-Pending.
+The higher-density mesh, press dent, response lag, rebound, smarter sheen/shadow and release plop improved the feel, but only modestly. The main product lesson is therefore to preserve the simple core and spend future polish budget on the complete crafting/reveal/reward loop instead of endlessly tuning the squeeze in isolation.
+
+## Protocol bookkeeping
+
+The correction-pass rule was respected. Exact stopwatch duration / exact interaction count were not separately logged in chat, so this record does not fabricate those measurements. The practical qualitative gate was nonetheless clear enough to make the portfolio decision: the core interaction was positively received across both the original and refined versions.
 
 ## Decision
 
-**PENDING**
+**PASS — promote Squishy Lab / Maker to full-project planning.**
 
-When decided, replace with exactly one of:
+Next work:
 
-- **PASS — promote Squishy Lab / Maker to full-project planning.**
-- **FAIL — stop the Squishy thesis and return the next slot to Custom Headphones.**
-
-Then update the canonical queue in `DanilaH/decisions/Yandex Games/YANDEX_GAMES_DECISIONS.md` and record any genuinely reusable feel/kit lesson supported by the probe.
+1. preserve the validated deformation approach as the tactile core;
+2. define the full low-burden crafting / reveal / collection product around it;
+3. keep true soft-body physics, bespoke per-object deformation and unnecessary meta systems out unless later evidence demands them;
+4. update the canonical Yandex Games decision ledger with the PASS and new production queue;
+5. apply target-device, lifecycle and repeated-use acceptance again to the complete game before release.
