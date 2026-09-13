@@ -220,9 +220,13 @@ const setStage = (next: CraftStage): void => {
   clearTransitionTimer();
   stage = next;
   shell.dataset.stage = next;
+  shell.dataset.tested = 'false';
   setStageProgress(0);
   setHoldSurfaceActive(false);
 
+  const tactileStage = next === 'mix' || next === 'mold' || next === 'test';
+  canvas.style.pointerEvents = tactileStage ? 'auto' : 'none';
+  objectStack.setAttribute('aria-hidden', String(next === 'collect'));
   recipePanel.hidden = next !== 'select';
   collectButton.hidden = next !== 'test';
 
@@ -338,7 +342,7 @@ const renderMetrics = (metrics: ProbeMetrics): void => {
 const probe = new SquishProbe(canvas, renderMetrics);
 
 const updateHeroSize = (): void => {
-  const rect = canvas.getBoundingClientRect();
+  const rect = workspace.getBoundingClientRect();
   const size = Math.min(rect.width, rect.height) * 0.68;
   shell.style.setProperty('--hero-size', `${Math.max(120, size).toFixed(1)}px`);
 };
@@ -446,6 +450,11 @@ const tickCraft = (now: number): void => {
 
 const handleVisibilityChange = (): void => {
   if (!document.hidden || holdPointerId === null) return;
+  try {
+    holdSurface.releasePointerCapture(holdPointerId);
+  } catch {
+    // Capture may already be gone.
+  }
   holdPointerId = null;
   holdStageComplete = false;
 };
