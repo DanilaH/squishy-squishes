@@ -1,63 +1,94 @@
 # Squishy Squishes
 
-Bounded feel probe for the Squishy Lab / Maker thesis.
+Compact tactile maker / collection game for Yandex Games.
 
-The repository exists to answer one question:
+**Current status:** feel thesis **PASSED**; full-game specification is prepared for pre-development review. Implementation beyond the validated probe should not begin until `docs/PREIMPLEMENTATION_REVIEW.md` is resolved.
 
-> Can a single soft object remain pleasant to squeeze 20+ times using cheap local mesh deformation, damped return, material response, and tactile audio without true soft-body physics or product-scope expansion?
+## Product thesis
 
-This is not the full game prototype. A weak core is a **FAIL**, not a reason to add economy, progression, collection, multiple objects, or another mechanic.
+Make desirable soft collectibles through a short tactile lab ritual, reveal them dramatically, squeeze the finished result, add it to a visible collection, and unlock the next materially different recipe.
 
-## Current implementation
+Core loop:
 
-The probe branch contains:
+`choose recipe → pour/add → mix/squish → mold → reveal → finish/decorate → test squeeze → collect → unlock`
 
-- strict TypeScript + Vite;
-- one raw WebGL2 scene;
-- a `16x16` dynamic grid mesh (`17x17` vertices);
-- pointer-local weighted deformation;
-- a small hold/press dent with a local counter-bulge;
-- distance-weighted response for cheap viscoelastic lag;
-- bounded pseudo-volume response during drag;
-- damped spring return plus one restrained release kick;
-- procedural soft-material shading with lagged, strain-aware sheen;
-- direction-aware responsive contact shadow;
-- `mini-games-kit` continuous-interaction semantics;
-- `ContinuousNoiseTexture` tactile audio plus a low-frequency release plop;
-- FPS / frame-time / compression / press-depth / velocity / displacement / squeeze diagnostics;
-- optional mesh overlay and mute control.
+The production bet is asymmetric: a small set of reusable shapes and interaction grammars should create many visibly distinct collectibles through material/config combinations rather than bespoke mechanics.
 
-The implementation contract and PASS/FAIL protocol live in `docs/SQUISH_FEEL_PROBE.md`.
+## Art direction
 
-## Shared dependency
+**Premium tactile toy lab**:
 
-The probe pins:
+- dark plum / indigo studio environment;
+- bright semi-gloss designer-toy squishies;
+- tactile materials and strong silhouette contrast;
+- kawaii-lite rather than childlike;
+- restrained translucent UI;
+- reveal hierarchy without generic mobile-game effect spam.
+
+## Documentation
+
+Start here:
+
+- `docs/PRODUCT.md` — product thesis, scope and player promise
+- `docs/GAMEPLAY.md` — complete loop and interaction grammar
+- `docs/CONTENT_AND_PROGRESSION.md` — component system, initial 24-recipe catalog and unlock model
+- `docs/ART_DIRECTION.md` — visual identity and presentation rules
+- `docs/TECHNICAL_DIRECTION.md` — architecture, state boundaries and performance strategy
+- `docs/REUSE_AND_EXTRACTION_PLAN.md` — what comes from `mini-games-kit` and Signal 2000, and what must stay local
+- `docs/ANALYTICS_AND_MONETIZATION.md` — compact event contract and ad principles
+- `docs/ASSET_PIPELINE.md` — low-burden content production rules
+- `docs/IMPLEMENTATION_ROADMAP.md` — phased execution and gates
+- `docs/PREIMPLEMENTATION_REVIEW.md` — decisions to confirm before coding
+- `docs/DECISIONS.md` — local project decision log
+
+Historical validation evidence:
+
+- `docs/SQUISH_FEEL_PROBE.md`
+- `docs/PROBE_RESULT.md`
+
+## Validated tactile core
+
+The current runnable code is the successful feel probe:
+
+- raw WebGL2;
+- 16×16 deforming grid;
+- local press/drag deformation and pseudo-volume response;
+- damped spring return / restrained rebound;
+- procedural material sheen and responsive shadow;
+- progress/velocity-driven tactile WebAudio;
+- no soft-body solver, physics engine or 3D model.
+
+This is evidence to build on, not a requirement to keep the probe's file structure unchanged.
+
+## Shared production kit
+
+The probe itself is pinned to:
 
 `DanilaH/mini-games-kit@2da5b501a7e47fbe4b3683069b34f8e252116963`
 
-The kit repository is private, so `npm install` requires GitHub credentials that can read it. The probe intentionally does not copy those shared primitives into this repository.
+Full-game planning targets the newer reviewed kit revision:
 
-## Run
+`DanilaH/mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b`
 
-Requirements: Node.js `>=20.19.0` and GitHub authentication for the private kit dependency.
+The dependency is private. Local installs / CI require GitHub credentials that can read it.
+
+## Run the existing probe
+
+Requirements: Node.js `>=20.19.0` and GitHub authentication for the private kit.
 
 ```bash
 npm install
 npm run dev
 ```
 
-For a production build/type check:
+Production build/typecheck:
 
 ```bash
 npm run build
 ```
 
-## Acceptance
+## MVP rule
 
-Do not judge from one drag or a screenshot. Interact for at least 60 seconds, then perform 20+ deliberate presses/drags/releases at different speeds and directions.
+Do not turn this into Cooking Mama, a shop/economy sim or a physics sandbox.
 
-PASS requires the interaction to remain pleasant, responsive, materially soft rather than scale-like, stable in performance, and reusable without a real soft-body engine.
-
-The planned bounded feel-refinement pass has now been used. Do not add product scope to rescue the probe; further changes should be limited to concrete defects or tuning exposed by the final hands-on run.
-
-After acceptance, the result must be written back to the canonical Yandex Games decision ledger in `DanilaH/decisions`.
+The first release should prove that a polished sequence of a few reusable tactile interactions + a high-CMF collectible system is enough. If a new feature does not strengthen the high-frequency craft/reveal/squeeze/collect loop enough to justify its complete production burden, leave it out.
