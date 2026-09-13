@@ -1,83 +1,92 @@
 # Squishy Squishes — Agent Contract
 
-This repository has passed its bounded Squish Feel Probe and is now in **pre-development full-game planning** for Squishy Lab / Maker.
+The feel thesis has PASSED. The current implementation task is **Vertical Slice 01**, not broad full-game productionization.
 
-Do not start broad implementation until `docs/PREIMPLEMENTATION_REVIEW.md` is explicitly resolved with the user.
+Read `docs/VERTICAL_SLICE_01.md` first. Then read:
 
-## Required startup reading
+1. `docs/GAMEPLAY.md`
+2. `docs/DECISIONS.md`
+3. `docs/IMPLEMENTATION_ROADMAP.md`
+4. `docs/PRODUCT.md`
+5. `docs/ART_DIRECTION.md`
+6. `docs/TECHNICAL_DIRECTION.md`
+7. `docs/REUSE_AND_EXTRACTION_PLAN.md`
 
-Read local project truth first:
+Canonical portfolio guidance in `DanilaH/decisions` remains relevant, especially the Yandex decision ledger and feel/polish doctrine, but do not reopen broad market research.
 
-1. `docs/PRODUCT.md`
-2. `docs/GAMEPLAY.md`
-3. `docs/CONTENT_AND_PROGRESSION.md`
-4. `docs/ART_DIRECTION.md`
-5. `docs/TECHNICAL_DIRECTION.md`
-6. `docs/REUSE_AND_EXTRACTION_PLAN.md`
-7. `docs/IMPLEMENTATION_ROADMAP.md`
-8. `docs/DECISIONS.md`
+## Current task invariant
 
-Then consult the canonical portfolio guidance in `DanilaH/decisions` when relevant, especially:
+Build the smallest complete product loop directly on the validated probe base:
 
-- `Yandex Games/YANDEX_GAMES_DECISIONS.md`
-- `Yandex Games/GAME_FEEL_DOCTRINE.md`
-- `Yandex Games/FEEL_PATTERNS.md`
-- `Yandex Games/POLISH_ACCEPTANCE.md`
-- `Yandex Games/REUSABLE_MECHANICS.md`
-- `Yandex Games/MINI_GAMES_KIT_CURRENT_STATUS.md`
+`select → pour → optional filling → mix/squish → mold/press → reveal → free squeeze → Collect → repeat`
 
-Before reimplementing production/platform/feel infrastructure, inspect the current pinned `DanilaH/mini-games-kit` API documentation.
+Current slice content is locked:
+
+- one existing rounded soft-cube/superellipse geometry;
+- Lavender/Grape, Strawberry/Pink, Lime/Mint palettes;
+- Smooth / Foam Beads modifier;
+- six deterministic variants;
+- minimal temporary UI.
+
+Do not add a second shape, Lab XP, final collection UI, Yandex SDK, ads, cloud save, final i18n, a production asset pipeline or mass content before the slice passes repeated-use hands-on.
 
 ## Product invariant
 
-The product is a compact tactile maker/collection game, not a general crafting simulator.
+The eventual product is a compact tactile maker/collection game, not a general crafting simulator.
 
-Target loop:
+Long-term grammar:
 
-`choose recipe → pour/add → mix/squish → mold → reveal → finish/decorate → test squeeze → collect → unlock next desirable recipe`
+`choose recipe → tactile make → mold → reveal → squeeze/play → collect → visible next unlock`
 
-The loop must reuse a small grammar of tactile interactions. Do not create a different mini-game for every crafting stage.
-
-The validated squeeze core is cheap 2D deformation. Preserve that advantage. True soft-body physics, real-time 3D, bespoke deformation code per collectible, backend services, ECS, character systems, orders/customers, shop economy, quests and unrelated meta systems are out of MVP unless new evidence explicitly justifies them.
-
-## Production strategy
-
-Optimize for **perceived quality / complete production burden**, not feature count.
-
-- Keep the hero interaction immediate and pleasant under repetition.
-- Spend polish budget on the high-frequency tactile loop, reveal and result exit before secondary UI.
-- New content should be primarily config/component driven.
-- A recipe that needs bespoke gameplay code is a warning that the content system is failing.
-- Presentation never owns durable gameplay truth.
-- Gameplay RNG and cosmetic randomness remain separate if gameplay randomness is introduced later.
-- Input responsiveness and frame stability outrank decorative richness.
-- Do not mask a weak stage with particles, ads, progression or extra mechanics.
+Reuse a small interaction grammar. A recipe that needs bespoke gameplay code is a warning that the content system is failing.
 
 ## Technical baseline
 
-Planned full-game baseline is strict TypeScript + Vite + raw WebGL2 for the tactile hero and DOM/CSS for lightweight UI.
+Use strict TypeScript + Vite + raw WebGL2 for the tactile hero and DOM/CSS for lightweight UI.
 
-Do not add Phaser, React, a physics engine or another rendering framework merely because the previous project used one. The probe already proved the hero interaction without them. A framework change requires concrete evidence that the current approach has become the dominant production cost.
+The current slice should preserve the validated probe dependency and rendering path unless a concrete defect requires change. The planned production upgrade to `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b` happens **after** the slice passes; do not churn the dependency just to obtain platform/persistence utilities that are intentionally deferred.
 
-The validated probe remains historical evidence in:
+No Phaser, React, physics engine, real-time 3D or general soft-body framework without new evidence.
+
+## Feel discipline
+
+The existing squeeze interaction is accepted evidence. Do not keep tuning it in isolation.
+
+Spend correction effort on the complete high-frequency loop:
+
+- immediate stage response;
+- causal visual change during pour/add/mix/mold;
+- short satisfying reveal;
+- frictionless transition into free squeeze;
+- fast Collect → next craft exit;
+- sound that survives repetition;
+- mobile/desktop stability.
+
+Do not mask a weak stage with particles, progression or extra mechanics.
+
+## State discipline
+
+For the vertical slice:
+
+- stage progress can be in-memory;
+- mid-craft reload may restart the craft;
+- tiny discovered-variant persistence is allowed;
+- presentation callbacks must not double-complete a stage;
+- pointer cancel / visibility change must release owned input/audio cleanly.
+
+Full save/cloud/progression truth boundaries are deferred until productionization after slice PASS.
+
+## Historical evidence
+
+Do not rewrite:
 
 - `docs/SQUISH_FEEL_PROBE.md`
 - `docs/PROBE_RESULT.md`
 
-Do not rewrite that history to match later implementation.
-
-## Shared-kit rule
-
-The validated probe used `mini-games-kit@2da5b501a7e47fbe4b3683069b34f8e252116963`.
-
-The full game is planned against the newer reviewed revision `d17ba31fce2a71335dcc3095f772c3fdd87fe97b`, subject to the pre-development review. Consume only fitting subpaths and keep game policy local.
-
-If an experimental kit API is close but wrong, record the friction. Correct the shared primitive only when the smallest general change is justified by this real consumer; do not silently fork an expensive generic mechanism inside the game.
+They record the original decision experiment.
 
 ## Development discipline
 
-Use branches and reviewable PRs. Keep domain logic in pure modules where practical and renderer/orchestration code non-authoritative for persistence/progression.
+Use branches and reviewable PRs. Material scope/architecture changes belong in `docs/DECISIONS.md`.
 
-Every material scope or architecture change belongs in `docs/DECISIONS.md`. Every reusable production lesson supported by hands-on evidence should be written back to `DanilaH/decisions` after review.
-
-Before declaring production-ready, apply the repeated-use and lifecycle checks in the canonical polish acceptance document on representative desktop/mobile conditions.
+The current acceptance gate is 5–10 complete loops from creation through Collect. Only after that loop passes should architecture/content scale expand.
