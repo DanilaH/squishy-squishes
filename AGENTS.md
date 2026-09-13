@@ -1,21 +1,83 @@
 # Squishy Squishes — Agent Contract
 
-This repository is a bounded Squish Feel Probe, not a full game.
+This repository has passed its bounded Squish Feel Probe and is now in **pre-development full-game planning** for Squishy Lab / Maker.
 
-Read `docs/SQUISH_FEEL_PROBE.md` first. Then consult the canonical Yandex Games guidance in `DanilaH/decisions` and the public API docs in `DanilaH/mini-games-kit` when relevant.
+Do not start broad implementation until `docs/PREIMPLEMENTATION_REVIEW.md` is explicitly resolved with the user.
 
-The only decision question is whether one generic soft object can remain pleasant to squeeze 20+ times using cheap local mesh deformation, damped return, material response, and tactile audio without true soft-body physics or bespoke per-object deformation code.
+## Required startup reading
 
-PASS means Squishy Lab / Maker can move to full-project planning. FAIL means stop this thesis and return the next production slot to Custom Headphones. Do not create a MAYBE by adding product scope.
+Read local project truth first:
 
-Allowed scope: one object, TypeScript, Vite, WebGL2, local mesh deformation, pointer/touch input, damped spring return, cheap pseudo-volume response, material/shadow feedback, diagnostic overlay, and tactile audio.
+1. `docs/PRODUCT.md`
+2. `docs/GAMEPLAY.md`
+3. `docs/CONTENT_AND_PROGRESSION.md`
+4. `docs/ART_DIRECTION.md`
+5. `docs/TECHNICAL_DIRECTION.md`
+6. `docs/REUSE_AND_EXTRACTION_PLAN.md`
+7. `docs/IMPLEMENTATION_ROADMAP.md`
+8. `docs/DECISIONS.md`
 
-Forbidden in the probe: economy, progression, collection, ads, Yandex SDK, persistence/backend, merge, mystery boxes, shops/orders/customers, multiple mini-games, multiple authored objects, third-party soft-body physics, or features added to compensate for weak squeezing.
+Then consult the canonical portfolio guidance in `DanilaH/decisions` when relevant, especially:
 
-Pin `DanilaH/mini-games-kit@2da5b501a7e47fbe4b3683069b34f8e252116963`. Use `sampleContinuousInteraction(...)` and `ContinuousNoiseTexture` where they fit. Keep hit testing, pointer geometry, mesh topology, deformation, spring tuning, pseudo-volume logic, and shaders local.
+- `Yandex Games/YANDEX_GAMES_DECISIONS.md`
+- `Yandex Games/GAME_FEEL_DOCTRINE.md`
+- `Yandex Games/FEEL_PATTERNS.md`
+- `Yandex Games/POLISH_ACCEPTANCE.md`
+- `Yandex Games/REUSABLE_MECHANICS.md`
+- `Yandex Games/MINI_GAMES_KIT_CURRENT_STATUS.md`
 
-Use strict TypeScript. Keep the frame loop allocation-light, bound dt and deformation amplitudes, and clean up pointer/audio state on cancel, visibility changes, and teardown.
+Before reimplementing production/platform/feel infrastructure, inspect the current pinned `DanilaH/mini-games-kit` API documentation.
 
-Acceptance is repeated-use: at least 60 seconds of interaction and 20+ deliberate presses/drags/releases. The single bounded feel-refinement pass has now been used; further edits before PASS/FAIL are limited to concrete defects or tuning exposed by hands-on testing. Do not spend a second day rescuing the thesis without new evidence.
+## Product invariant
 
-After the probe, record PASS/FAIL and write material findings back to the canonical decision documents.
+The product is a compact tactile maker/collection game, not a general crafting simulator.
+
+Target loop:
+
+`choose recipe → pour/add → mix/squish → mold → reveal → finish/decorate → test squeeze → collect → unlock next desirable recipe`
+
+The loop must reuse a small grammar of tactile interactions. Do not create a different mini-game for every crafting stage.
+
+The validated squeeze core is cheap 2D deformation. Preserve that advantage. True soft-body physics, real-time 3D, bespoke deformation code per collectible, backend services, ECS, character systems, orders/customers, shop economy, quests and unrelated meta systems are out of MVP unless new evidence explicitly justifies them.
+
+## Production strategy
+
+Optimize for **perceived quality / complete production burden**, not feature count.
+
+- Keep the hero interaction immediate and pleasant under repetition.
+- Spend polish budget on the high-frequency tactile loop, reveal and result exit before secondary UI.
+- New content should be primarily config/component driven.
+- A recipe that needs bespoke gameplay code is a warning that the content system is failing.
+- Presentation never owns durable gameplay truth.
+- Gameplay RNG and cosmetic randomness remain separate if gameplay randomness is introduced later.
+- Input responsiveness and frame stability outrank decorative richness.
+- Do not mask a weak stage with particles, ads, progression or extra mechanics.
+
+## Technical baseline
+
+Planned full-game baseline is strict TypeScript + Vite + raw WebGL2 for the tactile hero and DOM/CSS for lightweight UI.
+
+Do not add Phaser, React, a physics engine or another rendering framework merely because the previous project used one. The probe already proved the hero interaction without them. A framework change requires concrete evidence that the current approach has become the dominant production cost.
+
+The validated probe remains historical evidence in:
+
+- `docs/SQUISH_FEEL_PROBE.md`
+- `docs/PROBE_RESULT.md`
+
+Do not rewrite that history to match later implementation.
+
+## Shared-kit rule
+
+The validated probe used `mini-games-kit@2da5b501a7e47fbe4b3683069b34f8e252116963`.
+
+The full game is planned against the newer reviewed revision `d17ba31fce2a71335dcc3095f772c3fdd87fe97b`, subject to the pre-development review. Consume only fitting subpaths and keep game policy local.
+
+If an experimental kit API is close but wrong, record the friction. Correct the shared primitive only when the smallest general change is justified by this real consumer; do not silently fork an expensive generic mechanism inside the game.
+
+## Development discipline
+
+Use branches and reviewable PRs. Keep domain logic in pure modules where practical and renderer/orchestration code non-authoritative for persistence/progression.
+
+Every material scope or architecture change belongs in `docs/DECISIONS.md`. Every reusable production lesson supported by hands-on evidence should be written back to `DanilaH/decisions` after review.
+
+Before declaring production-ready, apply the repeated-use and lifecycle checks in the canonical polish acceptance document on representative desktop/mobile conditions.
