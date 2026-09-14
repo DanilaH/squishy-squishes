@@ -16,17 +16,17 @@ type CraftStage = 'select' | 'pour' | 'add' | 'mix' | 'mold' | 'reveal' | 'test'
 
 const DISCOVERED_STORAGE_KEY = 'squishy.vertical-slice.discovered.v2';
 const TOTAL_VARIANTS = ALL_VARIANT_IDS.length;
-const SHAKE_PATH_FOR_FULL_PROGRESS_PX = 2200;
+const SHAKE_PATH_FOR_FULL_PROGRESS_PX = 3000;
 const SHAKE_IDLE_MS = 120;
 const PAINT_CANVAS_SIZE = 256;
-const PAINT_GRID_SIZE = 16;
-const PAINT_COMPLETE_COVERAGE = 0.82;
-const PAINT_BRUSH_RADIUS_UV = 0.14;
+const PAINT_GRID_SIZE = 20;
+const PAINT_COMPLETE_COVERAGE = 0.92;
+const PAINT_BRUSH_RADIUS_UV = 0.115;
 const PAINT_IDLE_MS = 110;
 const MIX_MOTION_IDLE_MS = 110;
-const MOLD_HIT_PROGRESS = 0.17;
-const MOLD_DECAY_PER_SECOND = 0.055;
-const MOLD_TARGET_LIFETIME_MS = 900;
+const MOLD_NORMAL_HIT_PROGRESS = 0.028;
+const MOLD_CRIT_HIT_PROGRESS = 0.095;
+const MOLD_DECAY_PER_SECOND = 0.03;
 const MOLD_NEXT_TARGET_DELAY_MS = 130;
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
@@ -185,11 +185,14 @@ export class VerticalSliceApp {
     `).join('');
 
     const discoveryDots = ALL_VARIANT_IDS.map((id) => `<span class="discovery-dot" data-variant-dot="${id}"></span>`).join('');
-    const foamParticles = Array.from({ length: 11 }, (_, index) => {
-      const x = (index - 5) * 8;
-      const drift = x + ((index % 3) - 1) * 7;
-      const delay = index * -47;
-      return `<span class="foam-particle" style="--foam-x: ${x}px; --foam-drift: ${drift}px; --foam-delay: ${delay}ms"></span>`;
+    const foamParticles = Array.from({ length: 20 }, (_, index) => {
+      const x = (index - 9.5) * 4.6;
+      const drift = x + ((index % 5) - 2) * 5.5;
+      const delay = index * -31;
+      const size = 3 + ((index * 7) % 4);
+      const duration = 450 + (index % 5) * 55;
+      const blur = (index % 3) * 0.18;
+      return `<span class="foam-particle" style="--foam-x: ${x}px; --foam-drift: ${drift}px; --foam-delay: ${delay}ms; --foam-size: ${size}px; --foam-duration: ${duration}ms; --foam-blur: ${blur}px"></span>`;
     }).join('');
 
     return `
@@ -285,6 +288,7 @@ export class VerticalSliceApp {
     this.holdSurface.addEventListener('pointerup', this.handleHoldPointerEnd, { signal });
     this.holdSurface.addEventListener('pointercancel', this.handleHoldPointerEnd, { signal });
     this.moldTarget.addEventListener('pointerdown', this.handleMoldTargetPress, { signal });
+    this.workspace.addEventListener('pointerdown', this.handleMoldSurfacePress, { signal });
 
     this.canvas.addEventListener('pointerdown', this.handleMixPointerDown, { signal });
     this.canvas.addEventListener('pointermove', this.handleMixPointerMove, { signal });
@@ -421,7 +425,7 @@ export class VerticalSliceApp {
         this.lastSemanticAt = performance.now();
         break;
       case 'mold':
-        this.setStageCopy('Press the mold', 'Tap each pulse before the press meter slips back.');
+        this.setStageCopy('Shape it', 'Tap the squishy. Hit the pulse for a critical press.');
         this.renderer.setMoldProgress(0);
         this.lastSemanticAt = performance.now();
         this.spawnMoldTarget();
@@ -482,7 +486,7 @@ export class VerticalSliceApp {
       if (movingStretch && this.stageProgress < 1) {
         const stretch = clamp01((metrics.compression - 0.22) / 0.58);
         const effort = stretch * 0.72 + speedFactor * 0.28;
-        this.setStageProgress(this.stageProgress + dt * effort * 0.88);
+        this.setStageProgress(this.stageProgress + dt * effort * 0.67);
       }
 
       if (!metrics.active && this.stageProgress >= 1) {
@@ -647,7 +651,7 @@ export class VerticalSliceApp {
     const du = point.u - this.paintLastU;
     const dv = point.v - this.paintLastV;
     const distance = Math.hypot(du, dv);
-    const steps = Math.max(1, Math.ceil(distance / 0.035));
+    const steps = Math.max(1, Math.ceil(distance / 0.026));
 
     for (let step = 1; step <= steps; step += 1) {
       const ratio = step / steps;
@@ -696,7 +700,23 @@ export class VerticalSliceApp {
     const x = u * PAINT_CANVAS_SIZE;
     const y = (1 - v) * PAINT_CANVAS_SIZE;
     const radius = PAINT_CANVAS_SIZE * PAINT_BRUSH_RADIUS_UV;
+    const spreadRadius = radius * 1.42;
     const palette = getPalette(this.selected.palette);
+
+    const spreadGradient = context.createRadialGradient(x, y, radius * 0.25, x, y, spreadRadius);
+    spreadGradient.addColorStop(0, palette.accentCss);
+    spreadGradient.addColorStop(0.48, palette.accentSoftCss);
+    spreadGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+    context.save();
+    context.clip(this.paintShapePath);
+    context.globalAlpha = 0.34;
+    context.fillStyle = spreadGradient;
+    context.beginPath();
+    context.arc(x, y, spreadRadius, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+
     const gradient = context.createRadialGradient(
       x - radius * 0.18,
       y - radius * 0.18,
@@ -854,6 +874,31 @@ export class VerticalSliceApp {
     this.mixPointerSpeed = 0;
   }
 
+  private readonly handleMoldSurfacePress = (event: PointerEvent): void => {
+    if (this.stage !== 'mold' || this.moldComplete) return;
+    const point = this.pointerToPaintUv(event.clientX, event.clientY);
+    if (!this.isInsidePaintShape(point.u, point.v)) return;
+    event.preventDefault();
+    void this.audio.prime();
+    this.advanceMoldProgress(MOLD_NORMAL_HIT_PROGRESS);
+  };
+
+  private advanceMoldProgress(amount: number): boolean {
+    if (this.stage !== 'mold' || this.moldComplete) return false;
+    this.setStageProgress(this.stageProgress + amount);
+    this.renderer.setMoldProgress(this.stageProgress);
+    if (this.stageProgress < 1) return false;
+
+    this.moldComplete = true;
+    this.clearMoldTargetTimer();
+    this.moldTarget.hidden = true;
+    this.moldTarget.disabled = true;
+    this.setStageCopy('Shape locked', '');
+    this.audio.playStageComplete(0.8);
+    this.transitionTimer = window.setTimeout(() => this.setStage('reveal'), 220);
+    return true;
+  }
+
   private readonly handleMoldTargetPress = (event: PointerEvent): void => {
     if (this.stage !== 'mold' || this.moldComplete) return;
     event.preventDefault();
@@ -866,17 +911,7 @@ export class VerticalSliceApp {
     this.moldTarget.classList.add('is-hit');
     this.moldTarget.disabled = true;
 
-    this.setStageProgress(this.stageProgress + MOLD_HIT_PROGRESS);
-    this.renderer.setMoldProgress(this.stageProgress);
-
-    if (this.stageProgress >= 1) {
-      this.moldComplete = true;
-      this.moldTarget.hidden = true;
-      this.setStageCopy('Press locked', '');
-      this.audio.playStageComplete(0.8);
-      this.transitionTimer = window.setTimeout(() => this.setStage('reveal'), 190);
-      return;
-    }
+    if (this.advanceMoldProgress(MOLD_CRIT_HIT_PROGRESS)) return;
 
     this.moldTargetTimer = window.setTimeout(() => this.spawnMoldTarget(), MOLD_NEXT_TARGET_DELAY_MS);
   };
@@ -904,7 +939,6 @@ export class VerticalSliceApp {
     this.moldTarget.classList.remove('is-hit');
     this.moldTarget.disabled = false;
     this.moldTarget.hidden = false;
-    this.moldTargetTimer = window.setTimeout(() => this.spawnMoldTarget(), MOLD_TARGET_LIFETIME_MS);
   }
 
   private positionMoldTarget(): void {
