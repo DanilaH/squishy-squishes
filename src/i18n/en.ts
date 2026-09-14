@@ -1,7 +1,7 @@
 export const en = {
   brand: {
     name: 'Squishy Lab',
-    line: 'Production line · 01',
+    line: 'Make · squeeze · collect',
   },
   collection: {
     made: 'Collected',
@@ -54,7 +54,7 @@ export const en = {
     makeAgain: 'Make again',
   },
   stage: {
-    kicker: 'CRAFT 01',
+    kicker: 'SQUISHY LAB',
     selectTitle: 'Choose a recipe',
     selectHint: 'Browse the recipe book, pick something you want, then make it.',
     pourTitle: 'Spread the base',

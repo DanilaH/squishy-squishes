@@ -19,6 +19,7 @@ import {
   type CompletionOutcome,
 } from './progression';
 import { SquishyAudio } from './SquishyAudio';
+import { getPresentationTier } from './presentation';
 import {
   createShapePath,
   getShape,
@@ -414,6 +415,7 @@ export class VerticalSliceApp {
     this.shell.dataset.palette = palette.id;
     this.shell.dataset.material = material.id;
     this.shell.dataset.filling = filling.id;
+    this.shell.dataset.presentationTier = getPresentationTier(this.selected);
     this.shell.style.setProperty('--accent', palette.accentCss);
     this.shell.style.setProperty('--accent-soft', palette.accentSoftCss);
     const selectedId = variantId(this.selected);
@@ -524,7 +526,7 @@ export class VerticalSliceApp {
       case 'reveal':
         this.setStageCopy(this.options.copy.stage.revealTitle, '');
         this.renderer.setMoldProgress(1);
-        this.audio.playReveal(this.selected.material !== 'soft' || getFilling(this.selected.filling).requiresAddStage);
+        this.audio.playReveal(getPresentationTier(this.selected));
         this.transitionTimer = window.setTimeout(() => this.setStage('test'), 920);
         break;
       case 'test': {
@@ -545,7 +547,7 @@ export class VerticalSliceApp {
           this.options.copy.stage.collectedTitle,
           this.collectFeedbackText || this.options.copy.stage.collectedHint,
         );
-        this.audio.playCollect();
+        this.audio.playCollect(getPresentationTier(this.selected));
         this.transitionTimer = window.setTimeout(() => this.setStage('select'), 520);
         break;
     }

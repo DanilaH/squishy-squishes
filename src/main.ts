@@ -3,6 +3,7 @@ import './interaction-pass.css';
 import './interaction-pass-03.css';
 import './release.css';
 import './ui-ux-pass-01.css';
+import './feel-art-audio-pass-01.css';
 import { bootstrapSquishyApp } from './app/bootstrap';
 import { getGameCopy, normalizeLanguage } from './i18n';
 
