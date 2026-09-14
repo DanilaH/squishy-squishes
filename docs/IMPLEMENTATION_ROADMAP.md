@@ -1,9 +1,10 @@
 # Squishy Squishes — Implementation Roadmap
 
 **Status:** ACTIVE PRODUCTION ROADMAP
-**Current gate:** Production Skeleton 01. Vertical Slice 01 and interaction correction passes are complete; the next gate is one materially different second shape.
+**Current gate:** Phase 3 — Production Skeleton 01
+**Next gate:** Phase 4 — Renderer Reuse / Second Shape
 
-The successful feel probe already answered the isolated deformation question. The highest-value next evidence is whether the entire tiny product loop is worth repeating.
+The tactile probe, complete vertical slice, production renderer pass, and evidence-backed interaction corrections have passed. The project is now moving from a proven loop into production architecture and then into content-scale validation.
 
 ---
 
@@ -11,107 +12,51 @@ The successful feel probe already answered the isolated deformation question. Th
 
 Confirmed:
 
-- Squishy is the active next project;
-- cheap 2D deformation remains the core;
+- compact tactile maker / collection game;
+- cheap 2D WebGL deformation core;
 - deterministic curated recipes;
 - premium tactile toy-lab direction;
 - no currency/shop/orders/customers;
-- long-term high-CMF content target;
+- high-CMF content thesis;
 - raw WebGL2 + DOM/CSS baseline;
-- responsive desktop/mobile starting assumption;
-- conservative between-loop monetization later;
-- mid-craft reload may restart the current short craft.
-
-Immediate implementation scope is locked in `VERTICAL_SLICE_01.md`.
+- responsive desktop/mobile baseline;
+- conservative between-loop monetization later.
 
 ---
 
-## Phase 1 — Vertical Slice 01: one shape, full loop — COMPLETE
+## Phase 1 — Vertical Slice 01 — COMPLETE
 
-### Goal
+Validated one complete loop:
 
-Build the smallest honest version of the game directly on the validated probe base.
+`select → paint/pour → optional filling → mix/stretch → form → reveal → free squeeze → Collect → repeat`
 
-Loop:
+Validated slice content:
 
-`select → pour → optional filling → mix/squish → mold/press → reveal → free squeeze → Collect → repeat`
+- one rounded soft-cube / superellipse geometry;
+- three palettes;
+- Smooth / Foam Beads modifier;
+- six deterministic variants.
 
-Content:
+The slice answered the core product question: the tiny loop is worth productionizing.
 
-- current rounded cube/superellipse geometry only;
-- three color palettes;
-- Smooth / Foam Beads filling modifier;
-- six deterministic results total.
-
-UI:
-
-- minimal overlays only;
-- no final recipe browser/collection shell;
-- preserve DEV metrics/mute/mesh only as secondary tools.
-
-### Work
-
-- add small stage controller;
-- add material palette configuration to the existing renderer;
-- add procedural filling treatment;
-- add cheap hold-to-pour beat;
-- add optional hold-to-add-filling beat;
-- use the actual squish engine for mix;
-- use press/deformation input for mold progress;
-- add short unmold/reveal choreography;
-- allow unrestricted result squeeze;
-- add Collect → next-loop transition;
-- optionally persist discovered variant ids only;
-- keep stage progress deterministic and bounded.
-
-### Explicit non-goals
-
-Do not build yet:
-
-- production platform bootstrap;
-- Yandex SDK;
-- cloud save;
-- Lab XP;
-- ads;
-- final i18n;
-- second shape;
-- final collection screen;
-- mass asset/content pipeline.
-
-### Exit gate
-
-Hands-on 5–10 complete loops.
-
-PASS when the obvious next task is scale/productionization rather than inventing another mechanic/meta system.
-
-If a beat is weak, correct that beat before adding scope.
+Historical acceptance evidence remains in `VERTICAL_SLICE_01.md` and `PRODUCTION_PASS_01.md`.
 
 ---
 
-## Phase 2 — Full-loop correction pass — COMPLETE
+## Phase 2 — Full-loop correction — COMPLETE
 
-### Goal
+Interaction Passes 02–04 applied only hands-on, high-frequency corrections:
 
-Polish the high-frequency loop exposed by real repeated play.
+- first beat became surface paint/coverage;
+- paint duration/readability and visual bleed improved;
+- foam became shake/scatter rather than a single stream;
+- foam presentation quality improved;
+- mix requires real pointer motion + stretch;
+- active craft beats were lengthened;
+- forming now uses normal taps + stronger persistent crit targets;
+- lifecycle/pointer/audio edge cases were reviewed repeatedly.
 
-Correct only evidence-backed issues such as:
-
-- pour response/readability;
-- stage length;
-- weak mix completion feedback;
-- mold causality;
-- reveal anticipation/settle;
-- result squeeze transition;
-- Collect exit latency;
-- audio fatigue;
-- modifier readability;
-- mobile composition/performance.
-
-### Exit gate
-
-A repeated-use run has no obvious high-value loop correction remaining.
-
-Do not use this phase to add progression, more shapes or prettier menus.
+No additional mechanic invention is required before production architecture.
 
 ---
 
@@ -119,60 +64,68 @@ Do not use this phase to add progression, more shapes or prettier menus.
 
 ### Goal
 
-Productionize code **after** the loop has proven what needs to exist.
+Put production boundaries around the accepted loop without changing its feel.
+
+Canonical bounded spec:
+
+- `PRODUCTION_SKELETON_01.md`
+- `PRODUCTION_SKELETON_01_REVIEW.md`
 
 ### Work
 
-- preserve the already-pinned reviewed `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b` production dependency;
-- app/platform bootstrap;
-- mock + Yandex runtime seam;
-- settings repository;
+- preserve reviewed `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b` pin;
+- app bootstrap boundary;
+- mock + explicit Yandex runtime seam;
 - versioned game save repository;
-- typed RU/EN skeleton;
-- activity lifecycle wiring;
-- render-density setup;
-- DEV-only scenario/debug panel;
-- separate renderer/stage/domain boundaries from temporary slice shell;
-- preserve the accepted slice behavior during refactor.
+- one-time legacy slice-save migration;
+- separate versioned settings repository;
+- typed RU/EN copy skeleton;
+- aggregate activity lifecycle wiring;
+- DEV-only debug seam;
+- remove direct storage/platform ownership from `VerticalSliceApp`;
+- preserve the already-working shared render-density path;
+- preserve all accepted craft tuning.
 
 ### Exit gate
 
-- accepted slice still feels the same or better;
-- build/typecheck/tests green;
+- accepted six-variant slice still behaves equivalently;
+- strict typecheck/build green;
 - save/settings round-trip;
-- lifecycle cleanup works;
-- no speculative framework layer introduced.
+- legacy discoveries migrate safely;
+- platform blocking releases active interaction/audio and resumes without dt jumps;
+- GitHub Pages remains playable on phone;
+- final diff contains no hidden gameplay tuning or speculative framework layer.
 
 ---
 
-## Phase 4 — Renderer reuse + second-shape gate
+## Phase 4 — Renderer Reuse / Second Shape — NEXT
 
 ### Goal
 
-Prove the high-CMF technical thesis rather than assuming it.
+Prove the high-CMF technical thesis instead of assuming it.
 
 ### Work
 
-- data-driven material palettes/fillings/finishes;
-- clean recipe registry;
-- shape representation beyond current superellipse;
+- extract/data-drive shape representation only as much as the second shape requires;
+- keep one shared deformation/material path;
 - add exactly one materially different second shape;
-- card/preview strategy;
-- performance diagnostics.
+- verify existing materials/fillings still work without bespoke per-shape gameplay;
+- establish preview/card rendering strategy;
+- measure representative mobile performance.
 
 ### Exit gate
 
-Two shapes and several recipes use the same deformation/material path without bespoke per-recipe physics/gameplay code.
+Two materially different shapes and several recipes use one deformation/material system without bespoke physics or a separate state machine.
 
-If this fails, fix the renderer/content boundary before producing six shapes.
+If this fails, repair the renderer/content boundary before adding more shapes.
 
 ---
 
-## Phase 5 — Progression + collection
+## Phase 5 — Progression + Collection
 
 ### Goal
 
-Build the “one more recipe” layer using measured full-loop duration.
+Build the “one more recipe” layer after multi-shape reuse is proven.
 
 Leading model:
 
@@ -185,15 +138,15 @@ Leading model:
 Also:
 
 - collection read model;
-- locked/unlocked/completed cards;
-- item revisit squeeze;
-- small milestone celebrations;
+- locked / unlocked-unmade / completed cards;
+- revisit completed items for free squeeze;
+- a few meaningful milestone celebrations;
 - debug state seeding;
 - save migration tests.
 
 ### Exit gate
 
-Fresh save reaches several desirable unlocks at a cadence supported by real loop timing.
+Fresh save reaches several desirable unlocks at a cadence supported by measured loop timing.
 
 ---
 
@@ -201,20 +154,20 @@ Fresh save reaches several desirable unlocks at a cadence supported by real loop
 
 ### Goal
 
-Prove optional stage variation without creating a mini-game collection.
+Prove optional content variation without turning the product into a mini-game collection.
 
 Possible additions only where content needs them:
 
 - richer filling/add variants;
-- DRAG/APPLY for selected finishes/decor;
-- one restrained decorate/finish beat;
+- selected DRAG/APPLY finish/decor behavior;
+- one restrained finish/decor beat if justified;
 - premium reveal hierarchy.
 
-Use 3–4 representative recipes before mass catalog work.
+Use only a few representative recipes before catalog scale.
 
 ### Exit gate
 
-Variety comes mainly from material/content/choreography, not bespoke mechanics.
+Most novelty comes from material/content/choreography rather than bespoke mechanics.
 
 ---
 
@@ -230,39 +183,36 @@ Working launch target:
 - about 24 strong curated recipes;
 - quality may explicitly reduce the count.
 
-Produce in small batches and review in-game between batches.
-
-No filler to satisfy a numeric quota.
+Produce in small batches and review in-game between batches. No filler to satisfy a quota.
 
 ---
 
 ## Phase 8 — Platform, analytics, monetization
 
-Finish product behavior only after real craft/session cadence exists.
+Finish platform behavior after real craft/session cadence exists.
 
-- Yandex production runtime;
-- cloud policy if justified;
+- production Yandex runtime configuration;
+- cloud policy only if justified;
 - compact analytics contract;
-- interstitial only at post-Collect boundaries with grace/cooldown/craft-count gate;
-- at most one rewarded progression offer if still useful;
+- conservative interstitial eligibility only after Collect;
+- grace/cooldown/craft-count gates;
+- at most one rewarded progression offer if useful;
 - ad/activity/audio lifecycle stress.
 
-No ad may interrupt an active tactile/reveal/result beat.
+No ad may interrupt tactile craft, reveal, or result squeeze.
 
 ---
 
 ## Phase 9 — Full feel/art/audio correction
 
-Use repeated-use evidence and the portfolio polish acceptance doctrine.
-
-Prioritize:
+Prioritize repeated-use evidence:
 
 - high-frequency craft beats;
 - reveal/result stability;
 - exit/restart speed;
 - sound-off readability;
 - audio/visual fatigue;
-- premium material hierarchy;
+- material hierarchy;
 - target-device performance.
 
 Do not spend equal effort on low-frequency settings chrome.
@@ -271,7 +221,7 @@ Do not spend equal effort on low-frequency settings chrome.
 
 ## Phase 10 — Release hardening / Yandex DRAFT
 
-Validate exact release revision:
+Validate the exact release revision:
 
 - production build;
 - desktop/mobile real-browser checks;
@@ -292,10 +242,10 @@ After release:
 
 - observe activation/repeat funnel;
 - inspect recipe/shape engagement;
-- inspect ad behavior conservatively;
-- write material lessons back to `DanilaH/decisions`;
-- extract shared code only with real second-consumer evidence;
-- prefer content additions over new systems if content demand is the bottleneck.
+- inspect conservative ad behavior;
+- write material lessons back to portfolio decisions;
+- extract additional shared code only with real second-consumer evidence;
+- prefer content additions over new systems when content demand is the bottleneck.
 
 ---
 
@@ -303,13 +253,13 @@ After release:
 
 Stop and reassess if:
 
-- complete craft/reveal loop is not fun enough to repeat;
+- the complete craft/reveal loop stops being fun under repetition;
 - raw WebGL becomes the dominant production burden;
 - multiple shapes require bespoke deformation code;
-- recipes need new mini-games merely to feel different;
+- recipes require new mini-games merely to feel different;
 - progression starts demanding currency/shop complexity;
 - performance fails on representative mobile conditions;
 - scope is being added to hide weak tactile/reveal feel;
 - catalog production burden is materially worse than the high-CMF thesis predicted.
 
-A failed assumption is evidence. Do not hide it with scope.
+A failed assumption is evidence. Fix the assumption or reduce scope; do not hide it with more systems.
