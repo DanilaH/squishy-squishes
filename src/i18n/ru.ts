@@ -4,7 +4,7 @@ import { en } from './en';
 export const ru = {
   brand: {
     name: 'Лаборатория сквишей',
-    line: 'Производственная линия · 01',
+    line: 'Сделай · пожмякай · собери',
   },
   collection: {
     made: 'В коллекции',
@@ -57,7 +57,7 @@ export const ru = {
     makeAgain: 'Сделать ещё',
   },
   stage: {
-    kicker: 'КРАФТ 01',
+    kicker: 'ЛАБОРАТОРИЯ',
     selectTitle: 'Выбери рецепт',
     selectHint: 'Открой книгу рецептов, выбери сквиш и сделай его.',
     pourTitle: 'Распредели основу',
