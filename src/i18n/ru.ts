@@ -16,6 +16,9 @@ export const ru = {
     completed: 'Готово',
     squeeze: 'Пожмякать',
     requiredRank: 'Ранг {rank}',
+    resetProgress: 'Сбросить прогресс',
+    resetConfirm: 'Сбросить весь XP лаборатории и коллекцию? Отменить это нельзя.',
+    resetFailed: 'Не удалось сбросить прогресс. Попробуй ещё раз.',
   },
   progress: {
     rank: 'Ранг лаборатории {rank}',
