@@ -37,6 +37,7 @@ export interface VerticalSliceAppOptions {
   readonly muted: boolean;
   readonly copy: GameCopy;
   readonly onVariantCollected: (variantId: string) => CompletionOutcome;
+  readonly onProgressReset: () => Promise<void>;
   readonly onMutedChange: (muted: boolean) => void | Promise<void>;
 }
 
@@ -82,6 +83,7 @@ export class VerticalSliceApp {
   private readonly collectionOverlay: HTMLElement;
   private readonly collectionGroups: HTMLElement;
   private readonly collectionCloseButton: HTMLButtonElement;
+  private readonly collectionResetButton: HTMLButtonElement;
   private readonly progressionFeedback: HTMLElement;
   private readonly variantPreview: HTMLElement;
   private readonly resultBadge: HTMLElement;
@@ -182,6 +184,7 @@ export class VerticalSliceApp {
     this.collectionOverlay = this.requireElement<HTMLElement>('.collection-overlay');
     this.collectionGroups = this.requireElement<HTMLElement>('.collection-groups');
     this.collectionCloseButton = this.requireElement<HTMLButtonElement>('.collection-close-button');
+    this.collectionResetButton = this.requireElement<HTMLButtonElement>('.collection-reset-button');
     this.progressionFeedback = this.requireElement<HTMLElement>('.progression-feedback');
     this.variantPreview = this.requireElement<HTMLElement>('.variant-preview');
     this.resultBadge = this.requireElement<HTMLElement>('.result-badge');
@@ -364,7 +367,10 @@ export class VerticalSliceApp {
                 <span class="option-label">${copy.collection.title}</span>
                 <strong>${copy.collection.title}</strong>
               </div>
-              <button class="collection-close-button" type="button">${copy.collection.close}</button>
+              <div class="collection-panel__actions">
+                <button class="collection-reset-button" type="button">${copy.collection.resetProgress}</button>
+                <button class="collection-close-button" type="button">${copy.collection.close}</button>
+              </div>
             </header>
             <div class="collection-groups"></div>
           </div>
@@ -407,6 +413,7 @@ export class VerticalSliceApp {
     this.collectButton.addEventListener('click', () => this.collectResult(), { signal });
     this.collectionButton.addEventListener('click', () => this.openCollection(), { signal });
     this.collectionCloseButton.addEventListener('click', () => this.closeCollection(), { signal });
+    this.collectionResetButton.addEventListener('click', () => { void this.resetProgress(); }, { signal });
     this.collectionOverlay.addEventListener('click', (event) => {
       if (event.target === this.collectionOverlay) this.closeCollection();
     }, { signal });
@@ -1173,6 +1180,36 @@ export class VerticalSliceApp {
 
   private closeCollection(): void {
     this.collectionOverlay.hidden = true;
+  }
+
+  private async resetProgress(): Promise<void> {
+    if (this.activityBlocked || this.stage !== 'select') return;
+    if (!window.confirm(this.options.copy.collection.resetConfirm)) return;
+
+    this.collectionResetButton.disabled = true;
+    try {
+      await this.options.onProgressReset();
+      this.labXp = 0;
+      this.discovered.clear();
+      this.revisitMode = false;
+      this.collectFeedbackText = '';
+      this.selected = { shape: 'soft-square', palette: 'grape', filling: 'smooth' };
+      if (this.feedbackTimer !== null) {
+        window.clearTimeout(this.feedbackTimer);
+        this.feedbackTimer = null;
+      }
+      this.progressionFeedback.hidden = true;
+      this.updateDiscoveredUi();
+      this.updateProgressionUi();
+      this.updateCollectionUi();
+      this.updateSelectionUi();
+      this.closeCollection();
+    } catch (error: unknown) {
+      console.error('[squishy:reset-progress]', error);
+      window.alert(this.options.copy.collection.resetFailed);
+    } finally {
+      this.collectionResetButton.disabled = false;
+    }
   }
 
   private openCompletedVariant(id: string): void {

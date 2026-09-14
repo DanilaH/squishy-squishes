@@ -13,6 +13,9 @@ export const en = {
     completed: 'Completed',
     squeeze: 'Squeeze',
     requiredRank: 'Rank {rank}',
+    resetProgress: 'Reset progress',
+    resetConfirm: 'Reset all Lab XP and collection progress? This cannot be undone.',
+    resetFailed: 'Could not reset progress. Please try again.',
   },
   progress: {
     rank: 'Lab Rank {rank}',

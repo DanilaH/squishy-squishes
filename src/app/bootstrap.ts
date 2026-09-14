@@ -6,6 +6,7 @@ import {
   createDefaultSave,
   createSaveRepository,
   loadSaveWithLegacyMigration,
+  resetProgressSave,
 } from '../platform/save';
 import { createDefaultSettings, createSettingsRepository } from '../platform/settings';
 
@@ -41,6 +42,9 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
       saveState = result.state;
       void saveRepository.write(saveState).catch((error: unknown) => reportError('save-write', error));
       return result.outcome;
+    },
+    onProgressReset: async () => {
+      saveState = await resetProgressSave(runtime.storage, saveRepository);
     },
     onMutedChange: (muted) => {
       settingsState = { version: 1, muted };

@@ -350,6 +350,8 @@ Extend DEV-only debug tooling only where it materially accelerates this pass:
 
 Do not turn debug tooling into an admin framework.
 
+During deployed phone acceptance, Collection exposes one explicit **Reset progress** QA control with confirmation. It clears V2 plus both migration-source keys so a reset cannot silently resurrect old progress. This is a temporary visible test surface, not a hidden production backdoor; review/remove it during release hardening.
+
 ## 19. Acceptance criteria
 
 ### Domain

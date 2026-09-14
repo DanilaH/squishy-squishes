@@ -945,6 +945,7 @@ body {
 
 .collection-open-button,
 .collection-close-button,
+.collection-reset-button,
 .collection-card__action {
   border: 1px solid rgba(255,255,255,0.10);
   border-radius: 10px;
@@ -1017,9 +1018,27 @@ body {
   font-size: 20px;
 }
 
-.collection-close-button {
+.collection-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collection-close-button,
+.collection-reset-button {
   padding: 8px 11px;
   font-size: 11px;
+}
+
+.collection-reset-button {
+  border-color: rgba(255, 111, 124, 0.24);
+  color: rgba(255, 170, 178, 0.82);
+  background: rgba(255, 88, 106, 0.06);
+}
+
+.collection-reset-button:disabled {
+  opacity: 0.42;
+  cursor: wait;
 }
 
 .collection-groups {
