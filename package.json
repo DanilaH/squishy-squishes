@@ -13,7 +13,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@danilah/mini-games-kit": "github:DanilaH/mini-games-kit#2da5b501a7e47fbe4b3683069b34f8e252116963"
+    "@danilah/mini-games-kit": "github:DanilaH/mini-games-kit#d17ba31fce2a71335dcc3095f772c3fdd87fe97b"
   },
   "devDependencies": {
     "typescript": "7.0.2",
