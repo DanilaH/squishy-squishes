@@ -1,14 +1,33 @@
 import { JsonStorageRepository, type StorageAdapter } from '@danilah/mini-games-kit/platform';
 import { ALL_VARIANT_IDS } from '../game/content';
+import {
+  applyVariantCompletion,
+  getHistoricalLabXp,
+  type CompletionOutcome,
+} from '../game/progression';
 
-export const SAVE_STORAGE_KEY = 'squishy.save.v1';
+export const SAVE_STORAGE_KEY = 'squishy.save.v2';
+export const PREVIOUS_SAVE_STORAGE_KEY = 'squishy.save.v1';
 export const LEGACY_DISCOVERED_STORAGE_KEY = 'squishy.vertical-slice.discovered.v2';
 
-export interface SaveStateV1 {
+export interface SaveStateV2 {
+  readonly version: 2;
+  readonly completedVariantIds: readonly string[];
+  readonly totalCrafts: number;
+  readonly labXp: number;
+  readonly updatedAt: number;
+}
+
+interface SaveStateV1 {
   readonly version: 1;
   readonly completedVariantIds: readonly string[];
   readonly totalCrafts: number;
   readonly updatedAt: number;
+}
+
+export interface SaveCollectResult {
+  readonly state: SaveStateV2;
+  readonly outcome: CompletionOutcome;
 }
 
 const knownVariantIds = new Set<string>(ALL_VARIANT_IDS);
@@ -39,17 +58,30 @@ const readFiniteTimestamp = (value: unknown): number => {
   return value;
 };
 
-export const createDefaultSave = (): SaveStateV1 => ({
-  version: 1,
+export const createDefaultSave = (): SaveStateV2 => ({
+  version: 2,
   completedVariantIds: [],
   totalCrafts: 0,
+  labXp: 0,
   updatedAt: 0,
 });
 
-export const decodeSaveState = (value: unknown): SaveStateV1 => {
+export const decodeSaveState = (value: unknown): SaveStateV2 => {
   if (!isRecord(value)) throw new TypeError('Save root must be an object');
-  if (value.version !== 1) throw new TypeError(`Unsupported save version: ${String(value.version)}`);
+  if (value.version !== 2) throw new TypeError(`Unsupported save version: ${String(value.version)}`);
 
+  return {
+    version: 2,
+    completedVariantIds: normalizeVariantIds(value.completedVariantIds),
+    totalCrafts: readNonNegativeInteger(value.totalCrafts, 'totalCrafts'),
+    labXp: readNonNegativeInteger(value.labXp, 'labXp'),
+    updatedAt: readFiniteTimestamp(value.updatedAt),
+  };
+};
+
+const decodePreviousSave = (value: unknown): SaveStateV1 => {
+  if (!isRecord(value)) throw new TypeError('Previous save root must be an object');
+  if (value.version !== 1) throw new TypeError(`Unsupported previous save version: ${String(value.version)}`);
   return {
     version: 1,
     completedVariantIds: normalizeVariantIds(value.completedVariantIds),
@@ -58,7 +90,7 @@ export const decodeSaveState = (value: unknown): SaveStateV1 => {
   };
 };
 
-export const createSaveRepository = (storage: StorageAdapter): JsonStorageRepository<SaveStateV1> =>
+export const createSaveRepository = (storage: StorageAdapter): JsonStorageRepository<SaveStateV2> =>
   new JsonStorageRepository({
     storage,
     key: SAVE_STORAGE_KEY,
@@ -69,22 +101,63 @@ export const createSaveRepository = (storage: StorageAdapter): JsonStorageReposi
     },
   });
 
+const writeMigratedSave = async (
+  storage: StorageAdapter,
+  repository: JsonStorageRepository<SaveStateV2>,
+  migrated: SaveStateV2,
+  oldKey: string,
+  onError: (error: unknown) => void,
+): Promise<void> => {
+  try {
+    await repository.write(migrated);
+    await storage.removeItem(oldKey);
+  } catch (error: unknown) {
+    onError(error);
+  }
+};
+
 export const loadSaveWithLegacyMigration = async (
   storage: StorageAdapter,
-  repository: JsonStorageRepository<SaveStateV1>,
+  repository: JsonStorageRepository<SaveStateV2>,
   onError: (error: unknown) => void,
-): Promise<SaveStateV1> => {
-  let productionRaw: string | null;
+): Promise<SaveStateV2> => {
+  let currentRaw: string | null;
   try {
-    productionRaw = await storage.getItem(SAVE_STORAGE_KEY);
+    currentRaw = await storage.getItem(SAVE_STORAGE_KEY);
   } catch (error: unknown) {
     onError(error);
     return createDefaultSave();
   }
 
-  if (productionRaw !== null) {
+  if (currentRaw !== null) {
     try {
       return await repository.load();
+    } catch (error: unknown) {
+      onError(error);
+      return createDefaultSave();
+    }
+  }
+
+  let previousRaw: string | null;
+  try {
+    previousRaw = await storage.getItem(PREVIOUS_SAVE_STORAGE_KEY);
+  } catch (error: unknown) {
+    onError(error);
+    return createDefaultSave();
+  }
+
+  if (previousRaw !== null) {
+    try {
+      const previous = decodePreviousSave(JSON.parse(previousRaw) as unknown);
+      const migrated: SaveStateV2 = {
+        version: 2,
+        completedVariantIds: previous.completedVariantIds,
+        totalCrafts: previous.totalCrafts,
+        labXp: getHistoricalLabXp(previous.completedVariantIds, previous.totalCrafts),
+        updatedAt: Date.now(),
+      };
+      await writeMigratedSave(storage, repository, migrated, PREVIOUS_SAVE_STORAGE_KEY, onError);
+      return migrated;
     } catch (error: unknown) {
       onError(error);
       return createDefaultSave();
@@ -101,43 +174,38 @@ export const loadSaveWithLegacyMigration = async (
 
   if (legacyRaw === null) return createDefaultSave();
 
-  let completedVariantIds: readonly string[];
   try {
-    completedVariantIds = normalizeVariantIds(JSON.parse(legacyRaw) as unknown);
+    const completedVariantIds = normalizeVariantIds(JSON.parse(legacyRaw) as unknown);
+    const totalCrafts = completedVariantIds.length;
+    const migrated: SaveStateV2 = {
+      version: 2,
+      completedVariantIds,
+      totalCrafts,
+      labXp: getHistoricalLabXp(completedVariantIds, totalCrafts),
+      updatedAt: Date.now(),
+    };
+    await writeMigratedSave(storage, repository, migrated, LEGACY_DISCOVERED_STORAGE_KEY, onError);
+    return migrated;
   } catch (error: unknown) {
     onError(error);
     return createDefaultSave();
   }
-
-  const migrated: SaveStateV1 = {
-    version: 1,
-    completedVariantIds,
-    totalCrafts: completedVariantIds.length,
-    updatedAt: Date.now(),
-  };
-
-  try {
-    await repository.write(migrated);
-    await storage.removeItem(LEGACY_DISCOVERED_STORAGE_KEY);
-  } catch (error: unknown) {
-    onError(error);
-  }
-
-  return migrated;
 };
 
 export const applyCollectedVariant = (
-  state: SaveStateV1,
+  state: SaveStateV2,
   collectedVariantId: string,
   updatedAt = Date.now(),
-): SaveStateV1 => {
-  const completed = new Set(state.completedVariantIds);
-  if (knownVariantIds.has(collectedVariantId)) completed.add(collectedVariantId);
-
+): SaveCollectResult => {
+  const outcome = applyVariantCompletion(state, collectedVariantId);
   return {
-    version: 1,
-    completedVariantIds: [...completed],
-    totalCrafts: state.totalCrafts + 1,
-    updatedAt,
+    outcome,
+    state: {
+      version: 2,
+      completedVariantIds: outcome.next.completedVariantIds,
+      totalCrafts: outcome.next.totalCrafts,
+      labXp: outcome.next.labXp,
+      updatedAt,
+    },
   };
 };

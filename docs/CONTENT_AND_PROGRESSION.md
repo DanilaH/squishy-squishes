@@ -1,7 +1,7 @@
 # Squishy Squishes — Content & Progression
 
-**Status:** APPROVED DIRECTION / DEFERRED UNTIL AFTER SECOND-SHAPE GATE
-**Important:** exact names, XP values and unlock thresholds remain provisional until the production shell and second-shape reuse gate are complete.
+**Status:** ACTIVE SUPPORTING DIRECTION — Phase 5 Progression + Collection
+**Important:** `PROGRESSION_COLLECTION_01.md` defines the bounded 12-recipe validation tuning. Its XP values/unlock order are test parameters, not final launch balance.
 
 ---
 
@@ -30,23 +30,27 @@ The production test is not “can we imagine 100 recipes?” It is “can recipe
 
 ## 2. Base shapes
 
-### MVP shapes
+### Proven production shapes
 
-1. **Mochi / Dumpling** — rounded soft starter; immediately reads as squeezable.
-2. **Soft Cube** — strong deformation readability and a useful contrast to round shapes.
-3. **Peach / Fruit Puff** — asymmetric silhouette with a small cleft/detail.
-4. **Mushroom** — broad cap + thick stem; visually distinctive under squash.
-5. **Paw** — recognizable tactile silhouette; pads can support subtle material accents.
-6. **Blob Creature** — abstract designer-toy form; allows stranger/adult-neutral recipes without becoming a licensed character.
+1. **Soft Cube** — accepted baseline; strong deformation readability.
+2. **Soft Heart** — accepted second silhouette; materially different concave outline on the same renderer/deformation path. It is now a real MVP candidate, not a disposable technical test.
 
-### Reserve / post-MVP shapes
+### Remaining MVP candidates
+
+- **Mochi / Dumpling** — rounded soft starter; immediately reads as squeezable.
+- **Peach / Fruit Puff** — asymmetric silhouette with a small cleft/detail.
+- **Mushroom** — broad cap + thick stem; visually distinctive under squash.
+- **Paw** — recognizable tactile silhouette; pads can support subtle material accents.
+- **Blob Creature** — abstract designer-toy form for stranger/adult-neutral recipes.
+
+The old planning list predated the successful Heart reuse gate. The final six launch shapes are therefore **not locked yet**: Soft Heart remains in contention and one of the remaining candidates may be cut after representative content/material expansion. Do not discard a proven low-burden shape merely to preserve the old count.
+
+### Reserve / post-MVP candidates
 
 - Cloud / Pillow
 - Capsule / Pebble
 
-Do not increase shape count before the six-shape production system proves cheap and stable.
-
----
+Do not increase the launch target above roughly six shapes before the content system proves cheap and stable.
 
 ## 3. Shape implementation rule
 

@@ -1,55 +1,48 @@
 # Squishy Squishes — Agent Contract
 
-The tactile thesis, Vertical Slice 01, interaction correction passes 02–04 and Production Skeleton 01 have **PASSED**. The active gate is now **Renderer Reuse / Second Shape**.
+The tactile thesis, Vertical Slice 01, interaction correction passes 02–04, Production Skeleton 01 and Renderer Reuse / Second Shape have **PASSED**. The active gate is now **Progression + Collection 01**.
 
 Read first:
 
-1. `docs/RENDERER_REUSE_SECOND_SHAPE.md`
-2. `docs/RENDERER_REUSE_SECOND_SHAPE_REVIEW.md`
-3. `docs/IMPLEMENTATION_ROADMAP.md`
-4. `docs/TECHNICAL_DIRECTION.md`
-5. `docs/GAMEPLAY.md`
-6. `docs/DECISIONS.md`
-7. `docs/PRODUCT.md`
+1. `docs/PROGRESSION_COLLECTION_01.md`
+2. `docs/PROGRESSION_COLLECTION_01_REVIEW.md`
+3. `docs/PROGRESSION_COLLECTION_01_IMPLEMENTATION_REVIEW.md`
+4. `docs/IMPLEMENTATION_ROADMAP.md`
+5. `docs/CONTENT_AND_PROGRESSION.md`
+6. `docs/TECHNICAL_DIRECTION.md`
+7. `docs/GAMEPLAY.md`
+8. `docs/DECISIONS.md`
+9. `docs/PRODUCT.md`
 
-Production Skeleton 01 remains the accepted architecture baseline. Older probe/slice documents remain evidence, not active instructions.
+Production Skeleton 01 remains the architecture baseline and the two-shape reuse gate is accepted evidence. Older probe/slice documents remain evidence, not active instructions.
 
 ## Current task invariant
 
-Prove that a materially different second silhouette can use the accepted loop and renderer without bespoke physics or a second state machine.
+Prove that the accepted tactile loop creates a clear durable “one more squishy” motivation without importing an economy or new content-production burden.
 
-Accepted loop remains:
+Accepted loop becomes:
 
-`select → paint base → optional foam shake → stretch/mix → form with normal taps + crit targets → reveal → free squeeze → Collect → repeat`
+`select unlocked recipe → tactile craft → reveal → squeeze → Collect → XP/unlock feedback → next visible goal → repeat`
 
-Current Phase 4 scope:
+Current Phase 5 scope:
 
-- preserve `soft-square`;
-- add exactly one second shape: `heart`;
-- centralize silhouette data in `ShapeDefinition`;
-- use that same geometry for WebGL field masking, pointer acquisition, paint clipping/coverage and mold validation;
-- preserve one spring mesh and one deformation/material path;
-- expand the selectable deterministic set from 6 to 12 combinations;
-- preserve the original six durable variant IDs exactly;
-- preserve save schema V1 and Production Skeleton lifecycle/runtime boundaries.
+- keep exactly the current two shapes and 12 combinations;
+- add one derived Lab XP / Lab Rank track;
+- deterministic unlock table;
+- SaveState V2 with V1/legacy migration;
+- collection read model with locked / available / completed states;
+- one compact collection overlay;
+- completed-item revisit through the existing test/squeeze state;
+- pure edge-triggered milestone resolution;
+- concise post-Collect feedback.
 
-Do not add a third shape, progression, final collection UI, new filling/material feature, per-shape physics values, per-shape stage flow or heart-only gameplay.
+Do not add currency, shop, crafting costs, ads, third shape, new materials/fillings, quests, duplicate systems, a router, another renderer, or bespoke per-recipe gameplay.
 
 ## Review blocker rule
 
-Any condition on `shape.id` inside deformation physics, stage-progress math, audio behavior or craft-state transitions is a blocker.
+Progression truth must remain domain-derived rather than scattered through DOM handlers. `labRank` and unlock arrays are derived from XP and must not be persisted redundantly. Collection cards must not create WebGL renderer instances. Revisit/free-squeeze must not mutate XP/save.
 
-Shape-specific logic is allowed only where shape boundaries are authored/selected. Generic consumers must operate on `ShapeDefinition` data.
-
-The renderer must remain:
-
-- one WebGL program;
-- one spring mesh;
-- one physics path;
-- one material/filling path;
-- one cached generic shape-field mechanism.
-
-If the heart needs dedicated deformation tuning or a second renderer, the reuse thesis has failed and catalog expansion must stop.
+Save migration must preserve effective access to every previously completed recipe, including Phase-4 completions that now have a higher required rank.
 
 ## Product invariant
 
@@ -84,11 +77,11 @@ Production Skeleton 01 remains authoritative:
 - malformed production save must not blank the app;
 - legacy slice discovery data migrates only when the production save key is absent.
 
-Phase 4 does **not** bump the save schema. Original variant IDs remain valid; new heart IDs extend the accepted set.
+Phase 5 bumps production save to V2 only to add `labXp`. Original square and heart variant IDs remain stable. Rank and unlocked IDs stay derived rather than persisted.
 
 ## Lifecycle discipline
 
-`PlatformRuntime.activity` remains the aggregate blocker source. Shape work must not create a second visibility policy.
+`PlatformRuntime.activity` remains the aggregate blocker source. Progression/collection work must not create a second visibility policy.
 
 On block/pause:
 

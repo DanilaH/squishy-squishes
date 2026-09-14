@@ -6,11 +6,11 @@
 
 ## Verdict
 
-**STRUCTURAL PASS. PHONE PRODUCT ACCEPTANCE PENDING.**
+**PASS — STRUCTURAL + PHONE PRODUCT ACCEPTANCE.**
 
 The implementation satisfies the architectural purpose of Phase 4. The second silhouette is represented as data, all semantic silhouette consumers share that data, the renderer remains one mesh/program/physics path, durable IDs remain compatible, and strict typecheck/build pass.
 
-Do **not** mark the whole Phase 4 product gate complete until the merged GitHub Pages build is exercised on phone for edge quality, heart-notch deformation, paint fairness, layout and responsiveness.
+The merged GitHub Pages build was subsequently exercised on phone and accepted by the project owner on 2026-09-14. Phase 4 is therefore complete; remaining visual tuning is ordinary later polish, not a reuse-gate blocker.
 
 ## What was verified
 
