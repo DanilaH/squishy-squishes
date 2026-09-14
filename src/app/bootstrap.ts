@@ -1,7 +1,7 @@
-import { installPhoneQaPanel } from '../debug/installPhoneQaPanel';
 import { VerticalSliceApp } from '../game/VerticalSliceApp';
 import { ALL_VARIANT_IDS } from '../game/content';
 import { getGameCopy } from '../i18n';
+import { installReleaseSession } from '../platform/releaseSession';
 import { createSquishyPlatformRuntime } from '../platform/runtime';
 import {
   applyCollectedVariant,
@@ -23,6 +23,8 @@ const reportError = (scope: string, error: unknown): void => {
 
 export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<SquishyAppHandle> => {
   const runtime = await createSquishyPlatformRuntime();
+  document.body.dataset.releasePlatform = runtime.kind;
+  document.body.dataset.releaseBuild = import.meta.env.PROD ? 'production' : 'development';
   const saveRepository = createSaveRepository(runtime.storage);
   const settingsRepository = createSettingsRepository(runtime.storage);
 
@@ -55,7 +57,10 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     },
   });
 
-  const removePhoneQaPanel = installPhoneQaPanel({
+  let removePhoneQaPanel = (): void => undefined;
+  if (import.meta.env.VITE_PLATFORM !== 'yandex' || import.meta.env.VITE_ENABLE_QA === '1') {
+    const { installPhoneQaPanel } = await import('../debug/installPhoneQaPanel');
+    removePhoneQaPanel = installPhoneQaPanel({
     language: runtime.language,
     getSaveState: () => saveState,
     setProgress: async (next) => {
@@ -75,8 +80,10 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     resetProgress: async () => {
       saveState = await resetProgressSave(runtime.storage, saveRepository);
     },
-  });
+    });
+  }
 
+  const releaseSession = installReleaseSession(root, runtime);
   const unsubscribeActivity = runtime.activity.onBlockedChange((blocked) => app.setActivityBlocked(blocked));
   runtime.activity.setGameplayDesired(true);
   runtime.markReady();
@@ -111,6 +118,7 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
       disposed = true;
       runtime.activity.setGameplayDesired(false);
       unsubscribeActivity();
+      releaseSession.dispose();
       removePhoneQaPanel();
       removeDebugTools();
       app.dispose();
