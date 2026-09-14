@@ -136,7 +136,7 @@ const createPawBoundary = (): readonly ShapePoint[] => {
   const top = Array.from({ length: PAW_TOP_POINTS }, (_, index) => {
     const x = -0.72 + (index / (PAW_TOP_POINTS - 1)) * 1.44;
     let y = 0.5;
-    for (const center of toeCenters) y += 0.28 * Math.exp(-((x - center) / 0.105) ** 2);
+    for (const center of toeCenters) y += 0.28 * Math.exp(-(((x - center) / 0.105) ** 2));
     return { x, y };
   });
 
