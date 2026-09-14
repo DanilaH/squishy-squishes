@@ -1,10 +1,10 @@
 # Squishy Squishes — Implementation Roadmap
 
 **Status:** ACTIVE PRODUCTION ROADMAP
-**Current gate:** Phase 7A — Catalog Production: Mochi + Peach
-**Previous gate:** Phase 6 — Representative Content 01 — COMPLETE
+**Current gate:** Phase 7B — Catalog Production: Mushroom + Paw
+**Previous gate:** Phase 7A — Catalog Production: Mochi + Peach — COMPLETE
 
-The tactile loop, production shell, reusable renderer, progression/collection loop and representative jelly/holo/pearl content have passed deployed phone acceptance. The project is now scaling the validated high-CMF system in deliberately small catalog batches, beginning with Mochi + Peach.
+The tactile loop, production shell, reusable renderer, progression/collection loop, representative materials and the first catalog-expansion batch have passed deployed phone acceptance. The project is now finishing the working MVP catalog target with Mushroom + Paw while preserving the same high-CMF production path.
 
 ---
 
@@ -214,24 +214,44 @@ Working launch target:
 
 Produce in small batches and review in-game between batches. No filler to satisfy a quota.
 
-### Phase 7A — Mochi + Peach — ACTIVE
+### Phase 7A — Mochi + Peach — COMPLETE
 
-Canonical bounded spec/review:
+Canonical bounded spec/reviews:
 
 - `CATALOG_PRODUCTION_7A.md`
 - `CATALOG_PRODUCTION_7A_REVIEW.md`
+- `CATALOG_PRODUCTION_7A_IMPLEMENTATION_REVIEW.md`
+
+Delivered:
+
+- Mochi and Peach/Fruit Puff as `ShapeDefinition` data only;
+- four curated recipes, growing the catalog from 16 to 20;
+- two cheap reusable palettes (`milk`, `peach`);
+- existing soft/jelly/holo and smooth/pearls vocabulary;
+- unchanged Lab Rank 1–8, XP thresholds and SaveState V2;
+- legacy component selector kept to Cube + Heart;
+- zero renderer physics/shader/audio changes for the new shapes.
+
+Deployed phone acceptance passed on 2026-09-14 for Milk Mochi, Galaxy Pearl Mochi, Peach Milk Puff and Sakura Jelly Peach, with no blocking Cube/Heart regression reported.
+
+### Phase 7B — Mushroom + Paw — ACTIVE
+
+Canonical bounded spec/review:
+
+- `CATALOG_PRODUCTION_7B.md`
+- `CATALOG_PRODUCTION_7B_REVIEW.md`
 
 Bounded batch:
 
-- add Mochi and Peach/Fruit Puff as `ShapeDefinition` data only;
-- add exactly four curated recipes, taking the catalog from 16 to 20;
-- add only two cheap reusable palettes (`milk`, `peach`);
-- reuse existing soft/jelly/holo and smooth/pearls vocabulary;
-- keep Lab Rank 1–8, XP thresholds and SaveState V2 unchanged;
+- add Mushroom and Paw as generic normalized boundaries only;
+- add exactly four curated recipes, taking the catalog from 20 to 24;
+- add **zero** new palettes/materials/fillings;
+- place new recipes in existing Ranks 4/5/6/8;
+- keep SaveState V2 and current XP thresholds unchanged;
 - keep the temporary component selector limited to Cube + Heart;
-- do not touch renderer physics/shaders/audio for the new shapes.
+- defer Blob Creature because its current identity depends on decoration/internal-detail systems not justified by this batch.
 
-Exit gate is deployed phone acceptance of Milk Mochi, Galaxy Pearl Mochi, Peach Milk Puff and Sakura Jelly Peach plus Cube/Heart regression. Only then decide 7B content/shape direction.
+Exit gate is deployed phone acceptance of Vanilla Mushroom, Grape Glow Mushroom, Milk Paw and Aurora Paw plus regression across the first four shapes. If accepted, Phase 7 closes at the working 6-shape / 24-recipe target instead of automatically expanding the catalog further.
 
 ---
 

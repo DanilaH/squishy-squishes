@@ -245,10 +245,34 @@ const CATALOG_PRODUCTION_7A_VARIANTS: readonly VariantSpec[] = [
   },
 ] as const;
 
+const CATALOG_PRODUCTION_7B_VARIANTS: readonly VariantSpec[] = [
+  {
+    choice: { shape: 'mushroom', palette: 'milk', material: 'soft', filling: 'smooth' },
+    id: 'mushroom-milk-soft-smooth',
+    label: 'Vanilla Mushroom',
+  },
+  {
+    choice: { shape: 'paw', palette: 'milk', material: 'soft', filling: 'smooth' },
+    id: 'paw-milk-soft-smooth',
+    label: 'Milk Paw',
+  },
+  {
+    choice: { shape: 'mushroom', palette: 'grape', material: 'jelly', filling: 'smooth' },
+    id: 'mushroom-grape-jelly-smooth',
+    label: 'Grape Glow Mushroom',
+  },
+  {
+    choice: { shape: 'paw', palette: 'prism', material: 'holo', filling: 'pearls' },
+    id: 'paw-prism-holo-pearls',
+    label: 'Aurora Paw',
+  },
+] as const;
+
 export const ALL_VARIANTS: readonly VariantSpec[] = [
   ...LEGACY_VARIANTS,
   ...REPRESENTATIVE_VARIANTS,
   ...CATALOG_PRODUCTION_7A_VARIANTS,
+  ...CATALOG_PRODUCTION_7B_VARIANTS,
 ];
 export const ALL_VARIANT_IDS: readonly string[] = ALL_VARIANTS.map((variant) => variant.id);
 
