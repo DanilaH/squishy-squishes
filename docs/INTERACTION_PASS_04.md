@@ -75,30 +75,38 @@ Required behavior:
 - Keep gentle progress decay so there is still some tempo pressure.
 - No fail state, lives, combo loss, score, or miss penalty.
 
-## Tuning values for this pass
+## Final tuning values for this pass
 
-These are implementation defaults, not product constants:
+These are implementation defaults, not permanent product constants:
 
-- Paint completion coverage: ~92%.
-- Paint logical brush radius: ~0.115 UV.
-- Foam full-progress shake path: ~3000 px of qualifying travel.
-- Mix progress multiplier: reduced from the current pass by roughly 20–25%.
-- Mold normal tap: ~0.035 progress.
-- Mold critical target tap: ~0.105 progress.
-- Mold decay: gentle, around 0.035 progress / second.
+- Paint completion coverage: `0.92`.
+- Paint logical grid: `20 × 20`.
+- Paint logical brush radius: `0.115` UV.
+- Foam full-progress qualifying shake path: `3000 px`.
+- Mix progress multiplier: `0.67` (down from `0.88`).
+- Mold normal tap: `0.028` progress.
+- Mold critical target tap: `0.095` progress.
+- Mold decay: `0.03` progress / second.
+- New mold target delay after a crit: `130 ms`.
 
-The exact feel should be validated on phone after deployment.
+The exact feel still needs phone validation after deployment.
 
 ## Independent design review before implementation
 
 The requested direction is coherent. The following constraints prevent scope or UX regressions:
 
-1. **Do not require 100% paint coverage.** That would turn the first beat into edge-cleanup work. ~92% is high enough to look substantially full while retaining forgiveness.
+1. **Do not require 100% paint coverage.** That would turn the first beat into edge-cleanup work. `92%` is high enough to look substantially full while retaining forgiveness.
 2. **Paint bleed is visual, not simulation.** A clipped soft outer halo and denser interpolated brush path can create the read of material flowing together without adding fluid state or expensive per-frame processing.
 3. **Foam quality should come from art direction, not particle count alone.** Smaller semi-soft particles with varied timing are preferable to simply multiplying the existing large opaque dots.
 4. **Normal mold taps must be weak enough that ignoring targets is clearly suboptimal.** Critical targets remain the dominant action; normal taps prevent dead clicks from feeling wasted.
 5. **Persistent targets are better than timed relocation here.** Since ordinary taps already advance the meter, a target that waits for a deliberate crit gives the player a stable goal instead of visual churn.
 6. **Longer does not mean slower feedback.** Every gesture should still react immediately; only the amount of total successful interaction required increases.
+
+## Independent implementation review
+
+After implementation, one additional visual defect source was found in the foam shader: bead placement used a seed-offset cell grid while bead shading used a different unshifted grid. That could create shade discontinuities crossing individual beads and contribute to the reported artifacted look. The final implementation derives both placement and shading from the same seeded cell coordinate.
+
+No additional architecture or state system was introduced for this fix.
 
 ## Acceptance checks
 
