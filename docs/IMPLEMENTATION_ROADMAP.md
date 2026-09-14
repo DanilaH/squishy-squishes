@@ -1,12 +1,12 @@
 # Squishy Squishes — Implementation Roadmap
 
-**Status:** RELEASE CANDIDATE
-**Current gate:** RC01 engineering + external Yandex publication
-**Catalog target:** 6 production shapes / 24 canonical recipes
+**Status:** ACTIVE PLAYER-FACING POLISH
+**Current gate:** UI/UX Pass 01 — recipe-first shell
+**Catalog target:** 6 production shapes / 24 canonical recipes — ENGINEERING COMPLETE
 
-The tactile loop, reusable renderer, progression/Collection, representative materials and bounded catalog production are complete. New gameplay/content work is frozen unless post-release evidence justifies it.
+RC01 was an important release-infrastructure milestone, not product completion. It proved reproducible Pages/Yandex builds, platform lifecycle, analytics/ad seams and packaging. The remaining work is deliberately player-facing: recipe browsing, feel/art/audio/reward hierarchy, repeated-use QA and only then Yandex DRAFT/publication.
 
-Phase 7B phone review was explicitly deferred by the product owner. It remains a pre-publication smoke check, not an engineering blocker.
+Phase 7B phone review remains explicitly deferred by owner decision. Do not convert that deferral into a false acceptance claim.
 
 ---
 
@@ -69,17 +69,9 @@ Canonical docs: `PRODUCTION_SKELETON_01.md`, `PRODUCTION_SKELETON_01_REVIEW.md`.
 
 ## Phase 4 — Renderer reuse / second shape — COMPLETE
 
-Soft Cube and Soft Heart proved one generic:
-
-- spring mesh;
-- deformation path;
-- shader/material path;
-- craft state machine;
-- shape boundary representation for render mask, hit testing, paint and mold validation.
+Soft Cube and Soft Heart proved one generic spring/deformation/shader/craft path and one shared shape-boundary representation for render mask, hit testing, paint and mold validation.
 
 No shape-specific physics branch was required.
-
-Phone acceptance passed on 2026-09-14.
 
 ---
 
@@ -90,7 +82,7 @@ Delivered:
 - Lab XP / derived Lab Rank;
 - +100 first completion / +25 repeat validation tuning;
 - deterministic unlock table;
-- locked / available / completed Collection cards;
+- locked / available / completed states;
 - completed-item free squeeze revisit;
 - compact milestone feedback;
 - SaveState V2;
@@ -111,151 +103,145 @@ Validated reusable content vocabulary:
 - premium recipes through the same craft loop;
 - explicit curated recipe registry rather than a Cartesian canonical catalog.
 
-Phone QA accepted the material/filling proof. PR #12 fixed one shared spring-release visual snap without material-specific code.
+PR #12 fixed one shared spring-release visual snap without material-specific code.
 
 Canonical docs: `REPRESENTATIVE_CONTENT_01*.md`.
 
 ---
 
-## Phase 7 — Catalog production — COMPLETE
+## Phase 7 — Catalog production — ENGINEERING COMPLETE
 
 ### 7A — Mochi + Peach — COMPLETE
 
-Added:
+Added Mochi + Peach Puff, two reusable palettes and four curated recipes without renderer/physics/audio/save changes.
 
-- Mochi;
-- Peach Puff;
-- two reusable palettes;
-- four curated recipes;
-- no renderer/physics/audio/save changes.
+### 7B — Mushroom + Paw — ENGINEERING COMPLETE / MANUAL QA DEFERRED
 
-Deployed phone acceptance passed on 2026-09-14.
-
-Canonical docs: `CATALOG_PRODUCTION_7A*.md`.
-
-### 7B — Mushroom + Paw — ENGINEERING COMPLETE
-
-Added:
-
-- Mushroom;
-- Paw;
-- four curated recipes;
-- zero new palettes/materials/fillings;
-- no `VerticalSliceApp`, renderer, shader, physics, audio or save changes.
+Added Mushroom + Paw and four curated recipes with zero new palettes/materials/fillings and no renderer/shader/physics/audio/save changes.
 
 Result:
 
 - **6 production shapes**;
 - **24 canonical recipes**.
 
-This is sufficient evidence for the high-CMF thesis: the final batch was cheaper than earlier content batches.
-
-Manual phone inspection of Mushroom/Paw was deferred by owner decision. Treat it as a release smoke check, not an excuse to expand or rewrite the catalog.
-
-Canonical docs: `CATALOG_PRODUCTION_7B*.md`.
+Manual phone inspection of Mushroom/Paw was explicitly deferred by owner decision. It remains part of later representative smoke QA.
 
 **Catalog freeze:** do not automatically add Blob Creature, more recipes, new finishes or new gameplay systems before release evidence.
 
+Canonical docs: `CATALOG_PRODUCTION_7A*.md`, `CATALOG_PRODUCTION_7B*.md`.
+
 ---
 
-## RC01 — Presentation + platform + release hardening — RELEASE CANDIDATE
+## RC01 — Release infrastructure / platform hardening — COMPLETE
+
+RC01 established a reproducible shipping foundation:
+
+- final release CSS layer around the existing craft surface;
+- Yandex runtime lifecycle integration;
+- compact analytics seam with optional Metrica transport;
+- conservative post-loop interstitial policy;
+- separate GitHub Pages and Yandex archive builds;
+- Yandex dist verification;
+- Yandex QA-module exclusion;
+- permanent Release Check CI producing `squishy-squishes-yandex.zip`;
+- successful main Pages deployment.
+
+RC01 did **not** prove final player-facing UI, repeated-use feel, final reward presentation or store readiness. Those remain active work below.
+
+Canonical docs: `RELEASE_CANDIDATE_01*.md`.
+
+---
+
+## UI/UX Pass 01 — Recipe-first shell — STRUCTURAL PASS / MANUAL QA DEFERRED
 
 Canonical docs:
 
-- `RELEASE_CANDIDATE_01.md`;
-- `RELEASE_CANDIDATE_01_REVIEW.md`;
-- `RELEASE_CANDIDATE_01_IMPLEMENTATION_REVIEW.md`.
+- `UI_UX_PASS_01.md`;
+- `UI_UX_PASS_01_REVIEW.md`;
+- `UI_UX_PASS_01_IMPLEMENTATION_REVIEW.md`.
 
-RC01 consolidates the old Phase 8–10 engineering work into one bounded release pass.
+Goal: replace the validation-era component builder with a finished recipe-first collectible flow.
 
-### Presentation
+Delivered structurally:
 
-- keep the proven craft DOM/renderer intact;
-- apply a final release presentation layer;
-- make Collection read as the primary curated catalog;
-- improve mobile/short-landscape density;
-- remove internal-tool presentation from the Yandex build;
-- keep Pages QA tooling available for development/testing.
+- legacy Shape / Color / Texture builder removed from the player-facing select surface;
+- selected canonical recipe + metadata shown directly in the lab;
+- one Recipes/Browse control opens the existing Collection surface;
+- Collection promoted into the primary canonical recipe browser;
+- all 24 recipes represented from the existing progression snapshot;
+- completed recipes expose both `Make again` and `Squeeze`;
+- generic card thumbnails derive from canonical `ShapeDefinition.boundary` geometry;
+- material/filling thumbnail cues remain generic/reusable;
+- available / completed / locked hierarchy strengthened;
+- RU/EN copy updated;
+- no content/progression/save/renderer/audio/tactile changes.
 
-### Platform lifecycle
+Validation run `34874484160` passed diff check, strict TypeScript, Pages build, Yandex build and Yandex dist verification.
 
-- use the existing pinned Yandex runtime only;
-- `LoadingAPI.ready()` remains owned by runtime `markReady()`;
-- `GameplayAPI.start/stop` remains owned by `GameplayActivityCoordinator`;
-- Collection/menu state marks gameplay undesired without creating a fake external block;
-- visibility, platform pause and ad blocking continue through the existing blocker path.
-
-### Analytics
-
-Compact events only:
-
-- session ready;
-- catalog open/close;
-- craft start;
-- craft collect;
-- catalog recipe start;
-- completed-recipe revisit;
-- mute toggle;
-- interstitial request/result.
-
-Yandex Metrica is optional through `VITE_METRICA_COUNTER_ID`. Missing/invalid configuration falls back safely and never blocks gameplay.
-
-### Monetization
-
-RC01 uses only conservative fullscreen interstitials:
-
-- Yandex runtime only;
-- only after a completed craft returns from `collect` to `select`;
-- never during paint/add/mix/mold/reveal/test;
-- local 120-second session grace;
-- minimum 3 completed loops between requests;
-- local 150-second request cooldown;
-- ad lifecycle blocks gameplay through the existing activity coordinator.
-
-Deferred:
-
-- rewarded ads;
-- sticky banners;
-- ad-driven progression economy.
-
-### Release build
-
-Two production targets are explicit:
-
-1. GitHub Pages: `/squishy-squishes/` base, QA convenience retained.
-2. Yandex archive: relative `./` assets, `VITE_PLATFORM=yandex`, QA panel excluded.
-
-`npm run release:check` validates both targets and verifies the Yandex dist.
-
-Permanent `Release Check` GitHub Actions CI packages `squishy-squishes-yandex.zip` with `index.html` at archive root.
-
-### Engineering exit condition
-
-RC01 engineering is complete when:
-
-- strict TypeScript passes;
-- Pages production build passes;
-- Yandex production build passes;
-- Yandex dist verifier passes;
-- QA code is absent from the Yandex bundle;
-- final diff review passes;
-- release CI passes;
-- main Pages deployment succeeds.
+Manual phone visual acceptance remains deferred by owner decision and must not be silently marked complete.
 
 ---
 
-## External publication gate — PENDING OUTSIDE REPOSITORY
+## Feel / Art / Audio Pass 01 — NEXT
 
-These items cannot be truthfully completed by repository code alone:
+### Goal
 
-- one representative phone smoke pass (Mushroom, Paw, one legacy recipe);
-- optional Yandex Metrica counter ID configuration;
-- Yandex Games console/project metadata and store assets;
-- upload of the generated Yandex ZIP;
-- Yandex DRAFT/moderation result;
-- production ad behavior observation after platform approval.
+Turn the accepted mechanics and recipe browser into a coherent premium tactile toy product under repetition.
 
-Failures here should produce a small RC02 patch. They do not justify reopening catalog architecture by default.
+Bounded focus:
+
+- remove remaining prototype/internal-tool presentation residue;
+- improve reveal anticipation, impact and stable-result ownership;
+- create a bounded reward hierarchy for ordinary vs premium material/filling results;
+- improve Collect causality instead of abrupt disappearance;
+- add material-sensitive audio nuance without making every recipe a bespoke sound design project;
+- reduce repetition fatigue across stage-complete/reveal/collect sounds;
+- preserve sound-off readability;
+- preserve the same craft state machine and 24-recipe catalog.
+
+Explicit non-goals:
+
+- no new recipes/shapes/material systems;
+- no new craft stage;
+- no shop/economy;
+- no particle spam masking weak material rendering;
+- no per-recipe animation/audio branches unless evidence proves a real exception.
+
+Exit: structural validation + deployed representative visual/audio review, with manual acceptance allowed to remain explicitly deferred if owner chooses to continue.
+
+---
+
+## Repeated-use / release QA — AFTER FEEL PASS
+
+Run the actual ship-acceptance work from `QA_AND_ACCEPTANCE.md`:
+
+- single-recipe repetition stress;
+- fresh-save progression run;
+- mixed-catalog run;
+- completed-item revisit run;
+- lifecycle interruption matrix;
+- representative performance checks;
+- phone portrait/landscape + desktop short-height;
+- RU/EN clipping/readability;
+- Yandex ad pause/resume behavior;
+- fresh/existing save and reload boundaries.
+
+Functional success is not sufficient. This gate looks for fatigue, friction and lifecycle defects under repetition.
+
+---
+
+## Yandex DRAFT / store / moderation — EXTERNAL FINAL GATE
+
+Repository engineering can prepare the artifact but cannot truthfully complete:
+
+- Yandex Games project metadata;
+- icon/cover/screenshots/store copy;
+- final archive upload;
+- DRAFT runtime/ad validation;
+- moderation result;
+- production platform observations.
+
+Any discovered defect should become a bounded RC patch, not an excuse to reopen catalog architecture by default.
 
 ---
 
@@ -266,7 +252,8 @@ Observe:
 - activation and craft completion;
 - first-completion vs repeat behavior;
 - recipe/shape engagement;
-- catalog opens/revisits;
+- recipe browser opens/revisits/recrafts;
+- result squeeze behavior;
 - interstitial request/show behavior;
 - retention signals available from the platform.
 
@@ -285,6 +272,7 @@ Stop and reassess if:
 - target-device performance fails;
 - scope is added to hide weak tactile/reveal feel;
 - monetization can interrupt tactile gameplay;
-- a release fix starts changing unrelated validated interaction/content code.
+- polish starts changing unrelated validated interaction/content code;
+- final presentation relies on particle quantity rather than material/readability.
 
 A failed assumption is evidence. Fix the assumption or reduce scope; do not hide it with more systems.
