@@ -1,4 +1,6 @@
+import { installPhoneQaPanel } from '../debug/installPhoneQaPanel';
 import { VerticalSliceApp } from '../game/VerticalSliceApp';
+import { ALL_VARIANT_IDS } from '../game/content';
 import { getGameCopy } from '../i18n';
 import { createSquishyPlatformRuntime } from '../platform/runtime';
 import {
@@ -7,6 +9,7 @@ import {
   createSaveRepository,
   loadSaveWithLegacyMigration,
   resetProgressSave,
+  type SaveStateV2,
 } from '../platform/save';
 import { createDefaultSettings, createSettingsRepository } from '../platform/settings';
 
@@ -52,6 +55,28 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     },
   });
 
+  const removePhoneQaPanel = installPhoneQaPanel({
+    language: runtime.language,
+    getSaveState: () => saveState,
+    setProgress: async (next) => {
+      const requested = new Set(next.completedVariantIds);
+      const completedVariantIds = ALL_VARIANT_IDS.filter((id) => requested.has(id));
+      const nextState: SaveStateV2 = {
+        version: 2,
+        completedVariantIds,
+        totalCrafts: Math.max(saveState.totalCrafts, completedVariantIds.length),
+        labXp: Math.max(0, Math.floor(next.labXp)),
+        updatedAt: Date.now(),
+      };
+      await saveRepository.write(nextState);
+      await saveRepository.flush();
+      saveState = nextState;
+    },
+    resetProgress: async () => {
+      saveState = await resetProgressSave(runtime.storage, saveRepository);
+    },
+  });
+
   const unsubscribeActivity = runtime.activity.onBlockedChange((blocked) => app.setActivityBlocked(blocked));
   runtime.activity.setGameplayDesired(true);
   runtime.markReady();
@@ -86,6 +111,7 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
       disposed = true;
       runtime.activity.setGameplayDesired(false);
       unsubscribeActivity();
+      removePhoneQaPanel();
       removeDebugTools();
       app.dispose();
       await Promise.allSettled([saveRepository.flush(), settingsRepository.flush()]);
