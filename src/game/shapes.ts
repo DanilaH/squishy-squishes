@@ -1,4 +1,4 @@
-export type ShapeId = 'soft-square' | 'heart' | 'mochi' | 'peach';
+export type ShapeId = 'soft-square' | 'heart' | 'mochi' | 'peach' | 'mushroom' | 'paw';
 
 export interface ShapePoint {
   readonly x: number;
@@ -16,6 +16,9 @@ const SOFT_SQUARE_POINTS = 112;
 const HEART_POINTS = 128;
 const MOCHI_POINTS = 112;
 const PEACH_POINTS = 128;
+const MUSHROOM_SIDE_POINTS = 72;
+const PAW_TOP_POINTS = 72;
+const PAW_PALM_POINTS = 72;
 
 const createSoftSquareBoundary = (): readonly ShapePoint[] =>
   Array.from({ length: SOFT_SQUARE_POINTS }, (_, index) => {
@@ -103,11 +106,67 @@ const createPeachBoundary = (): readonly ShapePoint[] => {
   return normalizeBoundary(raw, 0.94);
 };
 
+const mushroomHalfWidth = (y: number): number => {
+  if (y < -0.52) {
+    const t = Math.min(1, Math.max(0, (y + 0.94) / 0.42));
+    return 0.32 * Math.sqrt(Math.max(0, 1 - (1 - t) ** 2));
+  }
+  if (y < -0.18) return 0.32;
+  if (y < 0.08) {
+    const t = (y + 0.18) / 0.26;
+    return 0.32 + 0.06 * t;
+  }
+
+  const t = Math.min(1, Math.max(0, (y - 0.08) / 0.86));
+  const cap = 0.9 * Math.sin(t * Math.PI) ** 0.55;
+  return Math.max(0.38 * (1 - t), cap);
+};
+
+const createMushroomBoundary = (): readonly ShapePoint[] => {
+  const right = Array.from({ length: MUSHROOM_SIDE_POINTS }, (_, index) => {
+    const y = -0.94 + (index / (MUSHROOM_SIDE_POINTS - 1)) * 1.88;
+    return { x: mushroomHalfWidth(y), y };
+  });
+  const left = right.slice(1, -1).reverse().map((point) => ({ x: -point.x, y: point.y }));
+  return normalizeBoundary([...right, ...left], 0.94);
+};
+
+const createPawBoundary = (): readonly ShapePoint[] => {
+  const toeCenters = [-0.54, -0.18, 0.18, 0.54] as const;
+  const top = Array.from({ length: PAW_TOP_POINTS }, (_, index) => {
+    const x = -0.72 + (index / (PAW_TOP_POINTS - 1)) * 1.44;
+    let y = 0.5;
+    for (const center of toeCenters) y += 0.28 * Math.exp(-((x - center) / 0.105) ** 2);
+    return { x, y };
+  });
+
+  const lowerPalm = Array.from({ length: PAW_PALM_POINTS }, (_, index) => {
+    const angle = -((index + 1) / (PAW_PALM_POINTS + 1)) * Math.PI;
+    return {
+      x: 0.8 * Math.cos(angle),
+      y: 0.18 + 0.78 * Math.sin(angle),
+    };
+  });
+
+  const raw: readonly ShapePoint[] = [
+    ...top,
+    { x: 0.76, y: 0.42 },
+    { x: 0.8, y: 0.18 },
+    ...lowerPalm,
+    { x: -0.8, y: 0.18 },
+    { x: -0.76, y: 0.42 },
+  ];
+
+  return normalizeBoundary(raw, 0.94);
+};
+
 export const SHAPES: readonly ShapeDefinition[] = [
   { id: 'soft-square', label: 'Soft Cube', boundary: createSoftSquareBoundary() },
   { id: 'heart', label: 'Soft Heart', boundary: createHeartBoundary() },
   { id: 'mochi', label: 'Mochi', boundary: createMochiBoundary() },
   { id: 'peach', label: 'Peach Puff', boundary: createPeachBoundary() },
+  { id: 'mushroom', label: 'Mushroom', boundary: createMushroomBoundary() },
+  { id: 'paw', label: 'Paw', boundary: createPawBoundary() },
 ] as const;
 
 const SELECTOR_SHAPE_IDS = new Set<ShapeId>(['soft-square', 'heart']);
