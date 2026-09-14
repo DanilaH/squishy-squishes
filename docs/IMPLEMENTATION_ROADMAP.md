@@ -1,319 +1,276 @@
 # Squishy Squishes — Implementation Roadmap
 
-**Status:** ACTIVE PRODUCTION ROADMAP
-**Current gate:** Phase 7B — Catalog Production: Mushroom + Paw
-**Previous gate:** Phase 7A — Catalog Production: Mochi + Peach — COMPLETE
+**Status:** RELEASE CANDIDATE
+**Current gate:** RC01 engineering + external Yandex publication
+**Catalog target:** 6 production shapes / 24 canonical recipes
 
-The tactile loop, production shell, reusable renderer, progression/collection loop, representative materials and the first catalog-expansion batch have passed deployed phone acceptance. The project is now finishing the working MVP catalog target with Mushroom + Paw while preserving the same high-CMF production path.
+The tactile loop, reusable renderer, progression/Collection, representative materials and bounded catalog production are complete. New gameplay/content work is frozen unless post-release evidence justifies it.
+
+Phase 7B phone review was explicitly deferred by the product owner. It remains a pre-publication smoke check, not an engineering blocker.
 
 ---
 
 ## Phase 0 — Product/spec lock — COMPLETE
 
-Confirmed:
+Locked product thesis:
 
 - compact tactile maker / collection game;
-- cheap 2D WebGL deformation core;
 - deterministic curated recipes;
-- premium tactile toy-lab direction;
+- high-CMF content multiplication;
+- raw WebGL2 hero + DOM/CSS UI + WebAudio;
 - no currency/shop/orders/customers;
-- high-CMF content thesis;
-- raw WebGL2 + DOM/CSS baseline;
-- responsive desktop/mobile baseline;
-- conservative between-loop monetization later.
+- no bespoke minigame per recipe.
 
 ---
 
 ## Phase 1 — Vertical Slice 01 — COMPLETE
 
-Validated one complete loop:
+Validated:
 
 `select → paint/pour → optional filling → mix/stretch → form → reveal → free squeeze → Collect → repeat`
 
-Validated slice content:
+The core tactile loop was accepted as worth productionizing.
 
-- one rounded soft-cube / superellipse geometry;
-- three palettes;
-- Smooth / Foam Beads modifier;
-- six deterministic variants.
-
-The slice answered the core product question: the tiny loop is worth productionizing.
-
-Historical acceptance evidence remains in `VERTICAL_SLICE_01.md` and `PRODUCTION_PASS_01.md`.
+Historical evidence: `VERTICAL_SLICE_01.md`, `PRODUCTION_PASS_01.md`.
 
 ---
 
-## Phase 2 — Full-loop correction — COMPLETE
+## Phase 2 — Full-loop interaction correction — COMPLETE
 
-Interaction Passes 02–04 applied only hands-on, high-frequency corrections:
+Accepted interaction grammar includes:
 
-- first beat became surface paint/coverage;
-- paint duration/readability and visual bleed improved;
-- foam became shake/scatter rather than a single stream;
-- foam presentation quality improved;
-- mix requires real pointer motion + stretch;
-- active craft beats were lengthened;
-- forming now uses normal taps + stronger persistent crit targets;
-- lifecycle/pointer/audio edge cases were reviewed repeatedly.
+- unique-coverage paint rather than hold progress;
+- motion-driven filling shake;
+- real pointer travel + stretch for Mix;
+- normal mold taps + stronger crit targets;
+- no fail/lives/combo punishment;
+- corrected pointer/audio/lifecycle edge cases.
 
-No additional mechanic invention is required before production architecture.
+Do not reopen interaction tuning without hands-on evidence.
 
 ---
 
 ## Phase 3 — Production Skeleton 01 — COMPLETE
 
-### Goal
+Delivered:
 
-Put production boundaries around the accepted loop without changing its feel.
+- app bootstrap boundary;
+- mock + Yandex runtime seam;
+- versioned game/settings repositories;
+- legacy save migration;
+- typed RU/EN copy;
+- aggregate gameplay activity lifecycle;
+- debug seam;
+- pinned `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b`.
 
-Canonical bounded spec:
-
-- `PRODUCTION_SKELETON_01.md`
-- `PRODUCTION_SKELETON_01_REVIEW.md`
-
-### Completed work
-
-- preserved reviewed `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b` pin;
-- added app bootstrap boundary;
-- added mock + explicit Yandex runtime seam;
-- added versioned game save repository;
-- added one-time legacy slice-save migration;
-- added separate versioned settings repository;
-- added typed RU/EN copy skeleton;
-- routed platform/visibility blocking through aggregate activity lifecycle;
-- added DEV-only debug seam;
-- removed direct storage/platform ownership from `VerticalSliceApp`;
-- preserved shared render-density path and accepted craft tuning.
-
-### Exit result
-
-Structural review passed, strict typecheck/build passed, the final production source was merged, and the main GitHub Pages pipeline successfully rebuilt/published the production shell.
+Canonical docs: `PRODUCTION_SKELETON_01.md`, `PRODUCTION_SKELETON_01_REVIEW.md`.
 
 ---
 
-## Phase 4 — Renderer Reuse / Second Shape — COMPLETE
+## Phase 4 — Renderer reuse / second shape — COMPLETE
 
-### Goal
+Soft Cube and Soft Heart proved one generic:
 
-Prove the high-CMF technical thesis instead of assuming it.
+- spring mesh;
+- deformation path;
+- shader/material path;
+- craft state machine;
+- shape boundary representation for render mask, hit testing, paint and mold validation.
 
-Canonical bounded spec:
+No shape-specific physics branch was required.
 
-- `RENDERER_REUSE_SECOND_SHAPE.md`
-- `RENDERER_REUSE_SECOND_SHAPE_REVIEW.md`
-
-### Work
-
-- preserve the existing rounded soft-square;
-- centralize normalized silhouette data in one `ShapeDefinition` registry;
-- add exactly one materially different second shape: Soft Heart;
-- keep one spring mesh, one deformation path, one shader/material path and one craft state machine;
-- use shared shape geometry for WebGL field masking, pointer hit testing, paint clipping/coverage and mold target validation;
-- keep all three palettes and both fillings reusable on both silhouettes;
-- expand deterministic selectable variants from 6 to 12;
-- preserve the original six durable variant IDs and save schema V1;
-- keep all Phase 3 runtime/save/settings/lifecycle boundaries intact;
-- run strict typecheck/build and independent final diff review;
-- deploy and perform a representative phone acceptance check.
-
-### Structural exit gate
-
-- two materially different shapes use the same deformation/material system;
-- no `shape.id` branch exists in deformation physics, stage-progress math, audio behavior or craft transitions;
-- existing IDs/save load without migration;
-- build/typecheck green;
-- no third shape, progression or final collection work leaks into the diff.
-
-### Product exit gate
-
-After deployment, phone hands-on confirms:
-
-- heart edge/notch quality remains coherent while stretching;
-- paint feels fair on the concave shape;
-- selector/composition fits the phone surface;
-- input responsiveness/performance remain acceptable.
-
-Phone acceptance on the merged Pages build passed on 2026-09-14. The renderer/content reuse gate is closed; future shape work must preserve the same shared path.
+Phone acceptance passed on 2026-09-14.
 
 ---
 
 ## Phase 5 — Progression + Collection — COMPLETE
 
-Canonical bounded spec:
+Delivered:
 
-- `PROGRESSION_COLLECTION_01.md`
-- `PROGRESSION_COLLECTION_01_REVIEW.md`
-- `PROGRESSION_COLLECTION_01_IMPLEMENTATION_REVIEW.md`
-
-### Goal
-
-Build the “one more recipe” layer only after multi-shape reuse is proven.
-
-Leading model:
-
-- one Lab XP / Lab Rank track;
-- strong first-completion progress;
-- smaller repeat progress;
+- Lab XP / derived Lab Rank;
+- +100 first completion / +25 repeat validation tuning;
 - deterministic unlock table;
-- no spendable currency.
+- locked / available / completed Collection cards;
+- completed-item free squeeze revisit;
+- compact milestone feedback;
+- SaveState V2;
+- hardened reset behavior.
 
-Also:
+No spendable currency was introduced.
 
-- collection read model;
-- locked / unlocked-unmade / completed cards;
-- revisit completed items for free squeeze;
-- a few meaningful milestone celebrations;
-- debug state seeding;
-- save migration tests.
-
-### Exit gate
-
-Fresh-save progression, deterministic unlocks, Collection states and completed-item revisit were exercised successfully on the deployed phone build on 2026-09-14. The bounded one-more-loop gate is closed; XP values remain validation tuning rather than final launch balance.
+Canonical docs: `PROGRESSION_COLLECTION_01*.md`.
 
 ---
 
 ## Phase 6 — Representative Content 01 — COMPLETE
 
-Canonical bounded spec/reviews:
+Validated reusable content vocabulary:
 
-- `REPRESENTATIVE_CONTENT_01.md`
-- `REPRESENTATIVE_CONTENT_01_REVIEW.md`
-- `REPRESENTATIVE_CONTENT_01_IMPLEMENTATION_REVIEW.md`
+- `soft`, `jelly`, `holo` material profiles in one shader path;
+- Smooth / Foam / Pearl filling styles;
+- premium recipes through the same craft loop;
+- explicit curated recipe registry rather than a Cartesian canonical catalog.
 
-### Goal
+Phone QA accepted the material/filling proof. PR #12 fixed one shared spring-release visual snap without material-specific code.
 
-Prove reusable content variation without turning the product into a mini-game collection.
-
-Validated proof:
-
-- explicit curated registry rather than a Cartesian canonical catalog;
-- reusable `soft` / `jelly` / `holo` material profiles in one shader path;
-- reusable Pearl filling on the existing shake/add interaction;
-- four premium representative recipes across both proven shapes;
-- Collection Make as temporary functional reachability for recipes outside the legacy component selector.
-
-### Exit result
-
-Phone QA accepted jelly, holo and Pearl presentation and old recipe behavior on 2026-09-14. One shared release artifact was found during that check: shader-facing compression snapped to idle on pointer release while the spring mesh was still returning. PR #12 corrected the shared release state without material-specific branches, was deployed successfully, and the corrected behavior was accepted on phone.
-
-The material/filling reuse gate is closed. Additional finish/decor mechanics remain deferred unless later catalog evidence proves they are necessary.
+Canonical docs: `REPRESENTATIVE_CONTENT_01*.md`.
 
 ---
 
-## Phase 7 — Catalog production — ACTIVE
+## Phase 7 — Catalog production — COMPLETE
 
-### Goal
+### 7A — Mochi + Peach — COMPLETE
 
-Scale through the validated high-CMF system while proving that each next desirable squishy is cheaper to produce than the previous representative-content batch.
+Added:
 
-Working launch target:
+- Mochi;
+- Peach Puff;
+- two reusable palettes;
+- four curated recipes;
+- no renderer/physics/audio/save changes.
 
-- about 6 base shapes;
-- about 24 strong curated recipes;
-- quality may explicitly reduce the count.
+Deployed phone acceptance passed on 2026-09-14.
 
-Produce in small batches and review in-game between batches. No filler to satisfy a quota.
+Canonical docs: `CATALOG_PRODUCTION_7A*.md`.
 
-### Phase 7A — Mochi + Peach — COMPLETE
+### 7B — Mushroom + Paw — ENGINEERING COMPLETE
 
-Canonical bounded spec/reviews:
+Added:
 
-- `CATALOG_PRODUCTION_7A.md`
-- `CATALOG_PRODUCTION_7A_REVIEW.md`
-- `CATALOG_PRODUCTION_7A_IMPLEMENTATION_REVIEW.md`
+- Mushroom;
+- Paw;
+- four curated recipes;
+- zero new palettes/materials/fillings;
+- no `VerticalSliceApp`, renderer, shader, physics, audio or save changes.
 
-Delivered:
+Result:
 
-- Mochi and Peach/Fruit Puff as `ShapeDefinition` data only;
-- four curated recipes, growing the catalog from 16 to 20;
-- two cheap reusable palettes (`milk`, `peach`);
-- existing soft/jelly/holo and smooth/pearls vocabulary;
-- unchanged Lab Rank 1–8, XP thresholds and SaveState V2;
-- legacy component selector kept to Cube + Heart;
-- zero renderer physics/shader/audio changes for the new shapes.
+- **6 production shapes**;
+- **24 canonical recipes**.
 
-Deployed phone acceptance passed on 2026-09-14 for Milk Mochi, Galaxy Pearl Mochi, Peach Milk Puff and Sakura Jelly Peach, with no blocking Cube/Heart regression reported.
+This is sufficient evidence for the high-CMF thesis: the final batch was cheaper than earlier content batches.
 
-### Phase 7B — Mushroom + Paw — ACTIVE
+Manual phone inspection of Mushroom/Paw was deferred by owner decision. Treat it as a release smoke check, not an excuse to expand or rewrite the catalog.
 
-Canonical bounded spec/review:
+Canonical docs: `CATALOG_PRODUCTION_7B*.md`.
 
-- `CATALOG_PRODUCTION_7B.md`
-- `CATALOG_PRODUCTION_7B_REVIEW.md`
-
-Bounded batch:
-
-- add Mushroom and Paw as generic normalized boundaries only;
-- add exactly four curated recipes, taking the catalog from 20 to 24;
-- add **zero** new palettes/materials/fillings;
-- place new recipes in existing Ranks 4/5/6/8;
-- keep SaveState V2 and current XP thresholds unchanged;
-- keep the temporary component selector limited to Cube + Heart;
-- defer Blob Creature because its current identity depends on decoration/internal-detail systems not justified by this batch.
-
-Exit gate is deployed phone acceptance of Vanilla Mushroom, Grape Glow Mushroom, Milk Paw and Aurora Paw plus regression across the first four shapes. If accepted, Phase 7 closes at the working 6-shape / 24-recipe target instead of automatically expanding the catalog further.
+**Catalog freeze:** do not automatically add Blob Creature, more recipes, new finishes or new gameplay systems before release evidence.
 
 ---
 
-## Phase 8 — Platform, analytics, monetization
+## RC01 — Presentation + platform + release hardening — RELEASE CANDIDATE
 
-Finish platform behavior after real craft/session cadence exists.
+Canonical docs:
 
-- production Yandex runtime configuration;
-- cloud policy only if justified;
-- compact analytics contract;
-- conservative interstitial eligibility only after Collect;
-- grace/cooldown/craft-count gates;
-- at most one rewarded progression offer if useful;
-- ad/activity/audio lifecycle stress.
+- `RELEASE_CANDIDATE_01.md`;
+- `RELEASE_CANDIDATE_01_REVIEW.md`;
+- `RELEASE_CANDIDATE_01_IMPLEMENTATION_REVIEW.md`.
 
-No ad may interrupt tactile craft, reveal, or result squeeze.
+RC01 consolidates the old Phase 8–10 engineering work into one bounded release pass.
+
+### Presentation
+
+- keep the proven craft DOM/renderer intact;
+- apply a final release presentation layer;
+- make Collection read as the primary curated catalog;
+- improve mobile/short-landscape density;
+- remove internal-tool presentation from the Yandex build;
+- keep Pages QA tooling available for development/testing.
+
+### Platform lifecycle
+
+- use the existing pinned Yandex runtime only;
+- `LoadingAPI.ready()` remains owned by runtime `markReady()`;
+- `GameplayAPI.start/stop` remains owned by `GameplayActivityCoordinator`;
+- Collection/menu state marks gameplay undesired without creating a fake external block;
+- visibility, platform pause and ad blocking continue through the existing blocker path.
+
+### Analytics
+
+Compact events only:
+
+- session ready;
+- catalog open/close;
+- craft start;
+- craft collect;
+- catalog recipe start;
+- completed-recipe revisit;
+- mute toggle;
+- interstitial request/result.
+
+Yandex Metrica is optional through `VITE_METRICA_COUNTER_ID`. Missing/invalid configuration falls back safely and never blocks gameplay.
+
+### Monetization
+
+RC01 uses only conservative fullscreen interstitials:
+
+- Yandex runtime only;
+- only after a completed craft returns from `collect` to `select`;
+- never during paint/add/mix/mold/reveal/test;
+- local 120-second session grace;
+- minimum 3 completed loops between requests;
+- local 150-second request cooldown;
+- ad lifecycle blocks gameplay through the existing activity coordinator.
+
+Deferred:
+
+- rewarded ads;
+- sticky banners;
+- ad-driven progression economy.
+
+### Release build
+
+Two production targets are explicit:
+
+1. GitHub Pages: `/squishy-squishes/` base, QA convenience retained.
+2. Yandex archive: relative `./` assets, `VITE_PLATFORM=yandex`, QA panel excluded.
+
+`npm run release:check` validates both targets and verifies the Yandex dist.
+
+Permanent `Release Check` GitHub Actions CI packages `squishy-squishes-yandex.zip` with `index.html` at archive root.
+
+### Engineering exit condition
+
+RC01 engineering is complete when:
+
+- strict TypeScript passes;
+- Pages production build passes;
+- Yandex production build passes;
+- Yandex dist verifier passes;
+- QA code is absent from the Yandex bundle;
+- final diff review passes;
+- release CI passes;
+- main Pages deployment succeeds.
 
 ---
 
-## Phase 9 — Full feel/art/audio correction
+## External publication gate — PENDING OUTSIDE REPOSITORY
 
-Prioritize repeated-use evidence:
+These items cannot be truthfully completed by repository code alone:
 
-- high-frequency craft beats;
-- reveal/result stability;
-- exit/restart speed;
-- sound-off readability;
-- audio/visual fatigue;
-- material hierarchy;
-- target-device performance.
+- one representative phone smoke pass (Mushroom, Paw, one legacy recipe);
+- optional Yandex Metrica counter ID configuration;
+- Yandex Games console/project metadata and store assets;
+- upload of the generated Yandex ZIP;
+- Yandex DRAFT/moderation result;
+- production ad behavior observation after platform approval.
 
-Do not spend equal effort on low-frequency settings chrome.
-
----
-
-## Phase 10 — Release hardening / Yandex DRAFT
-
-Validate the exact release revision:
-
-- production build;
-- desktop/mobile real-browser checks;
-- orientation behavior;
-- fresh/existing save;
-- lifecycle/reload/ad recovery;
-- RU/EN;
-- asset/network failures where relevant;
-- Yandex DRAFT/moderation;
-- store assets;
-- encoded size/performance.
+Failures here should produce a small RC02 patch. They do not justify reopening catalog architecture by default.
 
 ---
 
-## Phase 11 — Ship / learn
+## Ship / learn — AFTER PUBLICATION
 
-After release:
+Observe:
 
-- observe activation/repeat funnel;
-- inspect recipe/shape engagement;
-- inspect conservative ad behavior;
-- write material lessons back to portfolio decisions;
-- extract additional shared code only with real second-consumer evidence;
-- prefer content additions over new systems when content demand is the bottleneck.
+- activation and craft completion;
+- first-completion vs repeat behavior;
+- recipe/shape engagement;
+- catalog opens/revisits;
+- interstitial request/show behavior;
+- retention signals available from the platform.
+
+Prefer content/presentation fixes backed by evidence. Add systems only when evidence says content reuse is no longer enough.
 
 ---
 
@@ -321,13 +278,13 @@ After release:
 
 Stop and reassess if:
 
-- the complete craft/reveal loop stops being fun under repetition;
 - raw WebGL becomes the dominant production burden;
-- multiple shapes require bespoke deformation code;
-- recipes require new mini-games merely to feel different;
+- shapes require bespoke deformation code;
+- recipes require new minigames merely to differ;
 - progression starts demanding currency/shop complexity;
-- performance fails on representative mobile conditions;
-- scope is being added to hide weak tactile/reveal feel;
-- catalog production burden is materially worse than the high-CMF thesis predicted.
+- target-device performance fails;
+- scope is added to hide weak tactile/reveal feel;
+- monetization can interrupt tactile gameplay;
+- a release fix starts changing unrelated validated interaction/content code.
 
 A failed assumption is evidence. Fix the assumption or reduce scope; do not hide it with more systems.
