@@ -205,9 +205,9 @@ const mixUntilMold = async (page: Page): Promise<void> => {
     if ((await shell.getAttribute('data-stage')) !== 'mix') return;
     await page.mouse.move(cx, cy);
     await page.mouse.down();
-    for (let index = 0; index < 72; index += 1) {
+    for (let index = 0; index < 18; index += 1) {
       const [x, y] = points[index % points.length]!;
-      await page.mouse.move(x, y, { steps: 2 });
+      await page.mouse.move(x, y);
       await page.waitForTimeout(12);
     }
     await page.mouse.up();
@@ -215,7 +215,7 @@ const mixUntilMold = async (page: Page): Promise<void> => {
       await expect(shell).toHaveAttribute('data-stage', 'mold', { timeout: 1_200 });
       return;
     } catch {
-      // Continue the same real interaction if the previous stretch burst was not enough.
+      // Continue with another normal stretch burst if this release was not enough.
     }
   }
 
