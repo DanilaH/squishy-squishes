@@ -3,7 +3,7 @@
 **Date:** 2026-09-14
 **Status:** REVIEW IN PROGRESS
 
-The implementation is intentionally isolated from `VerticalSliceApp` and renderer/craft code. Final verdict is pending branch typecheck/build.
+The implementation is intentionally isolated from `VerticalSliceApp` and renderer/craft code. Final verdict is pending the corrected branch typecheck/build.
 
 Review checklist:
 
@@ -19,4 +19,8 @@ Review checklist:
 - panel-open preference is session-only UI state;
 - release removal requirement is documented in `PHONE_QA_PANEL.md`.
 
-Final validation result will be recorded after the temporary branch workflow completes.
+## Validation correction
+
+The first strict branch run reached `npm run typecheck` and caught one DOM typing issue: modern `HTMLElement.hidden` can be typed as `boolean | "until-found"`. The launcher toggle was corrected to convert that state explicitly to a boolean. No runtime/gameplay behavior was changed by the correction.
+
+A fresh temporary-workflow run after this correction is the final structural gate before PR/merge.
