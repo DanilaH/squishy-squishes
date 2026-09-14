@@ -29,6 +29,12 @@ export interface VariantChoice {
   readonly filling: FillingId;
 }
 
+export interface VariantSpec {
+  readonly id: string;
+  readonly label: string;
+  readonly choice: VariantChoice;
+}
+
 export const PALETTES: readonly PaletteSpec[] = [
   {
     id: 'grape',
@@ -93,8 +99,21 @@ export const variantLabel = (choice: VariantChoice): string => {
   return `${shape.label} · ${palette.label} · ${filling.label}`;
 };
 
-export const ALL_VARIANT_IDS: readonly string[] = SHAPES.flatMap((shape) =>
+export const ALL_VARIANTS: readonly VariantSpec[] = SHAPES.flatMap((shape) =>
   PALETTES.flatMap((palette) =>
-    FILLINGS.map((filling) => variantId({ shape: shape.id, palette: palette.id, filling: filling.id })),
+    FILLINGS.map((filling) => {
+      const choice: VariantChoice = { shape: shape.id, palette: palette.id, filling: filling.id };
+      return {
+        id: variantId(choice),
+        label: variantLabel(choice),
+        choice,
+      } satisfies VariantSpec;
+    }),
   ),
 );
+
+export const ALL_VARIANT_IDS: readonly string[] = ALL_VARIANTS.map((variant) => variant.id);
+
+const variantById = new Map(ALL_VARIANTS.map((variant) => [variant.id, variant] as const));
+
+export const getVariantSpec = (id: string): VariantSpec | null => variantById.get(id) ?? null;
