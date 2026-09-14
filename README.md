@@ -2,99 +2,85 @@
 
 Compact tactile maker / collection game for Yandex Games.
 
-**Current status:** feel thesis PASSED; full-game direction is locked; **Vertical Slice 01 is the active implementation gate**.
+**Current status:** tactile core PASS; full-loop slice PASS; interaction correction passes accepted; **Production Skeleton 01 is the active implementation gate**.
 
-Immediate goal:
+Current accepted loop:
 
-`select → pour → optional filling → mix/squish → mold/press → reveal → free squeeze → Collect → repeat`
+`select → paint base → optional foam shake → stretch/mix → form with normal taps + crit targets → reveal → free squeeze → Collect → repeat`
 
-The slice deliberately uses the existing validated shape and renderer before production architecture or catalog scale.
+## Active gate — Production Skeleton 01
 
-## Vertical Slice 01
+The next job is architecture around the proven loop, not new gameplay.
 
-Current content:
+Scope:
 
-- one rounded soft-cube / superellipse shape;
-- Lavender/Grape, Strawberry/Pink, Lime/Mint palettes;
-- Smooth / Foam Beads modifier;
-- six deterministic variants;
-- minimal temporary UI over the current scene.
+- app bootstrap boundary;
+- mock/Yandex runtime seam;
+- versioned save repository;
+- separate versioned settings repository;
+- legacy slice-save migration;
+- typed RU/EN copy skeleton;
+- aggregate activity/lifecycle wiring;
+- DEV-only debug seam;
+- remove direct storage/platform ownership from `VerticalSliceApp`;
+- preserve current gameplay feel exactly.
 
-Canonical scope and acceptance: `docs/VERTICAL_SLICE_01.md`.
+Canonical implementation spec: `docs/PRODUCTION_SKELETON_01.md`.
+Independent review: `docs/PRODUCTION_SKELETON_01_REVIEW.md`.
 
-Do not add Lab XP, second shape, final collection UI, Yandex integration, ads, cloud save or mass content until this complete loop has been tested and polished over repeated runs.
+After this passes, the next gate is **exactly one materially different second shape** using the same deformation/material path. Only after that reuse test passes do we scale progression and catalog production.
 
 ## Product thesis
 
-Make desirable soft collectibles through a short tactile lab ritual, reveal them dramatically, squeeze the finished result, collect them, and unlock the next materially different recipe.
+Make desirable soft collectibles through a short tactile lab ritual, reveal them, squeeze the finished result, collect them, and quickly expose the next visually different recipe.
 
-Long-term loop:
+The production bet is high content multiplication from:
 
-`choose recipe → pour/add → mix/squish → mold → reveal → optional finish/decorate → test squeeze → collect → unlock`
+`shape × material/palette × filling × decal/decoration × finish`
 
-The production bet is asymmetric: reusable shapes/interactions plus material/config combinations should create many desirable collectibles without bespoke mechanics.
+without bespoke gameplay code per recipe.
 
-## Art direction
+Working MVP direction remains approximately six reusable base shapes and around 24 curated recipes, with quality allowed to reduce the final count.
 
-**Premium tactile toy lab**:
+## Stack
 
-- dark plum / indigo studio environment;
-- bright semi-gloss designer-toy squishies;
-- tactile materials and strong silhouette contrast;
-- kawaii-lite rather than childlike;
-- restrained UI;
-- reveal hierarchy without generic mobile-game effect spam.
+- strict TypeScript;
+- Vite;
+- raw WebGL2 for the tactile hero;
+- DOM/CSS for UI;
+- WebAudio;
+- `@danilah/mini-games-kit` pinned to `d17ba31fce2a71335dcc3095f772c3fdd87fe97b`;
+- no backend;
+- no React/Phaser/Pixi/Three.js/physics engine unless new evidence justifies it.
 
 ## Documentation
 
-Start here:
+Current execution order:
 
-- `docs/VERTICAL_SLICE_01.md` — active implementation scope and acceptance gate
-- `docs/DECISIONS.md` — confirmed project decisions
-- `docs/IMPLEMENTATION_ROADMAP.md` — vertical-slice-first execution order
-- `docs/GAMEPLAY.md` — full intended loop and interaction grammar
-- `docs/PRODUCT.md` — product thesis and scope
-- `docs/CONTENT_AND_PROGRESSION.md` — future component/catalog/progression design
+- `docs/PRODUCTION_SKELETON_01.md` — active production-shell specification
+- `docs/PRODUCTION_SKELETON_01_REVIEW.md` — independent review/corrections
+- `docs/IMPLEMENTATION_ROADMAP.md` — full phase order
+- `docs/TECHNICAL_DIRECTION.md` — long-term boundaries
+- `docs/GAMEPLAY.md` — interaction grammar
+- `docs/PRODUCT.md` — product thesis/scope
+- `docs/CONTENT_AND_PROGRESSION.md` — later catalog/progression design
 - `docs/ART_DIRECTION.md` — visual identity
-- `docs/TECHNICAL_DIRECTION.md` — production architecture direction
-- `docs/REUSE_AND_EXTRACTION_PLAN.md` — shared-kit / previous-project reuse
-- `docs/ANALYTICS_AND_MONETIZATION.md` — later product analytics/ad posture
-- `docs/ASSET_PIPELINE.md` — later content production rules
-- `docs/QA_AND_ACCEPTANCE.md` — release-scale validation
-- `docs/PREIMPLEMENTATION_REVIEW.md` — resolved pre-development review
+- `docs/ANALYTICS_AND_MONETIZATION.md` — later analytics/ad posture
+- `docs/QA_AND_ACCEPTANCE.md` — release validation
 
-Historical validation evidence:
+Historical evidence:
 
 - `docs/SQUISH_FEEL_PROBE.md`
 - `docs/PROBE_RESULT.md`
-
-## Validated tactile core
-
-The runnable base came from the successful feel probe:
-
-- raw WebGL2;
-- 16×16 deforming grid;
-- local press/drag deformation and pseudo-volume response;
-- damped spring return / restrained rebound;
-- procedural material sheen and responsive shadow;
-- progress/velocity-driven tactile WebAudio;
-- no soft-body solver, physics engine or 3D model.
-
-## Shared production kit
-
-The accepted probe / first slice base is pinned to:
-
-`DanilaH/mini-games-kit@2da5b501a7e47fbe4b3683069b34f8e252116963`
-
-Productionization after slice PASS is planned against:
-
-`DanilaH/mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b`
-
-The dependency is private. Local installs / CI require GitHub credentials that can read it.
+- `docs/VERTICAL_SLICE_01.md`
+- `docs/PRODUCTION_PASS_01.md`
+- `docs/INTERACTION_PASS_02.md`
+- `docs/INTERACTION_PASS_03.md`
+- `docs/INTERACTION_PASS_04.md`
 
 ## Run
 
-Requirements: Node.js `>=20.19.0` and GitHub authentication for the private kit.
+Requirements: Node.js `>=20.19.0`.
 
 ```bash
 npm install
@@ -104,11 +90,16 @@ npm run dev
 Production build/typecheck:
 
 ```bash
+npm run typecheck
 npm run build
 ```
 
+GitHub Pages phone build:
+
+https://danilah.github.io/squishy-squishes/
+
 ## Scope rule
 
-Do not turn the project into Cooking Mama, a shop/economy sim or a physics sandbox.
+Do not turn the project into Cooking Mama, a shop/economy sim, or a physics sandbox.
 
-Right now the only thing that matters is whether the tiny full loop remains fun across several complete crafts. If it does, productionize and scale. If it does not, fix the weak beat instead of adding systems.
+Right now the goal is to make the accepted loop a clean production foundation, then prove renderer reuse on a second shape before scaling systems or content.
