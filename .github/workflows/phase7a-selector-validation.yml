@@ -1,0 +1,37 @@
+name: Phase 7A Selector Validation
+
+on:
+  push:
+    branches:
+      - phase-7a-mochi-peach
+    paths:
+      - .github/workflows/phase7a-selector-validation.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: phase-7a-mochi-peach
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Apply selector patch
+        run: node scripts/phase7a-selector-patch.mjs
+      - name: Install dependencies
+        run: npm install
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Upload patched source
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase7a-selector-source
+          path: src/game/VerticalSliceApp.ts
