@@ -1,0 +1,45 @@
+name: Temporary Interaction Pass 04 executor
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v5
+        with:
+          ref: interaction-pass-04
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Apply patch
+        run: python scripts/apply_interaction_pass_04.py
+
+      - name: Validate diff
+        run: git diff --check
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit feature patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/game/VerticalSliceApp.ts src/interaction-pass.css src/squish/shaders.ts
+          git commit -m "Tune craft pacing and mold crit interactions"
+          git push origin HEAD:interaction-pass-04
