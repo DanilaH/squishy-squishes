@@ -1,4 +1,4 @@
-name: Apply Second Shape Gate
+name: Apply Second Shape Review Fix
 
 on:
   push:
@@ -19,12 +19,12 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - run: python scripts/apply_second_shape.py
+      - run: python scripts/fix_second_shape_review.py
       - run: git diff --check
       - run: npm install
       - run: npm run typecheck
       - run: npm run build
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: Wire shared renderer through second shape
-          file_pattern: src/squish/SquishSurface.ts src/game/VerticalSliceApp.ts src/styles.css
+          commit_message: Harden generic mold target fallback
+          file_pattern: src/game/VerticalSliceApp.ts
