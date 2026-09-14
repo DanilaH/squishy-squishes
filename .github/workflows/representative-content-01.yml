@@ -20,6 +20,7 @@ jobs:
         with:
           node-version: 24
       - run: python scripts/apply_representative_content_01.py
+      - run: sed -i "/^  FILLINGS,$/d; /^  PALETTES,$/d" src/game/VerticalSliceApp.ts
       - run: git diff --check
       - run: npm install
       - run: npm run typecheck
