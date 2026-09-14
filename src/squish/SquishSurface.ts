@@ -244,7 +244,6 @@ export class SquishSurface {
     canvas.addEventListener('pointerup', this.handlePointerEnd);
     canvas.addEventListener('pointercancel', this.handlePointerEnd);
     window.addEventListener('resize', this.resize);
-    document.addEventListener('visibilitychange', this.handleVisibilityChange);
 
     this.resize();
     this.animationFrame = requestAnimationFrame(this.tick);
@@ -264,6 +263,12 @@ export class SquishSurface {
     this.interactive = enabled;
     this.canvas.classList.toggle('is-disabled', !enabled);
     if (!enabled) this.cancelInteraction();
+  }
+
+  public resetTiming(): void {
+    const now = performance.now();
+    this.lastFrameAt = now;
+    this.previousSampleAt = now;
   }
 
   public setMaterial(material: SquishMaterialStyle): void {
@@ -298,7 +303,6 @@ export class SquishSurface {
     this.canvas.removeEventListener('pointerup', this.handlePointerEnd);
     this.canvas.removeEventListener('pointercancel', this.handlePointerEnd);
     window.removeEventListener('resize', this.resize);
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
 
     this.gl.deleteBuffer(this.vertexBuffer);
     this.gl.deleteBuffer(this.triangleIndexBuffer);
@@ -400,10 +404,6 @@ export class SquishSurface {
       this.applyReleaseImpulse();
     }
     this.cancelInteraction(releaseEnergy);
-  };
-
-  private readonly handleVisibilityChange = (): void => {
-    if (document.hidden) this.cancelInteraction();
   };
 
   private cancelInteraction(releaseEnergy = 0): void {

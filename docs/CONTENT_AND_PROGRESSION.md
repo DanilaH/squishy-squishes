@@ -1,7 +1,7 @@
 # Squishy Squishes — Content & Progression
 
-**Status:** PRE-DEVELOPMENT PROPOSAL  
-**Important:** exact names, XP values and unlock thresholds are not final until `PREIMPLEMENTATION_REVIEW.md` is resolved.
+**Status:** APPROVED DIRECTION / DEFERRED UNTIL AFTER SECOND-SHAPE GATE
+**Important:** exact names, XP values and unlock thresholds remain provisional until the production shell and second-shape reuse gate are complete.
 
 ---
 

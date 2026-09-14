@@ -1,6 +1,6 @@
 # Squishy Squishes — Technical Direction
 
-**Status:** PRE-DEVELOPMENT PROPOSAL
+**Status:** ACTIVE PRODUCTION DIRECTION — current bounded implementation is `PRODUCTION_SKELETON_01.md`
 
 ## 1. Stack
 
