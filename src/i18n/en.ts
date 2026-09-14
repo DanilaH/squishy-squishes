@@ -12,11 +12,13 @@ export const en = {
     craftSurface: 'Craft interaction surface',
     moldTarget: 'Press the mold target',
     recipeOptions: 'Recipe options',
+    shapeGroup: 'Squishy shape',
     colorGroup: 'Squishy color',
     fillingGroup: 'Squishy filling',
     debugControls: 'Debug controls',
   },
   recipe: {
+    shape: 'Shape',
     color: 'Color',
     texture: 'Texture',
     make: 'Make squishy',
@@ -24,7 +26,7 @@ export const en = {
   stage: {
     kicker: 'CRAFT 01',
     selectTitle: 'Choose a recipe',
-    selectHint: 'Pick a color and texture, then make it.',
+    selectHint: 'Pick a shape, color and texture, then make it.',
     pourTitle: 'Spread the base',
     pourHint: 'Drag across the squishy until the surface is covered.',
     addTitle: 'Shake in the foam beads',
