@@ -196,6 +196,7 @@ export const resetProgressSave = async (
   storage: StorageAdapter,
   repository: JsonStorageRepository<SaveStateV2>,
 ): Promise<SaveStateV2> => {
+  await repository.flush();
   await storage.removeItem(PREVIOUS_SAVE_STORAGE_KEY);
   await storage.removeItem(LEGACY_DISCOVERED_STORAGE_KEY);
   await repository.remove();
