@@ -6,7 +6,7 @@ let text = readFileSync(path, 'utf8');
 const replacements = [
   [
     "  SHAPES,\n  createShapePath,\n  getShape,\n  isPointInsideShape,\n",
-    "  SELECTOR_SHAPES,\n  SHAPES,\n  createShapePath,\n  getShape,\n  isPointInsideShape,\n  isSelectorShapeId,\n",
+    "  SELECTOR_SHAPES,\n  createShapePath,\n  getShape,\n  isPointInsideShape,\n  isSelectorShapeId,\n",
   ],
   [
     "    const shapeButtons = SHAPES.map((shape, index) => `",
