@@ -91,7 +91,7 @@ export const isPointInsideShape = (
     const a = points[index]!;
     const b = points[previous]!;
     const crosses = (a.y > y) !== (b.y > y)
-      && x < ((b.x - a.x) * (y - a.y)) / Math.max(1e-9, b.y - a.y) + a.x;
+      && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x;
     if (crosses) inside = !inside;
   }
 
@@ -124,7 +124,7 @@ export const createShapeField = (
   const points = shape.boundary;
 
   for (let y = 0; y < size; y += 1) {
-    const localY = 1 - ((y + 0.5) / size) * 2;
+    const localY = ((y + 0.5) / size) * 2 - 1;
     for (let x = 0; x < size; x += 1) {
       const localX = ((x + 0.5) / size) * 2 - 1;
       let minDistance = Number.POSITIVE_INFINITY;
