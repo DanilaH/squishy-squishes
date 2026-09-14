@@ -77,6 +77,16 @@ The direction is accepted with these constraints:
 4. **Mix motion is measured from actual pointer travel.** The previous use of `normalizedVelocity` measured compression change, not actual travel, so it could reject valid curved dragging and admit some press/release input. This pass tracks recent pointer movement in screen space instead.
 5. **Foam reveal remains shader-driven but progress is linear.** The shader already assigns stable random reveal order to bead cells; easing the amount front-loaded the visual and made the second half feel dead.
 
+## Independent implementation review
+
+A second pass was done after implementation rather than assuming the first implementation was correct. It found and corrected three issues before merge:
+
+1. **Shake feedback liveness.** The first implementation refreshed the shake idle timestamp on every pointer move, including movements too slow to earn progress. That could leave bead particles/audio running while the meter was not moving. The final implementation tracks the last *qualifying* shake separately.
+2. **Paint feedback liveness.** The first implementation refreshed paint audio timing even when the pointer moved over already-covered cells. The final implementation refreshes paint feedback only when new coverage is actually added.
+3. **Paint-path allocation.** Rebuilding the same 96-point clipping path for every brush dab was unnecessary work on the exact stage intended to improve mobile feel. The final implementation caches the `Path2D` once per app instance.
+
+The review also rechecked the coverage geometry: with the current 16×16 eligible-cell grid and 0.14 UV brush radius, about four broad horizontal passes are enough to cross the 82% completion threshold. This is within the intended short-loop budget without requiring edge cleanup.
+
 ## Acceptance checks
 
 - `npm run build` passes.
