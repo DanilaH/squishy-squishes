@@ -82,6 +82,7 @@
 
 .collection-card {
   grid-template-columns: 72px minmax(0, 1fr) auto;
+  grid-template-rows: auto;
   align-items: center;
   min-height: 96px;
   gap: 12px;

@@ -2,16 +2,10 @@ import type { GameCopy } from '../i18n';
 import { SquishSurface, type SquishMetrics } from '../squish/SquishSurface';
 import {
   ALL_VARIANT_IDS,
-  SELECTOR_FILLINGS,
-  SELECTOR_PALETTES,
   getFilling,
   getMaterial,
   getPalette,
   getVariantSpec,
-  isLegacyFillingId,
-  isLegacyPaletteId,
-  type FillingId,
-  type PaletteId,
   type VariantChoice,
   variantId,
   variantLabel,
@@ -26,12 +20,9 @@ import {
 } from './progression';
 import { SquishyAudio } from './SquishyAudio';
 import {
-  SELECTOR_SHAPES,
   createShapePath,
   getShape,
   isPointInsideShape,
-  isSelectorShapeId,
-  type ShapeId,
 } from './shapes';
 
 type CraftStage = 'select' | 'pour' | 'add' | 'mix' | 'mold' | 'reveal' | 'test' | 'collect';
@@ -78,6 +69,7 @@ export class VerticalSliceApp {
   private readonly stageHint: HTMLElement;
   private readonly progressFill: HTMLElement;
   private readonly recipePanel: HTMLElement;
+  private readonly recipeBrowseButton: HTMLButtonElement;
   private readonly startButton: HTMLButtonElement;
   private readonly collectButton: HTMLButtonElement;
   private readonly madeCount: HTMLElement;
@@ -91,15 +83,13 @@ export class VerticalSliceApp {
   private readonly collectionResetButton: HTMLButtonElement;
   private readonly progressionFeedback: HTMLElement;
   private readonly variantPreview: HTMLElement;
+  private readonly variantMeta: HTMLElement;
   private readonly resultBadge: HTMLElement;
   private readonly metricsElement: HTMLElement;
   private readonly metricsButton: HTMLButtonElement;
   private readonly wireframeButton: HTMLButtonElement;
   private readonly muteButton: HTMLButtonElement;
   private readonly discoveryDots: HTMLElement;
-  private readonly shapeButtons: readonly HTMLButtonElement[];
-  private readonly colorButtons: readonly HTMLButtonElement[];
-  private readonly fillingButtons: readonly HTMLButtonElement[];
   private readonly audio = new SquishyAudio();
   private readonly renderer: SquishSurface;
   private readonly discovered = new Set<string>();
@@ -179,6 +169,7 @@ export class VerticalSliceApp {
     this.stageHint = this.requireElement<HTMLElement>('.stage-hint');
     this.progressFill = this.requireElement<HTMLElement>('.stage-progress__fill');
     this.recipePanel = this.requireElement<HTMLElement>('.recipe-panel');
+    this.recipeBrowseButton = this.requireElement<HTMLButtonElement>('.recipe-browse-button');
     this.startButton = this.requireElement<HTMLButtonElement>('.start-button');
     this.collectButton = this.requireElement<HTMLButtonElement>('.collect-button');
     this.madeCount = this.requireElement<HTMLElement>('.made-count');
@@ -192,15 +183,13 @@ export class VerticalSliceApp {
     this.collectionResetButton = this.requireElement<HTMLButtonElement>('.collection-reset-button');
     this.progressionFeedback = this.requireElement<HTMLElement>('.progression-feedback');
     this.variantPreview = this.requireElement<HTMLElement>('.variant-preview');
+    this.variantMeta = this.requireElement<HTMLElement>('.variant-meta');
     this.resultBadge = this.requireElement<HTMLElement>('.result-badge');
     this.metricsElement = this.requireElement<HTMLElement>('.metrics');
     this.metricsButton = this.requireElement<HTMLButtonElement>('[data-action="metrics"]');
     this.wireframeButton = this.requireElement<HTMLButtonElement>('[data-action="wireframe"]');
     this.muteButton = this.requireElement<HTMLButtonElement>('[data-action="mute"]');
     this.discoveryDots = this.requireElement<HTMLElement>('.discovery-dots');
-    this.shapeButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-shape-choice]'));
-    this.colorButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-palette-choice]'));
-    this.fillingButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-filling-choice]'));
 
     this.renderer = new SquishSurface(this.canvas, this.handleMetrics, this.audio);
     this.renderer.setMuted(this.muted);
@@ -232,40 +221,6 @@ export class VerticalSliceApp {
 
   private renderShell(): string {
     const copy = this.options.copy;
-    const shapeButtons = SELECTOR_SHAPES.map((shape, index) => `
-      <button
-        class="texture-button shape-button"
-        type="button"
-        data-shape-choice="${shape.id}"
-        aria-pressed="${index === 0 ? 'true' : 'false'}"
-      >
-        <span>${shape.label}</span>
-      </button>
-    `).join('');
-
-    const paletteButtons = SELECTOR_PALETTES.map((palette, index) => `
-      <button
-        class="swatch"
-        type="button"
-        data-palette-choice="${palette.id}"
-        aria-pressed="${index === 0 ? 'true' : 'false'}"
-        aria-label="${palette.label}"
-        style="--swatch-color: ${palette.accentCss}"
-      ></button>
-    `).join('');
-
-    const fillingButtons = SELECTOR_FILLINGS.map((filling, index) => `
-      <button
-        class="texture-button"
-        type="button"
-        data-filling-choice="${filling.id}"
-        aria-pressed="${index === 0 ? 'true' : 'false'}"
-      >
-        <span>${filling.label}</span>
-        <small>${filling.description}</small>
-      </button>
-    `).join('');
-
     const discoveryDots = ALL_VARIANT_IDS.map((id) => `<span class="discovery-dot" data-variant-dot="${id}"></span>`).join('');
     const foamParticles = Array.from({ length: 20 }, (_, index) => {
       const x = (index - 9.5) * 4.6;
@@ -341,24 +296,14 @@ export class VerticalSliceApp {
           </div>
         </section>
 
-        <section class="recipe-panel" aria-label="${copy.aria.recipeOptions}">
-          <div class="option-group option-group--shape">
-            <span class="option-label">${copy.recipe.shape}</span>
-            <div class="shape-options texture-options" role="group" aria-label="${copy.aria.shapeGroup}">${shapeButtons}</div>
+        <section class="recipe-panel recipe-dock" aria-label="${copy.aria.recipeOptions}">
+          <div class="recipe-dock__identity">
+            <span class="option-label">${copy.recipe.selected}</span>
+            <strong class="variant-preview">Soft Cube · Lavender Grape · Smooth</strong>
+            <span class="variant-meta">Lavender Grape · Soft · Smooth</span>
           </div>
-
-          <div class="option-group option-group--palette">
-            <span class="option-label">${copy.recipe.color}</span>
-            <div class="swatches" role="group" aria-label="${copy.aria.colorGroup}">${paletteButtons}</div>
-          </div>
-
-          <div class="option-group option-group--texture">
-            <span class="option-label">${copy.recipe.texture}</span>
-            <div class="texture-options" role="group" aria-label="${copy.aria.fillingGroup}">${fillingButtons}</div>
-          </div>
-
-          <div class="recipe-action">
-            <span class="variant-preview">Soft Cube · Lavender Grape · Smooth</span>
+          <div class="recipe-dock__actions">
+            <button class="recipe-browse-button" type="button">${copy.recipe.browse}</button>
             <button class="primary-button start-button" type="button">${copy.recipe.make}</button>
           </div>
         </section>
@@ -418,6 +363,7 @@ export class VerticalSliceApp {
 
     this.collectButton.addEventListener('click', () => this.collectResult(), { signal });
     this.collectionButton.addEventListener('click', () => this.openCollection(), { signal });
+    this.recipeBrowseButton.addEventListener('click', () => this.openCollection(), { signal });
     this.collectionCloseButton.addEventListener('click', () => this.closeCollection(), { signal });
     this.collectionResetButton.addEventListener('click', () => { void this.resetProgress(); }, { signal });
     this.collectionOverlay.addEventListener('click', (event) => {
@@ -435,42 +381,6 @@ export class VerticalSliceApp {
       const revisitId = revisitTarget?.dataset.revisitId;
       if (revisitId) this.openCompletedVariant(revisitId);
     }, { signal });
-
-    for (const button of this.shapeButtons) {
-      button.addEventListener('click', () => {
-        if (this.activityBlocked || this.stage !== 'select') return;
-        const value = button.dataset.shapeChoice;
-        if (!this.isShapeId(value)) return;
-        const palette = isLegacyPaletteId(this.selected.palette) ? this.selected.palette : 'grape';
-        const filling = isLegacyFillingId(this.selected.filling) ? this.selected.filling : 'smooth';
-        this.selected = { shape: value, palette, material: 'soft', filling };
-        this.updateSelectionUi();
-      }, { signal });
-    }
-
-    for (const button of this.colorButtons) {
-      button.addEventListener('click', () => {
-        if (this.activityBlocked || this.stage !== 'select') return;
-        const value = button.dataset.paletteChoice;
-        if (!this.isPaletteId(value)) return;
-        const shape = isSelectorShapeId(this.selected.shape) ? this.selected.shape : 'soft-square';
-        const filling = isLegacyFillingId(this.selected.filling) ? this.selected.filling : 'smooth';
-        this.selected = { shape, palette: value, material: 'soft', filling };
-        this.updateSelectionUi();
-      }, { signal });
-    }
-
-    for (const button of this.fillingButtons) {
-      button.addEventListener('click', () => {
-        if (this.activityBlocked || this.stage !== 'select') return;
-        const value = button.dataset.fillingChoice;
-        if (!this.isFillingId(value)) return;
-        const shape = isSelectorShapeId(this.selected.shape) ? this.selected.shape : 'soft-square';
-        const palette = isLegacyPaletteId(this.selected.palette) ? this.selected.palette : 'grape';
-        this.selected = { shape, palette, material: 'soft', filling: value };
-        this.updateSelectionUi();
-      }, { signal });
-    }
 
     this.metricsButton.addEventListener('click', () => {
       this.metricsVisible = !this.metricsVisible;
@@ -511,12 +421,17 @@ export class VerticalSliceApp {
     const unlocked = selectedSpec ? isVariantUnlocked(selectedId, this.labXp) : false;
     if (selectedSpec) {
       const requiredRank = getRequiredRank(selectedId);
-      this.variantPreview.textContent = unlocked
-        ? selectedSpec.label
-        : `${selectedSpec.label} · ${this.options.copy.progress.lockedAtRank.replace('{rank}', String(requiredRank))}`;
+      this.variantPreview.textContent = selectedSpec.label;
+      this.variantMeta.textContent = unlocked
+        ? `${palette.label} · ${material.label} · ${filling.label}`
+        : this.options.copy.progress.lockedAtRank.replace('{rank}', String(requiredRank));
     } else {
       this.variantPreview.textContent = variantLabel(this.selected);
+      this.variantMeta.textContent = `${palette.label} · ${material.label} · ${filling.label}`;
     }
+    this.startButton.textContent = selectedSpec && this.discovered.has(selectedSpec.id)
+      ? this.options.copy.recipe.makeAgain
+      : this.options.copy.recipe.make;
     this.startButton.disabled = !unlocked;
     this.paintShapePath = createShapePath(shape, PAINT_CANVAS_SIZE);
     this.renderer.setShape(shape);
@@ -531,16 +446,6 @@ export class VerticalSliceApp {
     });
     this.renderer.setFillingStyle(filling.renderStyle);
 
-    for (const button of this.shapeButtons) {
-      button.setAttribute('aria-pressed', String(button.dataset.shapeChoice === this.selected.shape));
-    }
-    for (const button of this.colorButtons) {
-      button.setAttribute('aria-pressed', String(button.dataset.paletteChoice === this.selected.palette));
-    }
-    for (const button of this.fillingButtons) {
-      button.setAttribute('aria-pressed', String(button.dataset.fillingChoice === this.selected.filling));
-    }
-
     if (this.stage === 'select') {
       this.renderer.setFillProgress(1);
       this.renderer.setFillingAmount(filling.requiresAddStage ? 1 : 0);
@@ -553,6 +458,7 @@ export class VerticalSliceApp {
     this.audio.stopPour();
     this.stage = next;
     this.collectionButton.disabled = next !== 'select' || this.activityBlocked;
+    this.recipeBrowseButton.disabled = next !== 'select' || this.activityBlocked;
     if (next !== 'select') this.closeCollection();
     this.shell.dataset.stage = next;
     this.shell.dataset.tested = 'false';
@@ -1177,26 +1083,58 @@ export class VerticalSliceApp {
     this.rankProgressFill.style.transform = `scaleX(${progress.fraction.toFixed(4)})`;
   }
 
+  private renderRecipeThumbnail(id: string, choice: VariantChoice): string {
+    const shape = getShape(choice.shape);
+    const palette = getPalette(choice.palette);
+    const filling = getFilling(choice.filling);
+    const points = shape.boundary
+      .map((point) => `${(50 + point.x * 43).toFixed(1)},${(50 - point.y * 43).toFixed(1)}`)
+      .join(' ');
+    const dotLayout = filling.renderStyle === 'foam'
+      ? [[38, 43, 4], [50, 53, 3], [61, 43, 4], [44, 62, 3], [57, 63, 3]]
+      : filling.renderStyle === 'pearl'
+        ? [[40, 45, 7], [57, 43, 6], [51, 60, 7]]
+        : [];
+    const dots = dotLayout
+      .map(([x, y, size]) => `<span style="--dot-x: ${x}%; --dot-y: ${y}%; --dot-size: ${size}px"></span>`)
+      .join('');
+    const fillingLayer = dots ? `<span class="recipe-thumb__filling">${dots}</span>` : '';
+    return `<div class="recipe-thumb recipe-thumb--${choice.material} recipe-thumb--${filling.renderStyle}" style="--card-accent: ${palette.accentCss}; --card-accent-soft: ${palette.accentSoftCss}" data-thumb-id="${id}" aria-hidden="true">
+      <svg viewBox="0 0 100 100" focusable="false">
+        <polygon class="recipe-thumb__shape" points="${points}"></polygon>
+        <path class="recipe-thumb__shine" d="M 33 31 Q 45 22 58 27"></path>
+      </svg>
+      ${fillingLayer}
+    </div>`;
+  }
+
   private updateCollectionUi(): void {
     const snapshot = getCollectionSnapshot(this.labXp, [...this.discovered]);
     this.collectionGroups.innerHTML = snapshot.byShape.map((group) => {
       const cards = group.recipes.map((recipe) => {
         const palette = getPalette(recipe.choice.palette);
+        const material = getMaterial(recipe.choice.material);
+        const filling = getFilling(recipe.choice.filling);
         const status = recipe.state === 'completed'
           ? this.options.copy.collection.completed
           : recipe.state === 'available'
             ? this.options.copy.collection.available
             : this.options.copy.collection.locked;
-        const action = recipe.state === 'completed'
-          ? `<button class="collection-card__action" type="button" data-revisit-id="${recipe.id}">${this.options.copy.collection.squeeze}</button>`
-          : recipe.state === 'available'
-            ? `<button class="collection-card__action" type="button" data-make-id="${recipe.id}">${this.options.copy.collection.make}</button>`
-            : `<span class="collection-card__rank">${this.formatCopy(this.options.copy.collection.requiredRank, { rank: recipe.requiredRank })}</span>`;
-        return `<article class="collection-card collection-card--${recipe.state}" style="--card-accent: ${palette.accentCss}; --card-accent-soft: ${palette.accentSoftCss}">
-          <div class="collection-card__swatch" aria-hidden="true"></div>
+        const makeLabel = recipe.state === 'completed'
+          ? this.options.copy.collection.makeAgain
+          : this.options.copy.collection.make;
+        const makeButton = `<button class="collection-card__action" type="button" data-make-id="${recipe.id}">${makeLabel}</button>`;
+        const action = recipe.state === 'locked'
+          ? `<span class="collection-card__rank">${this.formatCopy(this.options.copy.collection.requiredRank, { rank: recipe.requiredRank })}</span>`
+          : recipe.state === 'completed'
+            ? `<div class="collection-card__actions">${makeButton}<button class="collection-card__action collection-card__action--secondary" type="button" data-revisit-id="${recipe.id}">${this.options.copy.collection.squeeze}</button></div>`
+            : `<div class="collection-card__actions">${makeButton}</div>`;
+        return `<article class="collection-card collection-card--${recipe.state}" data-recipe-id="${recipe.id}" style="--card-accent: ${palette.accentCss}; --card-accent-soft: ${palette.accentSoftCss}">
+          ${this.renderRecipeThumbnail(recipe.id, recipe.choice)}
           <div class="collection-card__body">
             <strong>${recipe.label}</strong>
             <span>${status}</span>
+            <span class="collection-card__meta">${material.label} · ${filling.label}</span>
           </div>
           ${action}
         </article>`;
@@ -1339,6 +1277,7 @@ export class VerticalSliceApp {
 
     if (blocked) {
       this.collectionButton.disabled = true;
+      this.recipeBrowseButton.disabled = true;
       this.closeCollection();
       this.audio.stopPour();
       this.paintAudioActive = false;
@@ -1365,6 +1304,7 @@ export class VerticalSliceApp {
     }
 
     this.collectionButton.disabled = this.stage !== 'select';
+    this.recipeBrowseButton.disabled = this.stage !== 'select';
     this.lastCraftFrameAt = performance.now();
     this.lastSemanticAt = performance.now();
     this.renderer.resetTiming();
@@ -1444,15 +1384,4 @@ export class VerticalSliceApp {
     return element;
   }
 
-  private isShapeId(value: string | undefined): value is ShapeId {
-    return value === 'soft-square' || value === 'heart';
-  }
-
-  private isPaletteId(value: string | undefined): value is PaletteId {
-    return value === 'grape' || value === 'strawberry' || value === 'lime';
-  }
-
-  private isFillingId(value: string | undefined): value is FillingId {
-    return value === 'smooth' || value === 'beads';
-  }
 }
