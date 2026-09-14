@@ -1,0 +1,37 @@
+name: Release Check
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Validate Pages and Yandex builds
+        run: npm run release:check
+      - name: Package Yandex archive
+        run: |
+          cd dist-yandex
+          zip -r ../squishy-squishes-yandex.zip .
+      - name: Upload Yandex archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: squishy-squishes-yandex
+          path: squishy-squishes-yandex.zip
+          if-no-files-found: error
