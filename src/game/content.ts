@@ -1,6 +1,6 @@
-import { SHAPES, getShape, type ShapeId } from './shapes';
+import { SELECTOR_SHAPES, getShape, type ShapeId } from './shapes';
 
-export type PaletteId = 'grape' | 'strawberry' | 'lime' | 'aqua' | 'prism';
+export type PaletteId = 'grape' | 'strawberry' | 'lime' | 'aqua' | 'prism' | 'milk' | 'peach';
 export type MaterialId = 'soft' | 'jelly' | 'holo';
 export type FillingId = 'smooth' | 'beads' | 'pearls';
 export type FillingRenderStyle = 'none' | 'foam' | 'pearl';
@@ -103,6 +103,28 @@ export const PALETTES: readonly PaletteSpec[] = [
     accentSoftCss: 'rgba(211, 191, 242, 0.24)',
     seed: 0.91,
   },
+  {
+    id: 'milk',
+    label: 'Warm Milk',
+    low: [0.66, 0.58, 0.47],
+    high: [0.99, 0.93, 0.8],
+    sheen: [1, 0.99, 0.94],
+    rim: [0.72, 0.62, 0.49],
+    accentCss: '#f1dcae',
+    accentSoftCss: 'rgba(241, 220, 174, 0.23)',
+    seed: 0.28,
+  },
+  {
+    id: 'peach',
+    label: 'Peach Cream',
+    low: [0.62, 0.24, 0.17],
+    high: [1, 0.67, 0.47],
+    sheen: [1, 0.91, 0.84],
+    rim: [0.74, 0.31, 0.22],
+    accentCss: '#ff9f78',
+    accentSoftCss: 'rgba(255, 159, 120, 0.23)',
+    seed: 0.38,
+  },
 ] as const;
 
 export const MATERIALS: readonly MaterialSpec[] = [
@@ -159,7 +181,7 @@ export const variantLabel = (choice: VariantChoice): string => {
   return `${shape.label} · ${palette.label}${materialLabel} · ${filling.label}`;
 };
 
-const LEGACY_VARIANTS: readonly VariantSpec[] = SHAPES.flatMap((shape) =>
+const LEGACY_VARIANTS: readonly VariantSpec[] = SELECTOR_SHAPES.flatMap((shape) =>
   SELECTOR_PALETTES.flatMap((palette) =>
     SELECTOR_FILLINGS.map((filling) => {
       const choice: VariantChoice = {
@@ -200,7 +222,34 @@ const REPRESENTATIVE_VARIANTS: readonly VariantSpec[] = [
   },
 ] as const;
 
-export const ALL_VARIANTS: readonly VariantSpec[] = [...LEGACY_VARIANTS, ...REPRESENTATIVE_VARIANTS];
+const CATALOG_PRODUCTION_7A_VARIANTS: readonly VariantSpec[] = [
+  {
+    choice: { shape: 'mochi', palette: 'milk', material: 'soft', filling: 'smooth' },
+    id: 'mochi-milk-soft-smooth',
+    label: 'Milk Mochi',
+  },
+  {
+    choice: { shape: 'peach', palette: 'peach', material: 'soft', filling: 'smooth' },
+    id: 'peach-peach-soft-smooth',
+    label: 'Peach Milk Puff',
+  },
+  {
+    choice: { shape: 'peach', palette: 'strawberry', material: 'jelly', filling: 'smooth' },
+    id: 'peach-strawberry-jelly-smooth',
+    label: 'Sakura Jelly Peach',
+  },
+  {
+    choice: { shape: 'mochi', palette: 'prism', material: 'holo', filling: 'pearls' },
+    id: 'mochi-prism-holo-pearls',
+    label: 'Galaxy Pearl Mochi',
+  },
+] as const;
+
+export const ALL_VARIANTS: readonly VariantSpec[] = [
+  ...LEGACY_VARIANTS,
+  ...REPRESENTATIVE_VARIANTS,
+  ...CATALOG_PRODUCTION_7A_VARIANTS,
+];
 export const ALL_VARIANT_IDS: readonly string[] = ALL_VARIANTS.map((variant) => variant.id);
 
 const uniqueVariantIds = new Set(ALL_VARIANT_IDS);

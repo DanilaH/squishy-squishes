@@ -1,4 +1,4 @@
-export type ShapeId = 'soft-square' | 'heart';
+export type ShapeId = 'soft-square' | 'heart' | 'mochi' | 'peach';
 
 export interface ShapePoint {
   readonly x: number;
@@ -14,6 +14,8 @@ export interface ShapeDefinition {
 const TAU = Math.PI * 2;
 const SOFT_SQUARE_POINTS = 112;
 const HEART_POINTS = 128;
+const MOCHI_POINTS = 112;
+const PEACH_POINTS = 128;
 
 const createSoftSquareBoundary = (): readonly ShapePoint[] =>
   Array.from({ length: SOFT_SQUARE_POINTS }, (_, index) => {
@@ -68,10 +70,50 @@ const createHeartBoundary = (): readonly ShapePoint[] => {
   return normalizeBoundary(raw, 0.94);
 };
 
+const createMochiBoundary = (): readonly ShapePoint[] => {
+  const raw = Array.from({ length: MOCHI_POINTS }, (_, index) => {
+    const angle = (index / MOCHI_POINTS) * TAU;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const horizontalRadius = 1 + Math.cos(angle * 2) * 0.055;
+    const verticalRadius = 0.8 + Math.cos(angle * 2) * 0.03;
+    const bottomFlatten = Math.max(0, -sin) ** 4 * 0.055;
+    return {
+      x: cos * horizontalRadius,
+      y: sin * verticalRadius + bottomFlatten,
+    };
+  });
+
+  return normalizeBoundary(raw, 0.94);
+};
+
+const createPeachBoundary = (): readonly ShapePoint[] => {
+  const raw = Array.from({ length: PEACH_POINTS }, (_, index) => {
+    const angle = (index / PEACH_POINTS) * TAU;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const radial = 0.88 + Math.cos(angle * 2) * 0.14 - Math.cos(angle * 4) * 0.025;
+    const bottomPoint = Math.max(0, -sin) ** 6 * 0.1;
+    return {
+      x: cos * radial,
+      y: sin * radial * 1.03 - bottomPoint,
+    };
+  });
+
+  return normalizeBoundary(raw, 0.94);
+};
+
 export const SHAPES: readonly ShapeDefinition[] = [
   { id: 'soft-square', label: 'Soft Cube', boundary: createSoftSquareBoundary() },
   { id: 'heart', label: 'Soft Heart', boundary: createHeartBoundary() },
+  { id: 'mochi', label: 'Mochi', boundary: createMochiBoundary() },
+  { id: 'peach', label: 'Peach Puff', boundary: createPeachBoundary() },
 ] as const;
+
+const SELECTOR_SHAPE_IDS = new Set<ShapeId>(['soft-square', 'heart']);
+
+export const SELECTOR_SHAPES: readonly ShapeDefinition[] = SHAPES.filter((shape) => SELECTOR_SHAPE_IDS.has(shape.id));
+export const isSelectorShapeId = (id: ShapeId): boolean => SELECTOR_SHAPE_IDS.has(id);
 
 const shapeById: Readonly<Record<ShapeId, ShapeDefinition>> = Object.fromEntries(
   SHAPES.map((shape) => [shape.id, shape]),

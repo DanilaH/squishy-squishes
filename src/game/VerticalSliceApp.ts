@@ -26,10 +26,11 @@ import {
 } from './progression';
 import { SquishyAudio } from './SquishyAudio';
 import {
-  SHAPES,
+  SELECTOR_SHAPES,
   createShapePath,
   getShape,
   isPointInsideShape,
+  isSelectorShapeId,
   type ShapeId,
 } from './shapes';
 
@@ -231,7 +232,7 @@ export class VerticalSliceApp {
 
   private renderShell(): string {
     const copy = this.options.copy;
-    const shapeButtons = SHAPES.map((shape, index) => `
+    const shapeButtons = SELECTOR_SHAPES.map((shape, index) => `
       <button
         class="texture-button shape-button"
         type="button"
@@ -452,8 +453,9 @@ export class VerticalSliceApp {
         if (this.activityBlocked || this.stage !== 'select') return;
         const value = button.dataset.paletteChoice;
         if (!this.isPaletteId(value)) return;
+        const shape = isSelectorShapeId(this.selected.shape) ? this.selected.shape : 'soft-square';
         const filling = isLegacyFillingId(this.selected.filling) ? this.selected.filling : 'smooth';
-        this.selected = { shape: this.selected.shape, palette: value, material: 'soft', filling };
+        this.selected = { shape, palette: value, material: 'soft', filling };
         this.updateSelectionUi();
       }, { signal });
     }
@@ -463,8 +465,9 @@ export class VerticalSliceApp {
         if (this.activityBlocked || this.stage !== 'select') return;
         const value = button.dataset.fillingChoice;
         if (!this.isFillingId(value)) return;
+        const shape = isSelectorShapeId(this.selected.shape) ? this.selected.shape : 'soft-square';
         const palette = isLegacyPaletteId(this.selected.palette) ? this.selected.palette : 'grape';
-        this.selected = { shape: this.selected.shape, palette, material: 'soft', filling: value };
+        this.selected = { shape, palette, material: 'soft', filling: value };
         this.updateSelectionUi();
       }, { signal });
     }

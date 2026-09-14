@@ -1,10 +1,10 @@
 # Squishy Squishes — Implementation Roadmap
 
 **Status:** ACTIVE PRODUCTION ROADMAP
-**Current gate:** Phase 6 — Representative Content 01
-**Previous gate:** Phase 5 — Progression + Collection 01 — COMPLETE
+**Current gate:** Phase 7A — Catalog Production: Mochi + Peach
+**Previous gate:** Phase 6 — Representative Content 01 — COMPLETE
 
-The tactile loop, production shell, two-shape renderer reuse and the one-more-squishy progression/collection loop have passed deployed phone acceptance. The project is now proving reusable material/filling novelty with four curated representative recipes before broad catalog production or final UI polish.
+The tactile loop, production shell, reusable renderer, progression/collection loop and representative jelly/holo/pearl content have passed deployed phone acceptance. The project is now scaling the validated high-CMF system in deliberately small catalog batches, beginning with Mochi + Peach.
 
 ---
 
@@ -172,18 +172,19 @@ Fresh-save progression, deterministic unlocks, Collection states and completed-i
 
 ---
 
-## Phase 6 — Interaction/content expansion — ACTIVE
+## Phase 6 — Representative Content 01 — COMPLETE
 
-Canonical bounded spec:
+Canonical bounded spec/reviews:
 
 - `REPRESENTATIVE_CONTENT_01.md`
 - `REPRESENTATIVE_CONTENT_01_REVIEW.md`
+- `REPRESENTATIVE_CONTENT_01_IMPLEMENTATION_REVIEW.md`
 
 ### Goal
 
-Prove optional content variation without turning the product into a mini-game collection.
+Prove reusable content variation without turning the product into a mini-game collection.
 
-Current bounded proof:
+Validated proof:
 
 - explicit curated registry rather than a Cartesian canonical catalog;
 - reusable `soft` / `jelly` / `holo` material profiles in one shader path;
@@ -191,19 +192,19 @@ Current bounded proof:
 - four premium representative recipes across both proven shapes;
 - Collection Make as temporary functional reachability for recipes outside the legacy component selector.
 
-Use only this representative set before deciding whether catalog scale is cheap enough. Additional finish/decor mechanics remain deferred unless the content proof shows they are needed.
+### Exit result
 
-### Exit gate
+Phone QA accepted jelly, holo and Pearl presentation and old recipe behavior on 2026-09-14. One shared release artifact was found during that check: shader-facing compression snapped to idle on pointer release while the spring mesh was still returning. PR #12 corrected the shared release state without material-specific branches, was deployed successfully, and the corrected behavior was accepted on phone.
 
-Most novelty comes from material/content/choreography rather than bespoke mechanics.
+The material/filling reuse gate is closed. Additional finish/decor mechanics remain deferred unless later catalog evidence proves they are necessary.
 
 ---
 
-## Phase 7 — Catalog production
+## Phase 7 — Catalog production — ACTIVE
 
 ### Goal
 
-Scale through the validated high-CMF system.
+Scale through the validated high-CMF system while proving that each next desirable squishy is cheaper to produce than the previous representative-content batch.
 
 Working launch target:
 
@@ -212,6 +213,25 @@ Working launch target:
 - quality may explicitly reduce the count.
 
 Produce in small batches and review in-game between batches. No filler to satisfy a quota.
+
+### Phase 7A — Mochi + Peach — ACTIVE
+
+Canonical bounded spec/review:
+
+- `CATALOG_PRODUCTION_7A.md`
+- `CATALOG_PRODUCTION_7A_REVIEW.md`
+
+Bounded batch:
+
+- add Mochi and Peach/Fruit Puff as `ShapeDefinition` data only;
+- add exactly four curated recipes, taking the catalog from 16 to 20;
+- add only two cheap reusable palettes (`milk`, `peach`);
+- reuse existing soft/jelly/holo and smooth/pearls vocabulary;
+- keep Lab Rank 1–8, XP thresholds and SaveState V2 unchanged;
+- keep the temporary component selector limited to Cube + Heart;
+- do not touch renderer physics/shaders/audio for the new shapes.
+
+Exit gate is deployed phone acceptance of Milk Mochi, Galaxy Pearl Mochi, Peach Milk Puff and Sakura Jelly Peach plus Cube/Heart regression. Only then decide 7B content/shape direction.
 
 ---
 
