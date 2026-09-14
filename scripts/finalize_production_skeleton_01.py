@@ -48,7 +48,7 @@ replace_once(
 
 replace_once(
     'docs/PRODUCT.md',
-    '**Status:** PRE-DEVELOPMENT PROPOSAL  \n**Decision state:** tactile core PASS; product scope awaiting final user confirmation',
+    '**Status:** PRE-DEVELOPMENT PROPOSAL  \n**Decision state:** tactile core PASS; product scope awaiting final user confirmation  ',
     '**Status:** ACTIVE MVP SPEC\n**Decision state:** tactile core + full loop PASS; Production Skeleton 01 active',
 )
 replace_once(
