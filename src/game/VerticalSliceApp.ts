@@ -38,6 +38,7 @@ export class VerticalSliceApp {
   private readonly canvas: HTMLCanvasElement;
   private readonly paintCanvas: HTMLCanvasElement;
   private readonly paintContext: CanvasRenderingContext2D;
+  private readonly paintShapePath: Path2D;
   private readonly contactShadow: HTMLElement;
   private readonly holdSurface: HTMLButtonElement;
   private readonly moldTarget: HTMLButtonElement;
@@ -83,6 +84,7 @@ export class VerticalSliceApp {
   private shakeLastX = 0;
   private shakeLastY = 0;
   private shakeLastAt = 0;
+  private shakeLastActiveAt = 0;
   private shakeLastDirection = 0;
   private shakeAudioActive = false;
   private paintEligibleCount = 0;
@@ -113,6 +115,7 @@ export class VerticalSliceApp {
     const paintContext = this.paintCanvas.getContext('2d');
     if (!paintContext) throw new Error('2D canvas is required for paint coverage.');
     this.paintContext = paintContext;
+    this.paintShapePath = this.createPaintShapePath();
     this.contactShadow = this.requireElement<HTMLElement>('.contact-shadow');
     this.holdSurface = this.requireElement<HTMLButtonElement>('.hold-surface');
     this.moldTarget = this.requireElement<HTMLButtonElement>('.mold-target');
@@ -370,6 +373,7 @@ export class VerticalSliceApp {
     this.shell.dataset.shaking = 'false';
     this.foamShaker.style.setProperty('--shake-x', '0px');
     this.foamShaker.style.setProperty('--shake-tilt', '0deg');
+    this.shakeLastActiveAt = 0;
     this.setStageProgress(0);
     this.setHoldSurfaceActive(false);
     this.paintCanvas.hidden = true;
@@ -535,6 +539,7 @@ export class VerticalSliceApp {
     this.shakeLastX = event.clientX;
     this.shakeLastY = event.clientY;
     this.shakeLastAt = performance.now();
+    this.shakeLastActiveAt = 0;
     this.shakeLastDirection = 0;
   };
 
@@ -570,6 +575,7 @@ export class VerticalSliceApp {
       this.setStageProgress(this.stageProgress + progressDelta);
       this.renderer.setFillingAmount(this.stageProgress);
       this.shell.dataset.shaking = 'true';
+      this.shakeLastActiveAt = now;
       if (!this.shakeAudioActive) {
         this.audio.startPour('beads');
         this.shakeAudioActive = true;
@@ -624,16 +630,15 @@ export class VerticalSliceApp {
 
     const context = this.paintContext;
     context.clearRect(0, 0, PAINT_CANVAS_SIZE, PAINT_CANVAS_SIZE);
-    const shape = this.createPaintShapePath();
     const palette = getPalette(this.selected.palette);
     context.save();
     context.fillStyle = 'rgba(255, 255, 255, 0.045)';
-    context.fill(shape);
+    context.fill(this.paintShapePath);
     context.lineWidth = 2;
     context.strokeStyle = palette.accentSoftCss;
     context.shadowBlur = 12;
     context.shadowColor = palette.accentSoftCss;
-    context.stroke(shape);
+    context.stroke(this.paintShapePath);
     context.restore();
   }
 
@@ -652,7 +657,6 @@ export class VerticalSliceApp {
 
     this.paintLastU = point.u;
     this.paintLastV = point.v;
-    this.paintLastAt = performance.now();
   }
 
   private paintAtUv(u: number, v: number): void {
@@ -693,7 +697,6 @@ export class VerticalSliceApp {
     const y = (1 - v) * PAINT_CANVAS_SIZE;
     const radius = PAINT_CANVAS_SIZE * PAINT_BRUSH_RADIUS_UV;
     const palette = getPalette(this.selected.palette);
-    const shape = this.createPaintShapePath();
     const gradient = context.createRadialGradient(
       x - radius * 0.18,
       y - radius * 0.18,
@@ -707,7 +710,7 @@ export class VerticalSliceApp {
     gradient.addColorStop(1, palette.accentSoftCss);
 
     context.save();
-    context.clip(shape);
+    context.clip(this.paintShapePath);
     context.globalAlpha = 0.94;
     context.fillStyle = gradient;
     context.beginPath();
@@ -931,7 +934,7 @@ export class VerticalSliceApp {
       this.paintAudioActive = false;
     }
 
-    if (this.stage === 'add' && this.shell.dataset.shaking === 'true' && now - this.shakeLastAt > SHAKE_IDLE_MS) {
+    if (this.stage === 'add' && this.shell.dataset.shaking === 'true' && now - this.shakeLastActiveAt > SHAKE_IDLE_MS) {
       this.shell.dataset.shaking = 'false';
       if (this.shakeAudioActive) {
         this.audio.stopPour();
