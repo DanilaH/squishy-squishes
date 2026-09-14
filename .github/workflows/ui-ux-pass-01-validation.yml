@@ -6,7 +6,7 @@ on:
       - ui-ux-pass-01
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -22,20 +22,22 @@ jobs:
         with:
           node-version: 24
       - name: Apply UI UX source patch
-        run: node scripts/apply-ui-ux-pass-01.mjs
+        run: |
+          node scripts/apply-ui-ux-pass-01.mjs
+          node scripts/fix-ui-ux-pass-01-css.mjs
       - name: Diff check
         run: git diff --check
       - name: Install dependencies
         run: npm install
       - name: Validate Pages and Yandex builds
         run: npm run release:check
-      - name: Stage validated source
+      - name: Commit validated source and remove temporary tooling
         run: |
-          mkdir -p ui-ux-source/src/game
-          cp src/game/VerticalSliceApp.ts ui-ux-source/src/game/VerticalSliceApp.ts
-      - name: Upload validated source
-        uses: actions/upload-artifact@v4
-        with:
-          name: ui-ux-pass-01-validated-source
-          path: ui-ux-source
-          if-no-files-found: error
+          rm scripts/apply-ui-ux-pass-01.mjs
+          rm scripts/fix-ui-ux-pass-01-css.mjs
+          rm .github/workflows/ui-ux-pass-01-validation.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/game/VerticalSliceApp.ts src/ui-ux-pass-01.css scripts .github/workflows/ui-ux-pass-01-validation.yml
+          git commit -m "Implement recipe-first UI UX pass"
+          git push origin HEAD:ui-ux-pass-01
