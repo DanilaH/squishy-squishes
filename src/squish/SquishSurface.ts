@@ -1,5 +1,12 @@
 import { getBackingStoreSize, getRenderPixelRatio, sampleContinuousInteraction } from '@danilah/mini-games-kit/core';
 import type { SquishyAudio } from '../game/SquishyAudio';
+import {
+  createShapeField,
+  getShape,
+  isPointInsideShape,
+  type ShapeDefinition,
+  type ShapeId,
+} from '../game/shapes';
 import { fragmentShaderSource, vertexShaderSource } from './shaders';
 
 interface VertexState {
@@ -39,6 +46,7 @@ export interface SquishMetrics {
 type MetricsListener = (metrics: SquishMetrics) => void;
 
 const GRID_CELLS = 16;
+const SHAPE_FIELD_SIZE = 128;
 const GRAB_RADIUS = 0.92;
 const PRESS_RADIUS = 0.58;
 const MAX_POINTER_DISPLACEMENT = 0.72;
@@ -124,6 +132,9 @@ export class SquishSurface {
   private readonly vertexBuffer: WebGLBuffer;
   private readonly triangleIndexBuffer: WebGLBuffer;
   private readonly lineIndexBuffer: WebGLBuffer;
+  private readonly shapeTexture: WebGLTexture;
+  private readonly shapeFieldUniform: WebGLUniformLocation;
+  private readonly shapeFieldCache = new Map<ShapeId, Uint8Array>();
   private readonly vertices: VertexState[] = [];
   private readonly triangleIndices: Uint16Array;
   private readonly lineIndices: Uint16Array;
@@ -166,6 +177,7 @@ export class SquishSurface {
   private muted = false;
   private interactive = true;
   private material: SquishMaterialStyle = DEFAULT_MATERIAL;
+  private shape: ShapeDefinition = getShape('soft-square');
   private fillingAmount = 0;
   private fillProgress = 1;
   private moldProgress = 0;
@@ -192,6 +204,7 @@ export class SquishSurface {
 
     this.program = createProgram(gl);
     this.scaleUniform = requireUniform(gl, this.program, 'uScale');
+    this.shapeFieldUniform = requireUniform(gl, this.program, 'uShapeField');
     this.pointerUvUniform = requireUniform(gl, this.program, 'uPointerUv');
     this.compressionUniform = requireUniform(gl, this.program, 'uCompression');
     this.pressDepthUniform = requireUniform(gl, this.program, 'uPressDepth');
@@ -210,13 +223,24 @@ export class SquishSurface {
     const vertexBuffer = gl.createBuffer();
     const triangleIndexBuffer = gl.createBuffer();
     const lineIndexBuffer = gl.createBuffer();
-    if (!vao || !vertexBuffer || !triangleIndexBuffer || !lineIndexBuffer) {
-      throw new Error('Unable to allocate WebGL buffers.');
+    const shapeTexture = gl.createTexture();
+    if (!vao || !vertexBuffer || !triangleIndexBuffer || !lineIndexBuffer || !shapeTexture) {
+      throw new Error('Unable to allocate WebGL buffers or shape texture.');
     }
     this.vao = vao;
     this.vertexBuffer = vertexBuffer;
     this.triangleIndexBuffer = triangleIndexBuffer;
     this.lineIndexBuffer = lineIndexBuffer;
+    this.shapeTexture = shapeTexture;
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.shapeTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.uploadShapeField(this.shape);
+    gl.bindTexture(gl.TEXTURE_2D, null);
 
     const triangleIndices: number[] = [];
     const lineIndices: number[] = [];
@@ -275,6 +299,13 @@ export class SquishSurface {
     this.material = material;
   }
 
+  public setShape(shape: ShapeDefinition): void {
+    if (shape.id === this.shape.id) return;
+    this.cancelInteraction();
+    this.shape = shape;
+    this.uploadShapeField(shape);
+  }
+
   public setFillingAmount(amount: number): void {
     this.fillingAmount = clamp01(amount);
   }
@@ -307,6 +338,7 @@ export class SquishSurface {
     this.gl.deleteBuffer(this.vertexBuffer);
     this.gl.deleteBuffer(this.triangleIndexBuffer);
     this.gl.deleteBuffer(this.lineIndexBuffer);
+    this.gl.deleteTexture(this.shapeTexture);
     this.gl.deleteVertexArray(this.vao);
     this.gl.deleteProgram(this.program);
   }
@@ -460,7 +492,31 @@ export class SquishSurface {
   }
 
   private isInsideObject(x: number, y: number): boolean {
-    return Math.abs(x) ** 4 + Math.abs(y) ** 4 <= 0.96;
+    return isPointInsideShape(this.shape, x, y);
+  }
+
+  private uploadShapeField(shape: ShapeDefinition): void {
+    let field = this.shapeFieldCache.get(shape.id);
+    if (!field) {
+      field = createShapeField(shape, SHAPE_FIELD_SIZE);
+      this.shapeFieldCache.set(shape.id, field);
+    }
+
+    const gl = this.gl;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.shapeTexture);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.R8,
+      SHAPE_FIELD_SIZE,
+      SHAPE_FIELD_SIZE,
+      0,
+      gl.RED,
+      gl.UNSIGNED_BYTE,
+      field,
+    );
   }
 
   private readonly tick = (now: number): void => {
@@ -635,6 +691,9 @@ export class SquishSurface {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.useProgram(this.program);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.shapeTexture);
+    gl.uniform1i(this.shapeFieldUniform, 0);
     gl.uniform2f(this.scaleUniform, this.scaleX, this.scaleY);
     gl.uniform2f(
       this.pointerUvUniform,
