@@ -1,34 +1,41 @@
 # Squishy Squishes — Agent Contract
 
-The feel thesis has PASSED. The current implementation task is **Vertical Slice 01**, not broad full-game productionization.
+The tactile thesis and Vertical Slice 01 have **PASSED**. Interaction correction passes 02–04 are accepted. The active gate is now **Production Skeleton 01**.
 
-Read `docs/VERTICAL_SLICE_01.md` first. Then read:
+Read first:
 
-1. `docs/GAMEPLAY.md`
-2. `docs/DECISIONS.md`
+1. `docs/PRODUCTION_SKELETON_01.md`
+2. `docs/PRODUCTION_SKELETON_01_REVIEW.md`
 3. `docs/IMPLEMENTATION_ROADMAP.md`
-4. `docs/PRODUCT.md`
-5. `docs/ART_DIRECTION.md`
-6. `docs/TECHNICAL_DIRECTION.md`
-7. `docs/REUSE_AND_EXTRACTION_PLAN.md`
+4. `docs/TECHNICAL_DIRECTION.md`
+5. `docs/GAMEPLAY.md`
+6. `docs/DECISIONS.md`
+7. `docs/PRODUCT.md`
 
-Canonical portfolio guidance in `DanilaH/decisions` remains relevant, especially the Yandex decision ledger and feel/polish doctrine, but do not reopen broad market research.
+Historical probe/slice documents remain evidence, not active instructions.
 
 ## Current task invariant
 
-Build the smallest complete product loop directly on the validated probe base:
+Productionize the accepted loop **without changing its feel**:
 
-`select → pour → optional filling → mix/squish → mold/press → reveal → free squeeze → Collect → repeat`
+`select → paint base → optional foam shake → stretch/mix → form with normal taps + crit targets → reveal → free squeeze → Collect → repeat`
 
-Current slice content is locked:
+Production Skeleton 01 owns only the shell around that loop:
 
-- one existing rounded soft-cube/superellipse geometry;
-- Lavender/Grape, Strawberry/Pink, Lime/Mint palettes;
-- Smooth / Foam Beads modifier;
-- six deterministic variants;
-- minimal temporary UI.
+- app bootstrap;
+- mock/Yandex runtime seam;
+- versioned save;
+- separate settings;
+- typed RU/EN copy skeleton;
+- aggregate activity lifecycle;
+- DEV-only debug seam;
+- removal of direct browser persistence/platform ownership from `VerticalSliceApp`.
 
-Do not add a second shape, Lab XP, final collection UI, Yandex SDK, ads, cloud save, final i18n, a production asset pipeline or mass content before the slice passes repeated-use hands-on.
+Do not use this pass to retune paint/shake/mix/mold/reveal/squeeze values.
+
+## Next gate after this pass
+
+**Renderer Reuse / Second Shape.** Add exactly one materially different shape using the same deformation/material path. Do not begin six-shape or 24-recipe production until that gate passes.
 
 ## Product invariant
 
@@ -38,55 +45,58 @@ Long-term grammar:
 
 `choose recipe → tactile make → mold → reveal → squeeze/play → collect → visible next unlock`
 
-Reuse a small interaction grammar. A recipe that needs bespoke gameplay code is a warning that the content system is failing.
+Content novelty should come mainly from reusable shape/material/filling/finish composition. A recipe that needs bespoke gameplay code is a warning.
 
 ## Technical baseline
 
-Use strict TypeScript + Vite + raw WebGL2 for the tactile hero and DOM/CSS for lightweight UI.
+- strict TypeScript;
+- Vite;
+- raw WebGL2 hero renderer;
+- DOM/CSS UI;
+- project-local WebAudio over reviewed shared-kit primitives;
+- `@danilah/mini-games-kit` pinned to reviewed production revision `d17ba31fce2a71335dcc3095f772c3fdd87fe97b`.
 
-The current slice should preserve the validated probe dependency and rendering path unless a concrete defect requires change. The planned production upgrade to `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b` happens **after** the slice passes; do not churn the dependency just to obtain platform/persistence utilities that are intentionally deferred.
-
-No Phaser, React, physics engine, real-time 3D or general soft-body framework without new evidence.
-
-## Feel discipline
-
-The existing squeeze interaction is accepted evidence. Do not keep tuning it in isolation.
-
-Spend correction effort on the complete high-frequency loop:
-
-- immediate stage response;
-- causal visual change during pour/add/mix/mold;
-- short satisfying reveal;
-- frictionless transition into free squeeze;
-- fast Collect → next craft exit;
-- sound that survives repetition;
-- mobile/desktop stability.
-
-Do not mask a weak stage with particles, progression or extra mechanics.
+No Phaser, React, Pixi, Three.js, physics engine, ECS or general soft-body framework without new evidence.
 
 ## State discipline
 
-For the vertical slice:
+Production Skeleton 01 introduces the first real product persistence boundary.
 
-- stage progress can be in-memory;
-- mid-craft reload may restart the craft;
-- tiny discovered-variant persistence is allowed;
-- presentation callbacks must not double-complete a stage;
-- pointer cancel / visibility change must release owned input/audio cleanly.
+- save and settings are separate versioned documents;
+- game modules do not call localStorage directly;
+- platform adapters do not know Squishy recipe semantics;
+- mid-craft gestures/stages are not persisted;
+- every Collect may update durable product state, but persistence must not block presentation;
+- malformed preferences may fall back safely;
+- malformed production save must not blank the app;
+- legacy slice discovery data migrates only when the production save key is absent.
 
-Full save/cloud/progression truth boundaries are deferred until productionization after slice PASS.
+## Lifecycle discipline
 
-## Historical evidence
+`PlatformRuntime.activity` is the aggregate blocker source. Game code must not create a second competing visibility policy.
 
-Do not rewrite:
+On block/pause:
+
+- release owned input;
+- stop continuous stage audio;
+- prevent semantic progress;
+- reset timing before resume;
+- preserve stable stage state where practical.
+
+## Historical evidence — do not rewrite
 
 - `docs/SQUISH_FEEL_PROBE.md`
 - `docs/PROBE_RESULT.md`
+- `docs/VERTICAL_SLICE_01.md`
+- `docs/PRODUCTION_PASS_01.md`
+- `docs/INTERACTION_PASS_02.md`
+- `docs/INTERACTION_PASS_03.md`
+- `docs/INTERACTION_PASS_04.md`
 
-They record the original decision experiment.
+These explain how the current loop was validated and tuned.
 
 ## Development discipline
 
-Use branches and reviewable PRs. Material scope/architecture changes belong in `docs/DECISIONS.md`.
+Use a feature branch and reviewable PR. Run strict typecheck/build before merge. Independently inspect the final diff for gameplay-tuning drift and architecture overreach.
 
-The current acceptance gate is 5–10 complete loops from creation through Collect. Only after that loop passes should architecture/content scale expand.
+After Production Skeleton 01 passes, move directly to the second-shape reuse gate rather than adding progression or mass content first.
