@@ -1,0 +1,30 @@
+name: Apply Progression Collection 01
+
+on:
+  push:
+    branches:
+      - progression-collection-01
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: progression-collection-01
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: python scripts/apply_progression_collection.py
+      - run: git diff --check
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm run build
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Implement progression and collection loop
+          file_pattern: src/game/VerticalSliceApp.ts src/styles.css
