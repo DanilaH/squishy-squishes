@@ -61,6 +61,9 @@ float beadField(vec2 uv, float seed, float amount) {
   float distanceToCenter = length(local - jitter);
   float bead = 1.0 - smoothstep(0.095, 0.165, distanceToCenter);
 
+  // Each occupied cell gets a stable random reveal order. Increasing the amount
+  // therefore scatters new beads across the whole squishy instead of fading one
+  // pre-existing bead layer in as a single stream.
   float revealOrder = hash21(cell + vec2(29.1, 13.7) + seed * 43.0);
   float reveal = smoothstep(revealOrder, min(1.0, revealOrder + 0.075), clamp(amount, 0.0, 1.0));
   reveal *= smoothstep(0.0, 0.035, amount);
