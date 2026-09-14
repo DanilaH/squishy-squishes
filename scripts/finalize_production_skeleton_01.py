@@ -23,7 +23,7 @@ replace_once(
 replace_once(
     'docs/IMPLEMENTATION_ROADMAP.md',
     '**Status:** APPROVED START SEQUENCE  \n**Primary gate:** complete one real loop before productionizing the whole game.',
-    '**Status:** ACTIVE PRODUCTION ROADMAP  \n**Current gate:** Production Skeleton 01. Vertical Slice 01 and interaction correction passes are complete; the next gate is one materially different second shape.',
+    '**Status:** ACTIVE PRODUCTION ROADMAP\n**Current gate:** Production Skeleton 01. Vertical Slice 01 and interaction correction passes are complete; the next gate is one materially different second shape.',
 )
 replace_once(
     'docs/IMPLEMENTATION_ROADMAP.md',
@@ -49,12 +49,12 @@ replace_once(
 replace_once(
     'docs/PRODUCT.md',
     '**Status:** PRE-DEVELOPMENT PROPOSAL  \n**Decision state:** tactile core PASS; product scope awaiting final user confirmation',
-    '**Status:** ACTIVE MVP SPEC  \n**Decision state:** tactile core + full loop PASS; Production Skeleton 01 active',
+    '**Status:** ACTIVE MVP SPEC\n**Decision state:** tactile core + full loop PASS; Production Skeleton 01 active',
 )
 replace_once(
     'docs/CONTENT_AND_PROGRESSION.md',
     '**Status:** PRE-DEVELOPMENT PROPOSAL  \n**Important:** exact names, XP values and unlock thresholds are not final until `PREIMPLEMENTATION_REVIEW.md` is resolved.',
-    '**Status:** APPROVED DIRECTION / DEFERRED UNTIL AFTER SECOND-SHAPE GATE  \n**Important:** exact names, XP values and unlock thresholds remain provisional until the production shell and second-shape reuse gate are complete.',
+    '**Status:** APPROVED DIRECTION / DEFERRED UNTIL AFTER SECOND-SHAPE GATE\n**Important:** exact names, XP values and unlock thresholds remain provisional until the production shell and second-shape reuse gate are complete.',
 )
 replace_once(
     'docs/TECHNICAL_DIRECTION.md',
