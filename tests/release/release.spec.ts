@@ -228,8 +228,14 @@ const finishMold = async (page: Page): Promise<void> => {
   for (let press = 0; press < 18; press += 1) {
     if ((await shell.getAttribute('data-stage')) !== 'mold') return;
     await expect(target).toBeVisible();
-    await target.click();
-    await page.waitForTimeout(150);
+    await target.dispatchEvent('pointerdown', {
+      bubbles: true,
+      pointerId: press + 1,
+      button: 0,
+      buttons: 1,
+      pointerType: 'mouse',
+    });
+    await page.waitForTimeout(160);
   }
   if ((await shell.getAttribute('data-stage')) === 'mold') throw new Error('Mold did not complete after critical presses');
 };
