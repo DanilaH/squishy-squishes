@@ -1,7 +1,7 @@
 # Squishy Squishes — Product Specification
 
-**Status:** PRE-DEVELOPMENT PROPOSAL  
-**Decision state:** tactile core PASS; product scope awaiting final user confirmation  
+**Status:** ACTIVE MVP SPEC
+**Decision state:** tactile core + full loop PASS; Production Skeleton 01 active
 **Primary platform:** Yandex Games  
 **Product strategy:** low complete production burden × strong tactile/reward payoff × high content multiplication
 

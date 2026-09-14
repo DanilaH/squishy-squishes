@@ -47,7 +47,7 @@ export const ru = {
   },
   actions: {
     collect: 'Забрать',
-    mute: 'Звук',
+    mute: 'Выключить звук',
     unmute: 'Включить звук',
     metrics: 'Метрики',
     mesh: 'Сетка',

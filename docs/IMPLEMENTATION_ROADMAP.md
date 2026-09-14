@@ -1,7 +1,7 @@
 # Squishy Squishes — Implementation Roadmap
 
-**Status:** APPROVED START SEQUENCE  
-**Primary gate:** complete one real loop before productionizing the whole game.
+**Status:** ACTIVE PRODUCTION ROADMAP
+**Current gate:** Production Skeleton 01. Vertical Slice 01 and interaction correction passes are complete; the next gate is one materially different second shape.
 
 The successful feel probe already answered the isolated deformation question. The highest-value next evidence is whether the entire tiny product loop is worth repeating.
 
@@ -26,7 +26,7 @@ Immediate implementation scope is locked in `VERTICAL_SLICE_01.md`.
 
 ---
 
-## Phase 1 — Vertical Slice 01: one shape, full loop
+## Phase 1 — Vertical Slice 01: one shape, full loop — COMPLETE
 
 ### Goal
 
@@ -88,7 +88,7 @@ If a beat is weak, correct that beat before adding scope.
 
 ---
 
-## Phase 2 — Full-loop correction pass
+## Phase 2 — Full-loop correction pass — COMPLETE
 
 ### Goal
 
@@ -115,7 +115,7 @@ Do not use this phase to add progression, more shapes or prettier menus.
 
 ---
 
-## Phase 3 — Production skeleton and boundary extraction
+## Phase 3 — Production Skeleton 01 — ACTIVE
 
 ### Goal
 
@@ -123,7 +123,7 @@ Productionize code **after** the loop has proven what needs to exist.
 
 ### Work
 
-- move shared dependency to reviewed `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b`;
+- preserve the already-pinned reviewed `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b` production dependency;
 - app/platform bootstrap;
 - mock + Yandex runtime seam;
 - settings repository;

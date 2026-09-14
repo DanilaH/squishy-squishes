@@ -938,7 +938,7 @@ export class VerticalSliceApp {
   };
 
   private spawnMoldTarget(): void {
-    if (this.stage !== 'mold' || this.moldComplete || document.hidden) return;
+    if (this.activityBlocked || this.stage !== 'mold' || this.moldComplete) return;
     this.clearMoldTargetTimer();
 
     let nextX = 0;
