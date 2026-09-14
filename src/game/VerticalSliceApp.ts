@@ -1,3 +1,4 @@
+import type { GameCopy } from '../i18n';
 import { SquishSurface, type SquishMetrics } from '../squish/SquishSurface';
 import {
   ALL_VARIANT_IDS,
@@ -14,7 +15,14 @@ import { SquishyAudio } from './SquishyAudio';
 
 type CraftStage = 'select' | 'pour' | 'add' | 'mix' | 'mold' | 'reveal' | 'test' | 'collect';
 
-const DISCOVERED_STORAGE_KEY = 'squishy.vertical-slice.discovered.v2';
+export interface VerticalSliceAppOptions {
+  readonly completedVariantIds: readonly string[];
+  readonly muted: boolean;
+  readonly copy: GameCopy;
+  readonly onVariantCollected: (variantId: string) => void | Promise<void>;
+  readonly onMutedChange: (muted: boolean) => void | Promise<void>;
+}
+
 const TOTAL_VARIANTS = ALL_VARIANT_IDS.length;
 const SHAKE_PATH_FOR_FULL_PROGRESS_PX = 3000;
 const SHAKE_IDLE_MS = 120;
@@ -104,8 +112,17 @@ export class VerticalSliceApp {
   private moldTargetX = 0;
   private moldTargetY = 0;
   private heroSizePx = 240;
+  private activityBlocked = false;
+  private moldTargetWasAvailableBeforeBlock = false;
 
-  public constructor(private readonly root: HTMLDivElement) {
+  public constructor(
+    private readonly root: HTMLDivElement,
+    private readonly options: VerticalSliceAppOptions,
+  ) {
+    for (const id of options.completedVariantIds) {
+      if (ALL_VARIANT_IDS.includes(id)) this.discovered.add(id);
+    }
+    this.muted = options.muted;
     root.innerHTML = this.renderShell();
 
     this.shell = this.requireElement<HTMLElement>('.lab-shell');
@@ -138,9 +155,11 @@ export class VerticalSliceApp {
     this.fillingButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-filling-choice]'));
 
     this.renderer = new SquishSurface(this.canvas, this.handleMetrics, this.audio);
+    this.renderer.setMuted(this.muted);
+    this.muteButton.setAttribute('aria-pressed', String(this.muted));
+    this.muteButton.textContent = this.muted ? this.options.copy.actions.unmute : this.options.copy.actions.mute;
 
     this.bindEvents();
-    this.loadDiscovered();
     this.updateDiscoveredUi();
     this.updateSelectionUi();
     this.updateHeroSize();
@@ -161,6 +180,7 @@ export class VerticalSliceApp {
   }
 
   private renderShell(): string {
+    const copy = this.options.copy;
     const paletteButtons = PALETTES.map((palette, index) => `
       <button
         class="swatch"
@@ -199,16 +219,16 @@ export class VerticalSliceApp {
       <main class="lab-shell" data-stage="select" data-palette="grape" data-filling="smooth" data-tested="false" data-shaking="false">
         <header class="lab-topbar">
           <div class="lab-brand">
-            <strong>Squishy Lab</strong>
-            <span>Prototype line · 01</span>
+            <strong>${copy.brand.name}</strong>
+            <span>${copy.brand.line}</span>
           </div>
           <div class="collection-summary" aria-live="polite">
-            <span class="made-count">Made 0 / ${TOTAL_VARIANTS}</span>
+            <span class="made-count">${copy.collection.made} ${this.discovered.size} / ${TOTAL_VARIANTS}</span>
             <span class="discovery-dots" aria-hidden="true">${discoveryDots}</span>
           </div>
         </header>
 
-        <section class="lab-workspace" aria-label="Squishy workbench">
+        <section class="lab-workspace" aria-label="${copy.aria.workbench}">
           <div class="workspace-vignette" aria-hidden="true"></div>
           <div class="bench-line" aria-hidden="true"></div>
           <div class="mold-frame" aria-hidden="true">
@@ -218,7 +238,7 @@ export class VerticalSliceApp {
 
           <div class="contact-shadow" aria-hidden="true"></div>
           <div class="object-stack">
-            <canvas class="squish-canvas" aria-label="Interactive squishy"></canvas>
+            <canvas class="squish-canvas" aria-label="${copy.aria.squishy}"></canvas>
             <canvas class="paint-layer" width="${PAINT_CANVAS_SIZE}" height="${PAINT_CANVAS_SIZE}" aria-hidden="true" hidden></canvas>
           </div>
 
@@ -236,13 +256,13 @@ export class VerticalSliceApp {
           <div class="reveal-flash" aria-hidden="true"></div>
           <div class="result-halo" aria-hidden="true"></div>
 
-          <button class="hold-surface" type="button" aria-label="Craft interaction surface" hidden></button>
-          <button class="mold-target" type="button" aria-label="Press the mold target" hidden><span></span></button>
+          <button class="hold-surface" type="button" aria-label="${copy.aria.craftSurface}" hidden></button>
+          <button class="mold-target" type="button" aria-label="${copy.aria.moldTarget}" hidden><span></span></button>
 
           <div class="stage-copy">
-            <span class="stage-kicker">CRAFT 01</span>
-            <strong class="stage-title">Choose a recipe</strong>
-            <span class="stage-hint">Pick a color and texture.</span>
+            <span class="stage-kicker">${copy.stage.kicker}</span>
+            <strong class="stage-title">${copy.stage.selectTitle}</strong>
+            <span class="stage-hint">${copy.stage.selectHint}</span>
             <span class="result-badge" hidden>NEW</span>
           </div>
 
@@ -251,29 +271,29 @@ export class VerticalSliceApp {
           </div>
         </section>
 
-        <section class="recipe-panel" aria-label="Recipe options">
+        <section class="recipe-panel" aria-label="${copy.aria.recipeOptions}">
           <div class="option-group option-group--palette">
-            <span class="option-label">Color</span>
-            <div class="swatches" role="group" aria-label="Squishy color">${paletteButtons}</div>
+            <span class="option-label">${copy.recipe.color}</span>
+            <div class="swatches" role="group" aria-label="${copy.aria.colorGroup}">${paletteButtons}</div>
           </div>
 
           <div class="option-group option-group--texture">
-            <span class="option-label">Texture</span>
-            <div class="texture-options" role="group" aria-label="Squishy filling">${fillingButtons}</div>
+            <span class="option-label">${copy.recipe.texture}</span>
+            <div class="texture-options" role="group" aria-label="${copy.aria.fillingGroup}">${fillingButtons}</div>
           </div>
 
           <div class="recipe-action">
             <span class="variant-preview">Lavender Grape · Smooth</span>
-            <button class="primary-button start-button" type="button">Make squishy</button>
+            <button class="primary-button start-button" type="button">${copy.recipe.make}</button>
           </div>
         </section>
 
-        <button class="primary-button collect-button" type="button" hidden>Collect</button>
+        <button class="primary-button collect-button" type="button" hidden>${copy.actions.collect}</button>
 
-        <div class="debug-controls" aria-label="Debug controls">
-          <button class="debug-button" type="button" data-action="metrics" aria-pressed="false">Metrics</button>
-          <button class="debug-button" type="button" data-action="wireframe" aria-pressed="false">Mesh</button>
-          <button class="debug-button" type="button" data-action="mute" aria-pressed="false">Mute</button>
+        <div class="debug-controls" aria-label="${copy.aria.debugControls}">
+          <button class="debug-button" type="button" data-action="metrics" aria-pressed="false">${copy.actions.metrics}</button>
+          <button class="debug-button" type="button" data-action="wireframe" aria-pressed="false">${copy.actions.mesh}</button>
+          <button class="debug-button" type="button" data-action="mute" aria-pressed="false">${this.muted ? copy.actions.unmute : copy.actions.mute}</button>
         </div>
         <pre class="metrics" aria-live="polite" hidden></pre>
       </main>
@@ -296,6 +316,7 @@ export class VerticalSliceApp {
     this.canvas.addEventListener('pointercancel', this.handleMixPointerEnd, { signal });
 
     this.startButton.addEventListener('click', () => {
+      if (this.activityBlocked) return;
       void this.audio.prime();
       this.setStage('pour');
     }, { signal });
@@ -304,7 +325,7 @@ export class VerticalSliceApp {
 
     for (const button of this.colorButtons) {
       button.addEventListener('click', () => {
-        if (this.stage !== 'select') return;
+        if (this.activityBlocked || this.stage !== 'select') return;
         const value = button.dataset.paletteChoice;
         if (!this.isPaletteId(value)) return;
         this.selected = { ...this.selected, palette: value };
@@ -314,7 +335,7 @@ export class VerticalSliceApp {
 
     for (const button of this.fillingButtons) {
       button.addEventListener('click', () => {
-        if (this.stage !== 'select') return;
+        if (this.activityBlocked || this.stage !== 'select') return;
         const value = button.dataset.fillingChoice;
         if (!this.isFillingId(value)) return;
         this.selected = { ...this.selected, filling: value };
@@ -338,10 +359,10 @@ export class VerticalSliceApp {
       this.muted = !this.muted;
       this.renderer.setMuted(this.muted);
       this.muteButton.setAttribute('aria-pressed', String(this.muted));
-      this.muteButton.textContent = this.muted ? 'Unmute' : 'Mute';
+      this.muteButton.textContent = this.muted ? this.options.copy.actions.unmute : this.options.copy.actions.mute;
+      void this.options.onMutedChange(this.muted);
     }, { signal });
 
-    document.addEventListener('visibilitychange', this.handleVisibilityChange, { signal });
     window.addEventListener('resize', this.updateHeroSize, { signal });
   }
 
@@ -391,19 +412,19 @@ export class VerticalSliceApp {
     this.resultBadge.hidden = true;
 
     const tactile = next === 'mix' || next === 'test';
-    this.renderer.setInteractive(tactile);
+    this.renderer.setInteractive(!this.activityBlocked && tactile);
     this.recipePanel.hidden = next !== 'select';
     this.collectButton.hidden = next !== 'test';
 
     switch (next) {
       case 'select':
-        this.setStageCopy('Choose a recipe', 'Pick a color and texture, then make it.');
+        this.setStageCopy(this.options.copy.stage.selectTitle, this.options.copy.stage.selectHint);
         this.renderer.setFillProgress(1);
         this.renderer.setFillingAmount(this.selected.filling === 'beads' ? 1 : 0);
         this.renderer.setMoldProgress(0);
         break;
       case 'pour':
-        this.setStageCopy('Spread the base', 'Drag across the squishy until the surface is covered.');
+        this.setStageCopy(this.options.copy.stage.pourTitle, this.options.copy.stage.pourHint);
         this.renderer.setFillProgress(0);
         this.renderer.setFillingAmount(0);
         this.renderer.setMoldProgress(0);
@@ -412,26 +433,26 @@ export class VerticalSliceApp {
         this.setHoldSurfaceActive(true);
         break;
       case 'add':
-        this.setStageCopy('Shake in the foam beads', 'Hold and shake side to side to scatter them through the squishy.');
+        this.setStageCopy(this.options.copy.stage.addTitle, this.options.copy.stage.addHint);
         this.renderer.setFillProgress(1);
         this.renderer.setFillingAmount(0);
         this.setHoldSurfaceActive(true);
         break;
       case 'mix':
-        this.setStageCopy('Stretch to mix', 'Grab the squishy and keep pulling it around. Holding still will not mix it.');
+        this.setStageCopy(this.options.copy.stage.mixTitle, this.options.copy.stage.mixHint);
         this.renderer.setFillProgress(1);
         this.renderer.setFillingAmount(this.selected.filling === 'beads' ? 1 : 0);
         this.renderer.setMoldProgress(0);
         this.lastSemanticAt = performance.now();
         break;
       case 'mold':
-        this.setStageCopy('Shape it', 'Tap the squishy. Hit the pulse for a critical press.');
+        this.setStageCopy(this.options.copy.stage.moldTitle, this.options.copy.stage.moldHint);
         this.renderer.setMoldProgress(0);
         this.lastSemanticAt = performance.now();
         this.spawnMoldTarget();
         break;
       case 'reveal':
-        this.setStageCopy('Unmolding…', '');
+        this.setStageCopy(this.options.copy.stage.revealTitle, '');
         this.renderer.setMoldProgress(1);
         this.audio.playReveal(this.selected.filling === 'beads');
         this.transitionTimer = window.setTimeout(() => this.setStage('test'), 920);
@@ -439,14 +460,14 @@ export class VerticalSliceApp {
       case 'test': {
         const isNew = !this.discovered.has(variantId(this.selected));
         this.renderer.setMoldProgress(0);
-        this.setStageCopy(variantLabel(this.selected), 'Fresh from the mold. Squeeze it, then collect.');
+        this.setStageCopy(variantLabel(this.selected), this.options.copy.stage.testHint);
         this.resultBadge.hidden = !isNew;
-        this.resultBadge.textContent = 'NEW MATERIAL';
+        this.resultBadge.textContent = this.options.copy.stage.newMaterial;
         this.testStartSqueezes = this.latestMetrics?.squeezes ?? 0;
         break;
       }
       case 'collect':
-        this.setStageCopy('Collected', 'Ready for another recipe.');
+        this.setStageCopy(this.options.copy.stage.collectedTitle, this.options.copy.stage.collectedHint);
         this.audio.playCollect();
         this.transitionTimer = window.setTimeout(() => this.setStage('select'), 520);
         break;
@@ -475,7 +496,7 @@ export class VerticalSliceApp {
     const dt = Math.min(0.2, Math.max(0, (now - this.lastSemanticAt) / 1000));
     this.lastSemanticAt = now;
 
-    if (this.stage === 'mix') {
+    if (!this.activityBlocked && this.stage === 'mix') {
       const recentTravel = now - this.mixLastMoveAt <= MIX_MOTION_IDLE_MS;
       const speedFactor = clamp01((this.mixPointerSpeed - 55) / 650);
       const movingStretch = metrics.active
@@ -518,7 +539,7 @@ export class VerticalSliceApp {
   }
 
   private readonly handleHoldPointerDown = (event: PointerEvent): void => {
-    if (this.holdPointerId !== null || (this.stage !== 'pour' && this.stage !== 'add')) return;
+    if (this.activityBlocked || this.holdPointerId !== null || (this.stage !== 'pour' && this.stage !== 'add')) return;
     event.preventDefault();
     this.holdPointerId = event.pointerId;
     this.holdStageComplete = false;
@@ -548,7 +569,7 @@ export class VerticalSliceApp {
   };
 
   private readonly handleHoldPointerMove = (event: PointerEvent): void => {
-    if (event.pointerId !== this.holdPointerId) return;
+    if (this.activityBlocked || event.pointerId !== this.holdPointerId) return;
     event.preventDefault();
 
     if (this.stage === 'pour') {
@@ -782,7 +803,7 @@ export class VerticalSliceApp {
     this.paintComplete = true;
     this.setStageProgress(1);
     this.renderer.setFillProgress(1);
-    this.stageHint.textContent = 'Covered.';
+    this.stageHint.textContent = this.options.copy.stage.covered;
     this.audio.stopPour();
     this.paintAudioActive = false;
 
@@ -808,7 +829,7 @@ export class VerticalSliceApp {
     this.holdStageComplete = true;
     this.setStageProgress(1);
     this.renderer.setFillingAmount(1);
-    this.stageHint.textContent = 'Evenly scattered.';
+    this.stageHint.textContent = this.options.copy.stage.scattered;
     this.audio.stopPour();
     this.shakeAudioActive = false;
     this.shell.dataset.shaking = 'false';
@@ -835,7 +856,7 @@ export class VerticalSliceApp {
   }
 
   private readonly handleMixPointerDown = (event: PointerEvent): void => {
-    if (this.stage !== 'mix' || this.mixPointerId !== null) return;
+    if (this.activityBlocked || this.stage !== 'mix' || this.mixPointerId !== null) return;
     this.mixPointerId = event.pointerId;
     this.mixLastX = event.clientX;
     this.mixLastY = event.clientY;
@@ -845,7 +866,7 @@ export class VerticalSliceApp {
   };
 
   private readonly handleMixPointerMove = (event: PointerEvent): void => {
-    if (this.stage !== 'mix' || event.pointerId !== this.mixPointerId) return;
+    if (this.activityBlocked || this.stage !== 'mix' || event.pointerId !== this.mixPointerId) return;
     const now = performance.now();
     const dx = event.clientX - this.mixLastX;
     const dy = event.clientY - this.mixLastY;
@@ -875,7 +896,7 @@ export class VerticalSliceApp {
   }
 
   private readonly handleMoldSurfacePress = (event: PointerEvent): void => {
-    if (this.stage !== 'mold' || this.moldComplete) return;
+    if (this.activityBlocked || this.stage !== 'mold' || this.moldComplete) return;
     const point = this.pointerToPaintUv(event.clientX, event.clientY);
     if (!this.isInsidePaintShape(point.u, point.v)) return;
     event.preventDefault();
@@ -893,14 +914,14 @@ export class VerticalSliceApp {
     this.clearMoldTargetTimer();
     this.moldTarget.hidden = true;
     this.moldTarget.disabled = true;
-    this.setStageCopy('Shape locked', '');
+    this.setStageCopy(this.options.copy.stage.shapeLocked, '');
     this.audio.playStageComplete(0.8);
     this.transitionTimer = window.setTimeout(() => this.setStage('reveal'), 220);
     return true;
   }
 
   private readonly handleMoldTargetPress = (event: PointerEvent): void => {
-    if (this.stage !== 'mold' || this.moldComplete) return;
+    if (this.activityBlocked || this.stage !== 'mold' || this.moldComplete) return;
     event.preventDefault();
     event.stopPropagation();
     void this.audio.prime();
@@ -951,10 +972,11 @@ export class VerticalSliceApp {
   }
 
   private collectResult(): void {
-    if (this.stage !== 'test') return;
-    this.discovered.add(variantId(this.selected));
-    this.persistDiscovered();
+    if (this.activityBlocked || this.stage !== 'test') return;
+    const collectedVariantId = variantId(this.selected);
+    this.discovered.add(collectedVariantId);
     this.updateDiscoveredUi();
+    void this.options.onVariantCollected(collectedVariantId);
     this.setStage('collect');
   }
 
@@ -980,7 +1002,7 @@ export class VerticalSliceApp {
       this.mixPointerSpeed = 0;
     }
 
-    if (this.stage === 'mold' && !this.moldComplete && this.stageProgress > 0) {
+    if (!this.activityBlocked && this.stage === 'mold' && !this.moldComplete && this.stageProgress > 0) {
       this.setStageProgress(this.stageProgress - dt * MOLD_DECAY_PER_SECOND);
       this.renderer.setMoldProgress(this.stageProgress);
     }
@@ -988,32 +1010,51 @@ export class VerticalSliceApp {
     this.craftFrame = requestAnimationFrame(this.tickCraft);
   };
 
-  private readonly handleVisibilityChange = (): void => {
-    if (!document.hidden) {
-      this.lastCraftFrameAt = performance.now();
-      this.lastSemanticAt = performance.now();
-      if (this.stage === 'mold' && !this.moldComplete) this.spawnMoldTarget();
+  public setActivityBlocked(blocked: boolean): void {
+    if (this.activityBlocked === blocked) return;
+    this.activityBlocked = blocked;
+
+    if (blocked) {
+      this.audio.stopPour();
+      this.paintAudioActive = false;
+      this.shakeAudioActive = false;
+      this.shell.dataset.shaking = 'false';
+      this.moldTargetWasAvailableBeforeBlock = this.stage === 'mold'
+        && !this.moldTarget.hidden
+        && !this.moldTarget.disabled;
+      this.clearMoldTargetTimer();
+      this.moldTarget.hidden = true;
+      this.resetMixTracking();
+      this.renderer.setInteractive(false);
+
+      if (this.holdPointerId !== null) {
+        try {
+          this.holdSurface.releasePointerCapture(this.holdPointerId);
+        } catch {
+          // Pointer capture may already be unavailable during a platform pause.
+        }
+        this.holdPointerId = null;
+        this.holdStageComplete = false;
+      }
       return;
     }
 
-    this.audio.stopPour();
-    this.paintAudioActive = false;
-    this.shakeAudioActive = false;
-    this.shell.dataset.shaking = 'false';
-    this.clearMoldTargetTimer();
-    this.moldTarget.hidden = true;
-    this.resetMixTracking();
+    this.lastCraftFrameAt = performance.now();
+    this.lastSemanticAt = performance.now();
+    this.renderer.resetTiming();
+    this.renderer.setInteractive(this.stage === 'mix' || this.stage === 'test');
 
-    if (this.holdPointerId !== null) {
-      try {
-        this.holdSurface.releasePointerCapture(this.holdPointerId);
-      } catch {
-        // Capture may already be gone.
+    if (this.stage === 'mold' && !this.moldComplete) {
+      if (this.moldTargetWasAvailableBeforeBlock) {
+        this.positionMoldTarget();
+        this.moldTarget.disabled = false;
+        this.moldTarget.hidden = false;
+      } else {
+        this.spawnMoldTarget();
       }
-      this.holdPointerId = null;
-      this.holdStageComplete = false;
     }
-  };
+    this.moldTargetWasAvailableBeforeBlock = false;
+  }
 
   private setStageProgress(value: number): void {
     this.stageProgress = clamp01(value);
@@ -1046,30 +1087,8 @@ export class VerticalSliceApp {
     this.moldTargetTimer = null;
   }
 
-  private loadDiscovered(): void {
-    try {
-      const raw = window.localStorage.getItem(DISCOVERED_STORAGE_KEY);
-      if (!raw) return;
-      const parsed: unknown = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return;
-      for (const value of parsed) {
-        if (typeof value === 'string' && ALL_VARIANT_IDS.includes(value)) this.discovered.add(value);
-      }
-    } catch {
-      // Slice-only convenience state must never block the loop.
-    }
-  }
-
-  private persistDiscovered(): void {
-    try {
-      window.localStorage.setItem(DISCOVERED_STORAGE_KEY, JSON.stringify([...this.discovered]));
-    } catch {
-      // Slice-only convenience state must never block the loop.
-    }
-  }
-
   private updateDiscoveredUi(): void {
-    this.madeCount.textContent = `Made ${Math.min(TOTAL_VARIANTS, this.discovered.size)} / ${TOTAL_VARIANTS}`;
+    this.madeCount.textContent = `${this.options.copy.collection.made} ${Math.min(TOTAL_VARIANTS, this.discovered.size)} / ${TOTAL_VARIANTS}`;
     for (const dot of this.discoveryDots.querySelectorAll<HTMLElement>('[data-variant-dot]')) {
       const id = dot.dataset.variantDot;
       dot.classList.toggle('is-found', typeof id === 'string' && this.discovered.has(id));
