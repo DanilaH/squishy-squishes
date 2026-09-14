@@ -98,7 +98,10 @@ void main() {
 
   float fillAmount = clamp(uFillingAmount, 0.0, 1.0);
   float bead = beadField(vUv, uMaterialSeed, fillAmount);
-  float beadShade = 0.78 + hash21(floor(vUv * 10.4) + uMaterialSeed * 31.0) * 0.22;
+  float beadShade = 0.78 + hash21(
+    floor(vUv * 10.4 + vec2(uMaterialSeed * 3.1, uMaterialSeed * 5.7))
+      + uMaterialSeed * 31.0
+  ) * 0.22;
   vec3 beadColor = mix(vec3(0.89, 0.92, 0.96), uSheenColor, 0.28) * beadShade;
   base = mix(base, beadColor, bead * 0.72);
   base -= vec3(0.045) * bead * edge;
