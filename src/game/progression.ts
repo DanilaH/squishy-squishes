@@ -16,13 +16,13 @@ interface RankDefinition {
 
 export const RANK_DEFINITIONS: readonly RankDefinition[] = [
   { rank: 1, minXp: 0, variantIds: ['grape-smooth', 'heart-strawberry-smooth'] },
-  { rank: 2, minXp: 100, variantIds: ['strawberry-smooth', 'heart-grape-smooth'] },
-  { rank: 3, minXp: 200, variantIds: ['grape-beads', 'heart-lime-smooth'] },
+  { rank: 2, minXp: 100, variantIds: ['strawberry-smooth', 'heart-grape-smooth', 'mochi-milk-soft-smooth'] },
+  { rank: 3, minXp: 200, variantIds: ['grape-beads', 'heart-lime-smooth', 'peach-peach-soft-smooth'] },
   { rank: 4, minXp: 300, variantIds: ['lime-smooth', 'heart-grape-beads'] },
   { rank: 5, minXp: 400, variantIds: ['strawberry-beads', 'heart-strawberry-beads'] },
   { rank: 6, minXp: 500, variantIds: ['lime-beads', 'heart-lime-beads'] },
-  { rank: 7, minXp: 600, variantIds: ['aqua-jelly-pearls', 'heart-aqua-jelly-smooth'] },
-  { rank: 8, minXp: 700, variantIds: ['prism-holo-smooth', 'heart-prism-holo-pearls'] },
+  { rank: 7, minXp: 600, variantIds: ['aqua-jelly-pearls', 'heart-aqua-jelly-smooth', 'peach-strawberry-jelly-smooth'] },
+  { rank: 8, minXp: 700, variantIds: ['prism-holo-smooth', 'heart-prism-holo-pearls', 'mochi-prism-holo-pearls'] },
 ] as const;
 
 const requiredRankByVariant = new Map<string, LabRank>();
