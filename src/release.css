@@ -1,0 +1,339 @@
+/* RC01 release presentation overrides. Keep craft geometry/interaction CSS untouched. */
+
+body[data-release-build="production"] .debug-button[data-action="metrics"],
+body[data-release-build="production"] .debug-button[data-action="wireframe"],
+body[data-release-build="production"] .metrics {
+  display: none !important;
+}
+
+body[data-release-platform="yandex"] .collection-reset-button {
+  display: none !important;
+}
+
+.lab-shell {
+  background:
+    radial-gradient(circle at 50% 31%, color-mix(in srgb, var(--accent-soft) 92%, transparent), transparent 31%),
+    radial-gradient(circle at 18% 18%, rgba(119, 94, 160, 0.10), transparent 31%),
+    radial-gradient(circle at 82% 76%, rgba(57, 118, 129, 0.07), transparent 34%),
+    linear-gradient(180deg, #181520 0%, #0f0e15 66%, #09090d 100%);
+}
+
+.lab-shell::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at 50% 48%, black, transparent 78%);
+}
+
+.lab-topbar {
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.lab-brand {
+  padding: 8px 10px 8px 0;
+}
+
+.lab-brand strong {
+  font-weight: 820;
+  letter-spacing: -0.025em;
+}
+
+.lab-brand span {
+  letter-spacing: 0.08em;
+  text-transform: none;
+}
+
+.collection-summary {
+  min-width: 0;
+  padding: 8px 10px 9px;
+  border: 1px solid rgba(255,255,255,0.075);
+  border-radius: 14px;
+  background: rgba(12, 11, 17, 0.42);
+  box-shadow: 0 12px 34px rgba(0,0,0,0.16);
+  backdrop-filter: blur(16px) saturate(1.12);
+}
+
+.collection-summary__row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.collection-open-button,
+.collection-close-button,
+.collection-reset-button,
+.collection-card__action {
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.055);
+  color: rgba(255,255,255,0.82);
+  font-weight: 690;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.collection-open-button {
+  padding: 7px 10px;
+  border-color: color-mix(in srgb, var(--accent) 34%, rgba(255,255,255,0.08));
+  background: color-mix(in srgb, var(--accent) 10%, rgba(255,255,255,0.045));
+}
+
+.collection-open-button:hover,
+.collection-close-button:hover,
+.collection-card__action:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.085);
+}
+
+.recipe-panel {
+  border-color: rgba(255,255,255,0.105);
+  background:
+    linear-gradient(180deg, rgba(24, 21, 31, 0.82), rgba(12, 11, 17, 0.78));
+  box-shadow:
+    0 24px 70px rgba(0,0,0,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.035);
+}
+
+.option-label {
+  color: rgba(255,255,255,0.46);
+}
+
+.texture-button {
+  min-height: 42px;
+  border-color: rgba(255,255,255,0.09);
+  background: rgba(255,255,255,0.032);
+}
+
+.texture-button[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 17%, transparent);
+}
+
+.primary-button {
+  min-height: 44px;
+  border-radius: 14px;
+  box-shadow:
+    0 10px 30px color-mix(in srgb, var(--accent-soft) 82%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.40);
+}
+
+.stage-title {
+  font-weight: 790;
+  letter-spacing: -0.035em;
+}
+
+.stage-hint {
+  max-width: min(82vw, 520px);
+}
+
+.collection-overlay {
+  backdrop-filter: blur(18px) saturate(0.92);
+  background: rgba(5, 5, 8, 0.68);
+}
+
+.collection-panel {
+  border-color: rgba(255,255,255,0.105);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.035), transparent 32%),
+    linear-gradient(180deg, rgba(24, 22, 31, 0.98), rgba(11, 10, 15, 0.985));
+  box-shadow: 0 30px 100px rgba(0,0,0,0.48);
+}
+
+.collection-panel__header {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  padding-bottom: 12px;
+  background: linear-gradient(180deg, rgba(23,21,30,0.98) 72%, transparent);
+}
+
+.collection-group > header {
+  padding-inline: 2px;
+}
+
+.collection-grid {
+  gap: 10px;
+}
+
+.collection-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 86px;
+  border-color: rgba(255,255,255,0.075);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--card-accent-soft) 33%, transparent), transparent 48%),
+    rgba(255,255,255,0.028);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.collection-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.42;
+  background: linear-gradient(115deg, transparent 18%, rgba(255,255,255,0.045) 45%, transparent 70%);
+}
+
+.collection-card--available {
+  border-color: color-mix(in srgb, var(--card-accent) 28%, rgba(255,255,255,0.08));
+}
+
+.collection-card--available:hover,
+.collection-card--completed:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--card-accent) 48%, rgba(255,255,255,0.14));
+}
+
+.collection-card--locked {
+  opacity: 0.52;
+  filter: saturate(0.48);
+}
+
+.collection-card__swatch {
+  position: relative;
+  width: 58px;
+  min-width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--card-accent) 30%, rgba(255,255,255,0.13));
+  background:
+    radial-gradient(circle at 31% 24%, rgba(255,255,255,0.72), transparent 18%),
+    radial-gradient(circle at 68% 72%, color-mix(in srgb, var(--card-accent) 74%, transparent), transparent 46%),
+    linear-gradient(145deg, color-mix(in srgb, var(--card-accent) 82%, white 8%), color-mix(in srgb, var(--card-accent) 50%, #1b1420));
+  box-shadow:
+    inset 0 -12px 18px rgba(0,0,0,0.17),
+    0 8px 24px color-mix(in srgb, var(--card-accent-soft) 62%, transparent);
+}
+
+.collection-card__swatch::after {
+  content: "";
+  position: absolute;
+  inset: 8px 10px 26px 9px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.23);
+  filter: blur(2px);
+  transform: rotate(-15deg);
+}
+
+.collection-card__body strong {
+  font-size: 12px;
+  letter-spacing: -0.012em;
+}
+
+.collection-card__body span,
+.collection-card__rank {
+  color: rgba(255,255,255,0.43);
+}
+
+.progression-feedback {
+  border-color: color-mix(in srgb, var(--accent) 30%, rgba(255,255,255,0.08));
+  background: rgba(12, 11, 17, 0.88);
+  box-shadow: 0 16px 50px rgba(0,0,0,0.34), 0 0 28px var(--accent-soft);
+  backdrop-filter: blur(18px);
+}
+
+body[data-release-build="production"] .debug-controls {
+  gap: 5px;
+}
+
+body[data-release-build="production"] .debug-button[data-action="mute"] {
+  padding: 7px 9px;
+  border-radius: 11px;
+  color: rgba(255,255,255,0.68);
+}
+
+@media (max-width: 760px) {
+  .collection-summary {
+    padding: 6px 8px 7px;
+    background: rgba(10,9,14,0.32);
+  }
+
+  .discovery-dots {
+    max-width: 148px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 3px;
+  }
+
+  .discovery-dot {
+    width: 5px;
+    height: 5px;
+  }
+
+  .recipe-panel {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .collection-panel {
+    width: min(100% - 12px, 720px);
+    max-height: calc(100% - max(12px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom)));
+    border-radius: 20px;
+  }
+
+  .collection-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .collection-card {
+    min-height: 78px;
+    padding: 9px;
+  }
+
+  .collection-card__swatch {
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 480px) and (orientation: portrait) {
+  .lab-brand span {
+    display: none;
+  }
+
+  .collection-summary {
+    margin-top: 36px;
+  }
+
+  .collection-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .collection-card {
+    min-height: 68px;
+  }
+
+  .recipe-panel .option-label {
+    font-size: 8px;
+  }
+
+  .texture-button {
+    min-height: 38px;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .collection-summary {
+    padding-block: 5px;
+  }
+
+  .discovery-dots {
+    display: none;
+  }
+
+  .recipe-panel {
+    width: min(calc(100% - 18px), 900px);
+  }
+}
