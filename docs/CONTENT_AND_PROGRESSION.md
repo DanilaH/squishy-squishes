@@ -52,7 +52,7 @@ The old planning list predated the successful Heart reuse gate. The final six la
 
 Do not increase the launch target above roughly six shapes before the content system proves cheap and stable.
 
-## 3. Shape implementation rule## 3. Shape implementation rule
+## 3. Shape implementation rule
 
 A shape is primarily a **silhouette / mask / geometry profile**, not a unique gameplay implementation.
 

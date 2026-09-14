@@ -30,7 +30,7 @@ Independent review: `docs/PROGRESSION_COLLECTION_01_REVIEW.md`.
 
 Renderer Reuse / Second Shape is complete: Soft Cube and Soft Heart share one shape/deformation/material/craft path, and the merged phone build was accepted on 2026-09-14.
 
-## Product thesis## Product thesis
+## Product thesis
 
 Make desirable soft collectibles through a short tactile lab ritual, reveal them, squeeze the finished result, collect them, and quickly expose the next visually different recipe.
 
@@ -40,7 +40,7 @@ The production bet is high content multiplication from:
 
 without bespoke gameplay code per recipe.
 
-Working MVP direction remains approximately six reusable base shapes and around 24 curated recipes, with quality allowed to reduce the final count. That scale is not authorized until the current two-shape reuse gate passes.
+Working MVP direction remains approximately six reusable base shapes and around 24 curated recipes, with quality allowed to reduce the final count. Phase 5 validates progression on the current 12 combinations before representative content expansion and catalog scale.
 
 ## Stack
 
@@ -78,7 +78,7 @@ Completed production/reuse evidence:
 
 Historical tactile/slice evidence remains under `docs/` and is not the active implementation contract.
 
-## Run## Run
+## Run
 
 Requirements: Node.js `>=20.19.0`.
 
@@ -102,4 +102,4 @@ https://danilah.github.io/squishy-squishes/
 
 Do not turn the project into Cooking Mama, a shop/economy sim, or a physics sandbox.
 
-Right now the goal is to falsify or confirm reusable multi-shape rendering with one second shape. If the heart needs bespoke physics, stages or a separate renderer path, stop catalog expansion and fix the renderer/content boundary before progression work.
+Right now the goal is to validate the progression/collection loop without hiding weak motivation behind currencies or more content. If the current 12-combination build does not create a clear next goal, fix progression pacing/UX before catalog expansion.

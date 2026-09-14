@@ -43,7 +43,7 @@ Progression truth must remain domain-derived rather than scattered through DOM h
 
 Save migration must preserve effective access to every previously completed recipe, including Phase-4 completions that now have a higher required rank.
 
-## Product invariant## Product invariant
+## Product invariant
 
 The eventual product is a compact tactile maker/collection game, not a general crafting simulator.
 
@@ -80,7 +80,7 @@ Phase 5 bumps production save to V2 only to add `labXp`. Original square and hea
 
 ## Lifecycle discipline
 
-`PlatformRuntime.activity` remains the aggregate blocker source. Shape work must not create a second visibility policy.
+`PlatformRuntime.activity` remains the aggregate blocker source. Progression/collection work must not create a second visibility policy.
 
 On block/pause:
 
