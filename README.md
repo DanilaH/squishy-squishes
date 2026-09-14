@@ -2,46 +2,49 @@
 
 Compact tactile maker / collection game for Yandex Games.
 
-**Current status:** tactile core PASS; full-loop slice PASS; interaction correction passes PASS; Production Skeleton 01 PASS; Renderer Reuse / Second Shape PASS; **Progression + Collection 01 is the active gate**.
+**Current status:** core loop, reusable renderer, progression/Collection, representative materials and catalog production are structurally complete. The project is in **Release Candidate 01** productization/hardening.
 
-Current accepted loop:
+Current loop:
 
-`select → paint base → optional foam shake → stretch/mix → form with normal taps + crit targets → reveal → free squeeze → Collect → visible progression → repeat`
+`select recipe → paint base → optional filling shake → stretch/mix → form → reveal → free squeeze → Collect → progression/unlock → repeat`
 
-## Active gate — Progression + Collection 01
+## Current release candidate
 
-The current job is to prove the “one more squishy” layer on the already accepted two-shape renderer before representative content expansion.
+The working MVP catalog is now:
 
-Bounded scope:
+- **6 reusable shapes:** Soft Cube, Soft Heart, Mochi, Peach Puff, Mushroom, Paw;
+- **24 curated canonical recipes**;
+- one shared WebGL2 deformation path;
+- reusable soft / jelly / holographic material vocabulary;
+- reusable smooth / foam / pearl filling vocabulary;
+- Lab XP / Rank progression and Collection;
+- no spendable currency/shop/order system.
 
-- keep Soft Cube + Soft Heart and the current 12 deterministic combinations;
-- introduce derived Lab Rank / Lab XP progression with deterministic unlocks;
-- migrate production save V1 to V2 without losing access to previously completed content;
-- add a compact locked / available / completed collection overlay;
-- let completed items reopen the existing finished-object squeeze state;
-- award stronger first-completion XP and smaller repeat XP;
-- surface concise rank/unlock/milestone feedback after Collect;
-- no currency, shop, ads, third shape, new material family or bespoke recipe gameplay;
-- strict typecheck/build plus independent final diff review before merge;
-- deployed phone check before Phase 5 is marked fully complete.
+Phase 7B phone review was deliberately deferred by the product owner. It remains a pre-publication smoke check, not an engineering gate.
 
-Canonical implementation spec: `docs/PROGRESSION_COLLECTION_01.md`.
-Independent pre-implementation review: `docs/PROGRESSION_COLLECTION_01_REVIEW.md`.
-Independent implementation review: `docs/PROGRESSION_COLLECTION_01_IMPLEMENTATION_REVIEW.md`.
+RC01 scope is locked to:
 
-Renderer Reuse / Second Shape is complete: Soft Cube and Soft Heart share one shape/deformation/material/craft path, and the merged phone build was accepted on 2026-09-14.
+- final presentation/UI cleanup around the proven craft loop;
+- Collection/catalog presentation;
+- Yandex lifecycle integration through the pinned shared runtime;
+- compact analytics funnel;
+- conservative between-loop interstitial policy;
+- Yandex-specific archive build and automated verification;
+- permanent release CI and packaged Yandex artifact.
+
+No new content, mechanics, ranks, save schema, renderer/physics architecture or shared-kit upgrade belongs in RC01.
+
+Canonical RC contract:
+
+- `docs/RELEASE_CANDIDATE_01.md`
+- `docs/RELEASE_CANDIDATE_01_REVIEW.md`
+- `docs/IMPLEMENTATION_ROADMAP.md`
 
 ## Product thesis
 
 Make desirable soft collectibles through a short tactile lab ritual, reveal them, squeeze the finished result, collect them, and quickly expose the next visually different recipe.
 
-The production bet is high content multiplication from:
-
-`shape × material/palette × filling × decal/decoration × finish`
-
-without bespoke gameplay code per recipe.
-
-Working MVP direction remains approximately six reusable base shapes and around 24 curated recipes, with quality allowed to reduce the final count. Phase 5 validates progression on the current 12 combinations before representative content expansion and catalog scale.
+The production bet is high perceived novelty from a small reusable base. Catalog production has now demonstrated that later recipes/shapes can be added without new renderer, physics or craft-state implementations.
 
 ## Stack
 
@@ -54,32 +57,6 @@ Working MVP direction remains approximately six reusable base shapes and around 
 - no backend;
 - no React/Phaser/Pixi/Three.js/physics engine unless new evidence justifies it.
 
-## Documentation
-
-Current execution order:
-
-- `docs/PROGRESSION_COLLECTION_01.md` — active Phase 5 implementation contract
-- `docs/PROGRESSION_COLLECTION_01_REVIEW.md` — independent pre-implementation challenge/corrections
-- `docs/PROGRESSION_COLLECTION_01_IMPLEMENTATION_REVIEW.md` — final structural diff review / phone gate
-- `docs/IMPLEMENTATION_ROADMAP.md` — full phase order and gates
-- `docs/CONTENT_AND_PROGRESSION.md` — active supporting progression/content direction
-- `docs/TECHNICAL_DIRECTION.md` — long-term boundaries
-- `docs/GAMEPLAY.md` — interaction grammar
-- `docs/PRODUCT.md` — product thesis/scope
-- `docs/ART_DIRECTION.md` — visual identity
-- `docs/ANALYTICS_AND_MONETIZATION.md` — later analytics/ad posture
-- `docs/QA_AND_ACCEPTANCE.md` — release validation
-
-Completed production/reuse evidence:
-
-- `docs/PRODUCTION_SKELETON_01.md`
-- `docs/PRODUCTION_SKELETON_01_REVIEW.md`
-- `docs/RENDERER_REUSE_SECOND_SHAPE.md`
-- `docs/RENDERER_REUSE_SECOND_SHAPE_REVIEW.md`
-- `docs/RENDERER_REUSE_SECOND_SHAPE_IMPLEMENTATION_REVIEW.md`
-
-Historical tactile/slice evidence remains under `docs/` and is not the active implementation contract.
-
 ## Run
 
 Requirements: Node.js `>=20.19.0`.
@@ -89,19 +66,50 @@ npm install
 npm run dev
 ```
 
-Production build/typecheck:
+Normal production build:
 
 ```bash
 npm run typecheck
 npm run build
 ```
 
-GitHub Pages phone build:
+Full release validation:
+
+```bash
+npm run release:check
+```
+
+Yandex build only:
+
+```bash
+npm run build:yandex
+npm run verify:yandex
+```
+
+The Yandex build is emitted to `dist-yandex/` with relative asset paths and `VITE_PLATFORM=yandex`. The permanent `Release Check` GitHub Actions workflow packages it as `squishy-squishes-yandex.zip`.
+
+GitHub Pages QA build:
 
 https://danilah.github.io/squishy-squishes/
 
+The phone QA progression panel remains available on the Pages build for testing. It is excluded from the normal Yandex release bundle.
+
+## Documentation
+
+Current execution/source-of-truth:
+
+- `docs/RELEASE_CANDIDATE_01.md` — active release contract;
+- `docs/IMPLEMENTATION_ROADMAP.md` — phase status and remaining external gates;
+- `docs/CONTENT_AND_PROGRESSION.md` — catalog/content principles;
+- `docs/TECHNICAL_DIRECTION.md` — architecture boundaries;
+- `docs/GAMEPLAY.md` — interaction grammar;
+- `docs/PRODUCT.md` — product thesis/scope;
+- `docs/ART_DIRECTION.md` — visual identity;
+- `docs/ANALYTICS_AND_MONETIZATION.md` — analytics/ad posture;
+- `docs/QA_AND_ACCEPTANCE.md` — release validation principles.
+
+Historical implementation specs/reviews under `docs/` remain evidence of completed phases and should not be treated as the active gate.
+
 ## Scope rule
 
-Do not turn the project into Cooking Mama, a shop/economy sim, or a physics sandbox.
-
-Right now the goal is to validate the progression/collection loop without hiding weak motivation behind currencies or more content. If the current 12-combination build does not create a clear next goal, fix progression pacing/UX before catalog expansion.
+Do not turn the project into Cooking Mama, a shop/economy sim, or a physics sandbox. At this stage, new content and systems require post-release evidence. The priority is a clean, stable, measurable Yandex release of the already-proven loop.
