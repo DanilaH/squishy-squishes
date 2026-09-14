@@ -1,4 +1,3 @@
-import { installDebugTools } from '../debug/installDebugTools';
 import { VerticalSliceApp } from '../game/VerticalSliceApp';
 import { getGameCopy } from '../i18n';
 import { createSquishyPlatformRuntime } from '../platform/runtime';
@@ -50,24 +49,28 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
   runtime.activity.setGameplayDesired(true);
   runtime.markReady();
 
-  const removeDebugTools = installDebugTools({
-    resetSave: async () => {
-      await saveRepository.remove();
-      saveState = createDefaultSave();
-      console.info('[squishy-debug] save cleared; reload to reset in-memory collection state');
-    },
-    resetSettings: async () => {
-      await settingsRepository.remove();
-      settingsState = createDefaultSettings();
-      console.info('[squishy-debug] settings cleared; reload to apply defaults');
-    },
-    getState: () => ({
-      runtime: runtime.kind,
-      language: runtime.language,
-      save: saveState,
-      settings: settingsState,
-    }),
-  });
+  let removeDebugTools = (): void => undefined;
+  if (import.meta.env.DEV) {
+    const { installDebugTools } = await import('../debug/installDebugTools');
+    removeDebugTools = installDebugTools({
+      resetSave: async () => {
+        await saveRepository.remove();
+        saveState = createDefaultSave();
+        console.info('[squishy-debug] save cleared; reload to reset in-memory collection state');
+      },
+      resetSettings: async () => {
+        await settingsRepository.remove();
+        settingsState = createDefaultSettings();
+        console.info('[squishy-debug] settings cleared; reload to apply defaults');
+      },
+      getState: () => ({
+        runtime: runtime.kind,
+        language: runtime.language,
+        save: saveState,
+        settings: settingsState,
+      }),
+    });
+  }
 
   let disposed = false;
   return {
@@ -78,8 +81,8 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
       unsubscribeActivity();
       removeDebugTools();
       app.dispose();
-      runtime.destroy();
       await Promise.allSettled([saveRepository.flush(), settingsRepository.flush()]);
+      runtime.destroy();
     },
   };
 };
