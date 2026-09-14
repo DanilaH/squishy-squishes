@@ -106,7 +106,7 @@ export const installPhoneQaPanel = (options: Options): (() => void) => {
     }
   };
 
-  launcher.addEventListener('click', () => { setOpen(panel.hidden); refresh(); });
+  launcher.addEventListener('click', () => { setOpen(panel.hidden !== false); refresh(); });
 
   panel.addEventListener('click', (event) => {
     const target = event.target instanceof HTMLElement ? event.target.closest<HTMLButtonElement>('button') : null;
