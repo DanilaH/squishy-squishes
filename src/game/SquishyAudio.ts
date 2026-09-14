@@ -1,4 +1,5 @@
 import { ContinuousNoiseTexture, type ContinuousNoiseTextureProfile } from '@danilah/mini-games-kit/audio';
+import type { PresentationTier } from './presentation';
 
 type PourKind = 'base' | 'beads';
 
@@ -20,12 +21,66 @@ const tactileProfile: ContinuousNoiseTextureProfile = {
 };
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
+const STAGE_COMPLETE_PITCH = [0.975, 1.025, 1] as const;
 
 interface ActivePour {
   source: AudioBufferSourceNode;
   filter: BiquadFilterNode;
   gain: GainNode;
 }
+
+interface RevealProfile {
+  readonly lowStartHz: number;
+  readonly lowGain: number;
+  readonly highStartHz: number;
+  readonly highEndHz: number;
+  readonly highGain: number;
+  readonly duration: number;
+  readonly shimmerGain: number;
+}
+
+const revealProfiles: Readonly<Record<PresentationTier, RevealProfile>> = {
+  standard: {
+    lowStartHz: 110,
+    lowGain: 0.044,
+    highStartHz: 520,
+    highEndHz: 730,
+    highGain: 0.014,
+    duration: 0.28,
+    shimmerGain: 0,
+  },
+  special: {
+    lowStartHz: 98,
+    lowGain: 0.05,
+    highStartHz: 590,
+    highEndHz: 860,
+    highGain: 0.018,
+    duration: 0.31,
+    shimmerGain: 0.004,
+  },
+  showcase: {
+    lowStartHz: 88,
+    lowGain: 0.054,
+    highStartHz: 660,
+    highEndHz: 1040,
+    highGain: 0.021,
+    duration: 0.34,
+    shimmerGain: 0.009,
+  },
+};
+
+interface CollectProfile {
+  readonly startHz: number;
+  readonly endHz: number;
+  readonly gain: number;
+  readonly duration: number;
+}
+
+const collectProfiles: Readonly<Record<PresentationTier, CollectProfile>> = {
+  standard: { startHz: 330, endHz: 510, gain: 0.02, duration: 0.13 },
+  special: { startHz: 355, endHz: 585, gain: 0.021, duration: 0.145 },
+  showcase: { startHz: 385, endHz: 680, gain: 0.022, duration: 0.16 },
+};
 
 export class SquishyAudio {
   private context: AudioContext | null = null;
@@ -34,6 +89,7 @@ export class SquishyAudio {
   private noiseBuffer: AudioBuffer | null = null;
   private activePour: ActivePour | null = null;
   private pourRequestId = 0;
+  private stageCompleteToneIndex = 0;
   private muted = false;
   private disposed = false;
 
@@ -83,56 +139,59 @@ export class SquishyAudio {
   public playStageComplete(weight = 0.5): void {
     if (!this.context || !this.master || this.context.state !== 'running' || this.muted) return;
     const strength = clamp01(weight);
+    const pitch = STAGE_COMPLETE_PITCH[this.stageCompleteToneIndex % STAGE_COMPLETE_PITCH.length]!;
+    this.stageCompleteToneIndex = (this.stageCompleteToneIndex + 1) % STAGE_COMPLETE_PITCH.length;
     const now = this.context.currentTime;
     const oscillator = this.context.createOscillator();
     const gain = this.context.createGain();
 
     oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(410 + strength * 90, now);
-    oscillator.frequency.exponentialRampToValueAtTime(560 + strength * 120, now + 0.075);
+    oscillator.frequency.setValueAtTime((405 + strength * 85) * pitch, now);
+    oscillator.frequency.exponentialRampToValueAtTime((548 + strength * 110) * pitch, now + 0.072);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.014 + strength * 0.012, now + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.011 + strength * 0.009, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.112);
 
     oscillator.connect(gain);
     gain.connect(this.master);
     oscillator.start(now);
-    oscillator.stop(now + 0.13);
+    oscillator.stop(now + 0.12);
     oscillator.onended = () => {
       oscillator.disconnect();
       gain.disconnect();
     };
   }
 
-  public playReveal(premium = false): void {
+  public playReveal(tier: PresentationTier): void {
     if (!this.context || !this.master || this.context.state !== 'running' || this.muted) return;
+    const profile = revealProfiles[tier];
     const now = this.context.currentTime;
 
     const low = this.context.createOscillator();
     const lowGain = this.context.createGain();
     low.type = 'sine';
-    low.frequency.setValueAtTime(premium ? 92 : 108, now);
-    low.frequency.exponentialRampToValueAtTime(58, now + 0.24);
+    low.frequency.setValueAtTime(profile.lowStartHz, now);
+    low.frequency.exponentialRampToValueAtTime(58, now + profile.duration * 0.82);
     lowGain.gain.setValueAtTime(0.0001, now);
-    lowGain.gain.exponentialRampToValueAtTime(premium ? 0.062 : 0.048, now + 0.018);
-    lowGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.27);
+    lowGain.gain.exponentialRampToValueAtTime(profile.lowGain, now + 0.018);
+    lowGain.gain.exponentialRampToValueAtTime(0.0001, now + profile.duration);
     low.connect(lowGain);
     lowGain.connect(this.master);
     low.start(now);
-    low.stop(now + 0.29);
+    low.stop(now + profile.duration + 0.02);
 
     const high = this.context.createOscillator();
     const highGain = this.context.createGain();
-    high.type = 'triangle';
-    high.frequency.setValueAtTime(premium ? 610 : 540, now + 0.055);
-    high.frequency.exponentialRampToValueAtTime(premium ? 940 : 760, now + 0.22);
+    high.type = tier === 'showcase' ? 'sine' : 'triangle';
+    high.frequency.setValueAtTime(profile.highStartHz, now + 0.055);
+    high.frequency.exponentialRampToValueAtTime(profile.highEndHz, now + profile.duration * 0.8);
     highGain.gain.setValueAtTime(0.0001, now);
-    highGain.gain.exponentialRampToValueAtTime(premium ? 0.024 : 0.016, now + 0.075);
-    highGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+    highGain.gain.exponentialRampToValueAtTime(profile.highGain, now + 0.075);
+    highGain.gain.exponentialRampToValueAtTime(0.0001, now + profile.duration + 0.045);
     high.connect(highGain);
     highGain.connect(this.master);
     high.start(now + 0.05);
-    high.stop(now + 0.34);
+    high.stop(now + profile.duration + 0.06);
 
     low.onended = () => {
       low.disconnect();
@@ -142,25 +201,49 @@ export class SquishyAudio {
       high.disconnect();
       highGain.disconnect();
     };
+
+    if (profile.shimmerGain > 0 && this.noiseBuffer) {
+      const shimmer = this.context.createBufferSource();
+      const filter = this.context.createBiquadFilter();
+      const shimmerGain = this.context.createGain();
+      shimmer.buffer = this.noiseBuffer;
+      filter.type = 'bandpass';
+      filter.frequency.value = tier === 'showcase' ? 2850 : 2250;
+      filter.Q.value = tier === 'showcase' ? 1.5 : 1.05;
+      shimmerGain.gain.setValueAtTime(0.0001, now + 0.055);
+      shimmerGain.gain.exponentialRampToValueAtTime(profile.shimmerGain, now + 0.105);
+      shimmerGain.gain.exponentialRampToValueAtTime(0.0001, now + profile.duration + 0.07);
+      shimmer.connect(filter);
+      filter.connect(shimmerGain);
+      shimmerGain.connect(this.master);
+      shimmer.start(now + 0.05);
+      shimmer.stop(now + profile.duration + 0.09);
+      shimmer.onended = () => {
+        shimmer.disconnect();
+        filter.disconnect();
+        shimmerGain.disconnect();
+      };
+    }
   }
 
-  public playCollect(): void {
+  public playCollect(tier: PresentationTier): void {
     if (!this.context || !this.master || this.context.state !== 'running' || this.muted) return;
+    const profile = collectProfiles[tier];
     const now = this.context.currentTime;
     const oscillator = this.context.createOscillator();
     const gain = this.context.createGain();
 
     oscillator.type = 'triangle';
-    oscillator.frequency.setValueAtTime(330, now);
-    oscillator.frequency.exponentialRampToValueAtTime(515, now + 0.09);
+    oscillator.frequency.setValueAtTime(profile.startHz, now);
+    oscillator.frequency.exponentialRampToValueAtTime(profile.endHz, now + profile.duration * 0.72);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.024, now + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+    gain.gain.exponentialRampToValueAtTime(profile.gain, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + profile.duration);
 
     oscillator.connect(gain);
     gain.connect(this.master);
     oscillator.start(now);
-    oscillator.stop(now + 0.14);
+    oscillator.stop(now + profile.duration + 0.015);
     oscillator.onended = () => {
       oscillator.disconnect();
       gain.disconnect();
