@@ -2,10 +2,14 @@ import type { GameCopy } from '../i18n';
 import { SquishSurface, type SquishMetrics } from '../squish/SquishSurface';
 import {
   ALL_VARIANT_IDS,
-  FILLINGS,
-  PALETTES,
+  SELECTOR_FILLINGS,
+  SELECTOR_PALETTES,
+  getFilling,
+  getMaterial,
   getPalette,
   getVariantSpec,
+  isLegacyFillingId,
+  isLegacyPaletteId,
   type FillingId,
   type PaletteId,
   type VariantChoice,
@@ -102,7 +106,7 @@ export class VerticalSliceApp {
   private readonly paintEligible = new Uint8Array(PAINT_GRID_SIZE * PAINT_GRID_SIZE);
 
   private stage: CraftStage = 'select';
-  private selected: VariantChoice = { shape: 'soft-square', palette: 'grape', filling: 'smooth' };
+  private selected: VariantChoice = { shape: 'soft-square', palette: 'grape', material: 'soft', filling: 'smooth' };
   private labXp = 0;
   private revisitMode = false;
   private feedbackTimer: number | null = null;
@@ -238,7 +242,7 @@ export class VerticalSliceApp {
       </button>
     `).join('');
 
-    const paletteButtons = PALETTES.map((palette, index) => `
+    const paletteButtons = SELECTOR_PALETTES.map((palette, index) => `
       <button
         class="swatch"
         type="button"
@@ -249,7 +253,7 @@ export class VerticalSliceApp {
       ></button>
     `).join('');
 
-    const fillingButtons = FILLINGS.map((filling, index) => `
+    const fillingButtons = SELECTOR_FILLINGS.map((filling, index) => `
       <button
         class="texture-button"
         type="button"
@@ -314,7 +318,7 @@ export class VerticalSliceApp {
 
           <div class="foam-shaker" aria-hidden="true">
             <div class="foam-shaker__cap"></div>
-            <div class="foam-shaker__body"><span>FOAM</span></div>
+            <div class="foam-shaker__body"><span>FILL</span></div>
             <div class="foam-spray">${foamParticles}</div>
           </div>
 
@@ -404,7 +408,8 @@ export class VerticalSliceApp {
     this.canvas.addEventListener('pointercancel', this.handleMixPointerEnd, { signal });
 
     this.startButton.addEventListener('click', () => {
-      if (this.activityBlocked || !isVariantUnlocked(variantId(this.selected), this.labXp)) return;
+      const selectedId = variantId(this.selected);
+      if (this.activityBlocked || !getVariantSpec(selectedId) || !isVariantUnlocked(selectedId, this.labXp)) return;
       this.revisitMode = false;
       void this.audio.prime();
       this.setStage('pour');
@@ -418,9 +423,16 @@ export class VerticalSliceApp {
       if (event.target === this.collectionOverlay) this.closeCollection();
     }, { signal });
     this.collectionGroups.addEventListener('click', (event) => {
-      const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-revisit-id]') : null;
-      const id = target?.dataset.revisitId;
-      if (id) this.openCompletedVariant(id);
+      const element = event.target instanceof Element ? event.target : null;
+      const makeTarget = element?.closest<HTMLElement>('[data-make-id]') ?? null;
+      const makeId = makeTarget?.dataset.makeId;
+      if (makeId) {
+        this.startVariantFromCollection(makeId);
+        return;
+      }
+      const revisitTarget = element?.closest<HTMLElement>('[data-revisit-id]') ?? null;
+      const revisitId = revisitTarget?.dataset.revisitId;
+      if (revisitId) this.openCompletedVariant(revisitId);
     }, { signal });
 
     for (const button of this.shapeButtons) {
@@ -428,7 +440,9 @@ export class VerticalSliceApp {
         if (this.activityBlocked || this.stage !== 'select') return;
         const value = button.dataset.shapeChoice;
         if (!this.isShapeId(value)) return;
-        this.selected = { ...this.selected, shape: value };
+        const palette = isLegacyPaletteId(this.selected.palette) ? this.selected.palette : 'grape';
+        const filling = isLegacyFillingId(this.selected.filling) ? this.selected.filling : 'smooth';
+        this.selected = { shape: value, palette, material: 'soft', filling };
         this.updateSelectionUi();
       }, { signal });
     }
@@ -438,7 +452,8 @@ export class VerticalSliceApp {
         if (this.activityBlocked || this.stage !== 'select') return;
         const value = button.dataset.paletteChoice;
         if (!this.isPaletteId(value)) return;
-        this.selected = { ...this.selected, palette: value };
+        const filling = isLegacyFillingId(this.selected.filling) ? this.selected.filling : 'smooth';
+        this.selected = { shape: this.selected.shape, palette: value, material: 'soft', filling };
         this.updateSelectionUi();
       }, { signal });
     }
@@ -448,7 +463,8 @@ export class VerticalSliceApp {
         if (this.activityBlocked || this.stage !== 'select') return;
         const value = button.dataset.fillingChoice;
         if (!this.isFillingId(value)) return;
-        this.selected = { ...this.selected, filling: value };
+        const palette = isLegacyPaletteId(this.selected.palette) ? this.selected.palette : 'grape';
+        this.selected = { shape: this.selected.shape, palette, material: 'soft', filling: value };
         this.updateSelectionUi();
       }, { signal });
     }
@@ -479,21 +495,38 @@ export class VerticalSliceApp {
   private updateSelectionUi(): void {
     const shape = getShape(this.selected.shape);
     const palette = getPalette(this.selected.palette);
+    const material = getMaterial(this.selected.material);
+    const filling = getFilling(this.selected.filling);
     this.shell.dataset.shape = shape.id;
     this.shell.dataset.palette = palette.id;
-    this.shell.dataset.filling = this.selected.filling;
+    this.shell.dataset.material = material.id;
+    this.shell.dataset.filling = filling.id;
     this.shell.style.setProperty('--accent', palette.accentCss);
     this.shell.style.setProperty('--accent-soft', palette.accentSoftCss);
     const selectedId = variantId(this.selected);
-    const requiredRank = getRequiredRank(selectedId);
-    const unlocked = isVariantUnlocked(selectedId, this.labXp);
-    this.variantPreview.textContent = unlocked
-      ? variantLabel(this.selected)
-      : `${variantLabel(this.selected)} · ${this.options.copy.progress.lockedAtRank.replace('{rank}', String(requiredRank))}`;
+    const selectedSpec = getVariantSpec(selectedId);
+    const unlocked = selectedSpec ? isVariantUnlocked(selectedId, this.labXp) : false;
+    if (selectedSpec) {
+      const requiredRank = getRequiredRank(selectedId);
+      this.variantPreview.textContent = unlocked
+        ? selectedSpec.label
+        : `${selectedSpec.label} · ${this.options.copy.progress.lockedAtRank.replace('{rank}', String(requiredRank))}`;
+    } else {
+      this.variantPreview.textContent = variantLabel(this.selected);
+    }
     this.startButton.disabled = !unlocked;
     this.paintShapePath = createShapePath(shape, PAINT_CANVAS_SIZE);
     this.renderer.setShape(shape);
-    this.renderer.setMaterial(palette);
+    this.renderer.setMaterial({
+      low: palette.low,
+      high: palette.high,
+      sheen: palette.sheen,
+      rim: palette.rim,
+      seed: palette.seed,
+      translucency: material.translucency,
+      iridescence: material.iridescence,
+    });
+    this.renderer.setFillingStyle(filling.renderStyle);
 
     for (const button of this.shapeButtons) {
       button.setAttribute('aria-pressed', String(button.dataset.shapeChoice === this.selected.shape));
@@ -507,7 +540,7 @@ export class VerticalSliceApp {
 
     if (this.stage === 'select') {
       this.renderer.setFillProgress(1);
-      this.renderer.setFillingAmount(this.selected.filling === 'beads' ? 1 : 0);
+      this.renderer.setFillingAmount(filling.requiresAddStage ? 1 : 0);
     }
   }
 
@@ -548,7 +581,7 @@ export class VerticalSliceApp {
         this.setStageCopy(this.options.copy.stage.selectTitle, this.options.copy.stage.selectHint);
         this.updateSelectionUi();
         this.renderer.setFillProgress(1);
-        this.renderer.setFillingAmount(this.selected.filling === 'beads' ? 1 : 0);
+        this.renderer.setFillingAmount(getFilling(this.selected.filling).requiresAddStage ? 1 : 0);
         this.renderer.setMoldProgress(0);
         break;
       case 'pour':
@@ -569,7 +602,7 @@ export class VerticalSliceApp {
       case 'mix':
         this.setStageCopy(this.options.copy.stage.mixTitle, this.options.copy.stage.mixHint);
         this.renderer.setFillProgress(1);
-        this.renderer.setFillingAmount(this.selected.filling === 'beads' ? 1 : 0);
+        this.renderer.setFillingAmount(getFilling(this.selected.filling).requiresAddStage ? 1 : 0);
         this.renderer.setMoldProgress(0);
         this.lastSemanticAt = performance.now();
         break;
@@ -582,14 +615,14 @@ export class VerticalSliceApp {
       case 'reveal':
         this.setStageCopy(this.options.copy.stage.revealTitle, '');
         this.renderer.setMoldProgress(1);
-        this.audio.playReveal(this.selected.filling === 'beads');
+        this.audio.playReveal(this.selected.material !== 'soft' || getFilling(this.selected.filling).requiresAddStage);
         this.transitionTimer = window.setTimeout(() => this.setStage('test'), 920);
         break;
       case 'test': {
         const isNew = !this.revisitMode && !this.discovered.has(variantId(this.selected));
         this.renderer.setMoldProgress(0);
         this.setStageCopy(
-          variantLabel(this.selected),
+          getVariantSpec(variantId(this.selected))?.label ?? variantLabel(this.selected),
           this.revisitMode ? this.options.copy.stage.revisitHint : this.options.copy.stage.testHint,
         );
         this.collectButton.textContent = this.revisitMode ? this.options.copy.actions.backToLab : this.options.copy.actions.collect;
@@ -932,7 +965,7 @@ export class VerticalSliceApp {
     this.setHoldSurfaceActive(false);
     this.audio.playStageComplete(0.42);
     this.transitionTimer = window.setTimeout(
-      () => this.setStage(this.selected.filling === 'beads' ? 'add' : 'mix'),
+      () => this.setStage(getFilling(this.selected.filling).requiresAddStage ? 'add' : 'mix'),
       180,
     );
   }
@@ -1153,9 +1186,9 @@ export class VerticalSliceApp {
             : this.options.copy.collection.locked;
         const action = recipe.state === 'completed'
           ? `<button class="collection-card__action" type="button" data-revisit-id="${recipe.id}">${this.options.copy.collection.squeeze}</button>`
-          : recipe.state === 'locked'
-            ? `<span class="collection-card__rank">${this.formatCopy(this.options.copy.collection.requiredRank, { rank: recipe.requiredRank })}</span>`
-            : '';
+          : recipe.state === 'available'
+            ? `<button class="collection-card__action" type="button" data-make-id="${recipe.id}">${this.options.copy.collection.make}</button>`
+            : `<span class="collection-card__rank">${this.formatCopy(this.options.copy.collection.requiredRank, { rank: recipe.requiredRank })}</span>`;
         return `<article class="collection-card collection-card--${recipe.state}" style="--card-accent: ${palette.accentCss}; --card-accent-soft: ${palette.accentSoftCss}">
           <div class="collection-card__swatch" aria-hidden="true"></div>
           <div class="collection-card__body">
@@ -1193,7 +1226,7 @@ export class VerticalSliceApp {
       this.discovered.clear();
       this.revisitMode = false;
       this.collectFeedbackText = '';
-      this.selected = { shape: 'soft-square', palette: 'grape', filling: 'smooth' };
+      this.selected = { shape: 'soft-square', palette: 'grape', material: 'soft', filling: 'smooth' };
       if (this.feedbackTimer !== null) {
         window.clearTimeout(this.feedbackTimer);
         this.feedbackTimer = null;
@@ -1210,6 +1243,18 @@ export class VerticalSliceApp {
     } finally {
       this.collectionResetButton.disabled = false;
     }
+  }
+
+  private startVariantFromCollection(id: string): void {
+    if (this.activityBlocked || this.stage !== 'select') return;
+    const variant = getVariantSpec(id);
+    if (!variant || !isVariantUnlocked(id, this.labXp)) return;
+    this.selected = variant.choice;
+    this.revisitMode = false;
+    this.updateSelectionUi();
+    this.closeCollection();
+    void this.audio.prime();
+    this.setStage('pour');
   }
 
   private openCompletedVariant(id: string): void {

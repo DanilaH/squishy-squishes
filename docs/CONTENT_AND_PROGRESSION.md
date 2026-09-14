@@ -1,7 +1,7 @@
 # Squishy Squishes — Content & Progression
 
-**Status:** ACTIVE SUPPORTING DIRECTION — Phase 5 Progression + Collection
-**Important:** `PROGRESSION_COLLECTION_01.md` defines the bounded 12-recipe validation tuning. Its XP values/unlock order are test parameters, not final launch balance.
+**Status:** ACTIVE SUPPORTING DIRECTION — Phase 6 Representative Content
+**Important:** `PROGRESSION_COLLECTION_01.md` remains historical validation tuning. `REPRESENTATIVE_CONTENT_01.md` now governs the bounded 16-recipe material/filling proof; XP values/unlock order are still test parameters, not final launch balance.
 
 ---
 

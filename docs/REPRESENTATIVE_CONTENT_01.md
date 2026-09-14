@@ -103,7 +103,7 @@ No recipe ID or shape ID may branch inside shader/deformation behavior.
 Add only the palette data needed by the representative recipes:
 
 - `aqua` — clear aqua/cyan family suitable for jelly;
-- `opal` — pale neutral/spectral base suitable for holographic treatment.
+- `prism` — pale opal/spectral base suitable for holographic treatment.
 
 The legacy component selector continues to expose only grape/strawberry/lime during this pass. Aqua/opal are reached through curated Collection recipes.
 

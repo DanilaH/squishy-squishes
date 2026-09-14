@@ -21,6 +21,7 @@ interface VertexState {
 }
 
 export type SquishRgb = readonly [number, number, number];
+export type SquishFillingStyle = 'none' | 'foam' | 'pearl';
 
 export interface SquishMaterialStyle {
   low: SquishRgb;
@@ -28,6 +29,8 @@ export interface SquishMaterialStyle {
   sheen: SquishRgb;
   rim: SquishRgb;
   seed: number;
+  translucency: number;
+  iridescence: number;
 }
 
 export interface SquishMetrics {
@@ -123,6 +126,8 @@ const DEFAULT_MATERIAL: SquishMaterialStyle = {
   sheen: [0.98, 0.86, 1],
   rim: [0.44, 0.22, 0.54],
   seed: 0.17,
+  translucency: 0,
+  iridescence: 0,
 };
 
 export class SquishSurface {
@@ -149,9 +154,12 @@ export class SquishSurface {
   private readonly sheenColorUniform: WebGLUniformLocation;
   private readonly rimColorUniform: WebGLUniformLocation;
   private readonly fillingAmountUniform: WebGLUniformLocation;
+  private readonly fillingStyleUniform: WebGLUniformLocation;
   private readonly fillProgressUniform: WebGLUniformLocation;
   private readonly moldProgressUniform: WebGLUniformLocation;
   private readonly materialSeedUniform: WebGLUniformLocation;
+  private readonly translucencyUniform: WebGLUniformLocation;
+  private readonly iridescenceUniform: WebGLUniformLocation;
   private readonly wireframePassUniform: WebGLUniformLocation;
 
   private scaleX = 0.5;
@@ -179,6 +187,7 @@ export class SquishSurface {
   private material: SquishMaterialStyle = DEFAULT_MATERIAL;
   private shape: ShapeDefinition = getShape('soft-square');
   private fillingAmount = 0;
+  private fillingStyle = 0;
   private fillProgress = 1;
   private moldProgress = 0;
   private animationFrame = 0;
@@ -214,9 +223,12 @@ export class SquishSurface {
     this.sheenColorUniform = requireUniform(gl, this.program, 'uSheenColor');
     this.rimColorUniform = requireUniform(gl, this.program, 'uRimColor');
     this.fillingAmountUniform = requireUniform(gl, this.program, 'uFillingAmount');
+    this.fillingStyleUniform = requireUniform(gl, this.program, 'uFillingStyle');
     this.fillProgressUniform = requireUniform(gl, this.program, 'uFillProgress');
     this.moldProgressUniform = requireUniform(gl, this.program, 'uMoldProgress');
     this.materialSeedUniform = requireUniform(gl, this.program, 'uMaterialSeed');
+    this.translucencyUniform = requireUniform(gl, this.program, 'uTranslucency');
+    this.iridescenceUniform = requireUniform(gl, this.program, 'uIridescence');
     this.wireframePassUniform = requireUniform(gl, this.program, 'uWireframePass');
 
     const vao = gl.createVertexArray();
@@ -308,6 +320,10 @@ export class SquishSurface {
 
   public setFillingAmount(amount: number): void {
     this.fillingAmount = clamp01(amount);
+  }
+
+  public setFillingStyle(style: SquishFillingStyle): void {
+    this.fillingStyle = style === 'pearl' ? 2 : style === 'foam' ? 1 : 0;
   }
 
   public setFillProgress(progress: number): void {
@@ -708,9 +724,12 @@ export class SquishSurface {
     gl.uniform3f(this.sheenColorUniform, ...this.material.sheen);
     gl.uniform3f(this.rimColorUniform, ...this.material.rim);
     gl.uniform1f(this.fillingAmountUniform, this.fillingAmount);
+    gl.uniform1f(this.fillingStyleUniform, this.fillingStyle);
     gl.uniform1f(this.fillProgressUniform, this.fillProgress);
     gl.uniform1f(this.moldProgressUniform, this.moldProgress);
     gl.uniform1f(this.materialSeedUniform, this.material.seed);
+    gl.uniform1f(this.translucencyUniform, clamp01(this.material.translucency));
+    gl.uniform1f(this.iridescenceUniform, clamp01(this.material.iridescence));
 
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.triangleIndexBuffer);

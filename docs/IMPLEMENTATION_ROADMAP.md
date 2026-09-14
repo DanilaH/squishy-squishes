@@ -1,10 +1,10 @@
 # Squishy Squishes — Implementation Roadmap
 
 **Status:** ACTIVE PRODUCTION ROADMAP
-**Current gate:** Phase 5 — Progression + Collection 01
-**Previous gate:** Phase 4 — Renderer Reuse / Second Shape — COMPLETE
+**Current gate:** Phase 6 — Representative Content 01
+**Previous gate:** Phase 5 — Progression + Collection 01 — COMPLETE
 
-The tactile probe, complete vertical slice, production shell and two-shape renderer-reuse gate have passed. Soft Cube + Soft Heart share the same deformation/material/craft path and the merged phone build was accepted. The project is now validating the one-more-squishy progression/collection loop before representative content expansion.
+The tactile loop, production shell, two-shape renderer reuse and the one-more-squishy progression/collection loop have passed deployed phone acceptance. The project is now proving reusable material/filling novelty with four curated representative recipes before broad catalog production or final UI polish.
 
 ---
 
@@ -137,7 +137,7 @@ Phone acceptance on the merged Pages build passed on 2026-09-14. The renderer/co
 
 ---
 
-## Phase 5 — Progression + Collection — ACTIVE
+## Phase 5 — Progression + Collection — COMPLETE
 
 Canonical bounded spec:
 
@@ -168,24 +168,30 @@ Also:
 
 ### Exit gate
 
-Fresh save reaches several desirable unlocks at a cadence supported by measured loop timing.
+Fresh-save progression, deterministic unlocks, Collection states and completed-item revisit were exercised successfully on the deployed phone build on 2026-09-14. The bounded one-more-loop gate is closed; XP values remain validation tuning rather than final launch balance.
 
 ---
 
-## Phase 6 — Interaction/content expansion
+## Phase 6 — Interaction/content expansion — ACTIVE
+
+Canonical bounded spec:
+
+- `REPRESENTATIVE_CONTENT_01.md`
+- `REPRESENTATIVE_CONTENT_01_REVIEW.md`
 
 ### Goal
 
 Prove optional content variation without turning the product into a mini-game collection.
 
-Possible additions only where content needs them:
+Current bounded proof:
 
-- richer filling/add variants;
-- selected DRAG/APPLY finish/decor behavior;
-- one restrained finish/decor beat if justified;
-- premium reveal hierarchy.
+- explicit curated registry rather than a Cartesian canonical catalog;
+- reusable `soft` / `jelly` / `holo` material profiles in one shader path;
+- reusable Pearl filling on the existing shake/add interaction;
+- four premium representative recipes across both proven shapes;
+- Collection Make as temporary functional reachability for recipes outside the legacy component selector.
 
-Use only a few representative recipes before catalog scale.
+Use only this representative set before deciding whether catalog scale is cheap enough. Additional finish/decor mechanics remain deferred unless the content proof shows they are needed.
 
 ### Exit gate
 
