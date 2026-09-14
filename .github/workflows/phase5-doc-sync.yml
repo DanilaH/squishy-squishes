@@ -20,6 +20,7 @@ jobs:
         with:
           node-version: 24
       - run: python scripts/sync_phase5_docs.py
+      - run: sed -i 's/[[:space:]]\+$//' docs/PROGRESSION_COLLECTION_01.md
       - run: git diff --check
       - run: npm install
       - run: npm run typecheck
