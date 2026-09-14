@@ -15,11 +15,13 @@ export const ru = {
     craftSurface: 'Область взаимодействия с крафтом',
     moldTarget: 'Нажать на точку формовки',
     recipeOptions: 'Параметры рецепта',
+    shapeGroup: 'Форма сквиша',
     colorGroup: 'Цвет сквиша',
     fillingGroup: 'Наполнение сквиша',
     debugControls: 'Отладочные элементы',
   },
   recipe: {
+    shape: 'Форма',
     color: 'Цвет',
     texture: 'Текстура',
     make: 'Сделать сквиш',
@@ -27,7 +29,7 @@ export const ru = {
   stage: {
     kicker: 'КРАФТ 01',
     selectTitle: 'Выбери рецепт',
-    selectHint: 'Выбери цвет и текстуру, затем сделай сквиш.',
+    selectHint: 'Выбери форму, цвет и текстуру, затем сделай сквиш.',
     pourTitle: 'Распредели основу',
     pourHint: 'Проводи по сквишу, пока поверхность не будет покрыта.',
     addTitle: 'Насыпь пенопластовые шарики',
