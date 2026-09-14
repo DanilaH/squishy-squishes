@@ -1,5 +1,8 @@
 node_modules/
 dist/
+dist-yandex/
 .vite/
+playwright-report/
+test-results/
 .DS_Store
 *.log
