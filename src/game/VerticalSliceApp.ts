@@ -18,6 +18,12 @@ const DISCOVERED_STORAGE_KEY = 'squishy.vertical-slice.discovered.v2';
 const TOTAL_VARIANTS = ALL_VARIANT_IDS.length;
 const SHAKE_PATH_FOR_FULL_PROGRESS_PX = 2200;
 const SHAKE_IDLE_MS = 120;
+const PAINT_CANVAS_SIZE = 256;
+const PAINT_GRID_SIZE = 16;
+const PAINT_COMPLETE_COVERAGE = 0.82;
+const PAINT_BRUSH_RADIUS_UV = 0.14;
+const PAINT_IDLE_MS = 110;
+const MIX_MOTION_IDLE_MS = 110;
 const MOLD_HIT_PROGRESS = 0.17;
 const MOLD_DECAY_PER_SECOND = 0.055;
 const MOLD_TARGET_LIFETIME_MS = 900;
@@ -30,9 +36,13 @@ export class VerticalSliceApp {
   private readonly shell: HTMLElement;
   private readonly workspace: HTMLElement;
   private readonly canvas: HTMLCanvasElement;
+  private readonly paintCanvas: HTMLCanvasElement;
+  private readonly paintContext: CanvasRenderingContext2D;
+  private readonly paintShapePath: Path2D;
   private readonly contactShadow: HTMLElement;
   private readonly holdSurface: HTMLButtonElement;
   private readonly moldTarget: HTMLButtonElement;
+  private readonly foamShaker: HTMLElement;
   private readonly stageTitle: HTMLElement;
   private readonly stageHint: HTMLElement;
   private readonly progressFill: HTMLElement;
@@ -52,6 +62,8 @@ export class VerticalSliceApp {
   private readonly audio = new SquishyAudio();
   private readonly renderer: SquishSurface;
   private readonly discovered = new Set<string>();
+  private readonly paintCoverage = new Uint8Array(PAINT_GRID_SIZE * PAINT_GRID_SIZE);
+  private readonly paintEligible = new Uint8Array(PAINT_GRID_SIZE * PAINT_GRID_SIZE);
 
   private stage: CraftStage = 'select';
   private selected: VariantChoice = { palette: 'grape', filling: 'smooth' };
@@ -72,8 +84,22 @@ export class VerticalSliceApp {
   private shakeLastX = 0;
   private shakeLastY = 0;
   private shakeLastAt = 0;
+  private shakeLastActiveAt = 0;
   private shakeLastDirection = 0;
   private shakeAudioActive = false;
+  private paintEligibleCount = 0;
+  private paintCoveredCount = 0;
+  private paintLastU = 0.5;
+  private paintLastV = 0.5;
+  private paintLastAt = 0;
+  private paintAudioActive = false;
+  private paintComplete = false;
+  private mixPointerId: number | null = null;
+  private mixLastX = 0;
+  private mixLastY = 0;
+  private mixLastSampleAt = 0;
+  private mixLastMoveAt = 0;
+  private mixPointerSpeed = 0;
   private moldComplete = false;
   private moldTargetX = 0;
   private moldTargetY = 0;
@@ -85,9 +111,15 @@ export class VerticalSliceApp {
     this.shell = this.requireElement<HTMLElement>('.lab-shell');
     this.workspace = this.requireElement<HTMLElement>('.lab-workspace');
     this.canvas = this.requireElement<HTMLCanvasElement>('.squish-canvas');
+    this.paintCanvas = this.requireElement<HTMLCanvasElement>('.paint-layer');
+    const paintContext = this.paintCanvas.getContext('2d');
+    if (!paintContext) throw new Error('2D canvas is required for paint coverage.');
+    this.paintContext = paintContext;
+    this.paintShapePath = this.createPaintShapePath();
     this.contactShadow = this.requireElement<HTMLElement>('.contact-shadow');
     this.holdSurface = this.requireElement<HTMLButtonElement>('.hold-surface');
     this.moldTarget = this.requireElement<HTMLButtonElement>('.mold-target');
+    this.foamShaker = this.requireElement<HTMLElement>('.foam-shaker');
     this.stageTitle = this.requireElement<HTMLElement>('.stage-title');
     this.stageHint = this.requireElement<HTMLElement>('.stage-hint');
     this.progressFill = this.requireElement<HTMLElement>('.stage-progress__fill');
@@ -184,6 +216,7 @@ export class VerticalSliceApp {
           <div class="contact-shadow" aria-hidden="true"></div>
           <div class="object-stack">
             <canvas class="squish-canvas" aria-label="Interactive squishy"></canvas>
+            <canvas class="paint-layer" width="${PAINT_CANVAS_SIZE}" height="${PAINT_CANVAS_SIZE}" aria-hidden="true" hidden></canvas>
           </div>
 
           <div class="dispenser" aria-hidden="true">
@@ -200,7 +233,7 @@ export class VerticalSliceApp {
           <div class="reveal-flash" aria-hidden="true"></div>
           <div class="result-halo" aria-hidden="true"></div>
 
-          <button class="hold-surface" type="button" aria-label="Hold to continue" hidden></button>
+          <button class="hold-surface" type="button" aria-label="Craft interaction surface" hidden></button>
           <button class="mold-target" type="button" aria-label="Press the mold target" hidden><span></span></button>
 
           <div class="stage-copy">
@@ -252,6 +285,11 @@ export class VerticalSliceApp {
     this.holdSurface.addEventListener('pointerup', this.handleHoldPointerEnd, { signal });
     this.holdSurface.addEventListener('pointercancel', this.handleHoldPointerEnd, { signal });
     this.moldTarget.addEventListener('pointerdown', this.handleMoldTargetPress, { signal });
+
+    this.canvas.addEventListener('pointerdown', this.handleMixPointerDown, { signal });
+    this.canvas.addEventListener('pointermove', this.handleMixPointerMove, { signal });
+    this.canvas.addEventListener('pointerup', this.handleMixPointerEnd, { signal });
+    this.canvas.addEventListener('pointercancel', this.handleMixPointerEnd, { signal });
 
     this.startButton.addEventListener('click', () => {
       void this.audio.prime();
@@ -333,10 +371,15 @@ export class VerticalSliceApp {
     this.shell.dataset.stage = next;
     this.shell.dataset.tested = 'false';
     this.shell.dataset.shaking = 'false';
-    this.shell.style.setProperty('--shake-x', '0px');
-    this.shell.style.setProperty('--shake-tilt', '0deg');
+    this.foamShaker.style.setProperty('--shake-x', '0px');
+    this.foamShaker.style.setProperty('--shake-tilt', '0deg');
+    this.shakeLastActiveAt = 0;
     this.setStageProgress(0);
     this.setHoldSurfaceActive(false);
+    this.paintCanvas.hidden = true;
+    this.paintAudioActive = false;
+    this.paintComplete = false;
+    this.resetMixTracking();
     this.moldTarget.hidden = true;
     this.moldTarget.disabled = true;
     this.moldComplete = false;
@@ -356,10 +399,12 @@ export class VerticalSliceApp {
         this.renderer.setMoldProgress(0);
         break;
       case 'pour':
-        this.setStageCopy('Pour the base', 'Hold the workbench until the mold is full.');
+        this.setStageCopy('Spread the base', 'Drag across the squishy until the surface is covered.');
         this.renderer.setFillProgress(0);
         this.renderer.setFillingAmount(0);
         this.renderer.setMoldProgress(0);
+        this.resetPaintCoverage();
+        this.paintCanvas.hidden = false;
         this.setHoldSurfaceActive(true);
         break;
       case 'add':
@@ -414,6 +459,7 @@ export class VerticalSliceApp {
       `compression      ${metrics.compression.toFixed(3)}`,
       `press depth      ${metrics.pressDepth.toFixed(3)}`,
       `velocity         ${metrics.normalizedVelocity.toFixed(3)}`,
+      `mix pointer px/s ${this.mixPointerSpeed.toFixed(1)}`,
       `max displacement ${metrics.maxDisplacement.toFixed(3)}`,
       `pointer active   ${metrics.active ? 'yes' : 'no'}`,
       `squeezes         ${metrics.squeezes}`,
@@ -426,14 +472,17 @@ export class VerticalSliceApp {
     this.lastSemanticAt = now;
 
     if (this.stage === 'mix') {
+      const recentTravel = now - this.mixLastMoveAt <= MIX_MOTION_IDLE_MS;
+      const speedFactor = clamp01((this.mixPointerSpeed - 55) / 650);
       const movingStretch = metrics.active
-        && metrics.compression >= 0.18
-        && metrics.normalizedVelocity >= 0.025;
+        && metrics.compression >= 0.24
+        && recentTravel
+        && speedFactor > 0;
 
       if (movingStretch && this.stageProgress < 1) {
-        const stretch = clamp01((metrics.compression - 0.15) / 0.65);
-        const effort = stretch * 0.72 + metrics.normalizedVelocity * 0.28;
-        this.setStageProgress(this.stageProgress + dt * effort * 0.66);
+        const stretch = clamp01((metrics.compression - 0.22) / 0.58);
+        const effort = stretch * 0.72 + speedFactor * 0.28;
+        this.setStageProgress(this.stageProgress + dt * effort * 0.88);
       }
 
       if (!metrics.active && this.stageProgress >= 1) {
@@ -477,20 +526,33 @@ export class VerticalSliceApp {
     }
 
     void this.audio.prime();
-    if (this.stage === 'pour') this.audio.startPour('base');
 
-    if (this.stage === 'add') {
-      this.shakeLastX = event.clientX;
-      this.shakeLastY = event.clientY;
-      this.shakeLastAt = performance.now();
-      this.shakeLastDirection = 0;
-      this.shell.dataset.shaking = 'true';
+    if (this.stage === 'pour') {
+      const point = this.pointerToPaintUv(event.clientX, event.clientY);
+      this.paintLastU = point.u;
+      this.paintLastV = point.v;
+      this.paintLastAt = performance.now();
+      this.paintAtUv(point.u, point.v);
+      return;
     }
+
+    this.shakeLastX = event.clientX;
+    this.shakeLastY = event.clientY;
+    this.shakeLastAt = performance.now();
+    this.shakeLastActiveAt = 0;
+    this.shakeLastDirection = 0;
   };
 
   private readonly handleHoldPointerMove = (event: PointerEvent): void => {
-    if (event.pointerId !== this.holdPointerId || this.stage !== 'add' || this.holdStageComplete) return;
+    if (event.pointerId !== this.holdPointerId) return;
     event.preventDefault();
+
+    if (this.stage === 'pour') {
+      if (!this.paintComplete) this.paintPathTo(event.clientX, event.clientY);
+      return;
+    }
+
+    if (this.stage !== 'add' || this.holdStageComplete) return;
 
     const now = performance.now();
     const dx = event.clientX - this.shakeLastX;
@@ -511,8 +573,9 @@ export class VerticalSliceApp {
         * (0.45 + speedFactor * 0.55)
         * reversalBonus;
       this.setStageProgress(this.stageProgress + progressDelta);
-      this.renderer.setFillingAmount(this.easeOutCubic(this.stageProgress));
+      this.renderer.setFillingAmount(this.stageProgress);
       this.shell.dataset.shaking = 'true';
+      this.shakeLastActiveAt = now;
       if (!this.shakeAudioActive) {
         this.audio.startPour('beads');
         this.shakeAudioActive = true;
@@ -540,20 +603,184 @@ export class VerticalSliceApp {
 
     this.holdPointerId = null;
     this.audio.stopPour();
+    this.paintAudioActive = false;
     this.shakeAudioActive = false;
     this.shell.dataset.shaking = 'false';
-
-    if (this.stage === 'pour') this.finishHoldStage();
   };
 
-  private finishHoldStage(): void {
-    if (!this.holdStageComplete) return;
-    this.holdStageComplete = false;
-    this.audio.playStageComplete(0.42);
+  private resetPaintCoverage(): void {
+    this.paintCoverage.fill(0);
+    this.paintEligible.fill(0);
+    this.paintEligibleCount = 0;
+    this.paintCoveredCount = 0;
+    this.paintComplete = false;
 
-    if (this.stage === 'pour') {
-      this.setStage(this.selected.filling === 'beads' ? 'add' : 'mix');
+    for (let y = 0; y < PAINT_GRID_SIZE; y += 1) {
+      for (let x = 0; x < PAINT_GRID_SIZE; x += 1) {
+        const u = (x + 0.5) / PAINT_GRID_SIZE;
+        const v = (y + 0.5) / PAINT_GRID_SIZE;
+        const px = u * 2 - 1;
+        const py = v * 2 - 1;
+        if (Math.abs(px) ** 4 + Math.abs(py) ** 4 > 0.96) continue;
+        const index = y * PAINT_GRID_SIZE + x;
+        this.paintEligible[index] = 1;
+        this.paintEligibleCount += 1;
+      }
     }
+
+    const context = this.paintContext;
+    context.clearRect(0, 0, PAINT_CANVAS_SIZE, PAINT_CANVAS_SIZE);
+    const palette = getPalette(this.selected.palette);
+    context.save();
+    context.fillStyle = 'rgba(255, 255, 255, 0.045)';
+    context.fill(this.paintShapePath);
+    context.lineWidth = 2;
+    context.strokeStyle = palette.accentSoftCss;
+    context.shadowBlur = 12;
+    context.shadowColor = palette.accentSoftCss;
+    context.stroke(this.paintShapePath);
+    context.restore();
+  }
+
+  private paintPathTo(clientX: number, clientY: number): void {
+    const point = this.pointerToPaintUv(clientX, clientY);
+    const du = point.u - this.paintLastU;
+    const dv = point.v - this.paintLastV;
+    const distance = Math.hypot(du, dv);
+    const steps = Math.max(1, Math.ceil(distance / 0.035));
+
+    for (let step = 1; step <= steps; step += 1) {
+      const ratio = step / steps;
+      this.paintAtUv(this.paintLastU + du * ratio, this.paintLastV + dv * ratio);
+      if (this.paintComplete) break;
+    }
+
+    this.paintLastU = point.u;
+    this.paintLastV = point.v;
+  }
+
+  private paintAtUv(u: number, v: number): void {
+    if (this.paintComplete || !this.isInsidePaintShape(u, v)) return;
+
+    let newlyCovered = 0;
+    for (let y = 0; y < PAINT_GRID_SIZE; y += 1) {
+      for (let x = 0; x < PAINT_GRID_SIZE; x += 1) {
+        const index = y * PAINT_GRID_SIZE + x;
+        if (this.paintEligible[index] !== 1 || this.paintCoverage[index] === 1) continue;
+        const cellU = (x + 0.5) / PAINT_GRID_SIZE;
+        const cellV = (y + 0.5) / PAINT_GRID_SIZE;
+        if (Math.hypot(cellU - u, cellV - v) > PAINT_BRUSH_RADIUS_UV) continue;
+        this.paintCoverage[index] = 1;
+        this.paintCoveredCount += 1;
+        newlyCovered += 1;
+      }
+    }
+
+    if (newlyCovered === 0) return;
+
+    this.drawPaintBrush(u, v);
+    const coverage = this.paintEligibleCount === 0 ? 0 : this.paintCoveredCount / this.paintEligibleCount;
+    this.setStageProgress(coverage / PAINT_COMPLETE_COVERAGE);
+    this.paintLastAt = performance.now();
+
+    if (!this.paintAudioActive) {
+      this.audio.startPour('base');
+      this.paintAudioActive = true;
+    }
+
+    if (coverage >= PAINT_COMPLETE_COVERAGE) this.finishPaintStage();
+  }
+
+  private drawPaintBrush(u: number, v: number): void {
+    const context = this.paintContext;
+    const x = u * PAINT_CANVAS_SIZE;
+    const y = (1 - v) * PAINT_CANVAS_SIZE;
+    const radius = PAINT_CANVAS_SIZE * PAINT_BRUSH_RADIUS_UV;
+    const palette = getPalette(this.selected.palette);
+    const gradient = context.createRadialGradient(
+      x - radius * 0.18,
+      y - radius * 0.18,
+      radius * 0.08,
+      x,
+      y,
+      radius,
+    );
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.34)');
+    gradient.addColorStop(0.22, palette.accentCss);
+    gradient.addColorStop(1, palette.accentSoftCss);
+
+    context.save();
+    context.clip(this.paintShapePath);
+    context.globalAlpha = 0.94;
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
+  private createPaintShapePath(): Path2D {
+    const path = new Path2D();
+    const center = PAINT_CANVAS_SIZE * 0.5;
+    const radius = PAINT_CANVAS_SIZE * 0.48;
+    const points = 96;
+
+    for (let index = 0; index <= points; index += 1) {
+      const angle = (index / points) * Math.PI * 2;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const x = Math.sign(cos) * Math.sqrt(Math.abs(cos));
+      const y = Math.sign(sin) * Math.sqrt(Math.abs(sin));
+      const px = center + x * radius;
+      const py = center - y * radius;
+      if (index === 0) path.moveTo(px, py);
+      else path.lineTo(px, py);
+    }
+
+    path.closePath();
+    return path;
+  }
+
+  private pointerToPaintUv(clientX: number, clientY: number): { u: number; v: number } {
+    const rect = this.workspace.getBoundingClientRect();
+    const left = rect.left + rect.width * 0.5 - this.heroSizePx * 0.5;
+    const top = rect.top + rect.height * 0.5 - this.heroSizePx * 0.5;
+    return {
+      u: (clientX - left) / Math.max(1, this.heroSizePx),
+      v: 1 - (clientY - top) / Math.max(1, this.heroSizePx),
+    };
+  }
+
+  private isInsidePaintShape(u: number, v: number): boolean {
+    const x = u * 2 - 1;
+    const y = v * 2 - 1;
+    return Math.abs(x) ** 4 + Math.abs(y) ** 4 <= 0.96;
+  }
+
+  private finishPaintStage(): void {
+    if (this.stage !== 'pour' || this.paintComplete) return;
+    this.paintComplete = true;
+    this.setStageProgress(1);
+    this.renderer.setFillProgress(1);
+    this.stageHint.textContent = 'Covered.';
+    this.audio.stopPour();
+    this.paintAudioActive = false;
+
+    if (this.holdPointerId !== null) {
+      try {
+        this.holdSurface.releasePointerCapture(this.holdPointerId);
+      } catch {
+        // Capture may already be gone.
+      }
+    }
+
+    this.holdPointerId = null;
+    this.setHoldSurfaceActive(false);
+    this.audio.playStageComplete(0.42);
+    this.transitionTimer = window.setTimeout(
+      () => this.setStage(this.selected.filling === 'beads' ? 'add' : 'mix'),
+      180,
+    );
   }
 
   private finishShakeStage(): void {
@@ -583,8 +810,48 @@ export class VerticalSliceApp {
   private updateShakerPose(clientX: number): void {
     const rect = this.workspace.getBoundingClientRect();
     const offset = clamp01((clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
-    this.shell.style.setProperty('--shake-x', `${(offset * 30).toFixed(1)}px`);
-    this.shell.style.setProperty('--shake-tilt', `${(offset * 9).toFixed(1)}deg`);
+    this.foamShaker.style.setProperty('--shake-x', `${(offset * 30).toFixed(1)}px`);
+    this.foamShaker.style.setProperty('--shake-tilt', `${(offset * 9).toFixed(1)}deg`);
+  }
+
+  private readonly handleMixPointerDown = (event: PointerEvent): void => {
+    if (this.stage !== 'mix' || this.mixPointerId !== null) return;
+    this.mixPointerId = event.pointerId;
+    this.mixLastX = event.clientX;
+    this.mixLastY = event.clientY;
+    this.mixLastSampleAt = performance.now();
+    this.mixLastMoveAt = 0;
+    this.mixPointerSpeed = 0;
+  };
+
+  private readonly handleMixPointerMove = (event: PointerEvent): void => {
+    if (this.stage !== 'mix' || event.pointerId !== this.mixPointerId) return;
+    const now = performance.now();
+    const dx = event.clientX - this.mixLastX;
+    const dy = event.clientY - this.mixLastY;
+    const distance = Math.hypot(dx, dy);
+    const elapsedMs = Math.max(8, now - this.mixLastSampleAt);
+
+    if (distance >= 1) {
+      this.mixPointerSpeed = (distance / elapsedMs) * 1000;
+      this.mixLastMoveAt = now;
+    }
+
+    this.mixLastX = event.clientX;
+    this.mixLastY = event.clientY;
+    this.mixLastSampleAt = now;
+  };
+
+  private readonly handleMixPointerEnd = (event: PointerEvent): void => {
+    if (event.pointerId !== this.mixPointerId) return;
+    this.resetMixTracking();
+  };
+
+  private resetMixTracking(): void {
+    this.mixPointerId = null;
+    this.mixLastSampleAt = 0;
+    this.mixLastMoveAt = 0;
+    this.mixPointerSpeed = 0;
   }
 
   private readonly handleMoldTargetPress = (event: PointerEvent): void => {
@@ -662,22 +929,21 @@ export class VerticalSliceApp {
     const dt = Math.min(0.05, Math.max(0, (now - this.lastCraftFrameAt) / 1000));
     this.lastCraftFrameAt = now;
 
-    if (this.holdPointerId !== null && !this.holdStageComplete && this.stage === 'pour') {
-      this.setStageProgress(this.stageProgress + dt / 1.35);
-      this.renderer.setFillProgress(this.easeOutCubic(this.stageProgress));
-
-      if (this.stageProgress >= 1) {
-        this.holdStageComplete = true;
-        this.stageHint.textContent = 'Release.';
-      }
+    if (this.stage === 'pour' && this.paintAudioActive && now - this.paintLastAt > PAINT_IDLE_MS) {
+      this.audio.stopPour();
+      this.paintAudioActive = false;
     }
 
-    if (this.stage === 'add' && this.shell.dataset.shaking === 'true' && now - this.shakeLastAt > SHAKE_IDLE_MS) {
+    if (this.stage === 'add' && this.shell.dataset.shaking === 'true' && now - this.shakeLastActiveAt > SHAKE_IDLE_MS) {
       this.shell.dataset.shaking = 'false';
       if (this.shakeAudioActive) {
         this.audio.stopPour();
         this.shakeAudioActive = false;
       }
+    }
+
+    if (this.stage === 'mix' && now - this.mixLastMoveAt > MIX_MOTION_IDLE_MS) {
+      this.mixPointerSpeed = 0;
     }
 
     if (this.stage === 'mold' && !this.moldComplete && this.stageProgress > 0) {
@@ -697,10 +963,12 @@ export class VerticalSliceApp {
     }
 
     this.audio.stopPour();
+    this.paintAudioActive = false;
     this.shakeAudioActive = false;
     this.shell.dataset.shaking = 'false';
     this.clearMoldTargetTimer();
     this.moldTarget.hidden = true;
+    this.resetMixTracking();
 
     if (this.holdPointerId !== null) {
       try {
@@ -803,10 +1071,5 @@ export class VerticalSliceApp {
 
   private isFillingId(value: string | undefined): value is FillingId {
     return value === 'smooth' || value === 'beads';
-  }
-
-  private easeOutCubic(value: number): number {
-    const t = clamp01(value);
-    return 1 - (1 - t) ** 3;
   }
 }
