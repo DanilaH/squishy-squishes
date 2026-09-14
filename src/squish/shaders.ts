@@ -52,7 +52,7 @@ float hash21(vec2 p) {
   return fract(p.x * p.y);
 }
 
-float beadField(vec2 uv, float seed) {
+float beadField(vec2 uv, float seed, float amount) {
   vec2 scaled = uv * 8.6 + vec2(seed * 3.1, seed * 5.7);
   vec2 cell = floor(scaled);
   vec2 local = fract(scaled) - 0.5;
@@ -64,7 +64,14 @@ float beadField(vec2 uv, float seed) {
   jitter *= 0.34;
   float distanceToCenter = length(local - jitter);
   float bead = 1.0 - smoothstep(0.11, 0.185, distanceToCenter);
-  return bead * occupied;
+
+  // Each occupied cell gets a stable random reveal order. Increasing the amount
+  // therefore scatters new beads across the whole squishy instead of fading one
+  // pre-existing bead layer in as a single stream.
+  float revealOrder = hash21(cell + vec2(29.1, 13.7) + seed * 43.0);
+  float reveal = smoothstep(revealOrder, min(1.0, revealOrder + 0.075), clamp(amount, 0.0, 1.0));
+  reveal *= smoothstep(0.0, 0.035, amount);
+  return bead * occupied * reveal;
 }
 
 void main() {
@@ -90,7 +97,7 @@ void main() {
   base *= 1.0 - edge * 0.26;
 
   float fillAmount = clamp(uFillingAmount, 0.0, 1.0);
-  float bead = beadField(vUv, uMaterialSeed) * fillAmount;
+  float bead = beadField(vUv, uMaterialSeed, fillAmount);
   float beadShade = 0.72 + hash21(floor(vUv * 8.6) + uMaterialSeed * 31.0) * 0.28;
   vec3 beadColor = mix(vec3(0.89, 0.92, 0.96), uSheenColor, 0.28) * beadShade;
   base = mix(base, beadColor, bead * 0.72);
