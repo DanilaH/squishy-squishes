@@ -1,5 +1,6 @@
 import './styles.css';
 import './interaction-pass.css';
+import './interaction-pass-03.css';
 import { VerticalSliceApp } from './game/VerticalSliceApp';
 
 const root = document.querySelector<HTMLDivElement>('#app');
