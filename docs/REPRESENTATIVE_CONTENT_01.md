@@ -1,7 +1,7 @@
 # Representative Content 01 — material/filling proof before catalog scale
 
 **Date:** 2026-09-14
-**Status:** APPROVED FOR IMPLEMENTATION
+**Status:** IMPLEMENTED / STRUCTURAL PASS — PHONE VISUAL ACCEPTANCE PENDING
 **Branch:** `representative-content-01`
 **Prerequisite:** Phase 5 progression/collection phone acceptance passed.
 
@@ -105,7 +105,7 @@ Add only the palette data needed by the representative recipes:
 - `aqua` — clear aqua/cyan family suitable for jelly;
 - `prism` — pale opal/spectral base suitable for holographic treatment.
 
-The legacy component selector continues to expose only grape/strawberry/lime during this pass. Aqua/opal are reached through curated Collection recipes.
+The legacy component selector continues to expose only grape/strawberry/lime during this pass. Aqua/prism are reached through curated Collection recipes.
 
 ## 8. Pearl filling
 
