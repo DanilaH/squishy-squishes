@@ -1,6 +1,6 @@
 # Renderer Reuse / Second Shape Gate
 
-**Status:** ACTIVE BOUNDED IMPLEMENTATION
+**Status:** COMPLETE / ACCEPTED — structural + phone gate passed 2026-09-14
 **Phase:** 4
 **Primary question:** can one materially different silhouette use the existing deformation/material/gameplay path without bespoke physics or a second craft state machine?
 

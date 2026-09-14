@@ -1,6 +1,6 @@
 # Squishy Squishes — Technical Direction
 
-**Status:** ACTIVE PRODUCTION DIRECTION — current bounded implementation is `RENDERER_REUSE_SECOND_SHAPE.md`
+**Status:** ACTIVE PRODUCTION DIRECTION — current bounded implementation is `PROGRESSION_COLLECTION_01.md`
 
 ## 1. Stack
 

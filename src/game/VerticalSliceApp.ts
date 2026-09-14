@@ -509,7 +509,7 @@ export class VerticalSliceApp {
     this.clearMoldTargetTimer();
     this.audio.stopPour();
     this.stage = next;
-    this.collectionButton.disabled = next !== 'select';
+    this.collectionButton.disabled = next !== 'select' || this.activityBlocked;
     if (next !== 'select') this.closeCollection();
     this.shell.dataset.stage = next;
     this.shell.dataset.tested = 'false';

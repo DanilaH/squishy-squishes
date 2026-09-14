@@ -1,10 +1,10 @@
 # Squishy Squishes — Implementation Roadmap
 
 **Status:** ACTIVE PRODUCTION ROADMAP
-**Current gate:** Phase 4 — Renderer Reuse / Second Shape
-**Previous gate:** Phase 3 — Production Skeleton 01 — COMPLETE
+**Current gate:** Phase 5 — Progression + Collection 01
+**Previous gate:** Phase 4 — Renderer Reuse / Second Shape — COMPLETE
 
-The tactile probe, complete vertical slice, production renderer pass, evidence-backed interaction corrections and production-shell extraction have passed. The project is now testing whether the high-CMF content thesis survives a materially different second silhouette before progression/catalog scale is allowed.
+The tactile probe, complete vertical slice, production shell and two-shape renderer-reuse gate have passed. Soft Cube + Soft Heart share the same deformation/material/craft path and the merged phone build was accepted. The project is now validating the one-more-squishy progression/collection loop before representative content expansion.
 
 ---
 
@@ -91,7 +91,7 @@ Structural review passed, strict typecheck/build passed, the final production so
 
 ---
 
-## Phase 4 — Renderer Reuse / Second Shape — ACTIVE
+## Phase 4 — Renderer Reuse / Second Shape — COMPLETE
 
 ### Goal
 
@@ -133,11 +133,16 @@ After deployment, phone hands-on confirms:
 - selector/composition fits the phone surface;
 - input responsiveness/performance remain acceptable.
 
-If this fails, repair the renderer/content boundary before adding more shapes.
+Phone acceptance on the merged Pages build passed on 2026-09-14. The renderer/content reuse gate is closed; future shape work must preserve the same shared path.
 
 ---
 
-## Phase 5 — Progression + Collection
+## Phase 5 — Progression + Collection — ACTIVE
+
+Canonical bounded spec:
+
+- `PROGRESSION_COLLECTION_01.md`
+- `PROGRESSION_COLLECTION_01_REVIEW.md`
 
 ### Goal
 

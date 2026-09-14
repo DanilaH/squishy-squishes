@@ -2,34 +2,35 @@
 
 Compact tactile maker / collection game for Yandex Games.
 
-**Current status:** tactile core PASS; full-loop slice PASS; interaction correction passes PASS; Production Skeleton 01 PASS; **Renderer Reuse / Second Shape is the active gate**.
+**Current status:** tactile core PASS; full-loop slice PASS; interaction correction passes PASS; Production Skeleton 01 PASS; Renderer Reuse / Second Shape PASS; **Progression + Collection 01 is the active gate**.
 
 Current accepted loop:
 
-`select → paint base → optional foam shake → stretch/mix → form with normal taps + crit targets → reveal → free squeeze → Collect → repeat`
+`select → paint base → optional foam shake → stretch/mix → form with normal taps + crit targets → reveal → free squeeze → Collect → visible progression → repeat`
 
-## Active gate — Renderer Reuse / Second Shape
+## Active gate — Progression + Collection 01
 
-The current job is to prove the high-CMF renderer thesis before progression or catalog scale.
+The current job is to prove the “one more squishy” layer on the already accepted two-shape renderer before representative content expansion.
 
 Bounded scope:
 
-- preserve the accepted rounded soft-square;
-- add exactly one materially different second silhouette: **Soft Heart**;
-- drive both silhouettes from one shared shape definition boundary;
-- keep one spring mesh, one deformation path, one shader/material path and one craft state machine;
-- use the same shape geometry for WebGL masking, pointer hit testing, paint clipping/coverage and mold target validation;
-- keep the original six durable variant IDs intact and add six heart variants;
-- no new physics tuning, gameplay stages, progression, collection redesign or third shape;
-- strict typecheck/build plus an independent diff review before merge;
-- deployed phone check before Phase 4 is marked fully complete.
+- keep Soft Cube + Soft Heart and the current 12 deterministic combinations;
+- introduce derived Lab Rank / Lab XP progression with deterministic unlocks;
+- migrate production save V1 to V2 without losing access to previously completed content;
+- add a compact locked / available / completed collection overlay;
+- let completed items reopen the existing finished-object squeeze state;
+- award stronger first-completion XP and smaller repeat XP;
+- surface concise rank/unlock/milestone feedback after Collect;
+- no currency, shop, ads, third shape, new material family or bespoke recipe gameplay;
+- strict typecheck/build plus independent final diff review before merge;
+- deployed phone check before Phase 5 is marked fully complete.
 
-Canonical implementation spec: `docs/RENDERER_REUSE_SECOND_SHAPE.md`.
-Independent review: `docs/RENDERER_REUSE_SECOND_SHAPE_REVIEW.md`.
+Canonical implementation spec: `docs/PROGRESSION_COLLECTION_01.md`.
+Independent review: `docs/PROGRESSION_COLLECTION_01_REVIEW.md`.
 
-Production Skeleton 01 is complete and remains the architecture baseline. Its save/settings/runtime/lifecycle boundaries must not be bypassed by shape work.
+Renderer Reuse / Second Shape is complete: Soft Cube and Soft Heart share one shape/deformation/material/craft path, and the merged phone build was accepted on 2026-09-14.
 
-## Product thesis
+## Product thesis## Product thesis
 
 Make desirable soft collectibles through a short tactile lab ritual, reveal them, squeeze the finished result, collect them, and quickly expose the next visually different recipe.
 
@@ -56,33 +57,28 @@ Working MVP direction remains approximately six reusable base shapes and around 
 
 Current execution order:
 
-- `docs/RENDERER_REUSE_SECOND_SHAPE.md` — active Phase 4 implementation contract
-- `docs/RENDERER_REUSE_SECOND_SHAPE_REVIEW.md` — independent challenge/corrections
+- `docs/PROGRESSION_COLLECTION_01.md` — active Phase 5 implementation contract
+- `docs/PROGRESSION_COLLECTION_01_REVIEW.md` — independent pre-implementation challenge/corrections
 - `docs/IMPLEMENTATION_ROADMAP.md` — full phase order and gates
+- `docs/CONTENT_AND_PROGRESSION.md` — active supporting progression/content direction
 - `docs/TECHNICAL_DIRECTION.md` — long-term boundaries
 - `docs/GAMEPLAY.md` — interaction grammar
 - `docs/PRODUCT.md` — product thesis/scope
-- `docs/CONTENT_AND_PROGRESSION.md` — later catalog/progression design
 - `docs/ART_DIRECTION.md` — visual identity
 - `docs/ANALYTICS_AND_MONETIZATION.md` — later analytics/ad posture
 - `docs/QA_AND_ACCEPTANCE.md` — release validation
 
-Completed production-boundary evidence:
+Completed production/reuse evidence:
 
 - `docs/PRODUCTION_SKELETON_01.md`
 - `docs/PRODUCTION_SKELETON_01_REVIEW.md`
+- `docs/RENDERER_REUSE_SECOND_SHAPE.md`
+- `docs/RENDERER_REUSE_SECOND_SHAPE_REVIEW.md`
+- `docs/RENDERER_REUSE_SECOND_SHAPE_IMPLEMENTATION_REVIEW.md`
 
-Historical tactile/slice evidence:
+Historical tactile/slice evidence remains under `docs/` and is not the active implementation contract.
 
-- `docs/SQUISH_FEEL_PROBE.md`
-- `docs/PROBE_RESULT.md`
-- `docs/VERTICAL_SLICE_01.md`
-- `docs/PRODUCTION_PASS_01.md`
-- `docs/INTERACTION_PASS_02.md`
-- `docs/INTERACTION_PASS_03.md`
-- `docs/INTERACTION_PASS_04.md`
-
-## Run
+## Run## Run
 
 Requirements: Node.js `>=20.19.0`.
 

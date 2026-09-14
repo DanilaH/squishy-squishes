@@ -891,7 +891,7 @@ body {
 
 /* Progression + Collection 01 */
 .collection-summary {
-  pointer-events: auto;
+  pointer-events: none;
   min-width: min(330px, 50vw);
 }
 
@@ -954,11 +954,13 @@ body {
 }
 
 .collection-open-button {
+  pointer-events: auto;
   padding: 6px 9px;
   font-size: 10px;
 }
 
 .collection-open-button:disabled {
+  pointer-events: none;
   opacity: 0.36;
   cursor: default;
 }
@@ -1181,5 +1183,12 @@ body {
 
   .collection-groups {
     padding: 12px;
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-progress__fill {
+    transition: none;
   }
 }
