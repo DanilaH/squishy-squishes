@@ -58,6 +58,7 @@ const GRAB_STIFFNESS_NEAR = 245;
 const GRAB_STIFFNESS_FAR = 92;
 const REST_STIFFNESS = 44;
 const DAMPING = 10.5;
+const VISUAL_COMPRESSION_RELEASE_RATE = DAMPING * 0.5;
 const BULGE_STRENGTH = 0.085;
 const PRESS_DENT_STRENGTH = 0.14;
 const PRESS_RING_BULGE = 0.045;
@@ -573,9 +574,16 @@ export class SquishSurface {
 
     const dragMagnitude = Math.hypot(displacementX, displacementY);
     const dragCompression = active ? clamp01(dragMagnitude / MAX_POINTER_DISPLACEMENT) : 0;
-    this.compression = active
+    const compressionTarget = active
       ? clamp01(Math.max(dragCompression, this.pressDepth * PRESS_COMPRESSION_WEIGHT))
       : 0;
+    if (active) {
+      this.compression = compressionTarget;
+    } else {
+      const compressionBlend = 1 - Math.exp(-VISUAL_COMPRESSION_RELEASE_RATE * dt);
+      this.compression += (compressionTarget - this.compression) * compressionBlend;
+      if (this.compression < 0.0005) this.compression = 0;
+    }
     this.maxGestureCompression = Math.max(this.maxGestureCompression, this.compression);
 
     const directionTargetX = active && dragMagnitude > 0.02 ? displacementX / dragMagnitude : 0;
