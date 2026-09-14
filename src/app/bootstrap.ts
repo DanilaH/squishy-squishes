@@ -33,11 +33,14 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
 
   const app = new VerticalSliceApp(root, {
     completedVariantIds: saveState.completedVariantIds,
+    labXp: saveState.labXp,
     muted: settingsState.muted,
     copy: getGameCopy(runtime.language),
     onVariantCollected: (id) => {
-      saveState = applyCollectedVariant(saveState, id);
+      const result = applyCollectedVariant(saveState, id);
+      saveState = result.state;
       void saveRepository.write(saveState).catch((error: unknown) => reportError('save-write', error));
+      return result.outcome;
     },
     onMutedChange: (muted) => {
       settingsState = { version: 1, muted };
@@ -56,7 +59,7 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
       resetSave: async () => {
         await saveRepository.remove();
         saveState = createDefaultSave();
-        console.info('[squishy-debug] save cleared; reload to reset in-memory collection state');
+        console.info('[squishy-debug] save cleared; reload to reset in-memory progression state');
       },
       resetSettings: async () => {
         await settingsRepository.remove();
