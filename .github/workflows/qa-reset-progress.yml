@@ -1,0 +1,30 @@
+name: QA Reset Progress
+
+on:
+  push:
+    branches:
+      - qa-reset-progress
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: qa-reset-progress
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: python scripts/apply_qa_reset_progress.py
+      - run: git diff --check
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm run build
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Add production QA progress reset
+          file_pattern: src/platform/save.ts src/app/bootstrap.ts src/game/VerticalSliceApp.ts src/i18n/en.ts src/i18n/ru.ts src/styles.css docs/PROGRESSION_COLLECTION_01.md
