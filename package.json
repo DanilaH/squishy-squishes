@@ -10,7 +10,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:yandex": "tsc --noEmit && vite build --mode yandex",
+    "verify:yandex": "node scripts/verify-yandex-dist.mjs",
+    "release:check": "npm run typecheck && npm run build && npm run build:yandex && npm run verify:yandex"
   },
   "dependencies": {
     "@danilah/mini-games-kit": "git+https://github.com/DanilaH/mini-games-kit.git#d17ba31fce2a71335dcc3095f772c3fdd87fe97b"
