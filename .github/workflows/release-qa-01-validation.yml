@@ -1,0 +1,38 @@
+name: Release QA 01 Validation
+
+on:
+  push:
+    branches:
+      - release-qa-01
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: release-qa-01
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build and run release browser QA
+        run: npm run qa:release
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-qa-01-failure
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
