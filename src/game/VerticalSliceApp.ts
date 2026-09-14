@@ -5,12 +5,21 @@ import {
   FILLINGS,
   PALETTES,
   getPalette,
+  getVariantSpec,
   type FillingId,
   type PaletteId,
   type VariantChoice,
   variantId,
   variantLabel,
 } from './content';
+import {
+  getCollectionSnapshot,
+  getRankProgress,
+  getRequiredRank,
+  isVariantUnlocked,
+  type CollectionMilestone,
+  type CompletionOutcome,
+} from './progression';
 import { SquishyAudio } from './SquishyAudio';
 import {
   SHAPES,
@@ -24,9 +33,10 @@ type CraftStage = 'select' | 'pour' | 'add' | 'mix' | 'mold' | 'reveal' | 'test'
 
 export interface VerticalSliceAppOptions {
   readonly completedVariantIds: readonly string[];
+  readonly labXp: number;
   readonly muted: boolean;
   readonly copy: GameCopy;
-  readonly onVariantCollected: (variantId: string) => void | Promise<void>;
+  readonly onVariantCollected: (variantId: string) => CompletionOutcome;
   readonly onMutedChange: (muted: boolean) => void | Promise<void>;
 }
 
@@ -65,6 +75,14 @@ export class VerticalSliceApp {
   private readonly startButton: HTMLButtonElement;
   private readonly collectButton: HTMLButtonElement;
   private readonly madeCount: HTMLElement;
+  private readonly labRankElement: HTMLElement;
+  private readonly xpLabel: HTMLElement;
+  private readonly rankProgressFill: HTMLElement;
+  private readonly collectionButton: HTMLButtonElement;
+  private readonly collectionOverlay: HTMLElement;
+  private readonly collectionGroups: HTMLElement;
+  private readonly collectionCloseButton: HTMLButtonElement;
+  private readonly progressionFeedback: HTMLElement;
   private readonly variantPreview: HTMLElement;
   private readonly resultBadge: HTMLElement;
   private readonly metricsElement: HTMLElement;
@@ -83,6 +101,10 @@ export class VerticalSliceApp {
 
   private stage: CraftStage = 'select';
   private selected: VariantChoice = { shape: 'soft-square', palette: 'grape', filling: 'smooth' };
+  private labXp = 0;
+  private revisitMode = false;
+  private feedbackTimer: number | null = null;
+  private collectFeedbackText = '';
   private stageProgress = 0;
   private holdPointerId: number | null = null;
   private holdStageComplete = false;
@@ -131,6 +153,7 @@ export class VerticalSliceApp {
       if (ALL_VARIANT_IDS.includes(id)) this.discovered.add(id);
     }
     this.muted = options.muted;
+    this.labXp = options.labXp;
     root.innerHTML = this.renderShell();
 
     this.shell = this.requireElement<HTMLElement>('.lab-shell');
@@ -152,6 +175,14 @@ export class VerticalSliceApp {
     this.startButton = this.requireElement<HTMLButtonElement>('.start-button');
     this.collectButton = this.requireElement<HTMLButtonElement>('.collect-button');
     this.madeCount = this.requireElement<HTMLElement>('.made-count');
+    this.labRankElement = this.requireElement<HTMLElement>('.lab-rank');
+    this.xpLabel = this.requireElement<HTMLElement>('.xp-label');
+    this.rankProgressFill = this.requireElement<HTMLElement>('.rank-progress__fill');
+    this.collectionButton = this.requireElement<HTMLButtonElement>('.collection-open-button');
+    this.collectionOverlay = this.requireElement<HTMLElement>('.collection-overlay');
+    this.collectionGroups = this.requireElement<HTMLElement>('.collection-groups');
+    this.collectionCloseButton = this.requireElement<HTMLButtonElement>('.collection-close-button');
+    this.progressionFeedback = this.requireElement<HTMLElement>('.progression-feedback');
     this.variantPreview = this.requireElement<HTMLElement>('.variant-preview');
     this.resultBadge = this.requireElement<HTMLElement>('.result-badge');
     this.metricsElement = this.requireElement<HTMLElement>('.metrics');
@@ -170,6 +201,8 @@ export class VerticalSliceApp {
 
     this.bindEvents();
     this.updateDiscoveredUi();
+    this.updateProgressionUi();
+    this.updateCollectionUi();
     this.updateSelectionUi();
     this.updateHeroSize();
     this.setStage('select');
@@ -181,6 +214,7 @@ export class VerticalSliceApp {
     this.disposed = true;
     this.clearTransitionTimer();
     this.clearMoldTargetTimer();
+    if (this.feedbackTimer !== null) window.clearTimeout(this.feedbackTimer);
     cancelAnimationFrame(this.craftFrame);
     this.abortController.abort();
     this.audio.stopPour();
@@ -243,7 +277,15 @@ export class VerticalSliceApp {
             <span>${copy.brand.line}</span>
           </div>
           <div class="collection-summary" aria-live="polite">
-            <span class="made-count">${copy.collection.made} ${this.discovered.size} / ${TOTAL_VARIANTS}</span>
+            <div class="rank-summary">
+              <span class="lab-rank">${copy.progress.rank.replace('{rank}', '1')}</span>
+              <span class="xp-label">0 / 100 XP</span>
+              <span class="rank-progress" aria-hidden="true"><span class="rank-progress__fill"></span></span>
+            </div>
+            <div class="collection-summary__row">
+              <span class="made-count">${copy.collection.made} ${this.discovered.size} / ${TOTAL_VARIANTS}</span>
+              <button class="collection-open-button" type="button">${copy.collection.open}</button>
+            </div>
             <span class="discovery-dots" aria-hidden="true">${discoveryDots}</span>
           </div>
         </header>
@@ -315,6 +357,21 @@ export class VerticalSliceApp {
 
         <button class="primary-button collect-button" type="button" hidden>${copy.actions.collect}</button>
 
+        <section class="collection-overlay" aria-label="${copy.aria.collection}" hidden>
+          <div class="collection-panel">
+            <header class="collection-panel__header">
+              <div>
+                <span class="option-label">${copy.collection.title}</span>
+                <strong>${copy.collection.title}</strong>
+              </div>
+              <button class="collection-close-button" type="button">${copy.collection.close}</button>
+            </header>
+            <div class="collection-groups"></div>
+          </div>
+        </section>
+
+        <div class="progression-feedback" aria-live="polite" hidden></div>
+
         <div class="debug-controls" aria-label="${copy.aria.debugControls}">
           <button class="debug-button" type="button" data-action="metrics" aria-pressed="false">${copy.actions.metrics}</button>
           <button class="debug-button" type="button" data-action="wireframe" aria-pressed="false">${copy.actions.mesh}</button>
@@ -341,12 +398,23 @@ export class VerticalSliceApp {
     this.canvas.addEventListener('pointercancel', this.handleMixPointerEnd, { signal });
 
     this.startButton.addEventListener('click', () => {
-      if (this.activityBlocked) return;
+      if (this.activityBlocked || !isVariantUnlocked(variantId(this.selected), this.labXp)) return;
+      this.revisitMode = false;
       void this.audio.prime();
       this.setStage('pour');
     }, { signal });
 
     this.collectButton.addEventListener('click', () => this.collectResult(), { signal });
+    this.collectionButton.addEventListener('click', () => this.openCollection(), { signal });
+    this.collectionCloseButton.addEventListener('click', () => this.closeCollection(), { signal });
+    this.collectionOverlay.addEventListener('click', (event) => {
+      if (event.target === this.collectionOverlay) this.closeCollection();
+    }, { signal });
+    this.collectionGroups.addEventListener('click', (event) => {
+      const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-revisit-id]') : null;
+      const id = target?.dataset.revisitId;
+      if (id) this.openCompletedVariant(id);
+    }, { signal });
 
     for (const button of this.shapeButtons) {
       button.addEventListener('click', () => {
@@ -409,7 +477,13 @@ export class VerticalSliceApp {
     this.shell.dataset.filling = this.selected.filling;
     this.shell.style.setProperty('--accent', palette.accentCss);
     this.shell.style.setProperty('--accent-soft', palette.accentSoftCss);
-    this.variantPreview.textContent = variantLabel(this.selected);
+    const selectedId = variantId(this.selected);
+    const requiredRank = getRequiredRank(selectedId);
+    const unlocked = isVariantUnlocked(selectedId, this.labXp);
+    this.variantPreview.textContent = unlocked
+      ? variantLabel(this.selected)
+      : `${variantLabel(this.selected)} · ${this.options.copy.progress.lockedAtRank.replace('{rank}', String(requiredRank))}`;
+    this.startButton.disabled = !unlocked;
     this.paintShapePath = createShapePath(shape, PAINT_CANVAS_SIZE);
     this.renderer.setShape(shape);
     this.renderer.setMaterial(palette);
@@ -435,6 +509,8 @@ export class VerticalSliceApp {
     this.clearMoldTargetTimer();
     this.audio.stopPour();
     this.stage = next;
+    this.collectionButton.disabled = next !== 'select';
+    if (next !== 'select') this.closeCollection();
     this.shell.dataset.stage = next;
     this.shell.dataset.tested = 'false';
     this.shell.dataset.shaking = 'false';
@@ -460,7 +536,10 @@ export class VerticalSliceApp {
 
     switch (next) {
       case 'select':
+        this.revisitMode = false;
+        this.collectButton.textContent = this.options.copy.actions.collect;
         this.setStageCopy(this.options.copy.stage.selectTitle, this.options.copy.stage.selectHint);
+        this.updateSelectionUi();
         this.renderer.setFillProgress(1);
         this.renderer.setFillingAmount(this.selected.filling === 'beads' ? 1 : 0);
         this.renderer.setMoldProgress(0);
@@ -500,16 +579,23 @@ export class VerticalSliceApp {
         this.transitionTimer = window.setTimeout(() => this.setStage('test'), 920);
         break;
       case 'test': {
-        const isNew = !this.discovered.has(variantId(this.selected));
+        const isNew = !this.revisitMode && !this.discovered.has(variantId(this.selected));
         this.renderer.setMoldProgress(0);
-        this.setStageCopy(variantLabel(this.selected), this.options.copy.stage.testHint);
+        this.setStageCopy(
+          variantLabel(this.selected),
+          this.revisitMode ? this.options.copy.stage.revisitHint : this.options.copy.stage.testHint,
+        );
+        this.collectButton.textContent = this.revisitMode ? this.options.copy.actions.backToLab : this.options.copy.actions.collect;
         this.resultBadge.hidden = !isNew;
         this.resultBadge.textContent = this.options.copy.stage.newMaterial;
         this.testStartSqueezes = this.latestMetrics?.squeezes ?? 0;
         break;
       }
       case 'collect':
-        this.setStageCopy(this.options.copy.stage.collectedTitle, this.options.copy.stage.collectedHint);
+        this.setStageCopy(
+          this.options.copy.stage.collectedTitle,
+          this.collectFeedbackText || this.options.copy.stage.collectedHint,
+        );
         this.audio.playCollect();
         this.transitionTimer = window.setTimeout(() => this.setStage('select'), 520);
         break;
@@ -1013,11 +1099,123 @@ export class VerticalSliceApp {
 
   private collectResult(): void {
     if (this.activityBlocked || this.stage !== 'test') return;
+    if (this.revisitMode) {
+      this.revisitMode = false;
+      this.setStage('select');
+      return;
+    }
+
     const collectedVariantId = variantId(this.selected);
+    const outcome = this.options.onVariantCollected(collectedVariantId);
+    this.labXp = outcome.next.labXp;
     this.discovered.add(collectedVariantId);
     this.updateDiscoveredUi();
-    void this.options.onVariantCollected(collectedVariantId);
+    this.updateProgressionUi();
+    this.updateCollectionUi();
+    this.presentCollectOutcome(outcome);
     this.setStage('collect');
+  }
+
+  private formatCopy(template: string, values: Readonly<Record<string, string | number>>): string {
+    let result = template;
+    for (const [key, value] of Object.entries(values)) result = result.replace(`{${key}}`, String(value));
+    return result;
+  }
+
+  private updateProgressionUi(): void {
+    const progress = getRankProgress(this.labXp);
+    this.labRankElement.textContent = this.formatCopy(this.options.copy.progress.rank, { rank: progress.rank });
+    this.xpLabel.textContent = progress.nextRank === null
+      ? this.options.copy.progress.max
+      : this.formatCopy(this.options.copy.progress.xp, {
+          current: progress.xpIntoRank,
+          target: progress.xpForRank,
+        });
+    this.rankProgressFill.style.transform = `scaleX(${progress.fraction.toFixed(4)})`;
+  }
+
+  private updateCollectionUi(): void {
+    const snapshot = getCollectionSnapshot(this.labXp, [...this.discovered]);
+    this.collectionGroups.innerHTML = snapshot.byShape.map((group) => {
+      const cards = group.recipes.map((recipe) => {
+        const palette = getPalette(recipe.choice.palette);
+        const status = recipe.state === 'completed'
+          ? this.options.copy.collection.completed
+          : recipe.state === 'available'
+            ? this.options.copy.collection.available
+            : this.options.copy.collection.locked;
+        const action = recipe.state === 'completed'
+          ? `<button class="collection-card__action" type="button" data-revisit-id="${recipe.id}">${this.options.copy.collection.squeeze}</button>`
+          : recipe.state === 'locked'
+            ? `<span class="collection-card__rank">${this.formatCopy(this.options.copy.collection.requiredRank, { rank: recipe.requiredRank })}</span>`
+            : '';
+        return `<article class="collection-card collection-card--${recipe.state}" style="--card-accent: ${palette.accentCss}; --card-accent-soft: ${palette.accentSoftCss}">
+          <div class="collection-card__swatch" aria-hidden="true"></div>
+          <div class="collection-card__body">
+            <strong>${recipe.label}</strong>
+            <span>${status}</span>
+          </div>
+          ${action}
+        </article>`;
+      }).join('');
+      return `<section class="collection-group">
+        <header><strong>${group.shapeLabel}</strong><span>${group.completed} / ${group.total}</span></header>
+        <div class="collection-grid">${cards}</div>
+      </section>`;
+    }).join('');
+  }
+
+  private openCollection(): void {
+    if (this.activityBlocked || this.stage !== 'select') return;
+    this.updateCollectionUi();
+    this.collectionOverlay.hidden = false;
+  }
+
+  private closeCollection(): void {
+    this.collectionOverlay.hidden = true;
+  }
+
+  private openCompletedVariant(id: string): void {
+    if (this.activityBlocked || this.stage !== 'select' || !this.discovered.has(id)) return;
+    const variant = getVariantSpec(id);
+    if (!variant) return;
+    this.selected = variant.choice;
+    this.updateSelectionUi();
+    this.revisitMode = true;
+    this.closeCollection();
+    this.setStage('test');
+  }
+
+  private milestoneLabel(milestone: CollectionMilestone): string {
+    switch (milestone) {
+      case 'first-squishy': return this.options.copy.progress.firstSquishy;
+      case 'half-catalog': return this.options.copy.progress.halfCatalog;
+      case 'full-shape': return this.options.copy.progress.fullShape;
+      case 'full-catalog': return this.options.copy.progress.fullCatalog;
+    }
+  }
+
+  private presentCollectOutcome(outcome: CompletionOutcome): void {
+    const parts = [this.formatCopy(this.options.copy.progress.xpAward, { xp: outcome.xpAward })];
+    if (outcome.currentRank > outcome.previousRank) {
+      parts.push(this.formatCopy(this.options.copy.progress.rankUp, { rank: outcome.currentRank }));
+    }
+    if (outcome.newlyUnlockedIds.length > 0) {
+      const names = outcome.newlyUnlockedIds
+        .map((id) => getVariantSpec(id)?.label ?? id)
+        .join(' · ');
+      parts.push(this.formatCopy(this.options.copy.progress.newUnlocks, { names }));
+    }
+    if (outcome.milestone) parts.push(this.milestoneLabel(outcome.milestone));
+
+    this.collectFeedbackText = parts.join(' · ');
+    this.progressionFeedback.textContent = this.collectFeedbackText;
+    this.progressionFeedback.hidden = false;
+    if (this.feedbackTimer !== null) window.clearTimeout(this.feedbackTimer);
+    this.feedbackTimer = window.setTimeout(() => {
+      this.progressionFeedback.hidden = true;
+      this.feedbackTimer = null;
+    }, 3400);
   }
 
   private readonly tickCraft = (now: number): void => {
@@ -1055,6 +1253,8 @@ export class VerticalSliceApp {
     this.activityBlocked = blocked;
 
     if (blocked) {
+      this.collectionButton.disabled = true;
+      this.closeCollection();
       this.audio.stopPour();
       this.paintAudioActive = false;
       this.shakeAudioActive = false;
@@ -1079,6 +1279,7 @@ export class VerticalSliceApp {
       return;
     }
 
+    this.collectionButton.disabled = this.stage !== 'select';
     this.lastCraftFrameAt = performance.now();
     this.lastSemanticAt = performance.now();
     this.renderer.resetTiming();
