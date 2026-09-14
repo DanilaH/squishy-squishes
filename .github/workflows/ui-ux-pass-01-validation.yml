@@ -1,0 +1,41 @@
+name: UI UX Pass 01 Validation
+
+on:
+  push:
+    branches:
+      - ui-ux-pass-01
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ui-ux-pass-01
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Apply UI UX source patch
+        run: node scripts/apply-ui-ux-pass-01.mjs
+      - name: Diff check
+        run: git diff --check
+      - name: Install dependencies
+        run: npm install
+      - name: Validate Pages and Yandex builds
+        run: npm run release:check
+      - name: Stage validated source
+        run: |
+          mkdir -p ui-ux-source/src/game
+          cp src/game/VerticalSliceApp.ts ui-ux-source/src/game/VerticalSliceApp.ts
+      - name: Upload validated source
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-ux-pass-01-validated-source
+          path: ui-ux-source
+          if-no-files-found: error
