@@ -3,16 +3,19 @@
 .lab-shell {
   --reward-light: var(--accent-soft);
   --reward-halo-opacity: 0.52;
+  --reward-halo-rest: 0.4;
   --reward-object-peak: 1.035;
 }
 
 .lab-shell[data-presentation-tier="special"] {
   --reward-halo-opacity: 0.64;
+  --reward-halo-rest: 0.49;
   --reward-object-peak: 1.052;
 }
 
 .lab-shell[data-presentation-tier="showcase"] {
   --reward-halo-opacity: 0.76;
+  --reward-halo-rest: 0.59;
   --reward-object-peak: 1.07;
 }
 
@@ -114,7 +117,7 @@
 @keyframes reward-reveal-halo {
   0%, 12% { opacity: 0; transform: translate(-50%, -50%) scale(0.72); }
   42% { opacity: var(--reward-halo-opacity); transform: translate(-50%, -50%) scale(1.06); }
-  100% { opacity: calc(var(--reward-halo-opacity) * 0.72); transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: var(--reward-halo-rest); transform: translate(-50%, -50%) scale(1); }
 }
 
 @keyframes reward-object-reveal {
@@ -131,7 +134,7 @@
 }
 
 @keyframes reward-result-breathe {
-  0%, 100% { transform: translate(-50%, -50%) scale(0.97); opacity: calc(var(--reward-halo-opacity) * 0.78); }
+  0%, 100% { transform: translate(-50%, -50%) scale(0.97); opacity: var(--reward-halo-rest); }
   50% { transform: translate(-50%, -50%) scale(1.035); opacity: var(--reward-halo-opacity); }
 }
 
