@@ -2,33 +2,32 @@
 
 Compact tactile maker / collection game for Yandex Games.
 
-**Current status:** tactile core PASS; full-loop slice PASS; interaction correction passes accepted; **Production Skeleton 01 is the active implementation gate**.
+**Current status:** tactile core PASS; full-loop slice PASS; interaction correction passes PASS; Production Skeleton 01 PASS; **Renderer Reuse / Second Shape is the active gate**.
 
 Current accepted loop:
 
 `select → paint base → optional foam shake → stretch/mix → form with normal taps + crit targets → reveal → free squeeze → Collect → repeat`
 
-## Active gate — Production Skeleton 01
+## Active gate — Renderer Reuse / Second Shape
 
-The next job is architecture around the proven loop, not new gameplay.
+The current job is to prove the high-CMF renderer thesis before progression or catalog scale.
 
-Scope:
+Bounded scope:
 
-- app bootstrap boundary;
-- mock/Yandex runtime seam;
-- versioned save repository;
-- separate versioned settings repository;
-- legacy slice-save migration;
-- typed RU/EN copy skeleton;
-- aggregate activity/lifecycle wiring;
-- DEV-only debug seam;
-- remove direct storage/platform ownership from `VerticalSliceApp`;
-- preserve current gameplay feel exactly.
+- preserve the accepted rounded soft-square;
+- add exactly one materially different second silhouette: **Soft Heart**;
+- drive both silhouettes from one shared shape definition boundary;
+- keep one spring mesh, one deformation path, one shader/material path and one craft state machine;
+- use the same shape geometry for WebGL masking, pointer hit testing, paint clipping/coverage and mold target validation;
+- keep the original six durable variant IDs intact and add six heart variants;
+- no new physics tuning, gameplay stages, progression, collection redesign or third shape;
+- strict typecheck/build plus an independent diff review before merge;
+- deployed phone check before Phase 4 is marked fully complete.
 
-Canonical implementation spec: `docs/PRODUCTION_SKELETON_01.md`.
-Independent review: `docs/PRODUCTION_SKELETON_01_REVIEW.md`.
+Canonical implementation spec: `docs/RENDERER_REUSE_SECOND_SHAPE.md`.
+Independent review: `docs/RENDERER_REUSE_SECOND_SHAPE_REVIEW.md`.
 
-After this passes, the next gate is **exactly one materially different second shape** using the same deformation/material path. Only after that reuse test passes do we scale progression and catalog production.
+Production Skeleton 01 is complete and remains the architecture baseline. Its save/settings/runtime/lifecycle boundaries must not be bypassed by shape work.
 
 ## Product thesis
 
@@ -40,7 +39,7 @@ The production bet is high content multiplication from:
 
 without bespoke gameplay code per recipe.
 
-Working MVP direction remains approximately six reusable base shapes and around 24 curated recipes, with quality allowed to reduce the final count.
+Working MVP direction remains approximately six reusable base shapes and around 24 curated recipes, with quality allowed to reduce the final count. That scale is not authorized until the current two-shape reuse gate passes.
 
 ## Stack
 
@@ -57,9 +56,9 @@ Working MVP direction remains approximately six reusable base shapes and around 
 
 Current execution order:
 
-- `docs/PRODUCTION_SKELETON_01.md` — active production-shell specification
-- `docs/PRODUCTION_SKELETON_01_REVIEW.md` — independent review/corrections
-- `docs/IMPLEMENTATION_ROADMAP.md` — full phase order
+- `docs/RENDERER_REUSE_SECOND_SHAPE.md` — active Phase 4 implementation contract
+- `docs/RENDERER_REUSE_SECOND_SHAPE_REVIEW.md` — independent challenge/corrections
+- `docs/IMPLEMENTATION_ROADMAP.md` — full phase order and gates
 - `docs/TECHNICAL_DIRECTION.md` — long-term boundaries
 - `docs/GAMEPLAY.md` — interaction grammar
 - `docs/PRODUCT.md` — product thesis/scope
@@ -68,7 +67,12 @@ Current execution order:
 - `docs/ANALYTICS_AND_MONETIZATION.md` — later analytics/ad posture
 - `docs/QA_AND_ACCEPTANCE.md` — release validation
 
-Historical evidence:
+Completed production-boundary evidence:
+
+- `docs/PRODUCTION_SKELETON_01.md`
+- `docs/PRODUCTION_SKELETON_01_REVIEW.md`
+
+Historical tactile/slice evidence:
 
 - `docs/SQUISH_FEEL_PROBE.md`
 - `docs/PROBE_RESULT.md`
@@ -102,4 +106,4 @@ https://danilah.github.io/squishy-squishes/
 
 Do not turn the project into Cooking Mama, a shop/economy sim, or a physics sandbox.
 
-Right now the goal is to make the accepted loop a clean production foundation, then prove renderer reuse on a second shape before scaling systems or content.
+Right now the goal is to falsify or confirm reusable multi-shape rendering with one second shape. If the heart needs bespoke physics, stages or a separate renderer path, stop catalog expansion and fix the renderer/content boundary before progression work.
