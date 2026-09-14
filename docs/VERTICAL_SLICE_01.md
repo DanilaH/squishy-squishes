@@ -3,11 +3,12 @@
 **Status:** IMPLEMENTED / PENDING HANDS-ON  
 **Date:** 2026-09-14  
 **Implementation branch:** `feat/vertical-slice-01`  
-**PR:** `#3`
+**PR:** `#3`  
+**Production pass:** `docs/PRODUCTION_PASS_01.md`
 
 ## Purpose
 
-Build the smallest version of the **real game loop** on top of the validated feel-probe base, then test and polish that complete loop before paying for production architecture, catalog scale, progression, monetization or finished UI.
+Build the smallest version of the **real game loop** on top of the validated feel-probe base, then test and polish that complete loop before paying for catalog scale, progression, monetization or finished product UI.
 
 The question is no longer whether squeezing works. It is:
 
@@ -56,34 +57,40 @@ variant select
 
 ## Current implementation
 
-The first implementation deliberately stays on the validated probe renderer instead of productionizing materials too early.
+The slice still preserves the validated tactile constants/behavior, but the playable path has now received one bounded production pass rather than continuing to stack temporary presentation hacks on the probe class.
 
 Implemented:
 
-- 3 palette choices;
+- 3 typed palette choices driving actual WebGL material uniforms;
 - Smooth / Foam Beads choice;
-- hold-to-pour stage;
+- Foam Beads generated procedurally in object UV space so the filling follows the deforming mesh;
+- hold-to-pour stage with a real shader fill boundary/meniscus rather than whole-object growth;
 - optional hold-to-add-beads stage;
 - mix progress driven by real squish metrics;
-- mold progress driven by real press/compression metrics;
-- short mold/reveal choreography;
+- mold progress driven by real press/compression metrics and a bounded mold-specific render deformation;
+- short mold/unmold/reveal choreography;
 - unrestricted finished-object squeeze;
 - Collect → repeat;
 - tiny local `Made X / 6` discovered-variant persistence;
-- existing metrics / mesh / mute diagnostics retained as secondary controls.
+- unified project-local audio owner for tactile sound, pour, beads, stage completion, reveal and Collect;
+- existing metrics / mesh / mute diagnostics retained as secondary controls;
+- production slice runtime separated from the untouched `src/probe/*` validation evidence;
+- reviewed `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b` used for shared interaction/audio/render-density primitives.
 
-Intentional cheap approximations for this gate:
+Still intentionally cheap:
 
-- palette variation currently uses CSS filtering over the validated material rather than production shader palette uniforms;
-- Foam Beads currently uses a lightweight central visual overlay with coarse gesture response rather than true embedded particles/material deformation;
-- pour/filling presentation is procedural DOM/CSS rather than fluid simulation;
-- no final stage-specific audio layer has been added beyond the existing tactile squish/release audio.
+- no fluid simulation;
+- no embedded-bead physics;
+- no general mold collision/soft-body solver;
+- no authored environment asset pack;
+- no final recipe browser/collection navigation;
+- no full product save/platform stack.
 
-These are acceptable **only for the full-loop decision gate**. If the loop passes, productionization can replace the cheap visual approximations without changing the accepted choreography.
+The purpose of the production pass is to remove shortcuts that would distort the hands-on verdict while keeping the decision experiment small. See `PRODUCTION_PASS_01.md` for the independent review and exact implementation changes.
 
 ## Interaction budget
 
-Use the current scene and a very small interaction grammar:
+Use one scene and a very small interaction grammar:
 
 - **hold** for pour / filling dispense;
 - **press / drag / squeeze** for mix;
@@ -95,7 +102,7 @@ No new mini-game grammar is allowed for this slice.
 
 ## UI budget
 
-UI is intentionally disposable/minimal.
+UI remains intentionally compact and secondary to the object.
 
 Required only:
 
@@ -104,10 +111,10 @@ Required only:
 - Start / Collect affordance;
 - current short stage hint;
 - small stage progress indication;
-- tiny `Made X / 6` feedback;
+- tiny `Made X / 6` / discovery feedback;
 - existing DEV metrics/mesh/mute controls visually secondary.
 
-Do not build the final recipe browser, collection screen, Lab Rank HUD, settings screen or polished navigation.
+Do not build the final recipe browser, collection screen, Lab Rank HUD, settings screen or full navigation before the loop passes.
 
 ## Persistence
 
@@ -129,7 +136,6 @@ Until this slice passes repeated-use hands-on:
 - cloud save;
 - full typed i18n;
 - final art-production pipeline;
-- renderer/framework migration;
 - production asset batch;
 - freeplay/remix.
 
@@ -160,15 +166,14 @@ Evaluate:
 
 ## PASS
 
-The slice passes when the complete loop is already enjoyable enough that the obvious next work is **scale and productionization**, not inventing another mechanic or meta-system.
+The slice passes when the complete loop is already enjoyable enough that the obvious next work is **scale and product integration**, not inventing another mechanic or meta-system.
 
 After PASS:
 
-- polish remaining high-value loop defects;
-- extract production boundaries from actual working code;
-- move to reviewed `mini-games-kit` production revision;
-- add platform/save/i18n/debug skeleton;
-- prove renderer reuse on a second shape only then;
+- polish only remaining high-value loop defects found hands-on;
+- retain the reviewed shared-kit production revision unless a concrete incompatibility appears;
+- add the platform/save/i18n/debug product skeleton around the accepted loop;
+- prove renderer/content reuse on a second shape only then;
 - lock progression using measured loop duration;
 - scale content in small batches.
 
