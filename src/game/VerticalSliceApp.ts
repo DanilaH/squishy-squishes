@@ -16,6 +16,12 @@ type CraftStage = 'select' | 'pour' | 'add' | 'mix' | 'mold' | 'reveal' | 'test'
 
 const DISCOVERED_STORAGE_KEY = 'squishy.vertical-slice.discovered.v2';
 const TOTAL_VARIANTS = ALL_VARIANT_IDS.length;
+const SHAKE_PATH_FOR_FULL_PROGRESS_PX = 2200;
+const SHAKE_IDLE_MS = 120;
+const MOLD_HIT_PROGRESS = 0.17;
+const MOLD_DECAY_PER_SECOND = 0.055;
+const MOLD_TARGET_LIFETIME_MS = 900;
+const MOLD_NEXT_TARGET_DELAY_MS = 130;
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
@@ -26,6 +32,7 @@ export class VerticalSliceApp {
   private readonly canvas: HTMLCanvasElement;
   private readonly contactShadow: HTMLElement;
   private readonly holdSurface: HTMLButtonElement;
+  private readonly moldTarget: HTMLButtonElement;
   private readonly stageTitle: HTMLElement;
   private readonly stageHint: HTMLElement;
   private readonly progressFill: HTMLElement;
@@ -52,6 +59,7 @@ export class VerticalSliceApp {
   private holdPointerId: number | null = null;
   private holdStageComplete = false;
   private transitionTimer: number | null = null;
+  private moldTargetTimer: number | null = null;
   private craftFrame = 0;
   private lastCraftFrameAt = performance.now();
   private lastSemanticAt = performance.now();
@@ -61,6 +69,15 @@ export class VerticalSliceApp {
   private wireframe = false;
   private muted = false;
   private disposed = false;
+  private shakeLastX = 0;
+  private shakeLastY = 0;
+  private shakeLastAt = 0;
+  private shakeLastDirection = 0;
+  private shakeAudioActive = false;
+  private moldComplete = false;
+  private moldTargetX = 0;
+  private moldTargetY = 0;
+  private heroSizePx = 240;
 
   public constructor(private readonly root: HTMLDivElement) {
     root.innerHTML = this.renderShell();
@@ -70,6 +87,7 @@ export class VerticalSliceApp {
     this.canvas = this.requireElement<HTMLCanvasElement>('.squish-canvas');
     this.contactShadow = this.requireElement<HTMLElement>('.contact-shadow');
     this.holdSurface = this.requireElement<HTMLButtonElement>('.hold-surface');
+    this.moldTarget = this.requireElement<HTMLButtonElement>('.mold-target');
     this.stageTitle = this.requireElement<HTMLElement>('.stage-title');
     this.stageHint = this.requireElement<HTMLElement>('.stage-hint');
     this.progressFill = this.requireElement<HTMLElement>('.stage-progress__fill');
@@ -102,6 +120,7 @@ export class VerticalSliceApp {
     if (this.disposed) return;
     this.disposed = true;
     this.clearTransitionTimer();
+    this.clearMoldTargetTimer();
     cancelAnimationFrame(this.craftFrame);
     this.abortController.abort();
     this.audio.stopPour();
@@ -134,9 +153,15 @@ export class VerticalSliceApp {
     `).join('');
 
     const discoveryDots = ALL_VARIANT_IDS.map((id) => `<span class="discovery-dot" data-variant-dot="${id}"></span>`).join('');
+    const foamParticles = Array.from({ length: 11 }, (_, index) => {
+      const x = (index - 5) * 8;
+      const drift = x + ((index % 3) - 1) * 7;
+      const delay = index * -47;
+      return `<span class="foam-particle" style="--foam-x: ${x}px; --foam-drift: ${drift}px; --foam-delay: ${delay}ms"></span>`;
+    }).join('');
 
     return `
-      <main class="lab-shell" data-stage="select" data-palette="grape" data-filling="smooth" data-tested="false">
+      <main class="lab-shell" data-stage="select" data-palette="grape" data-filling="smooth" data-tested="false" data-shaking="false">
         <header class="lab-topbar">
           <div class="lab-brand">
             <strong>Squishy Lab</strong>
@@ -165,10 +190,18 @@ export class VerticalSliceApp {
             <div class="dispenser-neck"></div>
             <div class="pour-stream"></div>
           </div>
+
+          <div class="foam-shaker" aria-hidden="true">
+            <div class="foam-shaker__cap"></div>
+            <div class="foam-shaker__body"><span>FOAM</span></div>
+            <div class="foam-spray">${foamParticles}</div>
+          </div>
+
           <div class="reveal-flash" aria-hidden="true"></div>
           <div class="result-halo" aria-hidden="true"></div>
 
           <button class="hold-surface" type="button" aria-label="Hold to continue" hidden></button>
+          <button class="mold-target" type="button" aria-label="Press the mold target" hidden><span></span></button>
 
           <div class="stage-copy">
             <span class="stage-kicker">CRAFT 01</span>
@@ -215,8 +248,10 @@ export class VerticalSliceApp {
     const signal = this.abortController.signal;
 
     this.holdSurface.addEventListener('pointerdown', this.handleHoldPointerDown, { signal });
+    this.holdSurface.addEventListener('pointermove', this.handleHoldPointerMove, { signal });
     this.holdSurface.addEventListener('pointerup', this.handleHoldPointerEnd, { signal });
     this.holdSurface.addEventListener('pointercancel', this.handleHoldPointerEnd, { signal });
+    this.moldTarget.addEventListener('pointerdown', this.handleMoldTargetPress, { signal });
 
     this.startButton.addEventListener('click', () => {
       void this.audio.prime();
@@ -292,15 +327,23 @@ export class VerticalSliceApp {
 
   private setStage(next: CraftStage): void {
     this.clearTransitionTimer();
+    this.clearMoldTargetTimer();
     this.audio.stopPour();
     this.stage = next;
     this.shell.dataset.stage = next;
     this.shell.dataset.tested = 'false';
+    this.shell.dataset.shaking = 'false';
+    this.shell.style.setProperty('--shake-x', '0px');
+    this.shell.style.setProperty('--shake-tilt', '0deg');
     this.setStageProgress(0);
     this.setHoldSurfaceActive(false);
+    this.moldTarget.hidden = true;
+    this.moldTarget.disabled = true;
+    this.moldComplete = false;
+    this.shakeAudioActive = false;
     this.resultBadge.hidden = true;
 
-    const tactile = next === 'mix' || next === 'mold' || next === 'test';
+    const tactile = next === 'mix' || next === 'test';
     this.renderer.setInteractive(tactile);
     this.recipePanel.hidden = next !== 'select';
     this.collectButton.hidden = next !== 'test';
@@ -320,22 +363,23 @@ export class VerticalSliceApp {
         this.setHoldSurfaceActive(true);
         break;
       case 'add':
-        this.setStageCopy('Add foam beads', 'Hold to scatter the filling through the base.');
+        this.setStageCopy('Shake in the foam beads', 'Hold and shake side to side to scatter them through the squishy.');
         this.renderer.setFillProgress(1);
         this.renderer.setFillingAmount(0);
         this.setHoldSurfaceActive(true);
         break;
       case 'mix':
-        this.setStageCopy('Knead it', 'Press, drag and fold the soft mass.');
+        this.setStageCopy('Stretch to mix', 'Grab the squishy and keep pulling it around. Holding still will not mix it.');
         this.renderer.setFillProgress(1);
         this.renderer.setFillingAmount(this.selected.filling === 'beads' ? 1 : 0);
         this.renderer.setMoldProgress(0);
         this.lastSemanticAt = performance.now();
         break;
       case 'mold':
-        this.setStageCopy('Press the mold', 'Push and hold until the shape settles.');
+        this.setStageCopy('Press the mold', 'Tap each pulse before the press meter slips back.');
         this.renderer.setMoldProgress(0);
         this.lastSemanticAt = performance.now();
+        this.spawnMoldTarget();
         break;
       case 'reveal':
         this.setStageCopy('Unmolding…', '');
@@ -382,26 +426,19 @@ export class VerticalSliceApp {
     this.lastSemanticAt = now;
 
     if (this.stage === 'mix') {
-      if (metrics.active && this.stageProgress < 1) {
-        const effort = 0.12
-          + metrics.compression * 0.5
-          + metrics.normalizedVelocity * 0.55
-          + metrics.pressDepth * 0.1;
-        this.setStageProgress(this.stageProgress + dt * effort * 0.72);
+      const movingStretch = metrics.active
+        && metrics.compression >= 0.18
+        && metrics.normalizedVelocity >= 0.025;
+
+      if (movingStretch && this.stageProgress < 1) {
+        const stretch = clamp01((metrics.compression - 0.15) / 0.65);
+        const effort = stretch * 0.72 + metrics.normalizedVelocity * 0.28;
+        this.setStageProgress(this.stageProgress + dt * effort * 0.66);
       }
+
       if (!metrics.active && this.stageProgress >= 1) {
         this.audio.playStageComplete(0.5);
         this.setStage('mold');
-      }
-    } else if (this.stage === 'mold') {
-      if (metrics.active && this.stageProgress < 1) {
-        const pressure = metrics.pressDepth * 0.52 + metrics.compression * 0.24;
-        this.setStageProgress(this.stageProgress + dt * pressure * 0.82);
-        this.renderer.setMoldProgress(this.stageProgress);
-      }
-      if (!metrics.active && this.stageProgress >= 1) {
-        this.audio.playStageComplete(0.8);
-        this.setStage('reveal');
       }
     } else if (this.stage === 'test') {
       this.shell.dataset.tested = String(metrics.squeezes > this.testStartSqueezes);
@@ -440,7 +477,55 @@ export class VerticalSliceApp {
     }
 
     void this.audio.prime();
-    this.audio.startPour(this.stage === 'pour' ? 'base' : 'beads');
+    if (this.stage === 'pour') this.audio.startPour('base');
+
+    if (this.stage === 'add') {
+      this.shakeLastX = event.clientX;
+      this.shakeLastY = event.clientY;
+      this.shakeLastAt = performance.now();
+      this.shakeLastDirection = 0;
+      this.shell.dataset.shaking = 'true';
+    }
+  };
+
+  private readonly handleHoldPointerMove = (event: PointerEvent): void => {
+    if (event.pointerId !== this.holdPointerId || this.stage !== 'add' || this.holdStageComplete) return;
+    event.preventDefault();
+
+    const now = performance.now();
+    const dx = event.clientX - this.shakeLastX;
+    const dy = event.clientY - this.shakeLastY;
+    const elapsedMs = Math.max(8, now - this.shakeLastAt);
+    const distance = Math.min(48, Math.hypot(dx, dy));
+    const speed = (distance / elapsedMs) * 1000;
+    const speedFactor = clamp01((speed - 110) / 650);
+    const direction = Math.abs(dx) < 1 ? 0 : Math.sign(dx);
+    const reversalBonus = direction !== 0
+      && this.shakeLastDirection !== 0
+      && direction !== this.shakeLastDirection
+      ? 1.28
+      : 1;
+
+    if (distance >= 2.5 && speedFactor > 0) {
+      const progressDelta = (distance / SHAKE_PATH_FOR_FULL_PROGRESS_PX)
+        * (0.45 + speedFactor * 0.55)
+        * reversalBonus;
+      this.setStageProgress(this.stageProgress + progressDelta);
+      this.renderer.setFillingAmount(this.easeOutCubic(this.stageProgress));
+      this.shell.dataset.shaking = 'true';
+      if (!this.shakeAudioActive) {
+        this.audio.startPour('beads');
+        this.shakeAudioActive = true;
+      }
+      this.updateShakerPose(event.clientX);
+    }
+
+    if (direction !== 0) this.shakeLastDirection = direction;
+    this.shakeLastX = event.clientX;
+    this.shakeLastY = event.clientY;
+    this.shakeLastAt = now;
+
+    if (this.stageProgress >= 1) this.finishShakeStage();
   };
 
   private readonly handleHoldPointerEnd = (event: PointerEvent): void => {
@@ -455,19 +540,113 @@ export class VerticalSliceApp {
 
     this.holdPointerId = null;
     this.audio.stopPour();
-    this.finishHoldStage();
+    this.shakeAudioActive = false;
+    this.shell.dataset.shaking = 'false';
+
+    if (this.stage === 'pour') this.finishHoldStage();
   };
 
   private finishHoldStage(): void {
     if (!this.holdStageComplete) return;
     this.holdStageComplete = false;
-    this.audio.playStageComplete(this.stage === 'add' ? 0.65 : 0.42);
+    this.audio.playStageComplete(0.42);
 
     if (this.stage === 'pour') {
       this.setStage(this.selected.filling === 'beads' ? 'add' : 'mix');
-    } else if (this.stage === 'add') {
-      this.setStage('mix');
     }
+  }
+
+  private finishShakeStage(): void {
+    if (this.stage !== 'add' || this.holdStageComplete) return;
+    this.holdStageComplete = true;
+    this.setStageProgress(1);
+    this.renderer.setFillingAmount(1);
+    this.stageHint.textContent = 'Evenly scattered.';
+    this.audio.stopPour();
+    this.shakeAudioActive = false;
+    this.shell.dataset.shaking = 'false';
+
+    if (this.holdPointerId !== null) {
+      try {
+        this.holdSurface.releasePointerCapture(this.holdPointerId);
+      } catch {
+        // Capture may already be gone.
+      }
+    }
+
+    this.holdPointerId = null;
+    this.setHoldSurfaceActive(false);
+    this.audio.playStageComplete(0.65);
+    this.transitionTimer = window.setTimeout(() => this.setStage('mix'), 170);
+  }
+
+  private updateShakerPose(clientX: number): void {
+    const rect = this.workspace.getBoundingClientRect();
+    const offset = clamp01((clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+    this.shell.style.setProperty('--shake-x', `${(offset * 30).toFixed(1)}px`);
+    this.shell.style.setProperty('--shake-tilt', `${(offset * 9).toFixed(1)}deg`);
+  }
+
+  private readonly handleMoldTargetPress = (event: PointerEvent): void => {
+    if (this.stage !== 'mold' || this.moldComplete) return;
+    event.preventDefault();
+    event.stopPropagation();
+    void this.audio.prime();
+
+    this.clearMoldTargetTimer();
+    this.moldTarget.classList.remove('is-hit');
+    void this.moldTarget.offsetWidth;
+    this.moldTarget.classList.add('is-hit');
+    this.moldTarget.disabled = true;
+
+    this.setStageProgress(this.stageProgress + MOLD_HIT_PROGRESS);
+    this.renderer.setMoldProgress(this.stageProgress);
+
+    if (this.stageProgress >= 1) {
+      this.moldComplete = true;
+      this.moldTarget.hidden = true;
+      this.setStageCopy('Press locked', '');
+      this.audio.playStageComplete(0.8);
+      this.transitionTimer = window.setTimeout(() => this.setStage('reveal'), 190);
+      return;
+    }
+
+    this.moldTargetTimer = window.setTimeout(() => this.spawnMoldTarget(), MOLD_NEXT_TARGET_DELAY_MS);
+  };
+
+  private spawnMoldTarget(): void {
+    if (this.stage !== 'mold' || this.moldComplete || document.hidden) return;
+    this.clearMoldTargetTimer();
+
+    let nextX = 0;
+    let nextY = 0;
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      const candidateX = (Math.random() * 2 - 1) * 0.68;
+      const candidateY = (Math.random() * 2 - 1) * 0.68;
+      const inside = Math.abs(candidateX) ** 4 + Math.abs(candidateY) ** 4 <= 0.62;
+      const separated = Math.hypot(candidateX - this.moldTargetX, candidateY - this.moldTargetY) >= 0.34;
+      if (!inside || !separated) continue;
+      nextX = candidateX;
+      nextY = candidateY;
+      break;
+    }
+
+    this.moldTargetX = nextX;
+    this.moldTargetY = nextY;
+    this.positionMoldTarget();
+    this.moldTarget.classList.remove('is-hit');
+    this.moldTarget.disabled = false;
+    this.moldTarget.hidden = false;
+    this.moldTargetTimer = window.setTimeout(() => this.spawnMoldTarget(), MOLD_TARGET_LIFETIME_MS);
+  }
+
+  private positionMoldTarget(): void {
+    if (this.stage !== 'mold') return;
+    const rect = this.workspace.getBoundingClientRect();
+    const left = rect.width * 0.5 + this.moldTargetX * this.heroSizePx * 0.5;
+    const top = rect.height * 0.5 - this.moldTargetY * this.heroSizePx * 0.5;
+    this.moldTarget.style.left = `${left.toFixed(1)}px`;
+    this.moldTarget.style.top = `${top.toFixed(1)}px`;
   }
 
   private collectResult(): void {
@@ -483,14 +662,9 @@ export class VerticalSliceApp {
     const dt = Math.min(0.05, Math.max(0, (now - this.lastCraftFrameAt) / 1000));
     this.lastCraftFrameAt = now;
 
-    if (this.holdPointerId !== null && !this.holdStageComplete) {
-      if (this.stage === 'pour') {
-        this.setStageProgress(this.stageProgress + dt / 1.35);
-        this.renderer.setFillProgress(this.easeOutCubic(this.stageProgress));
-      } else if (this.stage === 'add') {
-        this.setStageProgress(this.stageProgress + dt / 1.05);
-        this.renderer.setFillingAmount(this.easeOutCubic(this.stageProgress));
-      }
+    if (this.holdPointerId !== null && !this.holdStageComplete && this.stage === 'pour') {
+      this.setStageProgress(this.stageProgress + dt / 1.35);
+      this.renderer.setFillProgress(this.easeOutCubic(this.stageProgress));
 
       if (this.stageProgress >= 1) {
         this.holdStageComplete = true;
@@ -498,12 +672,35 @@ export class VerticalSliceApp {
       }
     }
 
+    if (this.stage === 'add' && this.shell.dataset.shaking === 'true' && now - this.shakeLastAt > SHAKE_IDLE_MS) {
+      this.shell.dataset.shaking = 'false';
+      if (this.shakeAudioActive) {
+        this.audio.stopPour();
+        this.shakeAudioActive = false;
+      }
+    }
+
+    if (this.stage === 'mold' && !this.moldComplete && this.stageProgress > 0) {
+      this.setStageProgress(this.stageProgress - dt * MOLD_DECAY_PER_SECOND);
+      this.renderer.setMoldProgress(this.stageProgress);
+    }
+
     this.craftFrame = requestAnimationFrame(this.tickCraft);
   };
 
   private readonly handleVisibilityChange = (): void => {
-    if (!document.hidden) return;
+    if (!document.hidden) {
+      this.lastCraftFrameAt = performance.now();
+      this.lastSemanticAt = performance.now();
+      if (this.stage === 'mold' && !this.moldComplete) this.spawnMoldTarget();
+      return;
+    }
+
     this.audio.stopPour();
+    this.shakeAudioActive = false;
+    this.shell.dataset.shaking = 'false';
+    this.clearMoldTargetTimer();
+    this.moldTarget.hidden = true;
 
     if (this.holdPointerId !== null) {
       try {
@@ -539,6 +736,12 @@ export class VerticalSliceApp {
     if (this.transitionTimer === null) return;
     window.clearTimeout(this.transitionTimer);
     this.transitionTimer = null;
+  }
+
+  private clearMoldTargetTimer(): void {
+    if (this.moldTargetTimer === null) return;
+    window.clearTimeout(this.moldTargetTimer);
+    this.moldTargetTimer = null;
   }
 
   private loadDiscovered(): void {
@@ -583,7 +786,9 @@ export class VerticalSliceApp {
   private readonly updateHeroSize = (): void => {
     const rect = this.workspace.getBoundingClientRect();
     const size = Math.min(rect.width, rect.height) * 0.68;
-    this.shell.style.setProperty('--hero-size', `${Math.max(120, size).toFixed(1)}px`);
+    this.heroSizePx = Math.max(120, size);
+    this.shell.style.setProperty('--hero-size', `${this.heroSizePx.toFixed(1)}px`);
+    if (this.stage === 'mold' && !this.moldTarget.hidden) this.positionMoldTarget();
   };
 
   private requireElement<T extends Element>(selector: string): T {
