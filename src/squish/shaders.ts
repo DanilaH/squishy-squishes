@@ -25,6 +25,7 @@ precision highp float;
 
 in vec2 vUv;
 
+uniform sampler2D uShapeField;
 uniform vec2 uPointerUv;
 uniform vec2 uStrainDirection;
 uniform vec3 uColorLow;
@@ -40,11 +41,6 @@ uniform float uMaterialSeed;
 uniform bool uWireframePass;
 
 out vec4 outColor;
-
-float superellipse(vec2 p) {
-  vec2 q = abs(p);
-  return pow(q.x, 4.0) + pow(q.y, 4.0);
-}
 
 float hash21(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -65,9 +61,6 @@ float beadField(vec2 uv, float seed, float amount) {
   float distanceToCenter = length(local - jitter);
   float bead = 1.0 - smoothstep(0.095, 0.165, distanceToCenter);
 
-  // Each occupied cell gets a stable random reveal order. Increasing the amount
-  // therefore scatters new beads across the whole squishy instead of fading one
-  // pre-existing bead layer in as a single stream.
   float revealOrder = hash21(cell + vec2(29.1, 13.7) + seed * 43.0);
   float reveal = smoothstep(revealOrder, min(1.0, revealOrder + 0.075), clamp(amount, 0.0, 1.0));
   reveal *= smoothstep(0.0, 0.035, amount);
@@ -76,8 +69,10 @@ float beadField(vec2 uv, float seed, float amount) {
 
 void main() {
   vec2 p = vUv * 2.0 - 1.0;
-  float shape = superellipse(p);
-  if (shape > 1.0) discard;
+  float shapeField = texture(uShapeField, vUv).r;
+  float shapeAlpha = 1.0 - smoothstep(0.49, 0.515, shapeField);
+  if (shapeAlpha <= 0.001) discard;
+  float shape = smoothstep(0.0, 0.5, shapeField);
 
   float fillProgress = clamp(uFillProgress, 0.0, 1.0);
   float meniscus = sin(vUv.x * 17.0 + uMaterialSeed * 9.0) * 0.010;
@@ -86,7 +81,7 @@ void main() {
   if (vUv.y > fillLine) discard;
 
   if (uWireframePass) {
-    outColor = vec4(1.0, 1.0, 1.0, 0.22);
+    outColor = vec4(1.0, 1.0, 1.0, 0.22 * shapeAlpha);
     return;
   }
 
@@ -135,6 +130,6 @@ void main() {
   meniscusBand *= 1.0 - step(0.995, fillProgress);
   base += uSheenColor * meniscusBand * 0.12;
 
-  outColor = vec4(base, 0.985);
+  outColor = vec4(base, 0.985 * shapeAlpha);
 }
 `;
