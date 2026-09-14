@@ -18,14 +18,14 @@ Use a **soft heart** as the second shape.
 
 Why this is the right gate:
 
-- it is clearly different from the rounded square at a glance;
-- it is vertically asymmetric;
-- it contains a concave top notch, so a simple width/height scale variant cannot fake the result;
-- it is still a single connected soft body with no hole/topology change;
-- it is commercially/content-wise plausible for the final catalog;
-- it stresses silhouette masking without forcing a new gameplay mechanic.
+- clearly different from the rounded square;
+- vertically asymmetric;
+- contains a concave top notch, so scale/aspect-ratio tricks cannot fake the result;
+- still a single connected body without a hole/topology change;
+- plausible final-catalog content;
+- stresses silhouette masking without forcing a new mechanic.
 
-Do not substitute circle/capsule/rectangle unless the heart proves technically invalid. Those shapes would provide weaker reuse evidence because they remain convex and too close to the current silhouette.
+Do not substitute circle/capsule/rectangle unless the heart proves technically invalid. Those would provide weaker reuse evidence.
 
 ## 3. Hard scope
 
@@ -33,36 +33,34 @@ Do not substitute circle/capsule/rectangle unless the heart proves technically i
 
 - `ShapeId = 'soft-square' | 'heart'`;
 - one central shape registry;
-- renderer shape switching through one generic shape-mask boundary;
+- renderer shape switching through one generic shape-field boundary;
 - pointer hit testing driven by the selected shape;
 - paint coverage/mask driven by the selected shape;
 - mold target placement constrained by the selected shape;
-- shape selector in the existing recipe panel;
-- both current fillings and all three current palettes on both shapes;
-- 12 selectable deterministic variants total;
+- one compact shape selector in the existing recipe panel;
+- both fillings and all three palettes on both shapes;
+- 12 deterministic variants total;
 - legacy-compatible IDs for the original six variants;
 - existing save/settings/runtime/lifecycle behavior unchanged;
-- representative performance diagnostics through the existing metrics path.
+- existing performance diagnostics reused.
 
 ### Out
 
-- a third shape;
+- third shape;
 - progression/Lab XP;
-- final collection screen/cards;
+- final collection/cards;
 - new fillings/material features;
 - per-shape physics constants;
 - per-shape craft stage sequences;
 - per-shape audio logic;
 - new renderer/framework/library;
 - SVG/PNG shape assets;
-- bespoke heart-only deformation code;
+- heart-only deformation code;
 - arbitrary recipe scripting.
 
 ## 4. Shape representation
 
-Create a project-local shape module, expected as `src/game/shapes.ts`.
-
-A shape definition owns data needed by all silhouette consumers:
+Create `src/game/shapes.ts`.
 
 ```ts
 export type ShapeId = 'soft-square' | 'heart';
@@ -76,78 +74,84 @@ export interface ShapeDefinition {
   readonly id: ShapeId;
   readonly label: string;
   readonly boundary: readonly ShapePoint[];
-  readonly visualScale: number;
-  readonly visualOffset: readonly [number, number];
 }
 ```
 
-`boundary` is one ordered normalized polygon sampled densely enough to look smooth at the existing hero size.
+### Coordinate contract
 
-The registry may generate those points procedurally once at module initialization. Runtime consumers must then use the resulting boundary data rather than reimplementing separate heart/superellipse predicates.
+`boundary` always uses normalized object-local coordinates:
 
-Required helpers:
+```text
+x: -1 left → +1 right
+y: -1 bottom → +1 top
+```
+
+No per-shape visual scale/offset exists in this gate. Each boundary is normalized once when created. Consumer-specific UV/Canvas transforms happen only at the consumer boundary.
+
+The registry may generate boundary points procedurally once at module initialization. Runtime consumers use those boundary points rather than reimplementing independent heart/superellipse predicates.
+
+Required shared helpers:
 
 - `getShape(id)`;
 - `isPointInsideShape(shape, x, y)`;
 - `createShapePath(shape, size)` or equivalent Path2D builder;
-- a bounded helper for sampling/encoding the shape mask for WebGL.
+- bounded one-channel signed-distance-like field generation from the boundary for WebGL.
 
-The exact helper names may differ. The invariant is one project-domain silhouette definition feeding renderer hit testing, paint clipping and mold placement.
+The same `isPointInsideShape()` helper must drive renderer pointer acquisition, paint eligibility and mold press/target validation.
 
 ## 5. Renderer contract
 
-`SquishSurface` gains one shape API:
+`SquishSurface` gains:
 
 ```ts
 setShape(shape: ShapeDefinition): void
 ```
 
-The existing spring mesh and deformation constants remain shared.
+The current spring mesh/deformation constants remain shared.
 
-The fragment path must no longer hard-code the superellipse as the only visible silhouette. Preferred implementation is one small mask/SDF texture generated from `ShapeDefinition.boundary` and sampled in the existing fragment shader.
+The fragment path must stop hard-coding the superellipse as the sole silhouette. Generate a small one-channel signed-distance-like field from `ShapeDefinition.boundary`, upload it as a texture and sample it in the existing shader.
 
 Requirements:
 
-- one shader/program for both shapes;
+- one WebGL program for both shapes;
 - one spring simulation for both shapes;
-- no shape switch inside `updatePhysics()` that changes stiffness, grab, press, damping, bulge or release constants;
-- shape mask updates only when shape changes;
-- mask resolution bounded (target 96–160 px; 128 px is the default starting point);
-- mask texture created once and reused/cached per shape for the life of the renderer;
-- mask filtering should preserve a smooth edge at current mobile/desktop hero sizes;
-- existing material/filling uniforms stay shared.
+- no `shape.id` branch in deformation physics;
+- no shape-specific stiffness/grab/press/damping/bulge/release constants;
+- shape field changes only when shape changes;
+- 128×128 default field resolution, bounded to the 96–160 range if implementation evidence requires adjustment;
+- field generated only on first use of each shape and cached by `ShapeId` for renderer lifetime;
+- no per-frame polygon traversal or field regeneration;
+- field carries stable inside/outside distance around the edge, not binary occupancy only;
+- fragment shader derives discard, edge darkening and rim from that one field sample;
+- material/filling uniforms remain shared.
 
-The current soft-square should remain perceptually equivalent. Minor edge-shading differences caused by the generic mask are acceptable only if the silhouette/feel is not visibly degraded.
+The soft-square must remain perceptually equivalent. Minor edge differences are acceptable only if silhouette and tactile feel are not visibly degraded.
 
 ## 6. Interaction geometry
 
-Every semantic silhouette check must use the selected shape.
+Every semantic silhouette check uses the active `ShapeDefinition`.
 
 ### Renderer pointer acquisition
 
-`SquishSurface` pointer-down hit testing uses the active `ShapeDefinition`, not a hard-coded superellipse predicate.
+Pointer down uses `isPointInsideShape()`.
 
-### Paint stage
+### Paint
 
-The paint canvas clip/mask is rebuilt when the selected shape changes. Coverage cells are eligible only when their centers lie inside the active shape.
+The Canvas2D clip/path rebuilds when selected shape changes. Coverage cells are eligible only if their center lies inside the active shape.
 
-The coverage threshold remains `0.92`. Do not retune it per shape in this pass.
+Keep `PAINT_COMPLETE_COVERAGE = 0.92`; no per-shape threshold.
 
-### Mold stage
+### Mold
 
-Random crit targets must spawn inside the active shape. The same separation rule remains. A bounded retry/fallback is required so the heart notch cannot create a dead loop.
+Normal presses reject points outside the active shape. Crit targets use the same inside predicate plus the existing separation rule and a bounded retry/fallback so the heart notch cannot cause a dead loop.
 
-Normal mold presses also reject points outside the active shape.
+No heart-only gameplay rule is allowed.
 
-No new heart-only gameplay rule is allowed.
+## 7. Content and durable IDs
 
-## 7. Content and IDs
+Extend `VariantChoice` with `shape: ShapeId`. Default is `soft-square`.
 
-Extend `VariantChoice` with `shape: ShapeId`.
-
-Default selection is `soft-square`.
-
-The original six IDs are durable compatibility IDs and must not change:
+The original six IDs remain unchanged:
 
 ```text
 grape-smooth
@@ -158,7 +162,7 @@ lime-smooth
 lime-beads
 ```
 
-Heart variants use:
+Heart IDs:
 
 ```text
 heart-grape-smooth
@@ -169,109 +173,115 @@ heart-lime-smooth
 heart-lime-beads
 ```
 
-This deliberately avoids a save migration in the renderer-reuse gate. A later recipe-domain migration may normalize ID structure when Phase 5 introduces the final recipe registry.
+`variantId(choice)` owns this compatibility mapping. No UI/save call site manually assembles IDs.
 
-`ALL_VARIANT_IDS` must contain all 12 IDs and existing V1 saves must decode unchanged.
+`ALL_VARIANT_IDS` is generated only by applying `variantId()` across the shape × palette × filling product.
 
-Variant labels should include the shape so the two silhouettes are distinguishable in the result UI.
+This avoids a save migration in Phase 4. Phase 5 may normalize recipe-domain IDs if the final registry justifies it.
+
+Variant labels include the shape so the two silhouettes are distinguishable.
 
 ## 8. UI
 
-Add one `Shape` option group to the existing recipe panel.
+Add one compact `Shape` option group to the existing recipe panel.
 
-Use the same low-cost DOM control style already used for texture selection. Do not design the final collection-card system here.
+Requirements:
 
-Required behavior:
-
-- shape can change only in `select` stage;
-- selecting a shape updates renderer silhouette immediately;
+- shape changes only during `select`;
+- selection updates renderer silhouette immediately;
 - selected shape participates in preview/result label and variant ID;
-- palette/filling behavior remains unchanged;
+- palette/filling behavior unchanged;
 - collection counter becomes `/ 12`;
-- no horizontal layout regression on phone.
+- reuse compact existing control styling;
+- no explanatory modal, preview cards or collection redesign;
+- no phone layout regression.
 
 ## 9. Preview/card strategy
 
-This phase only needs to establish the reusable source of truth for future previews.
+This phase only establishes the source of truth:
 
-Decision:
+- future collection thumbnails derive from `ShapeDefinition.boundary`;
+- no independent PNG/SVG silhouette asset;
+- no final cards in this pass.
 
-- future collection thumbnails should derive from the same `ShapeDefinition.boundary`;
-- do not author independent PNG/SVG silhouettes;
-- do not build final cards in this pass.
-
-If a small selector icon is useful, generate it from the same boundary/path helper. Text-only selector controls are also acceptable for this gate.
+If selector icons are useful, derive them from the same boundary/path helper. Text-only controls are acceptable.
 
 ## 10. Performance gate
 
-The mask/SDF path is accepted only if shape switching does not add per-frame CPU work proportional to mask resolution.
-
 Expected runtime cost:
 
-- one-time/cached mask generation on shape selection;
-- one extra texture sample (plus bounded neighbor samples only if needed for edge shading) in the fragment shader;
-- no per-frame polygon traversal;
+- one-time/cached field generation on first shape use;
+- one shape-field texture sample in the fragment shader;
+- no per-frame shape polygon work;
 - unchanged spring vertex count.
 
-Existing metrics remain the baseline. Build must remain comfortably interactive on the GitHub Pages phone surface. A catastrophic FPS/input regression blocks merge.
+A catastrophic FPS/input regression blocks merge. Phone hands-on remains required before Phase 4 is marked fully complete because CI cannot prove tactile latency, notch quality or mobile composition.
 
 ## 11. Persistence compatibility
 
-No save schema version bump in this phase.
+No save schema bump.
 
-`SaveStateV1.completedVariantIds` simply accepts the expanded `ALL_VARIANT_IDS` set.
-
-Existing saves containing original IDs remain valid. New heart completions persist as the new prefixed IDs.
-
-`totalCrafts` semantics do not change.
+`SaveStateV1.completedVariantIds` accepts the expanded `ALL_VARIANT_IDS` set. Existing original IDs remain valid; heart completions persist as the new IDs. `totalCrafts` semantics do not change.
 
 ## 12. Lifecycle
 
-The Phase 3 activity contract remains authoritative.
+Phase 3 activity ownership remains authoritative.
 
-Shape changes must not bypass:
+Shape work must not bypass:
 
 - `activityBlocked` input rejection;
 - pointer release on pause;
 - audio stop/quiet behavior;
 - dt reset on resume.
 
-No direct `document.hidden` logic may be reintroduced into shape code or renderer code.
+Do not reintroduce direct `document.hidden` ownership into shape or renderer code.
 
-## 13. Implementation sequence
+## 13. Review blocker rule
 
-1. Add shape registry + pure geometry helpers.
-2. Add generic renderer shape mask and `setShape()`.
-3. Replace renderer hard-coded hit test with shape helper.
+Any condition on `shape.id` inside:
+
+- deformation physics;
+- stage progress math;
+- audio behavior;
+- craft state transitions;
+
+is a blocker.
+
+Shape-specific logic is allowed only in boundary creation/selection. Generic hit/path/field consumers operate on `ShapeDefinition` data.
+
+## 14. Implementation sequence
+
+1. Add shape registry + geometry helpers.
+2. Add cached generic shape field + `SquishSurface.setShape()`.
+3. Replace renderer hard-coded hit test.
 4. Add shape to `VariantChoice`, IDs, labels and `ALL_VARIANT_IDS`.
 5. Wire selected shape through `VerticalSliceApp`.
-6. Replace paint eligibility/path checks with shape helpers.
-7. Replace mold target/press checks with shape helpers.
-8. Add minimal shape selector UI.
-9. Update active docs only where Phase status/current gate changed.
+6. Replace paint geometry checks/path with shape helpers.
+7. Replace mold geometry checks with shape helpers.
+8. Add compact shape selector.
+9. Update active docs for Phase 3 complete / Phase 4 active.
 10. Run strict typecheck/build.
-11. Independent diff review for accidental per-shape physics/gameplay forks and compatibility regressions.
-12. Merge only if the second-shape exit gate passes.
+11. Independently review the final diff for per-shape physics/gameplay forks, ID regressions and accidental scope growth.
+12. Merge only if structural gate passes; deploy and then hands-on-check phone before marking Phase 4 product gate complete.
 
-## 14. Acceptance criteria
+## 15. Acceptance criteria
 
-PASS requires all of the following:
+Structural PASS requires:
 
-- both `soft-square` and `heart` are selectable and visibly materially different;
-- all 12 combinations complete the same craft flow;
-- Smooth and Foam Beads render on both shapes;
-- pointer-down outside the active silhouette does not acquire the squish;
-- paint coverage cannot be completed by painting only outside the active silhouette;
-- mold crit targets do not spawn outside the active silhouette;
-- no shape-specific branch exists in deformation physics or craft state transitions;
-- existing six durable variant IDs remain unchanged;
+- `soft-square` and `heart` selectable and materially different;
+- all 12 combinations use the same craft flow;
+- Smooth/Foam Beads work on both;
+- outside-silhouette pointer acquisition is rejected;
+- paint eligibility follows active shape;
+- mold presses/targets follow active shape;
+- no shape-specific branch in physics or craft transitions;
+- original six durable IDs unchanged;
 - existing save loads without migration;
 - typecheck and production build pass;
-- phone build remains responsive enough for tactile play;
-- no third shape/progression/final collection scope enters the diff.
+- no third shape/progression/final-collection scope enters the diff.
 
-## 15. Failure interpretation
+Final Phase 4 product PASS additionally requires a deployed phone check for visual edge quality, heart-notch deformation, paint fairness, composition and responsiveness.
 
-If the heart needs dedicated deformation constants, dedicated stages or a second renderer path, do not paper over it.
+## 16. Failure interpretation
 
-That is a failed reuse assumption. Stop catalog expansion and repair the renderer/content boundary before Phase 5.
+If the heart needs dedicated deformation constants, dedicated stages or a second renderer path, stop catalog expansion and repair the renderer/content boundary before Phase 5.
