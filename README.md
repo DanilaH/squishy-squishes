@@ -26,7 +26,8 @@ Bounded scope:
 - deployed phone check before Phase 5 is marked fully complete.
 
 Canonical implementation spec: `docs/PROGRESSION_COLLECTION_01.md`.
-Independent review: `docs/PROGRESSION_COLLECTION_01_REVIEW.md`.
+Independent pre-implementation review: `docs/PROGRESSION_COLLECTION_01_REVIEW.md`.
+Independent implementation review: `docs/PROGRESSION_COLLECTION_01_IMPLEMENTATION_REVIEW.md`.
 
 Renderer Reuse / Second Shape is complete: Soft Cube and Soft Heart share one shape/deformation/material/craft path, and the merged phone build was accepted on 2026-09-14.
 
@@ -59,6 +60,7 @@ Current execution order:
 
 - `docs/PROGRESSION_COLLECTION_01.md` — active Phase 5 implementation contract
 - `docs/PROGRESSION_COLLECTION_01_REVIEW.md` — independent pre-implementation challenge/corrections
+- `docs/PROGRESSION_COLLECTION_01_IMPLEMENTATION_REVIEW.md` — final structural diff review / phone gate
 - `docs/IMPLEMENTATION_ROADMAP.md` — full phase order and gates
 - `docs/CONTENT_AND_PROGRESSION.md` — active supporting progression/content direction
 - `docs/TECHNICAL_DIRECTION.md` — long-term boundaries

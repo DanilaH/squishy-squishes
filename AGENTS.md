@@ -6,12 +6,13 @@ Read first:
 
 1. `docs/PROGRESSION_COLLECTION_01.md`
 2. `docs/PROGRESSION_COLLECTION_01_REVIEW.md`
-3. `docs/IMPLEMENTATION_ROADMAP.md`
-4. `docs/CONTENT_AND_PROGRESSION.md`
-5. `docs/TECHNICAL_DIRECTION.md`
-6. `docs/GAMEPLAY.md`
-7. `docs/DECISIONS.md`
-8. `docs/PRODUCT.md`
+3. `docs/PROGRESSION_COLLECTION_01_IMPLEMENTATION_REVIEW.md`
+4. `docs/IMPLEMENTATION_ROADMAP.md`
+5. `docs/CONTENT_AND_PROGRESSION.md`
+6. `docs/TECHNICAL_DIRECTION.md`
+7. `docs/GAMEPLAY.md`
+8. `docs/DECISIONS.md`
+9. `docs/PRODUCT.md`
 
 Production Skeleton 01 remains the architecture baseline and the two-shape reuse gate is accepted evidence. Older probe/slice documents remain evidence, not active instructions.
 

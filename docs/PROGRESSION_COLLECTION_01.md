@@ -1,8 +1,8 @@
 # Progression + Collection 01 — bounded one-more-loop pass
 
-**Date:** 2026-09-14  
-**Status:** APPROVED FOR IMPLEMENTATION  
-**Branch:** `progression-collection-01`  
+**Date:** 2026-09-14
+**Status:** IMPLEMENTED / STRUCTURAL PASS — PHONE ACCEPTANCE PENDING
+**Branch:** `progression-collection-01`
 **Prerequisite:** Renderer Reuse / Second Shape structurally passed and phone acceptance accepted.
 
 ## 1. Goal
@@ -87,6 +87,7 @@ When `squishy.save.v2` is absent and `squishy.save.v1` is valid:
 - derive historical XP as if prior accepted crafts had already participated in the new model:
   - each unique completed recipe contributes first-completion XP;
   - `max(0, totalCrafts - uniqueCompletedCount)` contributes repeat XP;
+- floor migrated XP to the threshold required by the highest-rank already-completed recipe, so Phase-4 completions never become effectively re-locked;
 - write V2;
 - remove V1 only after successful V2 write.
 
@@ -97,6 +98,7 @@ If no V2/V1 production save exists:
 - migrate valid legacy discovered IDs;
 - set `totalCrafts = uniqueCompletedCount`;
 - award first-completion XP for each migrated completion;
+- apply the same highest-completed-required-rank XP floor;
 - write V2;
 - remove legacy key only after successful V2 write.
 

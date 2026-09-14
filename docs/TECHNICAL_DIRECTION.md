@@ -135,11 +135,9 @@ The same boundary drives:
 
 The current renderer uses one cached one-channel signed-distance-like field per shape definition and one shared shader path.
 
-**Hard invariant:** shape differences are silhouette data. No `shape.id` condition may alter spring stiffness, grab/press response, damping, bulge, release behavior, craft progress math, audio behavior or state transitions during the Phase 4 reuse test.
+**Proven invariant:** shape differences are silhouette data. No `shape.id` condition should alter spring stiffness, grab/press response, damping, bulge, release behavior, craft progress math, audio behavior or state transitions without new evidence that the shared model itself must evolve.
 
-If the second shape needs bespoke deformation tuning to look acceptable, treat that as failed reuse evidence rather than hiding it in optional `softness`/`bulge` fields.
-
-Later catalog evidence may justify additional shared shape metadata, but only after the second-shape gate passes and only when every relevant consumer applies it consistently.
+The accepted Soft Heart passed without bespoke deformation tuning. Later catalog evidence may justify additional shared shape metadata only when every relevant consumer applies it consistently; do not normalize one-off per-shape physics knobs.
 
 ### Material representation
 
@@ -227,18 +225,25 @@ Do not prematurely split the current compact files into a framework-shaped direc
 
 ## 8. Save model
 
-The currently implemented save is intentionally smaller than the eventual progression model:
+Phase 5 uses the implemented progression save:
 
 ```ts
-interface SaveStateV1 {
-  readonly version: 1;
+interface SaveStateV2 {
+  readonly version: 2;
   readonly completedVariantIds: readonly string[];
   readonly totalCrafts: number;
+  readonly labXp: number;
   readonly updatedAt: number;
 }
 ```
 
-Settings are separate:
+Derived state is deliberately not persisted:
+
+- `labRank` comes from `labXp`;
+- unlocked variant IDs come from Lab Rank;
+- collection card state comes from unlocked + completed truth.
+
+Settings remain separate:
 
 ```ts
 interface SettingsV1 {
@@ -247,15 +252,13 @@ interface SettingsV1 {
 }
 ```
 
-Phase 4 does not bump the schema. Original six variant IDs remain durable; the second shape extends the accepted ID set through the project-local content registry.
+Migration order is V2 → previous production V1 → legacy slice data → fresh default. V1/legacy migration derives historical XP and floors it to the rank threshold required by the highest already-completed recipe, preserving effective access to all pre-progression completions.
 
-When progression/collection lands, introduce only the next fields actually required and migrate deliberately.
-
-Use shared `JsonStorageRepository` for JSON mechanics/write ordering while validation/migration/domain invariants remain Squishy-local.
+Original Soft Cube IDs and Phase-4 Heart IDs remain durable. Use shared `JsonStorageRepository` for JSON mechanics/write ordering while validation/migration/domain invariants remain Squishy-local.
 
 ---
 
-## 9. Mid-craft persistence
+## 9. Mid-craft persistence## 9. Mid-craft persistence
 
 Do **not** persist every crafting gesture.
 
@@ -263,10 +266,12 @@ If the tab closes during a short unfinished craft, restarting the craft remains 
 
 Persist durable truth only:
 
-- completed/collected result;
-- later progression/unlock state;
+- completed/collected result IDs;
+- Lab XP;
 - total craft count;
 - settings.
+
+Rank and unlock arrays remain derived rather than persisted.
 
 This avoids transaction complexity without a failure mode that justifies it.
 
@@ -278,7 +283,7 @@ In the accepted implementation, **Collect** is the semantic event that updates d
 
 Do not move ownership into tween/reveal callbacks merely to make persistence look earlier.
 
-Phase 5 may revisit the exact completion point if progression/reload evidence shows that losing a revealed-but-uncollected result is materially harmful. If random staged outcomes are introduced later, then evaluate stronger pending-transaction semantics. Do not preemptively add them now.
+Phase 5 keeps Collect as the durable completion boundary: bootstrap computes/applies progression truth synchronously in memory and persists asynchronously, while UI feedback only visualizes that committed outcome. If later random staged outcomes are introduced, then evaluate stronger pending-transaction semantics. Do not preemptively add them now.
 
 ---
 
