@@ -12,6 +12,13 @@ import {
   variantLabel,
 } from './content';
 import { SquishyAudio } from './SquishyAudio';
+import {
+  SHAPES,
+  createShapePath,
+  getShape,
+  isPointInsideShape,
+  type ShapeId,
+} from './shapes';
 
 type CraftStage = 'select' | 'pour' | 'add' | 'mix' | 'mold' | 'reveal' | 'test' | 'collect';
 
@@ -46,7 +53,7 @@ export class VerticalSliceApp {
   private readonly canvas: HTMLCanvasElement;
   private readonly paintCanvas: HTMLCanvasElement;
   private readonly paintContext: CanvasRenderingContext2D;
-  private readonly paintShapePath: Path2D;
+  private paintShapePath: Path2D;
   private readonly contactShadow: HTMLElement;
   private readonly holdSurface: HTMLButtonElement;
   private readonly moldTarget: HTMLButtonElement;
@@ -65,6 +72,7 @@ export class VerticalSliceApp {
   private readonly wireframeButton: HTMLButtonElement;
   private readonly muteButton: HTMLButtonElement;
   private readonly discoveryDots: HTMLElement;
+  private readonly shapeButtons: readonly HTMLButtonElement[];
   private readonly colorButtons: readonly HTMLButtonElement[];
   private readonly fillingButtons: readonly HTMLButtonElement[];
   private readonly audio = new SquishyAudio();
@@ -74,7 +82,7 @@ export class VerticalSliceApp {
   private readonly paintEligible = new Uint8Array(PAINT_GRID_SIZE * PAINT_GRID_SIZE);
 
   private stage: CraftStage = 'select';
-  private selected: VariantChoice = { palette: 'grape', filling: 'smooth' };
+  private selected: VariantChoice = { shape: 'soft-square', palette: 'grape', filling: 'smooth' };
   private stageProgress = 0;
   private holdPointerId: number | null = null;
   private holdStageComplete = false;
@@ -132,7 +140,7 @@ export class VerticalSliceApp {
     const paintContext = this.paintCanvas.getContext('2d');
     if (!paintContext) throw new Error('2D canvas is required for paint coverage.');
     this.paintContext = paintContext;
-    this.paintShapePath = this.createPaintShapePath();
+    this.paintShapePath = createShapePath(getShape(this.selected.shape), PAINT_CANVAS_SIZE);
     this.contactShadow = this.requireElement<HTMLElement>('.contact-shadow');
     this.holdSurface = this.requireElement<HTMLButtonElement>('.hold-surface');
     this.moldTarget = this.requireElement<HTMLButtonElement>('.mold-target');
@@ -151,6 +159,7 @@ export class VerticalSliceApp {
     this.wireframeButton = this.requireElement<HTMLButtonElement>('[data-action="wireframe"]');
     this.muteButton = this.requireElement<HTMLButtonElement>('[data-action="mute"]');
     this.discoveryDots = this.requireElement<HTMLElement>('.discovery-dots');
+    this.shapeButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-shape-choice]'));
     this.colorButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-palette-choice]'));
     this.fillingButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-filling-choice]'));
 
@@ -181,6 +190,17 @@ export class VerticalSliceApp {
 
   private renderShell(): string {
     const copy = this.options.copy;
+    const shapeButtons = SHAPES.map((shape, index) => `
+      <button
+        class="texture-button shape-button"
+        type="button"
+        data-shape-choice="${shape.id}"
+        aria-pressed="${index === 0 ? 'true' : 'false'}"
+      >
+        <span>${shape.label}</span>
+      </button>
+    `).join('');
+
     const paletteButtons = PALETTES.map((palette, index) => `
       <button
         class="swatch"
@@ -216,7 +236,7 @@ export class VerticalSliceApp {
     }).join('');
 
     return `
-      <main class="lab-shell" data-stage="select" data-palette="grape" data-filling="smooth" data-tested="false" data-shaking="false">
+      <main class="lab-shell" data-stage="select" data-shape="soft-square" data-palette="grape" data-filling="smooth" data-tested="false" data-shaking="false">
         <header class="lab-topbar">
           <div class="lab-brand">
             <strong>${copy.brand.name}</strong>
@@ -272,6 +292,11 @@ export class VerticalSliceApp {
         </section>
 
         <section class="recipe-panel" aria-label="${copy.aria.recipeOptions}">
+          <div class="option-group option-group--shape">
+            <span class="option-label">${copy.recipe.shape}</span>
+            <div class="shape-options texture-options" role="group" aria-label="${copy.aria.shapeGroup}">${shapeButtons}</div>
+          </div>
+
           <div class="option-group option-group--palette">
             <span class="option-label">${copy.recipe.color}</span>
             <div class="swatches" role="group" aria-label="${copy.aria.colorGroup}">${paletteButtons}</div>
@@ -283,7 +308,7 @@ export class VerticalSliceApp {
           </div>
 
           <div class="recipe-action">
-            <span class="variant-preview">Lavender Grape · Smooth</span>
+            <span class="variant-preview">Soft Cube · Lavender Grape · Smooth</span>
             <button class="primary-button start-button" type="button">${copy.recipe.make}</button>
           </div>
         </section>
@@ -322,6 +347,16 @@ export class VerticalSliceApp {
     }, { signal });
 
     this.collectButton.addEventListener('click', () => this.collectResult(), { signal });
+
+    for (const button of this.shapeButtons) {
+      button.addEventListener('click', () => {
+        if (this.activityBlocked || this.stage !== 'select') return;
+        const value = button.dataset.shapeChoice;
+        if (!this.isShapeId(value)) return;
+        this.selected = { ...this.selected, shape: value };
+        this.updateSelectionUi();
+      }, { signal });
+    }
 
     for (const button of this.colorButtons) {
       button.addEventListener('click', () => {
@@ -367,14 +402,21 @@ export class VerticalSliceApp {
   }
 
   private updateSelectionUi(): void {
+    const shape = getShape(this.selected.shape);
     const palette = getPalette(this.selected.palette);
+    this.shell.dataset.shape = shape.id;
     this.shell.dataset.palette = palette.id;
     this.shell.dataset.filling = this.selected.filling;
     this.shell.style.setProperty('--accent', palette.accentCss);
     this.shell.style.setProperty('--accent-soft', palette.accentSoftCss);
     this.variantPreview.textContent = variantLabel(this.selected);
+    this.paintShapePath = createShapePath(shape, PAINT_CANVAS_SIZE);
+    this.renderer.setShape(shape);
     this.renderer.setMaterial(palette);
 
+    for (const button of this.shapeButtons) {
+      button.setAttribute('aria-pressed', String(button.dataset.shapeChoice === this.selected.shape));
+    }
     for (const button of this.colorButtons) {
       button.setAttribute('aria-pressed', String(button.dataset.paletteChoice === this.selected.palette));
     }
@@ -646,7 +688,7 @@ export class VerticalSliceApp {
         const v = (y + 0.5) / PAINT_GRID_SIZE;
         const px = u * 2 - 1;
         const py = v * 2 - 1;
-        if (Math.abs(px) ** 4 + Math.abs(py) ** 4 > 0.96) continue;
+        if (!isPointInsideShape(getShape(this.selected.shape), px, py)) continue;
         const index = y * PAINT_GRID_SIZE + x;
         this.paintEligible[index] = 1;
         this.paintEligibleCount += 1;
@@ -760,28 +802,6 @@ export class VerticalSliceApp {
     context.restore();
   }
 
-  private createPaintShapePath(): Path2D {
-    const path = new Path2D();
-    const center = PAINT_CANVAS_SIZE * 0.5;
-    const radius = PAINT_CANVAS_SIZE * 0.48;
-    const points = 96;
-
-    for (let index = 0; index <= points; index += 1) {
-      const angle = (index / points) * Math.PI * 2;
-      const cos = Math.cos(angle);
-      const sin = Math.sin(angle);
-      const x = Math.sign(cos) * Math.sqrt(Math.abs(cos));
-      const y = Math.sign(sin) * Math.sqrt(Math.abs(sin));
-      const px = center + x * radius;
-      const py = center - y * radius;
-      if (index === 0) path.moveTo(px, py);
-      else path.lineTo(px, py);
-    }
-
-    path.closePath();
-    return path;
-  }
-
   private pointerToPaintUv(clientX: number, clientY: number): { u: number; v: number } {
     const rect = this.workspace.getBoundingClientRect();
     const left = rect.left + rect.width * 0.5 - this.heroSizePx * 0.5;
@@ -795,7 +815,7 @@ export class VerticalSliceApp {
   private isInsidePaintShape(u: number, v: number): boolean {
     const x = u * 2 - 1;
     const y = v * 2 - 1;
-    return Math.abs(x) ** 4 + Math.abs(y) ** 4 <= 0.96;
+    return isPointInsideShape(getShape(this.selected.shape), x, y);
   }
 
   private finishPaintStage(): void {
@@ -941,18 +961,38 @@ export class VerticalSliceApp {
     if (this.activityBlocked || this.stage !== 'mold' || this.moldComplete) return;
     this.clearMoldTargetTimer();
 
+    const shape = getShape(this.selected.shape);
     let nextX = 0;
     let nextY = 0;
+    let found = false;
     for (let attempt = 0; attempt < 16; attempt += 1) {
       const candidateX = (Math.random() * 2 - 1) * 0.68;
       const candidateY = (Math.random() * 2 - 1) * 0.68;
-      const inside = Math.abs(candidateX) ** 4 + Math.abs(candidateY) ** 4 <= 0.62;
+      const inside = isPointInsideShape(shape, candidateX, candidateY);
       const separated = Math.hypot(candidateX - this.moldTargetX, candidateY - this.moldTargetY) >= 0.34;
       if (!inside || !separated) continue;
       nextX = candidateX;
       nextY = candidateY;
+      found = true;
       break;
     }
+
+    if (!found) {
+      let bestDistance = -1;
+      for (let y = -0.56; y <= 0.56; y += 0.28) {
+        for (let x = -0.56; x <= 0.56; x += 0.28) {
+          if (!isPointInsideShape(shape, x, y)) continue;
+          const distance = Math.hypot(x - this.moldTargetX, y - this.moldTargetY);
+          if (distance <= bestDistance) continue;
+          bestDistance = distance;
+          nextX = x;
+          nextY = y;
+          found = true;
+        }
+      }
+    }
+
+    if (!found) return;
 
     this.moldTargetX = nextX;
     this.moldTargetY = nextY;
@@ -1116,6 +1156,10 @@ export class VerticalSliceApp {
     const element = this.root.querySelector<T>(selector);
     if (!element) throw new Error(`Missing required element: ${selector}`);
     return element;
+  }
+
+  private isShapeId(value: string | undefined): value is ShapeId {
+    return value === 'soft-square' || value === 'heart';
   }
 
   private isPaletteId(value: string | undefined): value is PaletteId {

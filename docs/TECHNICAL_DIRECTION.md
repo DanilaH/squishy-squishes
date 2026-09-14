@@ -1,10 +1,10 @@
 # Squishy Squishes — Technical Direction
 
-**Status:** ACTIVE PRODUCTION DIRECTION — current bounded implementation is `PRODUCTION_SKELETON_01.md`
+**Status:** ACTIVE PRODUCTION DIRECTION — current bounded implementation is `RENDERER_REUSE_SECOND_SHAPE.md`
 
 ## 1. Stack
 
-Planned MVP baseline:
+MVP baseline:
 
 - **TypeScript** with strict compiler options;
 - **Vite**;
@@ -16,7 +16,7 @@ Planned MVP baseline:
 
 Do not add Phaser, React, Pixi, Three.js, a physics engine, ECS or a second renderer absent concrete production evidence.
 
-The feel probe already demonstrated that the risky hero mechanic works without them.
+The feel probe demonstrated that the hero mechanic works without them. Phase 4 now tests whether that same cheap path survives a materially different silhouette.
 
 ---
 
@@ -24,28 +24,17 @@ The feel probe already demonstrated that the risky hero mechanic works without t
 
 The probe is historical evidence on `mini-games-kit@2da5b501a7e47fbe4b3683069b34f8e252116963`.
 
-The full game is planned against reviewed revision:
+The production game is pinned to reviewed revision:
 
 `d17ba31fce2a71335dcc3095f772c3fdd87fe97b`
 
-Relevant public surfaces at that revision:
+Relevant shared surfaces include:
 
 ### Core
 
 - continuous interaction progress/velocity semantics;
-- presentation skip controller if later justified;
-- durable pending transaction only if an actual exactly-once staged mutation needs it;
-- gameplay RNG / weighted choice if deterministic gameplay later gains randomness;
-- bounded value-transfer presentation;
-- render-density helpers.
-
-### Feel / audio
-
-- pointer normalization/response helpers where useful;
-- idle drift / parallax helpers;
-- `ContinuousNoiseTexture`;
-- `PresentationAudioMixer`;
-- pitch/accumulation helpers.
+- render-density helpers;
+- presentation helpers only where real use justifies them.
 
 ### Platform / Yandex
 
@@ -57,14 +46,10 @@ Relevant public surfaces at that revision:
 - Yandex runtime bootstrap;
 - Yandex ads adapter;
 - optional local-first Player Data mirroring;
-- Metrica analytics adapter;
+- analytics adapter;
 - mock platform runtime.
 
-### Asset tooling
-
-- generated-image cutout / transparent normalization / validation where generated 2D assets are used.
-
-Project-specific policy stays local.
+Project-specific recipe, progression, rendering and persistence policy stays local.
 
 ---
 
@@ -78,22 +63,20 @@ Use one main WebGL2 canvas for:
 - deformable squishy;
 - mold/result hero;
 - material shading;
-- fillings/decals that need to deform with the surface;
-- contact shadow or closely coupled hero effects.
+- fillings/decals that need to deform with the surface.
 
-Avoid stacking multiple canvas renderers for separate stages unless profiling proves it simpler.
+Avoid stacking independent canvas renderers for separate stages unless profiling proves it simpler.
 
 ### DOM overlay
 
 Use DOM/CSS for:
 
-- recipe selector/cards;
-- Lab Rank/progress;
-- collection UI;
-- contextual hint text;
+- recipe selection;
+- Lab Rank/progress later;
+- collection UI later;
+- contextual hints;
 - settings/mute;
-- debug panel;
-- orientation gate if one is chosen;
+- debug controls;
 - simple result labels/buttons.
 
 This keeps text crisp, localization cheap and layout iteration fast.
@@ -102,52 +85,67 @@ This keeps text crisp, localization cheap and layout iteration fast.
 
 ## 4. Generic squish renderer
 
-The existing probe code is a prototype, not the final API, but its production architecture should preserve these ideas:
+The production direction is:
 
 ```text
-regular bounded mesh
-+ shared deformation simulation
-+ shape mask/SDF
-+ material parameters
-+ filling/decal parameters
+bounded regular mesh
++ one shared deformation simulation
++ data-driven shape boundary / cached field
++ shared material parameters
++ shared filling parameters
 + pointer/press state
 → rendered squishy
 ```
 
 ### Mesh
 
-Initial production baseline can remain around the validated 16×16 cell density and be tuned from representative devices.
+Keep the validated bounded mesh density unless representative-device profiling justifies a change. Geometry density must not increase merely because more shapes exist.
 
-Do not increase geometry density by habit. The mesh is only as dense as needed for silhouette/material quality.
+### Shape representation — Phase 4 contract
 
-### Shape representation
-
-Preferred direction: one generic mesh clipped/shaded by a per-shape mask/SDF or another small data representation.
-
-A shape definition may provide:
+The current canonical shape definition is deliberately small:
 
 ```ts
+interface ShapePoint {
+  readonly x: number;
+  readonly y: number;
+}
+
 interface ShapeDefinition {
-  id: ShapeId;
-  mask: ShapeMaskReference;
-  visualScale: number;
-  visualOffset: readonly [number, number];
-  softness?: number;
-  bulge?: number;
-  returnSpeed?: number;
-  decorationAnchors?: readonly DecorationAnchor[];
+  readonly id: ShapeId;
+  readonly label: string;
+  readonly boundary: readonly ShapePoint[];
 }
 ```
 
-The exact format may change after implementation experiments.
+Boundary coordinates are normalized object-local coordinates:
 
-The invariant is stronger than the type: **same renderer/deformation model, data-driven silhouette differences.**
+```text
+x: -1 left → +1 right
+y: -1 bottom → +1 top
+```
+
+The same boundary drives:
+
+- generic WebGL silhouette field generation;
+- renderer pointer hit testing;
+- Canvas2D paint clipping/coverage;
+- mold press/target validation;
+- future thumbnail generation.
+
+The current renderer uses one cached one-channel signed-distance-like field per shape definition and one shared shader path.
+
+**Hard invariant:** shape differences are silhouette data. No `shape.id` condition may alter spring stiffness, grab/press response, damping, bulge, release behavior, craft progress math, audio behavior or state transitions during the Phase 4 reuse test.
+
+If the second shape needs bespoke deformation tuning to look acceptable, treat that as failed reuse evidence rather than hiding it in optional `softness`/`bulge` fields.
+
+Later catalog evidence may justify additional shared shape metadata, but only after the second-shape gate passes and only when every relevant consumer applies it consistently.
 
 ### Material representation
 
 Use a bounded shader feature set rather than one shader per recipe.
 
-Conceptual recipe material config:
+Conceptual future material config may include:
 
 ```ts
 interface MaterialStyle {
@@ -155,7 +153,6 @@ interface MaterialStyle {
   translucency: number;
   rimStrength: number;
   sheenStrength: number;
-  sheenHueShift: number;
   pearlescence: number;
   holoStrength: number;
   internalTint: string;
@@ -173,8 +170,8 @@ Internal beads/bubbles/stars are presentation elements, not simulation bodies.
 Preferred implementation:
 
 - bounded count;
-- deterministic seeded layout for a recipe instance if stable appearance matters;
-- simple cosmetic drift/parallax/deformation coupling;
+- deterministic seeded layout where stable appearance matters;
+- cosmetic deformation coupling;
 - no collision solver;
 - no per-piece spring graph.
 
@@ -184,222 +181,159 @@ Surface decals should derive from object UV/local coordinates so they remain coh
 
 ## 6. Crafting architecture
 
-Crafting should use an explicit small state machine, not a generalized workflow engine.
+Crafting uses an explicit small state machine, not a generalized workflow engine.
 
-Conceptual app flow:
+Current accepted sequence:
 
-```ts
-type CraftPhase =
-  | 'idle'
-  | 'pour'
-  | 'add'
-  | 'mix'
-  | 'mold'
-  | 'reveal'
-  | 'finish'
-  | 'test'
-  | 'result';
+```text
+select → pour/paint → optional add → mix → mold → reveal → test → collect
 ```
 
-A recipe provides a sequence of supported stage definitions. The orchestrator owns phase transitions; each stage implementation owns its local semantic progress and presentation.
+A later recipe registry may select from a bounded set of supported stage definitions. Do not build an arbitrary recipe scripting language.
 
-Do not build an arbitrary scripting language for recipes.
+The second-shape gate must reuse the exact current stage path; a shape-specific state sequence is a blocker.
 
 ---
 
-## 7. Domain/data boundaries
+## 7. Ownership boundaries
 
-Recommended project structure after full-game implementation begins:
+Current production boundaries:
 
 ```text
-src/
-  app/
-    bootstrap.ts
-    gameController.ts
-  content/
-    shapes.ts
-    materials.ts
-    fillings.ts
-    finishes.ts
-    recipes.ts
-    progression.ts
-  game/
-    craft/
-      craftState.ts
-      stages/
-        pourStage.ts
-        applyStage.ts
-        squishStage.ts
-        moldStage.ts
-      progression.ts
-      collection.ts
-      milestones.ts
-    render/
-      SquishRenderer.ts
-      deformation.ts
-      materials.ts
-      fillings.ts
-      shaders/
-    audio/
-      gameAudio.ts
-    ui/
-      labUi.ts
-      collectionUi.ts
-  platform/
-    runtime.ts
-    saveCodec.ts
-    settingsCodec.ts
-    analytics.ts
-    monetization.ts
-  debug/
-    createDebugPanel.ts
-    debugScenarios.ts
-  i18n/
-    en.ts
-    ru.ts
-    index.ts
-  main.ts
+main.ts
+  → app/bootstrap.ts
+      → platform/runtime.ts
+      → save/settings repositories
+      → typed copy
+      → VerticalSliceApp
+          → content + shape definitions
+          → SquishSurface
+          → SquishyAudio
 ```
 
-Exact filenames may evolve. Keep these ownership boundaries:
+Ownership rules:
 
 - content definitions are data;
-- domain progression/collection rules are pure where practical;
+- `VerticalSliceApp` owns current craft/presentation state, not browser/platform persistence;
 - renderer does not mutate save/progression;
-- UI does not own economy/progression truth;
+- UI does not own durable progression truth;
 - platform adapters do not know Squishy recipe semantics;
-- scene/stage choreography may visualize committed truth but does not grant it from tween callbacks.
+- bootstrap wires domain events to persistence/runtime;
+- animation callbacks do not invent durable rewards.
+
+Do not prematurely split the current compact files into a framework-shaped directory tree. Extract additional modules only when the next real consumer makes the boundary valuable.
 
 ---
 
 ## 8. Save model
 
-MVP save should remain small and versioned.
-
-Conceptual state:
+The currently implemented save is intentionally smaller than the eventual progression model:
 
 ```ts
 interface SaveStateV1 {
-  version: 1;
-  labXp: number;
-  completedRecipeIds: string[];
-  unlockedRecipeIds: string[];
-  totalCrafts: number;
-  selectedRecipeId: string | null;
-  tutorialComplete: boolean;
-  updatedAt: number;
+  readonly version: 1;
+  readonly completedVariantIds: readonly string[];
+  readonly totalCrafts: number;
+  readonly updatedAt: number;
 }
 ```
 
-Whether `unlockedRecipeIds` is persisted or derived from XP is a local design choice; prefer deriving redundant state when it keeps migration/reconciliation simpler.
-
-Use shared `JsonStorageRepository` for JSON mechanics/write ordering with a Squishy-local codec/migration/validation layer.
-
-Settings live separately:
+Settings are separate:
 
 ```ts
 interface SettingsV1 {
-  version: 1;
-  muted: boolean;
+  readonly version: 1;
+  readonly muted: boolean;
 }
 ```
 
-Language normally follows platform language; any development override is not production save truth.
+Phase 4 does not bump the schema. Original six variant IDs remain durable; the second shape extends the accepted ID set through the project-local content registry.
+
+When progression/collection lands, introduce only the next fields actually required and migrate deliberately.
+
+Use shared `JsonStorageRepository` for JSON mechanics/write ordering while validation/migration/domain invariants remain Squishy-local.
 
 ---
 
 ## 9. Mid-craft persistence
 
-Do **not** persist every crafting gesture in MVP.
+Do **not** persist every crafting gesture.
 
-If the tab closes during a 5–15 second stage, restarting the unfinished craft is acceptable unless hands-on/user evidence demonstrates meaningful frustration.
+If the tab closes during a short unfinished craft, restarting the craft remains acceptable until evidence says otherwise.
 
-Persist only meaningful durable truth such as:
+Persist durable truth only:
 
-- completed recipe;
-- progression award;
-- unlock state;
+- completed/collected result;
+- later progression/unlock state;
 - total craft count;
 - settings.
 
-This avoids importing transaction complexity without a failure mode that justifies it.
+This avoids transaction complexity without a failure mode that justifies it.
 
 ---
 
-## 10. Result commit boundary
+## 10. Current completion boundary
 
-For a deterministic recipe, result identity is already known before crafting begins.
+In the accepted implementation, **Collect** is the semantic event that updates durable variant completion and `totalCrafts`. Presentation updates immediately and persistence is asynchronous so storage latency cannot block the loop.
 
-Recommended approach:
+Do not move ownership into tween/reveal callbacks merely to make persistence look earlier.
 
-1. player completes final semantic crafting requirement;
-2. compute deterministic progression/collection delta;
-3. write durable result;
-4. reveal/test/collect presentation visualizes that owned result;
-5. final Collect action exits/banks visually but does not become the only place where ownership can be lost on reload.
-
-The exact commit point should be chosen to avoid replay exploits and lost completion while preserving a natural presentation.
-
-If later design introduces random secret outputs/rewarded mutation where exact staged outcome must survive reload, evaluate `DurablePendingTransactionSession` then. Do not preemptively use it now.
+Phase 5 may revisit the exact completion point if progression/reload evidence shows that losing a revealed-but-uncollected result is materially harmful. If random staged outcomes are introduced later, then evaluate stronger pending-transaction semantics. Do not preemptively add them now.
 
 ---
 
 ## 11. Platform bootstrap
 
-Target one platform-agnostic app entry shape around shared runtime.
+The application has one platform-agnostic bootstrap shape around the shared runtime.
 
-Production:
+Production/Yandex mode:
 
-- bootstrap Yandex runtime early;
-- attach pause/resume listeners before async boot completes via shared runtime;
+- initialize Yandex runtime explicitly;
+- attach platform pause/resume through shared runtime;
 - obtain safe storage;
-- optionally enable Player Data mirroring with Squishy-specific reconciliation policy;
 - load settings/save;
 - start app;
-- call LoadingAPI readiness once playable.
+- mark LoadingAPI ready once playable.
 
-Development:
+Development/GitHub Pages mode:
 
-- use matching mock runtime with localStorage;
+- matching mock runtime;
+- browser localStorage behind `StorageAdapter`;
 - no fake Yandex globals scattered through game code.
+
+Yandex remains an explicit build/runtime selection; GitHub Pages remains the fast phone-testing surface.
 
 ---
 
 ## 12. Activity lifecycle
 
-`GameplayActivityCoordinator` should aggregate:
+`GameplayActivityCoordinator` aggregates external blockers such as:
 
 - Yandex pause/resume;
 - document visibility;
 - ad ownership;
-- optional orientation blocker.
+- optional orientation blocker later.
 
 When blocked:
 
 - stop semantic input acquisition;
-- cancel/release pointer capture;
-- pause/quiet owned continuous audio;
-- pause expensive animation loop if appropriate;
-- do not accidentally resume while another blocker remains.
+- release owned pointer capture;
+- stop/quiet continuous audio;
+- prevent craft progress;
+- reset timing before resume;
+- do not resume while another blocker remains.
 
-Activity transitions should be testable outside the renderer.
+Game/render/shape code must not create a competing direct visibility policy.
 
 ---
 
 ## 13. Orientation/layout
 
-**Proposal awaiting confirmation:** support responsive desktop and mobile with the hero centered, rather than hard-locking landscape from the start.
+Current baseline remains responsive desktop + mobile with a centered hero rather than a hard landscape lock.
 
-Reasons:
+The second-shape selector must fit the phone composition without introducing a separate mobile UI system.
 
-- core interaction is one centered object;
-- DOM UI is sparse;
-- portrait is not structurally impossible;
-- broader playable surface may be valuable on Yandex.
-
-If implementation shows portrait composition materially weak or moderation/device behavior favors landscape, use the shared orientation blocker and render a simple rotate gate.
-
-Do not inherit Signal 2000's landscape rule automatically; it was a product-specific decision.
+If representative Yandex/device evidence later shows portrait composition is materially weak, use the shared orientation blocker and one simple rotate gate. Do not inherit another game's orientation rule without evidence.
 
 ---
 
@@ -407,49 +341,46 @@ Do not inherit Signal 2000's landscape rule automatically; it was a product-spec
 
 Performance is a feel requirement.
 
-Initial production targets:
+Targets:
 
 - stable perceived 60 FPS on representative desktop and mainstream mobile browsers during primary interaction;
 - same-frame pointer response where browser scheduling permits;
-- bounded dt to avoid explosive spring recovery;
+- bounded dt;
 - DPR/backing-store cap via shared render-density helper;
-- no per-frame DOM mutations except throttled diagnostics/debug;
+- no per-frame polygon traversal for shape masking;
+- shape field generation only on first use / shape changes, never each frame;
 - avoid per-frame allocations in deformation hot path;
 - reuse typed arrays/WebGL buffers;
 - bounded filling/decor count;
-- optional visual richness degrades before input responsiveness;
+- optional richness degrades before input responsiveness;
 - no continuous hidden-tab work.
 
-Record actual target-device measurements before release; do not call desktop dev-machine FPS proof of mobile readiness.
+Desktop CI/build success is not mobile acceptance. Phase 4 remains product-gated on a deployed phone check.
 
 ---
 
 ## 15. Audio architecture
 
-Use `PresentationAudioMixer` for ownership of baseline ambience and foreground reveal states where that model fits.
+Continuous tactile audio remains project-local over reviewed shared-kit primitives.
 
-Use `ContinuousNoiseTexture` for tactile continuous stages such as squish/mix.
+Potential later audio includes:
 
-Project-local audio may include:
-
-- pour/dispense loop or texture;
-- short additive filling cues;
+- pour/dispense texture;
+- filling cues;
 - mold press/release;
-- reveal one-shots by presentation tier;
-- collection/progression cue;
+- reveal one-shots;
+- collection/progression cues;
 - quiet UI feedback.
 
-Repeated cues should use bounded pitch variation/accumulation helpers rather than identical machine-gun repetition.
+Repeated cues should use bounded variation rather than identical machine-gun repetition. Audio nodes/contexts require deterministic teardown.
 
-Do not create AudioContexts/nodes without deterministic teardown.
+Shape selection must not create per-shape audio behavior in the current reuse gate.
 
 ---
 
 ## 16. Analytics boundary
 
-Game code calls one small analytics interface/event vocabulary. No PII.
-
-Do not put Metrica-specific calls into crafting/render modules.
+Game code calls one small analytics vocabulary. No PII and no Metrica-specific calls inside crafting/render modules.
 
 See `ANALYTICS_AND_MONETIZATION.md`.
 
@@ -459,11 +390,9 @@ See `ANALYTICS_AND_MONETIZATION.md`.
 
 Ads own activity blocking/audio interruption through the shared adapter.
 
-Interstitial eligibility remains local product policy around `ActionInterstitialGate`.
+Interstitial eligibility remains local product policy around `ActionInterstitialGate` and must stay causally tied to explicit between-loop transitions.
 
-Reward grants are durable domain mutations executed from the rewarded callback; animation is secondary.
-
-Do not show an ad from a background timer. Requests should remain causally tied to an explicit user transition where Yandex timing/moderation behavior remains valid.
+No ad may interrupt craft, reveal or result squeeze.
 
 ---
 
@@ -471,66 +400,51 @@ Do not show an ad from a background timer. Requests should remain causally tied 
 
 Initial languages: RU + EN.
 
-Use a typed dictionary pattern similar to the previous project:
+Use the current typed dictionary pattern:
 
 - one language object defines key shape;
-- other languages must satisfy that recursive string shape;
-- no runtime string concatenation that makes localization brittle;
-- no user-facing text baked into art.
+- other languages satisfy the recursive string shape;
+- no user-facing text baked into art;
+- content labels may later move into typed content localization when the final recipe registry is built.
 
 ---
 
 ## 19. Debug tooling
 
-A DEV-only panel is a production accelerator, not optional polish.
+DEV-only diagnostics are production accelerators.
 
-It should support at least:
+Current baseline includes state/reset diagnostics and renderer metrics/mesh controls. Expand only as upcoming phases need it, for example:
 
-- select/force any recipe;
-- unlock all / set representative progression states;
-- seed empty/half/full collection;
-- jump to craft phases where safely possible;
-- reset save/settings;
-- RU/EN debug switch;
-- toggle mesh/perf diagnostics;
-- force representative tier/reveal states;
-- test interstitial/rewarded adapter behavior;
-- test visibility/activity interruption where feasible.
+- seed progression/collection states in Phase 5;
+- force representative recipe/reveal states when catalog production needs it;
+- test ad/runtime interruptions before platform hardening.
 
-Hard-gate internal controls with `import.meta.env.DEV`; query-string switches alone are insufficient for production isolation.
+Hard-gate internal controls with `import.meta.env.DEV`; query-string switches alone are insufficient.
 
 ---
 
-## 20. Tests
+## 20. Tests and acceptance
 
-Prioritize pure/system contracts and lifecycle failure modes.
+Prioritize contracts/failure modes that can regress silently:
 
-Minimum expected areas:
-
-- recipe/content registry validity;
-- unlock/progression derivation;
-- save codec/migrations;
-- collection snapshots/milestones;
-- stage completion exactly once;
-- pause/cancel/release semantics;
-- monetization gate policy;
-- rewarded grant exactly once per earned callback contract;
-- platform/mock runtime integration seams;
 - deterministic content IDs;
-- no locked recipe can be selected through domain APIs;
-- final collection/progression state remains valid after reload.
+- save codec/migrations;
+- shape registry validity;
+- lifecycle block/release/resume semantics;
+- stage completion exactly once;
+- future progression derivation and monetization gates when those phases exist.
 
-Renderer math with meaningful invariants may be unit-tested, but screenshot/perceptual feel still requires browser/hands-on acceptance.
+Renderer geometry can have pure invariant tests where useful, but perceptual silhouette/deformation quality still needs real-browser hands-on acceptance.
+
+For the current second-shape gate, strict typecheck/build + independent diff review are the structural checks; deployed phone play is the product check.
 
 ---
 
-## 21. CI / private dependency
+## 21. CI / dependency installation
 
-Because `mini-games-kit` is private, CI must explicitly receive credentials that can read it or use another deliberate installation strategy.
+`mini-games-kit` is consumed at an explicit reviewed Git revision. CI must keep that install deterministic and must not silently vendor shared code to avoid dependency setup.
 
-Do not silently vendor shared code or weaken CI to avoid solving authentication.
-
-This is an implementation setup task before the first production PR, not a reason to publish the kit publicly.
+Current GitHub Actions installation/build path is already proven on the production repository. Preserve it unless the dependency distribution strategy intentionally changes.
 
 ---
 
@@ -546,4 +460,6 @@ Do not generalize:
 - inventory/economy abstractions;
 - live-ops config service.
 
-Implement the smallest structure that cleanly supports this product. Extract only after real second-consumer evidence identifies an expensive reusable boundary.
+Stop and repair the current boundary if multiple shapes require bespoke deformation code.
+
+Implement the smallest structure that cleanly supports this product. Extract shared code only after real second-consumer evidence identifies an expensive reusable boundary.

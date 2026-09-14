@@ -1,3 +1,5 @@
+import { SHAPES, getShape, type ShapeId } from './shapes';
+
 export type PaletteId = 'grape' | 'strawberry' | 'lime';
 export type FillingId = 'smooth' | 'beads';
 
@@ -22,6 +24,7 @@ export interface FillingSpec {
 }
 
 export interface VariantChoice {
+  readonly shape: ShapeId;
   readonly palette: PaletteId;
   readonly filling: FillingId;
 }
@@ -78,14 +81,20 @@ const fillingById: Readonly<Record<FillingId, FillingSpec>> = Object.fromEntries
 export const getPalette = (id: PaletteId): PaletteSpec => paletteById[id];
 export const getFilling = (id: FillingId): FillingSpec => fillingById[id];
 
-export const variantId = (choice: VariantChoice): string => `${choice.palette}-${choice.filling}`;
-
-export const variantLabel = (choice: VariantChoice): string => {
-  const palette = getPalette(choice.palette);
-  const filling = getFilling(choice.filling);
-  return `${palette.label} · ${filling.label}`;
+export const variantId = (choice: VariantChoice): string => {
+  const base = `${choice.palette}-${choice.filling}`;
+  return choice.shape === 'soft-square' ? base : `${choice.shape}-${base}`;
 };
 
-export const ALL_VARIANT_IDS: readonly string[] = PALETTES.flatMap((palette) =>
-  FILLINGS.map((filling) => variantId({ palette: palette.id, filling: filling.id })),
+export const variantLabel = (choice: VariantChoice): string => {
+  const shape = getShape(choice.shape);
+  const palette = getPalette(choice.palette);
+  const filling = getFilling(choice.filling);
+  return `${shape.label} · ${palette.label} · ${filling.label}`;
+};
+
+export const ALL_VARIANT_IDS: readonly string[] = SHAPES.flatMap((shape) =>
+  PALETTES.flatMap((palette) =>
+    FILLINGS.map((filling) => variantId({ shape: shape.id, palette: palette.id, filling: filling.id })),
+  ),
 );

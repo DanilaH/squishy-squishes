@@ -1,10 +1,10 @@
 # Squishy Squishes — Implementation Roadmap
 
 **Status:** ACTIVE PRODUCTION ROADMAP
-**Current gate:** Phase 3 — Production Skeleton 01
-**Next gate:** Phase 4 — Renderer Reuse / Second Shape
+**Current gate:** Phase 4 — Renderer Reuse / Second Shape
+**Previous gate:** Phase 3 — Production Skeleton 01 — COMPLETE
 
-The tactile probe, complete vertical slice, production renderer pass, and evidence-backed interaction corrections have passed. The project is now moving from a proven loop into production architecture and then into content-scale validation.
+The tactile probe, complete vertical slice, production renderer pass, evidence-backed interaction corrections and production-shell extraction have passed. The project is now testing whether the high-CMF content thesis survives a materially different second silhouette before progression/catalog scale is allowed.
 
 ---
 
@@ -60,7 +60,7 @@ No additional mechanic invention is required before production architecture.
 
 ---
 
-## Phase 3 — Production Skeleton 01 — ACTIVE
+## Phase 3 — Production Skeleton 01 — COMPLETE
 
 ### Goal
 
@@ -71,51 +71,67 @@ Canonical bounded spec:
 - `PRODUCTION_SKELETON_01.md`
 - `PRODUCTION_SKELETON_01_REVIEW.md`
 
-### Work
+### Completed work
 
-- preserve reviewed `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b` pin;
-- app bootstrap boundary;
-- mock + explicit Yandex runtime seam;
-- versioned game save repository;
-- one-time legacy slice-save migration;
-- separate versioned settings repository;
-- typed RU/EN copy skeleton;
-- aggregate activity lifecycle wiring;
-- DEV-only debug seam;
-- remove direct storage/platform ownership from `VerticalSliceApp`;
-- preserve the already-working shared render-density path;
-- preserve all accepted craft tuning.
+- preserved reviewed `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b` pin;
+- added app bootstrap boundary;
+- added mock + explicit Yandex runtime seam;
+- added versioned game save repository;
+- added one-time legacy slice-save migration;
+- added separate versioned settings repository;
+- added typed RU/EN copy skeleton;
+- routed platform/visibility blocking through aggregate activity lifecycle;
+- added DEV-only debug seam;
+- removed direct storage/platform ownership from `VerticalSliceApp`;
+- preserved shared render-density path and accepted craft tuning.
 
-### Exit gate
+### Exit result
 
-- accepted six-variant slice still behaves equivalently;
-- strict typecheck/build green;
-- save/settings round-trip;
-- legacy discoveries migrate safely;
-- platform blocking releases active interaction/audio and resumes without dt jumps;
-- GitHub Pages remains playable on phone;
-- final diff contains no hidden gameplay tuning or speculative framework layer.
+Structural review passed, strict typecheck/build passed, the final production source was merged, and the main GitHub Pages pipeline successfully rebuilt/published the production shell.
 
 ---
 
-## Phase 4 — Renderer Reuse / Second Shape — NEXT
+## Phase 4 — Renderer Reuse / Second Shape — ACTIVE
 
 ### Goal
 
 Prove the high-CMF technical thesis instead of assuming it.
 
+Canonical bounded spec:
+
+- `RENDERER_REUSE_SECOND_SHAPE.md`
+- `RENDERER_REUSE_SECOND_SHAPE_REVIEW.md`
+
 ### Work
 
-- extract/data-drive shape representation only as much as the second shape requires;
-- keep one shared deformation/material path;
-- add exactly one materially different second shape;
-- verify existing materials/fillings still work without bespoke per-shape gameplay;
-- establish preview/card rendering strategy;
-- measure representative mobile performance.
+- preserve the existing rounded soft-square;
+- centralize normalized silhouette data in one `ShapeDefinition` registry;
+- add exactly one materially different second shape: Soft Heart;
+- keep one spring mesh, one deformation path, one shader/material path and one craft state machine;
+- use shared shape geometry for WebGL field masking, pointer hit testing, paint clipping/coverage and mold target validation;
+- keep all three palettes and both fillings reusable on both silhouettes;
+- expand deterministic selectable variants from 6 to 12;
+- preserve the original six durable variant IDs and save schema V1;
+- keep all Phase 3 runtime/save/settings/lifecycle boundaries intact;
+- run strict typecheck/build and independent final diff review;
+- deploy and perform a representative phone acceptance check.
 
-### Exit gate
+### Structural exit gate
 
-Two materially different shapes and several recipes use one deformation/material system without bespoke physics or a separate state machine.
+- two materially different shapes use the same deformation/material system;
+- no `shape.id` branch exists in deformation physics, stage-progress math, audio behavior or craft transitions;
+- existing IDs/save load without migration;
+- build/typecheck green;
+- no third shape, progression or final collection work leaks into the diff.
+
+### Product exit gate
+
+After deployment, phone hands-on confirms:
+
+- heart edge/notch quality remains coherent while stretching;
+- paint feels fair on the concave shape;
+- selector/composition fits the phone surface;
+- input responsiveness/performance remain acceptable.
 
 If this fails, repair the renderer/content boundary before adding more shapes.
 
@@ -125,7 +141,7 @@ If this fails, repair the renderer/content boundary before adding more shapes.
 
 ### Goal
 
-Build the “one more recipe” layer after multi-shape reuse is proven.
+Build the “one more recipe” layer only after multi-shape reuse is proven.
 
 Leading model:
 

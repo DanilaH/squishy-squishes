@@ -463,9 +463,9 @@ body {
   left: 50%;
   bottom: max(22px, env(safe-area-inset-bottom));
   transform: translateX(-50%);
-  width: min(calc(100% - 32px), 650px);
+  width: min(calc(100% - 32px), 820px);
   display: grid;
-  grid-template-columns: auto minmax(210px, 1fr) auto;
+  grid-template-columns: minmax(150px, auto) auto minmax(210px, 1fr) auto;
   align-items: end;
   gap: 18px;
   padding: 14px 15px;
@@ -769,8 +769,13 @@ body {
     border-radius: 16px;
   }
 
+  .option-group--shape,
   .option-group--texture {
     min-width: 0;
+  }
+
+  .option-group--shape {
+    grid-column: 1 / -1;
   }
 
   .recipe-action {
@@ -833,6 +838,7 @@ body {
     grid-column: 1;
   }
 
+  .option-group--shape,
   .option-group--palette {
     grid-template-columns: auto 1fr;
     align-items: center;
