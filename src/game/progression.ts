@@ -4,7 +4,7 @@ import { SHAPES, type ShapeId } from './shapes';
 export const FIRST_COMPLETION_XP = 100;
 export const REPEAT_COMPLETION_XP = 25;
 
-export type LabRank = 1 | 2 | 3 | 4 | 5 | 6;
+export type LabRank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export type RecipeCardState = 'locked' | 'available' | 'completed';
 export type CollectionMilestone = 'first-squishy' | 'half-catalog' | 'full-shape' | 'full-catalog';
 
@@ -21,6 +21,8 @@ export const RANK_DEFINITIONS: readonly RankDefinition[] = [
   { rank: 4, minXp: 300, variantIds: ['lime-smooth', 'heart-grape-beads'] },
   { rank: 5, minXp: 400, variantIds: ['strawberry-beads', 'heart-strawberry-beads'] },
   { rank: 6, minXp: 500, variantIds: ['lime-beads', 'heart-lime-beads'] },
+  { rank: 7, minXp: 600, variantIds: ['aqua-jelly-pearls', 'heart-aqua-jelly-smooth'] },
+  { rank: 8, minXp: 700, variantIds: ['prism-holo-smooth', 'heart-prism-holo-pearls'] },
 ] as const;
 
 const requiredRankByVariant = new Map<string, LabRank>();
