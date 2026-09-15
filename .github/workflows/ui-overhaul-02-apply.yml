@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   apply:
-    if: startsWith(github.event.head_commit.message, 'Arm UI Overhaul 02 Browser QA patch')
+    if: startsWith(github.event.head_commit.message, 'Arm UI Overhaul 02 Browser QA patch v2')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
