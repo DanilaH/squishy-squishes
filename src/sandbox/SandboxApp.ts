@@ -191,6 +191,31 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
   },
 };
 
+interface DecorLabels {
+  readonly eyes: Readonly<Record<EyeStyleId, string>>;
+  readonly mouths: Readonly<Record<MouthStyleId, string>>;
+  readonly stickers: Readonly<Record<StickerId, string>>;
+  readonly accessories: Readonly<Record<AccessoryId, string>>;
+  readonly stickerTip: string;
+}
+
+const DECOR_LABELS: Readonly<Record<SandboxLanguage, DecorLabels>> = {
+  en: {
+    eyes: { dot: 'Dot', happy: 'Happy', sleepy: 'Sleepy' },
+    mouths: { smile: 'Smile', o: 'O', cat: 'Cat' },
+    stickers: { heart: 'Heart', star: 'Star', flower: 'Flower', sparkle: 'Sparkle' },
+    accessories: { 'cat-ears': 'Cat ears', 'bunny-ears': 'Bunny ears', horns: 'Horns', bow: 'Bow', crown: 'Crown' },
+    stickerTip: 'Tap the squishy to place it.',
+  },
+  ru: {
+    eyes: { dot: 'Точки', happy: 'Весёлые', sleepy: 'Сонные' },
+    mouths: { smile: 'Улыбка', o: 'О', cat: 'Котик' },
+    stickers: { heart: 'Сердце', star: 'Звезда', flower: 'Цветок', sparkle: 'Искра' },
+    accessories: { 'cat-ears': 'Кошачьи', 'bunny-ears': 'Заячьи', horns: 'Рожки', bow: 'Бант', crown: 'Корона' },
+    stickerTip: 'Тапни по сквишу, чтобы наклеить.',
+  },
+};
+
 const PAINT_COLORS = [0xd58cff, 0x63e6e2, 0xff79a8, 0x92df83, 0xffa46f, 0xffdc70] as const;
 const BRUSH_SIZES = [18, 34, 56] as const;
 const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti'];
@@ -334,6 +359,7 @@ export class SandboxApp {
   }
 
   private renderShell(): string {
+    const decorLabels = DECOR_LABELS[this.options.language];
     const shapes = SHAPES.map((shape) => `
       <button class="sandbox-shape" type="button" data-shape="${shape.id}" aria-pressed="${shape.id === 'soft-square'}">
         <span class="sandbox-shape__icon">${shapeSvg(shape)}</span>
@@ -363,22 +389,22 @@ export class SandboxApp {
     const accessoryGlyph = (id: AccessoryId): string => id === 'cat-ears' ? '▲ ▲' : id === 'bunny-ears' ? '∩ ∩' : id === 'horns' ? '△ △' : id === 'bow' ? '⋈' : '♛';
     const eyes = [null, ...EYE_STYLE_IDS].map((id) => `
       <button class="sandbox-decor-choice" type="button" data-decor-eyes="${id ?? 'none'}" aria-pressed="${id === null}">
-        <span>${id ? eyeGlyph(id) : '—'}</span><small>${id ?? this.copy.none}</small>
+        <span>${id ? eyeGlyph(id) : '—'}</span><small>${id ? decorLabels.eyes[id] : this.copy.none}</small>
       </button>
     `).join('');
     const mouths = [null, ...MOUTH_STYLE_IDS].map((id) => `
       <button class="sandbox-decor-choice" type="button" data-decor-mouth="${id ?? 'none'}" aria-pressed="${id === null}">
-        <span>${id ? mouthGlyph(id) : '—'}</span><small>${id ?? this.copy.none}</small>
+        <span>${id ? mouthGlyph(id) : '—'}</span><small>${id ? decorLabels.mouths[id] : this.copy.none}</small>
       </button>
     `).join('');
     const stickers = STICKER_IDS.map((id) => `
       <button class="sandbox-decor-choice" type="button" data-decor-sticker="${id}" aria-pressed="${id === this.selectedSticker}">
-        <span>${stickerGlyph(id)}</span><small>${id}</small>
+        <span>${stickerGlyph(id)}</span><small>${decorLabels.stickers[id]}</small>
       </button>
     `).join('');
     const accessories = [null, ...ACCESSORY_IDS].map((id) => `
       <button class="sandbox-decor-choice" type="button" data-decor-accessory="${id ?? 'none'}" aria-pressed="${id === null}">
-        <span>${id ? accessoryGlyph(id) : '—'}</span><small>${id ?? this.copy.none}</small>
+        <span>${id ? accessoryGlyph(id) : '—'}</span><small>${id ? decorLabels.accessories[id] : this.copy.none}</small>
       </button>
     `).join('');
 
@@ -445,7 +471,7 @@ export class SandboxApp {
             </div>
             <div class="sandbox-decor-section" data-decor-panel="stickers" hidden>
               <div class="sandbox-decor-grid sandbox-decor-grid--four">${stickers}</div>
-              <p class="sandbox-decor-tip">${this.copy.stickers}: tap the squishy</p>
+              <p class="sandbox-decor-tip">${decorLabels.stickerTip}</p>
               <div class="sandbox-tool-row sandbox-tool-row--actions"><button type="button" data-action="decor-undo">${this.copy.undo}</button><button type="button" data-action="decor-clear">${this.copy.clear}</button></div>
             </div>
             <div class="sandbox-decor-section" data-decor-panel="accessory" hidden>

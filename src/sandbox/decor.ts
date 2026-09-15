@@ -227,7 +227,26 @@ export const getDecorFrame = (shape: ShapeDefinition): DecorFrame => {
   const mouthY = centerY - height * 0.075;
   const blushY = centerY - height * 0.015;
   const blushDx = width * 0.225;
-  const headY = maxY - height * 0.055;
+
+  // Attach head accessories to the actual upper contour at the horizontal center.
+  // Using only maxY makes concave shapes (notably the heart) place the anchor in empty space.
+  let topBoundaryY = Number.NEGATIVE_INFINITY;
+  for (let index = 0; index < shape.boundary.length; index += 1) {
+    const a = shape.boundary[index]!;
+    const b = shape.boundary[(index + 1) % shape.boundary.length]!;
+    const minSegmentX = Math.min(a.x, b.x);
+    const maxSegmentX = Math.max(a.x, b.x);
+    if (centerX < minSegmentX - 1e-6 || centerX > maxSegmentX + 1e-6) continue;
+    const dx = b.x - a.x;
+    if (Math.abs(dx) <= 1e-6) {
+      if (Math.abs(centerX - a.x) <= 1e-6) topBoundaryY = Math.max(topBoundaryY, a.y, b.y);
+      continue;
+    }
+    const t = (centerX - a.x) / dx;
+    if (t >= 0 && t <= 1) topBoundaryY = Math.max(topBoundaryY, a.y + (b.y - a.y) * t);
+  }
+  const headSurfaceY = Number.isFinite(topBoundaryY) ? topBoundaryY : maxY;
+  const headY = headSurfaceY - height * 0.025;
   return {
     eyesLeft: toUv(centerX - eyeDx, eyeY),
     eyesRight: toUv(centerX + eyeDx, eyeY),
