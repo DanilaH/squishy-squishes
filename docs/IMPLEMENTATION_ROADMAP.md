@@ -1,7 +1,7 @@
 # Squishy Squishes — Implementation Roadmap
 
-**Status:** SANDBOX PIVOT ACTIVE / S1 SANDBOX CORE ENGINEERING PASSED
-**Current development gate:** S2 — Personal Library
+**Status:** SANDBOX PIVOT ACTIVE / S2 PERSONAL LIBRARY ENGINEERING PASSED
+**Current development gate:** S3 — Decor MVP
 **External release gate:** real-phone/manual touch acceptance is still outstanding
 **Current product thesis:** open creative squishy sandbox + personal library; recipes are optional inspiration/meta, never content gates
 
@@ -16,7 +16,11 @@ Current source of truth:
 - `SANDBOX_PIVOT_S1_CORE.md`;
 - `SANDBOX_PIVOT_S1_CORE_REVIEW.md`;
 - `SANDBOX_PIVOT_S1_VISUAL_REVIEW.md`;
-- `SANDBOX_PIVOT_S1_IMPLEMENTATION_REVIEW.md`.
+- `SANDBOX_PIVOT_S1_IMPLEMENTATION_REVIEW.md`;
+- `SANDBOX_PIVOT_S2_LIBRARY.md`;
+- `SANDBOX_PIVOT_S2_LIBRARY_REVIEW.md`;
+- `SANDBOX_PIVOT_S2_VISUAL_REVIEW.md`;
+- `SANDBOX_PIVOT_S2_IMPLEMENTATION_REVIEW.md`.
 
 Target product loop:
 
@@ -103,46 +107,52 @@ Canonical final review: `SANDBOX_PIVOT_S1_IMPLEMENTATION_REVIEW.md`.
 
 ---
 
-## S2 — Personal Library — CURRENT DEVELOPMENT GATE
+## S2 — Personal Library — PASS / ENGINEERING COMPLETE
 
-Goal: turn the proven one-toy lifecycle into the retention backbone without changing the sandbox thesis.
+S2 turns the single-toy sandbox into the retention backbone:
 
-Required behavior:
+`Library → New Squishy → Create → Save → Squeeze → Library`
 
-- initial target: **8 free saved-squishy slots**;
+Delivered/proved:
+
+- **8 free saved-squishy slots** as the initial product capacity;
 - cards represent actual authored toys, not canonical recipes;
-- open any saved toy directly into squeeze mode;
-- create a new squishy from the library;
-- delete a toy for free;
-- replace a toy for free;
-- full library must never hard-block continued free play;
-- deterministic slot ordering and persistence across reload;
-- safe behavior for malformed/partial library data;
-- no XP/rank gate on slots or creation tools.
+- cheap deterministic 2D thumbnails reconstructed from shared shape boundary + compact appearance data;
+- no per-card WebGL contexts and no renderer rewrite;
+- any saved toy opens directly into real Squeeze;
+- append order survives reload exactly;
+- delete is free, secondary and confirmation-gated;
+- full 8 / 8 Library still allows `New Squishy` and full creation;
+- replacement is transactional: storage is unchanged until an explicit slot is chosen;
+- cancel replacement returns safely to Finish without deleting an existing toy;
+- confirmed replacement preserves the selected array index and increments historical `totalCrafts`;
+- SaveState V3 remains the schema; no V4 introduced;
+- malformed persisted IDs are bounded by the decoder and escaped before Library markup insertion;
+- Yandex lifecycle/settings/build verification remains green;
+- S0 appearance regression remains green.
 
-Required persistence evidence:
+Payload evidence from valid production-codec fixtures:
 
-- measure real serialized V3 envelope with representative 1-, 8- and stress-library contents;
-- validate the practical ceiling before treating **24 slots** as committed;
-- keep each authored appearance bounded and compact;
-- do not switch to bitmap screenshots or raw float point arrays.
+- 1 rich toy: **3,426 B**;
+- 8 rich toys: **26,512 B**;
+- 24-toy stress: **79,333 B**;
+- largest representative appearance: **3,214 B**;
+- current authored-appearance target remains **≤ 6 KB per toy**.
 
-Required UX evidence:
+Current Yandex Games SDK docs state a **200 KB** per-player limit for `player.setData()`, so the representative 24-toy stress envelope is roughly 39% of the current cloud-data ceiling. This supports retaining 24 as a decoder hard bound, not exposing 24 slots as a product promise.
 
-- phone portrait library remains toy-first rather than database-like;
-- saved creations are visually distinguishable enough to choose;
-- New Squishy is always obvious;
-- delete/replace is understandable but not dangerously prominent;
-- opening a saved toy gets to tactile squeeze immediately;
-- no slot-cap monetization can strand a player.
+Final evidence:
 
-Explicit S2 non-goals:
+- bounded validation + final visual run **34962829873**: release check + Browser QA + final visual lifecycle **PASS**;
+- permanent S2 Browser QA covers empty Library, responsive containment, V2→V3 migration, Yandex lifecycle, multi-craft append/order/reload, non-latest Squeeze, confirmed delete, full-capacity cancel/replace and 1/8/24 payload measurement;
+- final production visual lifecycle accepted after fixing modal token scope/contrast and compacting the phone replacement chooser.
 
-- no decor/face subsystem;
-- no recipes/titles meta;
-- no rewarded ads;
-- no shop/currency;
-- no draggable appendage physics.
+Canonical reviews:
+
+- `SANDBOX_PIVOT_S2_VISUAL_REVIEW.md`;
+- `SANDBOX_PIVOT_S2_IMPLEMENTATION_REVIEW.md`.
+
+**Release note:** S2 engineering completion is not physical-phone acceptance. Real touch/device review remains outstanding before release/moderation claims.
 
 ---
 
