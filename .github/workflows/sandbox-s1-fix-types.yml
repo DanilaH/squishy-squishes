@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   fix:
-    if: startsWith(github.event.head_commit.message, 'Arm S1 QA selector fixes')
+    if: startsWith(github.event.head_commit.message, 'Arm S1 visual scale correction')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -21,26 +21,41 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - name: Harden permanent S1 browser selectors
+      - name: Apply bounded visual and QA corrections
         run: |
           python - <<'PY'
           from pathlib import Path
-          p = Path('tests/release/release.spec.ts')
-          s = p.read_text()
-          s = s.replace("  await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);\n", "  await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);\n  for (const shapeId of ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw']) {\n    await page.locator(`[data-shape=\"${shapeId}\"]`).click();\n    await expect(shell).toHaveAttribute('data-shape', shapeId);\n  }\n")
-          s = s.replace("  await page.locator('[data-paint-color=\"6547162\"]').click();", "  await page.locator('.sandbox-swatch').nth(1).click();")
-          p.write_text(s)
+
+          test = Path('tests/release/release.spec.ts')
+          s = test.read_text()
+          old = '    await page.locator(`[data-shape="${shapeId}"]`).click();'
+          new = '    await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();'
+          if old not in s:
+              raise SystemExit('shape selector anchor missing')
+          test.write_text(s.replace(old, new))
+
+          css = Path('src/sandbox-core.css')
+          c = css.read_text()
+          replacements = {
+              'width: min(72vw, 390px);': 'width: min(88vw, 470px);',
+              'width: min(70vw, 370px);\n  height: min(70vw, 370px);': 'width: min(82vw, 430px);\n  height: min(82vw, 430px);',
+              '.sandbox-canvas { width: min(54vw, 310px); height: min(54vw, 310px); }': '.sandbox-canvas { width: min(68vw, 330px); height: min(68vw, 330px); }',
+              '.sandbox-canvas { width: min(37vh, 250px); height: min(37vh, 250px); min-width: 210px; min-height: 210px; }': '.sandbox-canvas { width: min(64vh, 280px); height: min(64vh, 280px); min-width: 220px; min-height: 220px; }',
+              '.sandbox-glow { width: min(43vh, 280px); }': '.sandbox-glow { width: min(70vh, 320px); }',
+          }
+          for old_css, new_css in replacements.items():
+              if old_css not in c:
+                  raise SystemExit(f'CSS anchor missing: {old_css}')
+              c = c.replace(old_css, new_css)
+          css.write_text(c)
           PY
       - run: npm install
-      - run: npm run typecheck
-      - run: npm run build
-      - run: npm run build:yandex
-      - run: npm run verify:yandex
-      - name: Commit validated selector fixes
+      - run: npm run release:check
+      - name: Commit validated corrections
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tests/release/release.spec.ts
+          git add tests/release/release.spec.ts src/sandbox-core.css
           git diff --cached --check
-          git commit -m "Harden Sandbox S1 browser selectors"
+          git commit -m "Refine Sandbox S1 hero scale"
           git push origin HEAD:sandbox-pivot-s1-core
