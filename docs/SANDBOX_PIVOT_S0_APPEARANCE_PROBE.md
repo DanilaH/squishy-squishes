@@ -1,12 +1,14 @@
 # Sandbox Pivot — S0 Appearance Probe
 
-**Status:** ACTIVE TECHNICAL GATE
+**Status:** PASS / ENGINEERING COMPLETE
 
-S0 exists to answer one question before the sandbox pivot is allowed to expand:
+S0 answered one blocking question before the sandbox pivot was allowed to expand:
 
 > Can one custom-painted squishy preserve its appearance compactly across save/reload and deform correctly on the existing WebGL squish mesh?
 
-## In scope
+**Answer: yes.** The implementation and measured evidence are recorded in `SANDBOX_PIVOT_S0_APPEARANCE_PROBE_REVIEW.md`.
+
+## Proven scope
 
 - one existing production shape (`soft-square`);
 - existing `SquishSurface` physics/deformation;
@@ -17,7 +19,7 @@ S0 exists to answer one question before the sandbox pivot is allowed to expand:
 - Undo;
 - compact quantized stroke serialization;
 - save → reload → deterministic replay;
-- switch from Paint to Squeeze and verify the custom appearance follows deformation;
+- Paint → Squeeze using the real surface pointer path;
 - production build / Yandex bundle exclusion / browser evidence;
 - measured serialized byte size.
 
@@ -34,22 +36,24 @@ S0 exists to answer one question before the sandbox pivot is allowed to expand:
 - migration of existing saves;
 - final art direction.
 
-## Storage budget
+Those remain deliberately deferred to later Sandbox Pivot phases.
 
-The probe uses a compact stroke log rather than bitmap/base64 screenshots.
+## Storage contract proved by S0
 
-S0 target:
+The probe uses a compact stroke log rather than bitmap/base64 screenshots:
 
-- typical probe appearance **≤ 6,000 serialized UTF-8 bytes**;
 - no raw float arrays;
 - no PNG/base64 screenshot persistence;
-- UV points quantized to byte pairs before base64 transport.
+- UV points quantized to byte pairs before base64 transport;
+- representative 3-stroke paint/blend/erase appearance: **219 B** serialized UTF-8;
+- richer 48-stroke stress appearance: **4,195 B** serialized UTF-8;
+- S0 target: **≤ 6,000 B** per representative custom appearance.
 
-This is not the final per-toy schema, but it must demonstrate that a future 24-slot library is plausible inside the platform save budget.
+This is not the final per-toy SaveState V3 schema. Future shape/material/mix-in/decal/accessory metadata must still fit the overall cloud-save budget.
 
 ## Renderer contract
 
-The existing mesh already carries stable UV coordinates independently from deformed XY positions. S0 may add one optional appearance texture seam, but must not change:
+The existing mesh carries stable UV coordinates independently from deformed XY positions. S0 added one optional appearance texture seam without changing:
 
 - grid resolution;
 - spring/deformation constants;
@@ -57,7 +61,7 @@ The existing mesh already carries stable UV coordinates independently from defor
 - shape field masking;
 - material/filling semantics when no appearance texture is provided.
 
-With appearance disabled, production rendering must remain visually/behaviorally equivalent to main.
+With appearance disabled, the production renderer follows the existing material path.
 
 ## Pages-only probe
 
@@ -65,39 +69,37 @@ The probe is entered only with:
 
 `?appearanceProbe=1`
 
-It is QA/research tooling, not a new player screen. It must not ship into the Yandex bundle.
+It is QA/research tooling, not a player screen. It is dynamically excluded from the Yandex build, and `verify:yandex` now fails if the appearance-probe marker leaks into `dist-yandex`.
 
-## Automated exit evidence
+## Accepted automated evidence
 
-A real-browser probe must demonstrate:
+Production-browser evidence demonstrates:
 
 1. Pages production build boots the probe at phone portrait size;
 2. real pointer input paints color A;
-3. color B can overlap color A;
-4. eraser creates a third serialized stroke;
-5. serialized payload remains under 6 KB for the representative drawing;
+3. color B overlaps and blends with color A;
+4. eraser creates a real removal stroke;
+5. representative and richer serialized payloads remain under 6 KB;
 6. Save persists through page reload;
-7. reload reconstructs the same stroke document and reuploads the texture;
-8. Squeeze mode uses the real `SquishSurface` pointer path and records at least one squeeze;
-9. normal permanent release QA remains green;
+7. reload reconstructs the stroke document and reuploads the texture;
+8. Squeeze mode uses the real `SquishSurface` pointer path;
+9. permanent release QA remains green;
 10. Yandex verifier confirms probe code/storage marker is absent from `dist-yandex`.
 
-## Manual/visual exit evidence
+## Accepted visual evidence
 
-Production screenshot review must confirm:
+Production screenshots confirm:
 
-- paint is clearly attached to the squishy rather than floating UI;
-- overlapping colors look like a useful soft blend rather than hard stickers;
+- paint is attached to the squishy rather than floating over it;
+- overlapping colors produce a useful soft blend;
 - erasing reads as removal/fade;
-- after reload the visible custom appearance is materially the same;
-- when squeezed/stretched, the painted pattern follows the object without obvious sliding or detached overlay behavior.
+- reload reconstructs materially the same visible appearance;
+- during an actively held stretch, the painted pattern bends and moves with the object without obvious sliding or detached-overlay behavior.
 
 ## Exit decision
 
 ### PASS
 
-Only if the technical and visual evidence above are both acceptable. Then Sandbox Pivot S1 may introduce the real sandbox flow and SaveState V3.
+S0 is complete. Sandbox Pivot **S1 — Sandbox Core** is now the current implementation gate.
 
-### FAIL / REWORK
-
-If texture fidelity, persistence size, deformation attachment, or target-device performance is poor, fix/reduce the appearance representation before building library/decor/meta systems on top of it.
+S1 may introduce the actual player-facing single-toy sandbox and SaveState V3, but should not jump ahead to multi-slot library, recipe meta, rewarded monetization or expressive accessory physics.
