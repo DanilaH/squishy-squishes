@@ -24,6 +24,8 @@ export interface SandboxLibraryAppOptions {
   readonly initialLibrary: readonly SavedSquishy[];
   readonly initialCompletedRecipeIds: readonly string[];
   readonly libraryCapacity: number;
+  readonly shelfExpansionTargetCapacity: number;
+  readonly onUnlockShelfExpansion: () => Promise<{ readonly granted: boolean; readonly libraryCapacity: number; readonly status: 'closed' | 'error' }>;
   readonly onAppendSquishy: (draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
   readonly onReplaceSquishy: (targetId: string, draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
   readonly onDeleteSquishy: (targetId: string) => Promise<readonly SavedSquishy[]>;
@@ -56,6 +58,12 @@ interface LibraryCopy {
   readonly completed: string;
   readonly goal: string;
   readonly ideaComplete: string;
+  readonly rewardEyebrow: string;
+  readonly rewardTitle: string;
+  readonly rewardHint: string;
+  readonly rewardAction: string;
+  readonly rewardExpanded: string;
+  readonly rewardUnavailable: string;
 }
 
 
@@ -86,6 +94,12 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     completed: 'DONE',
     goal: 'IDEA',
     ideaComplete: 'IDEA COMPLETE',
+    rewardEyebrow: 'OPTIONAL UPGRADE',
+    rewardTitle: 'MAKE ROOM FOR TWO MORE',
+    rewardHint: 'Watch one ad to keep 10 squishies on this shelf forever.',
+    rewardAction: 'WATCH AD · +2 SLOTS',
+    rewardExpanded: 'Shelf expanded · 10 slots',
+    rewardUnavailable: 'No shelf change. Try again when you want.',
   },
   ru: {
     studio: 'СКВИШ-СТУДИЯ',
@@ -113,6 +127,12 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     completed: 'ГОТОВО',
     goal: 'ИДЕЯ',
     ideaComplete: 'ИДЕЯ ГОТОВА',
+    rewardEyebrow: 'НЕОБЯЗАТЕЛЬНО',
+    rewardTitle: 'ЕЩЁ ДВА МЕСТА НА ПОЛКЕ',
+    rewardHint: 'Посмотри одну рекламу — и навсегда храни здесь до 10 сквишей.',
+    rewardAction: 'РЕКЛАМА · +2 МЕСТА',
+    rewardExpanded: 'Полка расширена · 10 мест',
+    rewardUnavailable: 'Полка не изменилась. Можно попробовать позже.',
   },
 };
 
@@ -169,7 +189,10 @@ export class SandboxLibraryApp {
   private readonly copy: LibraryCopy;
   private library: readonly SavedSquishy[];
   private completedRecipeIds: readonly string[];
+  private libraryCapacity: number;
   private muted: boolean;
+  private rewardInFlight = false;
+  private rewardMessage: string | null = null;
   private activeIdea: SquishyIdea | null = null;
   private currentMaker: SandboxApp | null = null;
   private pendingReplacement: PendingReplacement | null = null;
@@ -184,6 +207,7 @@ export class SandboxLibraryApp {
     this.copy = COPY[options.language];
     this.library = [...options.initialLibrary];
     this.completedRecipeIds = [...options.initialCompletedRecipeIds];
+    this.libraryCapacity = options.libraryCapacity;
     this.muted = options.muted;
     this.root.addEventListener('click', this.handleClick, { signal: this.abortController.signal });
     this.renderLibrary();
@@ -212,8 +236,9 @@ export class SandboxLibraryApp {
     this.activeIdea = null;
     this.pendingDeleteId = null;
     const count = this.library.length;
-    const capacity = this.options.libraryCapacity;
+    const capacity = this.libraryCapacity;
     const full = count >= capacity;
+    const canExpandShelf = capacity < this.options.shelfExpansionTargetCapacity;
     const cards = this.library.map((toy) => this.renderToyCard(toy)).join('');
 
     this.root.innerHTML = `
@@ -244,7 +269,22 @@ export class SandboxLibraryApp {
             ${cards}
             ${!full ? `<button class="sandbox-library-add-card" type="button" data-library-new><span>＋</span><strong>${this.copy.newSquishy}</strong></button>` : ''}
           </section>
-          ${full ? `<p class="sandbox-library-full-note">${this.copy.full}</p>` : ''}
+          ${full ? `
+            <section class="sandbox-library-full-zone">
+              <p class="sandbox-library-full-note">${this.copy.full}</p>
+              ${canExpandShelf ? `
+                <aside class="sandbox-library-reward" data-library-reward-offer>
+                  <div class="sandbox-library-reward__copy">
+                    <span>${this.copy.rewardEyebrow}</span>
+                    <strong>${this.copy.rewardTitle}</strong>
+                    <p>${this.copy.rewardHint}</p>
+                  </div>
+                  <button type="button" data-library-expand-reward ${this.rewardInFlight ? 'disabled' : ''}>${this.copy.rewardAction}</button>
+                </aside>
+              ` : ''}
+            </section>
+          ` : ''}
+          ${this.rewardMessage ? `<p class="sandbox-library-reward-message" data-library-reward-message aria-live="polite">${this.rewardMessage}</p>` : ''}
         `}
       </main>
     `;
@@ -349,6 +389,7 @@ export class SandboxLibraryApp {
     this.currentMaker?.dispose();
     this.currentMaker = null;
     this.activeIdea = toy ? null : idea;
+    this.rewardMessage = null;
     this.root.innerHTML = `<div class="sandbox-maker-host" data-sandbox-maker-host></div>${idea ? this.renderIdeaGuideMarkup(idea) : ''}`;
     const host = this.root.querySelector<HTMLDivElement>('[data-sandbox-maker-host]');
     if (!host) throw new Error('Sandbox library failed to mount maker host.');
@@ -367,7 +408,7 @@ export class SandboxLibraryApp {
 
   private async handleSaveRequest(draft: SandboxDraft): Promise<SavedSquishy | null> {
     const ideaId = this.activeIdea?.id ?? null;
-    if (this.library.length < this.options.libraryCapacity) {
+    if (this.library.length < this.libraryCapacity) {
       const previousCompleted = this.completedRecipeIds;
       const result = await this.options.onAppendSquishy(draft, ideaId);
       this.library = [...result.library];
@@ -390,7 +431,7 @@ export class SandboxLibraryApp {
     overlay.dataset.libraryReplaceOverlay = '';
     overlay.innerHTML = `
       <div class="sandbox-library-modal__sheet" role="dialog" aria-modal="true" aria-labelledby="library-replace-title">
-        <span class="sandbox-library-modal__eyebrow">${this.library.length} / ${this.options.libraryCapacity}</span>
+        <span class="sandbox-library-modal__eyebrow">${this.library.length} / ${this.libraryCapacity}</span>
         <h2 id="library-replace-title">${this.copy.replaceTitle}</h2>
         <p>${this.copy.replaceHint}</p>
         <div class="sandbox-library-replace-grid">
@@ -459,7 +500,12 @@ export class SandboxLibraryApp {
       target.textContent = this.muted ? this.copy.muted : this.copy.sound;
       return;
     }
+    if (target.hasAttribute('data-library-expand-reward')) {
+      void this.unlockShelfExpansion();
+      return;
+    }
     if (target.hasAttribute('data-library-ideas')) {
+      this.rewardMessage = null;
       this.renderIdeas();
       return;
     }
@@ -544,6 +590,32 @@ export class SandboxLibraryApp {
   private cancelDelete(): void {
     this.pendingDeleteId = null;
     this.root.querySelector('[data-library-delete-overlay]')?.remove();
+  }
+
+  private async unlockShelfExpansion(): Promise<void> {
+    if (this.rewardInFlight || this.libraryCapacity >= this.options.shelfExpansionTargetCapacity) return;
+    this.rewardInFlight = true;
+    this.rewardMessage = null;
+    const offer = this.root.querySelector<HTMLElement>('[data-library-reward-offer]');
+    offer?.setAttribute('aria-busy', 'true');
+    const button = this.root.querySelector<HTMLButtonElement>('[data-library-expand-reward]');
+    if (button) button.disabled = true;
+
+    try {
+      const result = await this.options.onUnlockShelfExpansion();
+      if (result.granted) {
+        this.libraryCapacity = Math.max(this.libraryCapacity, result.libraryCapacity);
+        this.rewardMessage = this.copy.rewardExpanded;
+      } else {
+        this.rewardMessage = this.copy.rewardUnavailable;
+      }
+    } catch (error: unknown) {
+      console.error('[squishy:shelf-reward]', error);
+      this.rewardMessage = this.copy.rewardUnavailable;
+    } finally {
+      this.rewardInFlight = false;
+      this.renderLibrary();
+    }
   }
 
   private setMuted(muted: boolean): void {

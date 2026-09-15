@@ -261,40 +261,35 @@ A plausible first Squishy test is similarly conservative: no interstitial during
 
 ## 6. Rewarded strategy
 
-MVP should have at most one clear rewarded offer.
+The original Lab XP proposal is superseded by the sandbox pivot. S4 deliberately keeps titles as derived meta with no XP/rank authority, so rewarded monetization must not resurrect XP.
 
-### Primary candidate: optional Lab XP bonus after result
+### S5 selected MVP: permanent shelf expansion
 
-Example:
+One explicit rewarded offer is allowed:
 
-`Collect → result settles → optional “+XP” rewarded offer → grant on reward callback`
+`8 saved slots → watch one rewarded video → 10 saved slots permanently`
 
-Why this fits:
+Why this fits the current product:
 
-- it does not alter recipe quality;
-- core content remains earnable without ads;
-- no currency/shop needed;
-- reward meaning is easy to explain;
-- grant can be durable and deterministic.
+- free creation remains unchanged;
+- the existing free replace/delete flow remains available at full capacity;
+- value is durable and easy to explain;
+- SaveState V3 already has `libraryCapacity` and `unlockedRewardIds`;
+- no currency, shop, random reward or new cosmetic production is required;
+- the CTA can appear only when the free 8-slot shelf is actually full.
 
-Exact form remains to confirm:
+S5 must not add a second rewarded offer. Cosmetic/material/accessory packs remain later candidates after the rewarded lifecycle itself is proven.
 
-- `x2 XP for this craft`, or
-- fixed bonus XP.
+### Explicitly avoid for S5
 
-Prefer a bounded additive/fixed formulation if a multiplier creates awkward rank overshoot/balance.
-
-### Explicitly avoid for MVP
-
-- ad-only permanent recipes;
-- rewarded “make the squish actually good” quality boosts;
-- random chest for watching an ad;
-- multiple simultaneous rewarded CTAs;
+- rewarded XP or title progress;
+- ad-only Ideas or core creation tools;
+- random chests;
 - energy refill;
-- skip-stage ad;
-- forced rewarded flow during first session.
-
----
+- skip-stage ads;
+- rewarded quality boosts;
+- repeated shelf-expansion tiers;
+- rewarded prompts during active creation or first-result Squeeze.
 
 ## 7. Reward grant contract
 
