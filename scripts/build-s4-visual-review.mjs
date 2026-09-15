@@ -47,8 +47,8 @@ const makeContact = async (entries, columns, cellWidth, quality) => {
       return { image, label: entry.label, width: cellWidth, height: Math.round(image.naturalHeight * scale) };
     }));
     const rows = Math.ceil(images.length / columns);
-    const labelHeight = 13;
-    const gap = 4;
+    const labelHeight = 10;
+    const gap = 2;
     const rowHeights = Array.from({ length: rows }, (_, row) => {
       const rowImages = images.slice(row * columns, row * columns + columns);
       return Math.max(...rowImages.map((item) => item.height + labelHeight));
@@ -60,14 +60,14 @@ const makeContact = async (entries, columns, cellWidth, quality) => {
     if (!context) throw new Error('Missing contact-sheet 2D context');
     context.fillStyle = '#f4f1f7';
     context.fillRect(0, 0, canvas.width, canvas.height);
-    context.font = 'bold 8px sans-serif';
+    context.font = 'bold 6px sans-serif';
     context.fillStyle = '#2f2740';
     let y = 0;
     for (let row = 0; row < rows; row += 1) {
       const rowImages = images.slice(row * columns, row * columns + columns);
       rowImages.forEach((item, col) => {
         const x = col * (cellWidth + gap);
-        context.fillText(item.label, x + 2, y + 9);
+        context.fillText(item.label, x + 1, y + 7);
         context.drawImage(item.image, x, y + labelHeight, item.width, item.height);
       });
       y += rowHeights[row] + (row < rows - 1 ? gap : 0);
@@ -81,14 +81,14 @@ const phoneContact = await makeContact([
   { name: '02-phone-ideas-progress.png', label: '02 Ideas' },
   { name: '03-phone-idea-maker.png', label: '03 Maker' },
   { name: '04-phone-complete-squeeze.png', label: '04 Complete' },
-], 2, 90, 0.16);
+], 2, 44, 0.08);
 writeWrapped('contact-phone.b64', phoneContact);
 
 const responsiveContact = await makeContact([
   { name: '05-landscape-ideas.png', label: '05 Landscape' },
   { name: '06-desktop-ideas.png', label: '06 Desktop' },
-], 1, 190, 0.16);
+], 1, 92, 0.08);
 writeWrapped('contact-responsive.b64', responsiveContact);
 
 await browser.close();
-console.log(`Prepared ${files.length} thumbnails + 2 tiny S4 visual contact sheets.`);
+console.log(`Prepared ${files.length} thumbnails + 2 ultra-tiny S4 visual contact sheets.`);
