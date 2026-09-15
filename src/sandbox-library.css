@@ -392,3 +392,81 @@
     margin-top: 10px;
   }
 }
+
+
+/* S5 rewarded shelf expansion */
+.sandbox-library-full-zone {
+  width: min(100%, 820px);
+  margin: 14px auto 0;
+  display: grid;
+  gap: 10px;
+}
+
+.sandbox-library-full-zone .sandbox-library-full-note {
+  width: 100%;
+  margin: 0;
+}
+
+.sandbox-library-reward {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 14px 13px 16px;
+  border: 1px solid rgba(143, 83, 213, .18);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,255,255,.88), rgba(247,237,255,.92));
+  box-shadow: 0 8px 22px rgba(75,54,94,.07);
+}
+
+.sandbox-library-reward[aria-busy="true"] { opacity: .72; }
+.sandbox-library-reward__copy { min-width: 0; display: grid; gap: 2px; text-align: left; }
+.sandbox-library-reward__copy > span { color: #9566bd; font-size: 9px; font-weight: 950; letter-spacing: .12em; }
+.sandbox-library-reward__copy > strong { color: var(--library-ink); font-size: 14px; font-weight: 950; }
+.sandbox-library-reward__copy > p { margin: 0; color: var(--library-muted); font-size: 10px; line-height: 1.3; font-weight: 700; }
+.sandbox-library-reward > button {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #b66ce8, #8f53d5);
+  color: #fff;
+  box-shadow: 0 7px 16px rgba(118,70,173,.20), inset 0 1px rgba(255,255,255,.24);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .035em;
+  cursor: pointer;
+}
+.sandbox-library-reward > button:disabled { opacity: .55; cursor: default; }
+.sandbox-library-reward-message {
+  width: min(100%, 820px);
+  margin: 10px auto 0;
+  color: #4f8e69;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+@media (max-width: 700px) {
+  .sandbox-library-reward { align-items: stretch; gap: 10px; padding: 11px; }
+  .sandbox-library-reward__copy > strong { font-size: 12px; }
+  .sandbox-library-reward__copy > p { font-size: 9px; }
+  .sandbox-library-reward > button { max-width: 132px; white-space: normal; line-height: 1.05; }
+}
+
+@media (max-width: 430px) {
+  .sandbox-library-reward { display: grid; }
+  .sandbox-library-reward > button { width: 100%; max-width: none; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .sandbox-library-full-zone { margin-top: 6px; gap: 5px; }
+  .sandbox-library-reward { padding: 6px 8px; border-radius: 14px; gap: 8px; }
+  .sandbox-library-reward__copy { grid-template-columns: auto 1fr; gap: 1px 8px; align-items: center; }
+  .sandbox-library-reward__copy > span { font-size: 7px; }
+  .sandbox-library-reward__copy > strong { font-size: 10px; }
+  .sandbox-library-reward__copy > p { display: none; }
+  .sandbox-library-reward > button { min-height: 34px; padding-inline: 10px; font-size: 8px; }
+  .sandbox-library-reward-message { margin-top: 4px; font-size: 9px; }
+}

@@ -11,6 +11,12 @@ import {
 } from '../platform/saveV3';
 import { createDefaultSettings, createSettingsRepository } from '../platform/settings';
 import { completeRecipeIdea } from '../platform/saveV3Ideas';
+import {
+  S5_SHELF_EXPANSION_CAPACITY,
+  S5_SHELF_EXPANSION_REWARD_ID,
+  grantS5ShelfExpansion,
+  hasS5ShelfExpansion,
+} from '../platform/saveV3Rewards';
 import { SandboxLibraryApp } from '../sandbox/SandboxLibraryApp';
 import { getSquishyIdea, matchSquishyIdea } from '../sandbox/ideas';
 import type { SandboxLanguage } from '../sandbox/SandboxApp';
@@ -66,6 +72,10 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     saveState = nextState;
   };
 
+  if (hasS5ShelfExpansion(saveState) && saveState.libraryCapacity < S5_SHELF_EXPANSION_CAPACITY) {
+    await persistSave(grantS5ShelfExpansion(saveState));
+  }
+
   const completeMatchingIdea = (state: typeof saveState, draft: Parameters<typeof createSavedSquishy>[0], ideaId: string | null): typeof saveState => {
     if (!ideaId) return state;
     const idea = getSquishyIdea(ideaId);
@@ -80,6 +90,28 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     initialLibrary: saveState.library,
     initialCompletedRecipeIds: saveState.completedRecipeIds,
     libraryCapacity: saveState.libraryCapacity,
+    shelfExpansionTargetCapacity: S5_SHELF_EXPANSION_CAPACITY,
+    onUnlockShelfExpansion: async () => {
+      runtime.analytics.track('shelf_reward_offer_click', {
+        count: saveState.library.length,
+        capacity: saveState.libraryCapacity,
+      });
+      let grantedCapacity = saveState.libraryCapacity;
+      const result = await runtime.ads.showRewarded({
+        rewardId: S5_SHELF_EXPANSION_REWARD_ID,
+        onReward: async () => {
+          const nextState = grantS5ShelfExpansion(saveState);
+          await persistSave(nextState);
+          grantedCapacity = nextState.libraryCapacity;
+          runtime.analytics.track('shelf_reward_granted', { capacity: nextState.libraryCapacity });
+        },
+      });
+      return {
+        granted: result.rewardEarned,
+        libraryCapacity: grantedCapacity,
+        status: result.status,
+      };
+    },
     onAppendSquishy: async (draft, ideaId) => {
       const savedSquishy = createSavedSquishy(draft);
       let nextState = appendSavedSquishy(saveState, savedSquishy);
