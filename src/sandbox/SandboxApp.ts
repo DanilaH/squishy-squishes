@@ -46,6 +46,7 @@ export interface SandboxAppOptions {
   readonly language: SandboxLanguage;
   readonly muted: boolean;
   readonly savedSquishy: SavedSquishy | null;
+  readonly initialShapeId?: ShapeId;
   readonly startSavedInSqueeze?: boolean;
   readonly onExitToLibrary?: () => void;
   readonly onSaveSquishy: (draft: SandboxDraft) => Promise<SavedSquishy | null>;
@@ -302,6 +303,9 @@ export class SandboxApp {
   ) {
     this.copy = COPY[options.language];
     this.savedSquishy = options.savedSquishy;
+    if (!this.savedSquishy && options.initialShapeId) {
+      this.draft = { ...this.draft, shapeId: options.initialShapeId };
+    }
     this.muted = options.muted;
     this.stage = this.savedSquishy ? (options.startSavedInSqueeze ? 'squeeze' : 'home') : 'shape';
 
@@ -361,7 +365,7 @@ export class SandboxApp {
   private renderShell(): string {
     const decorLabels = DECOR_LABELS[this.options.language];
     const shapes = SHAPES.map((shape) => `
-      <button class="sandbox-shape" type="button" data-shape="${shape.id}" aria-pressed="${shape.id === 'soft-square'}">
+      <button class="sandbox-shape" type="button" data-shape="${shape.id}" aria-pressed="${shape.id === this.draft.shapeId}">
         <span class="sandbox-shape__icon">${shapeSvg(shape)}</span>
         <span>${shape.label}</span>
       </button>
@@ -409,7 +413,7 @@ export class SandboxApp {
     `).join('');
 
     return `
-      <main class="sandbox-shell" data-sandbox-app data-stage="${this.stage}" data-shape="soft-square" data-material="soft" data-sandbox-squeezes="0">
+      <main class="sandbox-shell" data-sandbox-app data-stage="${this.stage}" data-shape="${this.draft.shapeId}" data-material="soft" data-sandbox-squeezes="0">
         <header class="sandbox-topbar">
           <strong>${this.copy.studio}</strong>
           <button class="sandbox-sound" type="button" data-action="mute" aria-pressed="${this.muted}">${this.muted ? this.copy.muted : this.copy.sound}</button>

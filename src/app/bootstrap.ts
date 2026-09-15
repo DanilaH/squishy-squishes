@@ -10,7 +10,9 @@ import {
   replaceSavedSquishy,
 } from '../platform/saveV3';
 import { createDefaultSettings, createSettingsRepository } from '../platform/settings';
+import { completeRecipeIdea } from '../platform/saveV3Ideas';
 import { SandboxLibraryApp } from '../sandbox/SandboxLibraryApp';
+import { getSquishyIdea, matchSquishyIdea } from '../sandbox/ideas';
 import type { SandboxLanguage } from '../sandbox/SandboxApp';
 
 export interface SquishyAppHandle {
@@ -64,23 +66,33 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     saveState = nextState;
   };
 
+  const completeMatchingIdea = (state: typeof saveState, draft: Parameters<typeof createSavedSquishy>[0], ideaId: string | null): typeof saveState => {
+    if (!ideaId) return state;
+    const idea = getSquishyIdea(ideaId);
+    if (!idea || !matchSquishyIdea(draft, idea).complete) return state;
+    return completeRecipeIdea(state, ideaId);
+  };
+
   const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
   const app = new SandboxLibraryApp(root, {
     language,
     muted: settingsState.muted,
     initialLibrary: saveState.library,
+    initialCompletedRecipeIds: saveState.completedRecipeIds,
     libraryCapacity: saveState.libraryCapacity,
-    onAppendSquishy: async (draft) => {
+    onAppendSquishy: async (draft, ideaId) => {
       const savedSquishy = createSavedSquishy(draft);
-      const nextState = appendSavedSquishy(saveState, savedSquishy);
+      let nextState = appendSavedSquishy(saveState, savedSquishy);
+      nextState = completeMatchingIdea(nextState, draft, ideaId);
       await persistSave(nextState);
-      return { savedSquishy, library: nextState.library };
+      return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
     },
-    onReplaceSquishy: async (targetId, draft) => {
+    onReplaceSquishy: async (targetId, draft, ideaId) => {
       const savedSquishy = createSavedSquishy(draft);
-      const nextState = replaceSavedSquishy(saveState, targetId, savedSquishy);
+      let nextState = replaceSavedSquishy(saveState, targetId, savedSquishy);
+      nextState = completeMatchingIdea(nextState, draft, ideaId);
       await persistSave(nextState);
-      return { savedSquishy, library: nextState.library };
+      return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
     },
     onDeleteSquishy: async (targetId) => {
       const nextState = deleteSavedSquishy(saveState, targetId);

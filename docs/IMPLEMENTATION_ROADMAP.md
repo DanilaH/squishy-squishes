@@ -1,7 +1,7 @@
 # Squishy Squishes — Implementation Roadmap
 
-**Status:** SANDBOX PIVOT ACTIVE / S2 PERSONAL LIBRARY ENGINEERING PASSED
-**Current development gate:** S3 — Decor MVP
+**Status:** SANDBOX PIVOT ACTIVE / S3 DECOR ENGINEERING PASSED
+**Current development gate:** S4 — Ideas / Recipes + Humorous Titles
 **External release gate:** real-phone/manual touch acceptance is still outstanding
 **Current product thesis:** open creative squishy sandbox + personal library; recipes are optional inspiration/meta, never content gates
 
@@ -156,18 +156,21 @@ Canonical reviews:
 
 ---
 
-## S3 — Decor MVP
+## S3 — Decor MVP — PASS / ENGINEERING COMPLETE
 
-Add reusable identity after library persistence is stable:
+S3 added reusable authored identity while preserving one generic squishy renderer and SaveState V3:
 
-- eyes;
-- mouths;
-- blush;
-- flowers;
-- hearts/stars/stickers;
-- simple anchored accessories such as ears, bows, horns and crown.
+- eyes, mouths and blush rendered into the existing appearance texture;
+- up to 12 surface stickers;
+- one exclusive head accessory slot;
+- generic read-only UV → deformed-mesh projection for attached accessories;
+- Library thumbnails reconstruct surface decor + accessory without per-card WebGL;
+- compact Decor persistence remains inside the V3 envelope;
+- permanent Browser QA covers persistence, all six shapes, payload budget, responsive containment and accessory attachment during real squeeze;
+- production visual acceptance passed before PR #24;
+- final S3 commit on `main`: `87855d4c0483e9b0ccdc38130d0fde88a0ee3eeb`.
 
-Reuse stable appearance/deformation principles where appropriate. Do not begin with draggable ears or custom accessory physics.
+Physical-device/manual touch acceptance remains an external release gate.
 
 ---
 
