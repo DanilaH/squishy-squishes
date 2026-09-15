@@ -92,3 +92,5 @@ writeWrapped('contact-responsive.b64', responsiveContact);
 
 await browser.close();
 console.log(`Prepared ${files.length} readable tiny snapshots + 2 ultra-tiny contact sheets.`);
+
+// Refresh transport after the accepted S4 Ideas visual-polish pass.
