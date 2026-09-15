@@ -1,17 +1,14 @@
-import { VerticalSliceApp } from '../game/VerticalSliceApp';
-import { ALL_VARIANT_IDS } from '../game/content';
-import { getGameCopy } from '../i18n';
 import { installReleaseSession } from '../platform/releaseSession';
 import { createSquishyPlatformRuntime } from '../platform/runtime';
 import {
-  applyCollectedVariant,
-  createDefaultSave,
-  createSaveRepository,
-  loadSaveWithLegacyMigration,
-  resetProgressSave,
-  type SaveStateV2,
-} from '../platform/save';
+  createDefaultSaveV3,
+  createSaveV3Repository,
+  createSavedSquishy,
+  loadSaveV3WithMigration,
+  saveSingleS1Squishy,
+} from '../platform/saveV3';
 import { createDefaultSettings, createSettingsRepository } from '../platform/settings';
+import { SandboxApp, type SandboxLanguage } from '../sandbox/SandboxApp';
 
 export interface SquishyAppHandle {
   dispose(): Promise<void>;
@@ -46,63 +43,36 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     };
   }
 
-  const saveRepository = createSaveRepository(runtime.storage);
+  const saveRepository = createSaveV3Repository(runtime.storage);
   const settingsRepository = createSettingsRepository(runtime.storage);
 
-  let saveState = await loadSaveWithLegacyMigration(
+  let saveState = await loadSaveV3WithMigration(
     runtime.storage,
     saveRepository,
-    (error) => reportError('save-load', error),
+    (error) => reportError('save-v3-load', error),
   );
   let settingsState = await settingsRepository.loadOrDefault(
     (error) => reportError('settings-load', error),
   );
 
-  const app = new VerticalSliceApp(root, {
-    completedVariantIds: saveState.completedVariantIds,
-    labXp: saveState.labXp,
+  const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
+  const app = new SandboxApp(root, {
+    language,
     muted: settingsState.muted,
-    copy: getGameCopy(runtime.language),
-    onVariantCollected: (id) => {
-      const result = applyCollectedVariant(saveState, id);
-      saveState = result.state;
-      void saveRepository.write(saveState).catch((error: unknown) => reportError('save-write', error));
-      return result.outcome;
-    },
-    onProgressReset: async () => {
-      saveState = await resetProgressSave(runtime.storage, saveRepository);
+    savedSquishy: saveState.library[0] ?? null,
+    onSaveSquishy: async (draft) => {
+      const savedSquishy = createSavedSquishy(draft);
+      const nextState = saveSingleS1Squishy(saveState, savedSquishy);
+      await saveRepository.write(nextState);
+      await saveRepository.flush();
+      saveState = nextState;
+      return savedSquishy;
     },
     onMutedChange: (muted) => {
       settingsState = { version: 1, muted };
       void settingsRepository.write(settingsState).catch((error: unknown) => reportError('settings-write', error));
     },
   });
-
-  let removePhoneQaPanel = (): void => undefined;
-  if (import.meta.env.VITE_PLATFORM !== 'yandex' || import.meta.env.VITE_ENABLE_QA === '1') {
-    const { installPhoneQaPanel } = await import('../debug/installPhoneQaPanel');
-    removePhoneQaPanel = installPhoneQaPanel({
-    language: runtime.language,
-    getSaveState: () => saveState,
-    setProgress: async (next) => {
-      const requested = new Set(next.completedVariantIds);
-      const completedVariantIds = ALL_VARIANT_IDS.filter((id) => requested.has(id));
-      const nextState: SaveStateV2 = {
-        version: 2,
-        completedVariantIds,
-        totalCrafts: Math.max(saveState.totalCrafts, completedVariantIds.length),
-        labXp: Math.max(0, Math.floor(next.labXp)),
-        updatedAt: Date.now(),
-      };
-      await saveRepository.write(nextState);
-      await saveRepository.flush();
-      saveState = nextState;
-    },
-    resetProgress: async () => {
-      saveState = await resetProgressSave(runtime.storage, saveRepository);
-    },
-    });
-  }
 
   const releaseSession = installReleaseSession(root, runtime);
   const unsubscribeActivity = runtime.activity.onBlockedChange((blocked) => app.setActivityBlocked(blocked));
@@ -115,8 +85,8 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     removeDebugTools = installDebugTools({
       resetSave: async () => {
         await saveRepository.remove();
-        saveState = createDefaultSave();
-        console.info('[squishy-debug] save cleared; reload to reset in-memory progression state');
+        saveState = createDefaultSaveV3();
+        console.info('[squishy-debug] V3 save cleared; reload to reset sandbox state');
       },
       resetSettings: async () => {
         await settingsRepository.remove();
@@ -140,7 +110,6 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
       runtime.activity.setGameplayDesired(false);
       unsubscribeActivity();
       releaseSession.dispose();
-      removePhoneQaPanel();
       removeDebugTools();
       app.dispose();
       await Promise.allSettled([saveRepository.flush(), settingsRepository.flush()]);
