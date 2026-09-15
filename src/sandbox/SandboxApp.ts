@@ -18,12 +18,29 @@ import {
   type AppearanceStrokeMode,
   type MixInId,
 } from './appearance';
-import { drawAccessoryGraphic, getDecorFrame, hasSurfaceDecor, renderSurfaceDecor } from './decor';
+import {
+  ACCESSORY_IDS,
+  EYE_STYLE_IDS,
+  MAX_DECOR_STICKERS,
+  MOUTH_STYLE_IDS,
+  STICKER_IDS,
+  createStickerPlacement,
+  drawAccessoryGraphic,
+  estimateDecorBytes,
+  getDecorFrame,
+  hasSurfaceDecor,
+  renderSurfaceDecor,
+  type AccessoryId,
+  type EyeStyleId,
+  type MouthStyleId,
+  type StickerId,
+} from './decor';
 import { createSandboxDraft, type SandboxDraft, type SavedSquishy } from './types';
 
 export type SandboxLanguage = 'en' | 'ru';
-type SandboxStage = 'home' | 'shape' | 'paint' | 'mixins' | 'mix' | 'finish' | 'squeeze';
+type SandboxStage = 'home' | 'shape' | 'paint' | 'mixins' | 'mix' | 'decor' | 'finish' | 'squeeze';
 type PaintTool = 'paint' | 'erase';
+type DecorSection = 'face' | 'stickers' | 'accessory';
 
 export interface SandboxAppOptions {
   readonly language: SandboxLanguage;
@@ -41,6 +58,7 @@ interface SandboxCopy {
   readonly paint: string;
   readonly mixins: string;
   readonly mix: string;
+  readonly decor: string;
   readonly finish: string;
   readonly home: string;
   readonly squeeze: string;
@@ -48,6 +66,7 @@ interface SandboxCopy {
   readonly paintHint: string;
   readonly mixinsHint: string;
   readonly mixHint: string;
+  readonly decorHint: string;
   readonly finishHint: string;
   readonly homeHint: string;
   readonly squeezeHint: string;
@@ -69,6 +88,14 @@ interface SandboxCopy {
   readonly soft: string;
   readonly jelly: string;
   readonly holo: string;
+  readonly face: string;
+  readonly stickers: string;
+  readonly head: string;
+  readonly eyes: string;
+  readonly mouth: string;
+  readonly none: string;
+  readonly blush: string;
+  readonly back: string;
 }
 
 const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
@@ -78,6 +105,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     paint: 'PAINT IT',
     mixins: 'ADD SPRINKLES',
     mix: 'MIX & STRETCH',
+    decor: 'DECORATE',
     finish: 'FINISH IT',
     home: 'YOUR SQUISHY',
     squeeze: 'SQUEEZE IT',
@@ -85,6 +113,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     paintHint: 'Draw anything. You can continue whenever you want.',
     mixinsHint: 'Tap or drag to scatter. Skip it if you want.',
     mixHint: 'Grab the squishy and really move it around.',
+    decorHint: 'Give it a face, stickers or a little something on top.',
     finishHint: 'Choose how the material feels, then keep your squishy.',
     homeHint: 'Your saved squishy is here whenever you want to play.',
     squeezeHint: 'Pull, press and let go.',
@@ -106,6 +135,14 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     soft: 'Soft',
     jelly: 'Jelly',
     holo: 'Holo',
+    face: 'Face',
+    stickers: 'Stickers',
+    head: 'Head',
+    eyes: 'Eyes',
+    mouth: 'Mouth',
+    none: 'None',
+    blush: 'Blush',
+    back: 'BACK',
   },
   ru: {
     studio: 'СКВИШ-СТУДИЯ',
@@ -113,6 +150,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     paint: 'РАСКРАСЬ',
     mixins: 'ДОБАВЬ',
     mix: 'ЗАМЕШАЙ',
+    decor: 'УКРАСЬ',
     finish: 'ГОТОВО!',
     home: 'ТВОЙ СКВИШ',
     squeeze: 'ЖМЯКАЙ',
@@ -120,6 +158,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     paintHint: 'Рисуй что угодно. Продолжить можно в любой момент.',
     mixinsHint: 'Тапай или веди пальцем. Можно вообще пропустить.',
     mixHint: 'Хватай сквиш и хорошенько потяни его.',
+    decorHint: 'Добавь мордочку, наклейки или что-нибудь на макушку.',
     finishHint: 'Выбери материал и сохрани свой сквиш.',
     homeHint: 'Твой сквиш сохранён и всегда ждёт тебя.',
     squeezeHint: 'Тяни, дави и отпускай.',
@@ -141,6 +180,14 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     soft: 'Мягкий',
     jelly: 'Желе',
     holo: 'Голографик',
+    face: 'Мордочка',
+    stickers: 'Наклейки',
+    head: 'Макушка',
+    eyes: 'Глаза',
+    mouth: 'Ротик',
+    none: 'Нет',
+    blush: 'Румянец',
+    back: 'НАЗАД',
   },
 };
 
@@ -203,6 +250,8 @@ export class SandboxApp {
   private paintColor: number = PAINT_COLORS[0];
   private brushSize: number = BRUSH_SIZES[1];
   private selectedMixIn: MixInId = 'glitter';
+  private selectedSticker: StickerId = 'heart';
+  private decorSection: DecorSection = 'face';
   private authoredPointerId: number | null = null;
   private authoredPoints: AppearancePoint[] = [];
   private authoredStrokeMode: AppearanceStrokeMode = 0;
@@ -308,6 +357,30 @@ export class SandboxApp {
         <span>${material.id === 'soft' ? this.copy.soft : material.id === 'jelly' ? this.copy.jelly : this.copy.holo}</span>
       </button>
     `).join('');
+    const eyeGlyph = (id: EyeStyleId): string => id === 'dot' ? '••' : id === 'happy' ? '⌒⌒' : '﹏﹏';
+    const mouthGlyph = (id: MouthStyleId): string => id === 'smile' ? '⌣' : id === 'o' ? '○' : 'ω';
+    const stickerGlyph = (id: StickerId): string => id === 'heart' ? '♥' : id === 'star' ? '★' : id === 'flower' ? '✿' : '✦';
+    const accessoryGlyph = (id: AccessoryId): string => id === 'cat-ears' ? '▲ ▲' : id === 'bunny-ears' ? '∩ ∩' : id === 'horns' ? '△ △' : id === 'bow' ? '⋈' : '♛';
+    const eyes = [null, ...EYE_STYLE_IDS].map((id) => `
+      <button class="sandbox-decor-choice" type="button" data-decor-eyes="${id ?? 'none'}" aria-pressed="${id === null}">
+        <span>${id ? eyeGlyph(id) : '—'}</span><small>${id ?? this.copy.none}</small>
+      </button>
+    `).join('');
+    const mouths = [null, ...MOUTH_STYLE_IDS].map((id) => `
+      <button class="sandbox-decor-choice" type="button" data-decor-mouth="${id ?? 'none'}" aria-pressed="${id === null}">
+        <span>${id ? mouthGlyph(id) : '—'}</span><small>${id ?? this.copy.none}</small>
+      </button>
+    `).join('');
+    const stickers = STICKER_IDS.map((id) => `
+      <button class="sandbox-decor-choice" type="button" data-decor-sticker="${id}" aria-pressed="${id === this.selectedSticker}">
+        <span>${stickerGlyph(id)}</span><small>${id}</small>
+      </button>
+    `).join('');
+    const accessories = [null, ...ACCESSORY_IDS].map((id) => `
+      <button class="sandbox-decor-choice" type="button" data-decor-accessory="${id ?? 'none'}" aria-pressed="${id === null}">
+        <span>${id ? accessoryGlyph(id) : '—'}</span><small>${id ?? this.copy.none}</small>
+      </button>
+    `).join('');
 
     return `
       <main class="sandbox-shell" data-sandbox-app data-stage="${this.stage}" data-shape="soft-square" data-material="soft" data-sandbox-squeezes="0">
@@ -359,9 +432,31 @@ export class SandboxApp {
             <button class="sandbox-primary sandbox-panel__wide" type="button" data-action="mix-continue" disabled>${this.copy.next}</button>
           </div>
 
+          <div class="sandbox-panel sandbox-panel--decor" data-panel="decor">
+            <div class="sandbox-decor-tabs" role="tablist" aria-label="Decor categories">
+              <button type="button" data-decor-section="face" aria-pressed="true">☺ <span>${this.copy.face}</span></button>
+              <button type="button" data-decor-section="stickers" aria-pressed="false">✦ <span>${this.copy.stickers}</span></button>
+              <button type="button" data-decor-section="accessory" aria-pressed="false">♛ <span>${this.copy.head}</span></button>
+            </div>
+            <div class="sandbox-decor-section" data-decor-panel="face">
+              <label>${this.copy.eyes}</label><div class="sandbox-decor-grid sandbox-decor-grid--four">${eyes}</div>
+              <label>${this.copy.mouth}</label><div class="sandbox-decor-grid sandbox-decor-grid--four">${mouths}</div>
+              <button class="sandbox-decor-toggle" type="button" data-action="decor-blush" aria-pressed="false">● ● <span>${this.copy.blush}</span></button>
+            </div>
+            <div class="sandbox-decor-section" data-decor-panel="stickers" hidden>
+              <div class="sandbox-decor-grid sandbox-decor-grid--four">${stickers}</div>
+              <p class="sandbox-decor-tip">${this.copy.stickers}: tap the squishy</p>
+              <div class="sandbox-tool-row sandbox-tool-row--actions"><button type="button" data-action="decor-undo">${this.copy.undo}</button><button type="button" data-action="decor-clear">${this.copy.clear}</button></div>
+            </div>
+            <div class="sandbox-decor-section" data-decor-panel="accessory" hidden>
+              <div class="sandbox-decor-grid sandbox-decor-grid--three">${accessories}</div>
+            </div>
+            <button class="sandbox-primary sandbox-panel__wide" type="button" data-action="decor-continue">${this.copy.next}</button>
+          </div>
+
           <div class="sandbox-panel" data-panel="finish">
             <div class="sandbox-material-grid">${materials}</div>
-            <button class="sandbox-primary sandbox-panel__wide" type="button" data-action="save">${this.copy.save}</button>
+            <div class="sandbox-finish-actions"><button class="sandbox-secondary" type="button" data-action="finish-back">${this.copy.back}</button><button class="sandbox-primary" type="button" data-action="save">${this.copy.save}</button></div>
           </div>
 
           <div class="sandbox-panel sandbox-panel--center" data-panel="home">
@@ -431,6 +526,52 @@ export class SandboxApp {
       return;
     }
 
+    const decorSection = target.dataset.decorSection as DecorSection | undefined;
+    if (decorSection === 'face' || decorSection === 'stickers' || decorSection === 'accessory') {
+      this.setDecorSection(decorSection);
+      return;
+    }
+
+    const decorEyes = target.dataset.decorEyes;
+    if (decorEyes !== undefined) {
+      const eyes = decorEyes === 'none' ? null : decorEyes as EyeStyleId;
+      if (eyes === null || EYE_STYLE_IDS.includes(eyes)) {
+        this.draft = { ...this.draft, decor: { ...this.draft.decor, eyes } };
+        this.replayAndUpload();
+        this.updateDecorUi();
+      }
+      return;
+    }
+
+    const decorMouth = target.dataset.decorMouth;
+    if (decorMouth !== undefined) {
+      const mouth = decorMouth === 'none' ? null : decorMouth as MouthStyleId;
+      if (mouth === null || MOUTH_STYLE_IDS.includes(mouth)) {
+        this.draft = { ...this.draft, decor: { ...this.draft.decor, mouth } };
+        this.replayAndUpload();
+        this.updateDecorUi();
+      }
+      return;
+    }
+
+    const decorSticker = target.dataset.decorSticker as StickerId | undefined;
+    if (decorSticker && STICKER_IDS.includes(decorSticker)) {
+      this.selectedSticker = decorSticker;
+      this.updatePressed('[data-decor-sticker]', 'decorSticker', decorSticker);
+      return;
+    }
+
+    const decorAccessory = target.dataset.decorAccessory;
+    if (decorAccessory !== undefined) {
+      const accessory = decorAccessory === 'none' ? null : decorAccessory as AccessoryId;
+      if (accessory === null || ACCESSORY_IDS.includes(accessory)) {
+        this.draft = { ...this.draft, decor: { ...this.draft.decor, accessory } };
+        this.refreshAccessoryGraphic();
+        this.updateDecorUi();
+      }
+      return;
+    }
+
     const materialId = target.dataset.material as MaterialId | undefined;
     if (materialId && MATERIALS.some((material) => material.id === materialId)) {
       this.draft = { ...this.draft, materialId };
@@ -447,7 +588,12 @@ export class SandboxApp {
     else if (action === 'mixin-continue') this.beginMix();
     else if (action === 'mixin-undo') this.undoMixin();
     else if (action === 'mixin-clear') this.clearMixins();
-    else if (action === 'mix-continue' && this.mixDistance >= MIX_DISTANCE_FOR_COMPLETE_PX) this.setStage('finish');
+    else if (action === 'mix-continue' && this.mixDistance >= MIX_DISTANCE_FOR_COMPLETE_PX) this.setStage('decor');
+    else if (action === 'decor-blush') { this.draft = { ...this.draft, decor: { ...this.draft.decor, blush: !this.draft.decor.blush } }; this.replayAndUpload(); this.updateDecorUi(); }
+    else if (action === 'decor-undo') this.undoSticker();
+    else if (action === 'decor-clear') this.clearStickers();
+    else if (action === 'decor-continue') this.setStage('finish');
+    else if (action === 'finish-back') this.setStage('decor');
     else if (action === 'save') void this.saveDraft();
     else if (action === 'play-saved') this.openSavedForSqueeze();
     else if (action === 'new') this.startNew();
@@ -484,6 +630,17 @@ export class SandboxApp {
       this.lastMixinClientY = event.clientY;
       this.addMixinAt(point);
       try { this.canvas.setPointerCapture(event.pointerId); } catch { /* unavailable */ }
+      event.preventDefault();
+      return;
+    }
+
+    if (this.stage === 'decor' && this.decorSection === 'stickers') {
+      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
+      if (!point || this.draft.decor.stickers.length >= MAX_DECOR_STICKERS) return;
+      const placement = createStickerPlacement(this.selectedSticker, point, this.draft.decor.stickers.length);
+      this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers: [...this.draft.decor.stickers, placement] } };
+      this.replayAndUpload();
+      this.updateDecorUi();
       event.preventDefault();
       return;
     }
@@ -620,6 +777,42 @@ export class SandboxApp {
     this.replayAndUpload();
   }
 
+  private undoSticker(): void {
+    if (this.draft.decor.stickers.length === 0) return;
+    this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers: this.draft.decor.stickers.slice(0, -1) } };
+    this.replayAndUpload();
+    this.updateDecorUi();
+  }
+
+  private clearStickers(): void {
+    if (this.draft.decor.stickers.length === 0) return;
+    this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers: [] } };
+    this.replayAndUpload();
+    this.updateDecorUi();
+  }
+
+  private setDecorSection(next: DecorSection): void {
+    this.decorSection = next;
+    this.shell.dataset.decorSection = next;
+    this.updatePressed('[data-decor-section]', 'decorSection', next);
+    for (const panel of this.root.querySelectorAll<HTMLElement>('[data-decor-panel]')) panel.hidden = panel.dataset.decorPanel !== next;
+  }
+
+  private updateDecorUi(): void {
+    this.updatePressed('[data-decor-eyes]', 'decorEyes', this.draft.decor.eyes ?? 'none');
+    this.updatePressed('[data-decor-mouth]', 'decorMouth', this.draft.decor.mouth ?? 'none');
+    this.updatePressed('[data-decor-accessory]', 'decorAccessory', this.draft.decor.accessory ?? 'none');
+    this.updatePressed('[data-decor-sticker]', 'decorSticker', this.selectedSticker);
+    const blush = this.root.querySelector<HTMLButtonElement>('[data-action="decor-blush"]');
+    blush?.setAttribute('aria-pressed', String(this.draft.decor.blush));
+    this.shell.dataset.decorEyes = this.draft.decor.eyes ?? 'none';
+    this.shell.dataset.decorMouth = this.draft.decor.mouth ?? 'none';
+    this.shell.dataset.decorBlush = String(this.draft.decor.blush);
+    this.shell.dataset.decorStickerCount = String(this.draft.decor.stickers.length);
+    this.shell.dataset.decorAccessory = this.draft.decor.accessory ?? 'none';
+    this.shell.dataset.decorBytes = String(estimateDecorBytes(this.draft.decor));
+  }
+
   private beginMix(): void {
     this.mixDistance = 0;
     this.mixProgressFill.style.transform = 'scaleX(0)';
@@ -667,6 +860,8 @@ export class SandboxApp {
     this.paintColor = PAINT_COLORS[0];
     this.brushSize = BRUSH_SIZES[1];
     this.selectedMixIn = 'glitter';
+    this.selectedSticker = 'heart';
+    this.decorSection = 'face';
     this.mixDistance = 0;
     this.replayAndUpload();
     this.applyDraftToRenderer();
@@ -676,6 +871,8 @@ export class SandboxApp {
     this.updatePressed('[data-paint-color]', 'paintColor', String(this.paintColor));
     this.updatePressed('[data-brush-size]', 'brushSize', String(this.brushSize));
     this.updatePressed('[data-mixin]', 'mixin', this.selectedMixIn);
+    this.setDecorSection('face');
+    this.updateDecorUi();
     this.shell.dataset.saveComplete = 'false';
     this.setStage('shape');
   }
@@ -692,6 +889,7 @@ export class SandboxApp {
     this.updatePressed('[data-shape]', 'shape', saved.shapeId);
     this.updatePressed('[data-material]', 'material', saved.materialId);
     this.updateAppearanceDataset();
+    this.updateDecorUi();
   }
 
   private applyDraftToRenderer(): void {
@@ -793,11 +991,12 @@ export class SandboxApp {
   }
 
   private stageCopy(stage: SandboxStage): { step: string; title: string; hint: string } {
-    if (stage === 'shape') return { step: '1 / 5', title: this.copy.shape, hint: this.copy.chooseShape };
-    if (stage === 'paint') return { step: '2 / 5', title: this.copy.paint, hint: this.copy.paintHint };
-    if (stage === 'mixins') return { step: '3 / 5', title: this.copy.mixins, hint: this.copy.mixinsHint };
-    if (stage === 'mix') return { step: '4 / 5', title: this.copy.mix, hint: this.copy.mixHint };
-    if (stage === 'finish') return { step: '5 / 5', title: this.copy.finish, hint: this.copy.finishHint };
+    if (stage === 'shape') return { step: '1 / 6', title: this.copy.shape, hint: this.copy.chooseShape };
+    if (stage === 'paint') return { step: '2 / 6', title: this.copy.paint, hint: this.copy.paintHint };
+    if (stage === 'mixins') return { step: '3 / 6', title: this.copy.mixins, hint: this.copy.mixinsHint };
+    if (stage === 'mix') return { step: '4 / 6', title: this.copy.mix, hint: this.copy.mixHint };
+    if (stage === 'decor') return { step: '5 / 6', title: this.copy.decor, hint: this.copy.decorHint };
+    if (stage === 'finish') return { step: '6 / 6', title: this.copy.finish, hint: this.copy.finishHint };
     if (stage === 'home') return { step: '', title: this.copy.home, hint: this.copy.homeHint };
     return { step: '', title: this.copy.squeeze, hint: this.copy.squeezeHint };
   }
@@ -832,6 +1031,7 @@ export class SandboxApp {
     this.shell.dataset.appearanceBytes = String(estimateAppearanceBytes(this.draft.appearance));
     this.shell.dataset.paintStrokes = String(this.draft.appearance.strokes.length);
     this.shell.dataset.mixinCount = String(this.draft.appearance.mixins.length);
+    this.updateDecorUi();
   }
 
   private toggleMuted(): void {
