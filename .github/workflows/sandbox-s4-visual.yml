@@ -55,4 +55,4 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-# Retry armed after validated locator fix.
+# Recapture armed after validated Ideas visual polish.
