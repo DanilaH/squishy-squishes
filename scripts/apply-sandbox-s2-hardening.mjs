@@ -43,3 +43,9 @@ const landscapePatch = `
 `;
 if (!css.includes('grid-template-areas:\n      "toy title"')) css += landscapePatch;
 writeFileSync(cssPath, css);
+
+const qaPath = 'tests/release/release.spec.ts';
+let qa = readFileSync(qaPath, 'utf8');
+qa = qa.replaceAll('page.locator(`[data-material="${materialId}"]`)', 'page.locator(`.sandbox-material[data-material="${materialId}"]`)');
+qa = qa.replaceAll("page.locator('[data-material=\"holo\"]')", "page.locator('.sandbox-material[data-material=\"holo\"]')");
+writeFileSync(qaPath, qa);
