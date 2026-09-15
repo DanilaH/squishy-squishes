@@ -82,6 +82,12 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
   },
 };
 
+const escapeAttribute = (value: string): string => value
+  .replaceAll('&', '&amp;')
+  .replaceAll('"', '&quot;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;');
+
 const RU_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
   'soft-square': 'Кубик',
   heart: 'Сердечко',
@@ -200,14 +206,14 @@ export class SandboxLibraryApp {
   private renderToyCard(toy: SavedSquishy): string {
     const label = this.toyLabel(toy);
     return `
-      <article class="sandbox-library-card" data-library-toy="${toy.id}">
-        <button class="sandbox-library-card__play" type="button" data-library-play-id="${toy.id}" aria-label="${this.copy.squeeze}: ${label}">
-          <canvas class="sandbox-library-card__canvas" data-library-thumbnail="${toy.id}" aria-hidden="true"></canvas>
+      <article class="sandbox-library-card" data-library-toy="${escapeAttribute(toy.id)}">
+        <button class="sandbox-library-card__play" type="button" data-library-play-id="${escapeAttribute(toy.id)}" aria-label="${this.copy.squeeze}: ${label}">
+          <canvas class="sandbox-library-card__canvas" data-library-thumbnail="${escapeAttribute(toy.id)}" aria-hidden="true"></canvas>
           <span class="sandbox-library-card__cta">${this.copy.squeeze}</span>
         </button>
         <div class="sandbox-library-card__footer">
           <strong>${label}</strong>
-          <button class="sandbox-library-delete" type="button" data-library-delete-id="${toy.id}" aria-label="${this.copy.delete}: ${label}">×</button>
+          <button class="sandbox-library-delete" type="button" data-library-delete-id="${escapeAttribute(toy.id)}" aria-label="${this.copy.delete}: ${label}">×</button>
         </div>
       </article>
     `;
@@ -265,8 +271,8 @@ export class SandboxLibraryApp {
         <p>${this.copy.replaceHint}</p>
         <div class="sandbox-library-replace-grid">
           ${this.library.map((toy) => `
-            <button class="sandbox-library-replace-card" type="button" data-library-replace-id="${toy.id}">
-              <canvas data-library-thumbnail="${toy.id}" aria-hidden="true"></canvas>
+            <button class="sandbox-library-replace-card" type="button" data-library-replace-id="${escapeAttribute(toy.id)}">
+              <canvas data-library-thumbnail="${escapeAttribute(toy.id)}" aria-hidden="true"></canvas>
               <strong>${this.toyLabel(toy)}</strong>
               <span>${this.copy.replaceAction}</span>
             </button>
@@ -287,7 +293,7 @@ export class SandboxLibraryApp {
     overlay.dataset.libraryDeleteOverlay = '';
     overlay.innerHTML = `
       <div class="sandbox-library-modal__sheet sandbox-library-modal__sheet--compact" role="dialog" aria-modal="true" aria-labelledby="library-delete-title">
-        <canvas class="sandbox-library-delete-preview" data-library-thumbnail="${toy.id}" aria-hidden="true"></canvas>
+        <canvas class="sandbox-library-delete-preview" data-library-thumbnail="${escapeAttribute(toy.id)}" aria-hidden="true"></canvas>
         <h2 id="library-delete-title">${this.copy.deleteTitle}</h2>
         <p>${this.copy.deleteHint}</p>
         <p class="sandbox-library-modal__error" data-library-modal-error aria-live="polite"></p>

@@ -199,7 +199,7 @@ const craftMinimalToy = async (
   await performRealMix(page);
   await page.locator('[data-action="mix-continue"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'finish');
-  await page.locator(`[data-material="${materialId}"]`).click();
+  await page.locator(`.sandbox-material[data-material="${materialId}"]`).click();
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
 };
@@ -442,7 +442,7 @@ test('full 8-slot Library allows creation, mutates nothing before replacement, s
   await page.locator('[data-action="mixin-continue"]').click();
   await performRealMix(page);
   await page.locator('[data-action="mix-continue"]').click();
-  await page.locator('[data-material="holo"]').click();
+  await page.locator('.sandbox-material[data-material="holo"]').click();
   await page.locator('[data-action="save"]').click();
 
   await expect(page.locator('[data-library-replace-overlay]')).toBeVisible();
