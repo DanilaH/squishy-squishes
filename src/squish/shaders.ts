@@ -9,6 +9,16 @@ uniform float uMoldProgress;
 
 out vec2 vUv;
 
+float containAxis(float value) {
+  const float freeEdge = 0.88;
+  const float reserve = 0.08;
+  float magnitude = abs(value);
+  if (magnitude <= freeEdge) return value;
+  float excess = magnitude - freeEdge;
+  float contained = freeEdge + (reserve * excess) / (reserve + excess);
+  return sign(value) * contained;
+}
+
 void main() {
   vUv = aUv;
   float mold = smoothstep(0.0, 1.0, clamp(uMoldProgress, 0.0, 1.0));
@@ -16,7 +26,12 @@ void main() {
   stagePosition.x *= 1.0 + mold * 0.075;
   stagePosition.y *= 1.0 - mold * 0.095;
   stagePosition.y -= mold * 0.018;
-  gl_Position = vec4(stagePosition * uScale, 0.0, 1.0);
+
+  // Keep even an aggressively stretched squishy recoverable. The normal motion range is
+  // untouched; only the last 12% of clip-space gains progressively stronger resistance.
+  vec2 clipPosition = stagePosition * uScale;
+  clipPosition = vec2(containAxis(clipPosition.x), containAxis(clipPosition.y));
+  gl_Position = vec4(clipPosition, 0.0, 1.0);
 }
 `;
 
@@ -116,11 +131,21 @@ void main() {
   float edge = smoothstep(0.5, 1.0, shape);
   base *= 1.0 - edge * 0.26;
 
+  // Translucent materials should read as dense gel rather than a white exposure pass.
+  // Preserve authored colour, darken optical depth slightly, then add narrow internal
+  // caustics and a stronger coloured rim. A future physical background can make the
+  // alpha more transparent without having to rebuild the identity from scratch.
   float translucency = clamp(uTranslucency, 0.0, 1.0);
-  float innerLight = (1.0 - edge) * (0.07 + translucency * 0.17);
-  base = mix(base, base * 0.78 + uSheenColor * 0.22, translucency * 0.46);
-  base += uSheenColor * innerLight * translucency;
-  base += uRimColor * edge * translucency * 0.10;
+  float interior = 1.0 - edge;
+  float opticalDepth = smoothstep(0.0, 1.0, interior);
+  base *= 1.0 - translucency * (0.035 + opticalDepth * 0.055);
+  base = mix(base, base * 0.94 + uSheenColor * 0.06, translucency * 0.18);
+  float gelWave = 0.5 + 0.5 * sin(
+    (vUv.x * 1.72 + vUv.y * 1.08 + uMaterialSeed * 2.31 + uCompression * 0.12) * 6.2831853
+  );
+  float gelCaustic = pow(gelWave, 5.0) * interior * translucency;
+  base += uSheenColor * gelCaustic * 0.045;
+  base += uRimColor * edge * translucency * 0.22;
 
   float iridescence = clamp(uIridescence, 0.0, 1.0);
   float spectralPhase = vUv.x * 0.72 + vUv.y * 0.48 + uMaterialSeed * 0.61 + uCompression * 0.18;
@@ -170,7 +195,7 @@ void main() {
   meniscusBand *= 1.0 - step(0.995, fillProgress);
   base += uSheenColor * meniscusBand * 0.12;
 
-  float bodyAlpha = mix(0.985, 0.82 + edge * 0.10, translucency);
+  float bodyAlpha = mix(0.985, 0.86 + edge * 0.09, translucency);
   outColor = vec4(base, bodyAlpha * shapeAlpha);
 }
 `;
