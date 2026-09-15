@@ -55,4 +55,4 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-# Recapture armed after validated Ideas visual polish.
+# Final recapture armed after validated Idea guide layout polish.
