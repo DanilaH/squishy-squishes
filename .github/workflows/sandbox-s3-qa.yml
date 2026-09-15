@@ -1,5 +1,6 @@
 name: Sandbox S3 Temporary Permanent QA
 
+# retry after compact decor persistence + corrected Decor canvas coordinates
 on:
   push:
     branches:
