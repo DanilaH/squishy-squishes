@@ -89,7 +89,7 @@ test('capture player-feedback polish states', async ({ page }) => {
   await page.screenshot({ path: 'visual-artifacts/extreme-pull-1191x739.png', fullPage: true });
   await page.mouse.up();
 
-  await page.locator('[data-action="new"]').click();
+  await page.getByRole('button', { name: 'NEW SQUISHY', exact: true }).click();
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator('.sandbox-shape[data-shape="paw"]').click();
   await page.setViewportSize({ width: 1293, height: 853 });
