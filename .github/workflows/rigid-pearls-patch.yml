@@ -1,0 +1,111 @@
+name: Apply Rigid Pearl Projection Patch
+
+on:
+  push:
+    branches:
+      - sandbox-polish-feedback-01
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'Project rigid pearls without stretching'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Apply focused patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, found {count}')
+              file.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              'src/sandbox/appearance.ts',
+              '''export const replayAppearanceDocument = (\n  context: CanvasRenderingContext2D,\n  document: AppearanceDocumentV1,\n): void => {''',
+              '''export const replayAppearanceDocument = (\n  context: CanvasRenderingContext2D,\n  document: AppearanceDocumentV1,\n  options: { readonly excludeMixIns?: readonly MixInId[] } = {},\n): void => {''',
+          )
+          replace_once(
+              'src/sandbox/appearance.ts',
+              '''  for (const mixin of document.mixins) drawMixIn(context, mixin);\n};''',
+              '''  const excludedMixIns = new Set(options.excludeMixIns ?? []);\n  for (const mixin of document.mixins) {\n    if (!excludedMixIns.has(getMixInId(mixin))) drawMixIn(context, mixin);\n  }\n};''',
+          )
+
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''  estimateAppearanceBytes,\n  replayAppearanceDocument,''',
+              '''  estimateAppearanceBytes,\n  getMixInId,\n  replayAppearanceDocument,''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''const BASE_PALETTE_ID = 'milk' as const;\n\nconst clamp01''',
+              '''const BASE_PALETTE_ID = 'milk' as const;\nconst RIGID_MIXIN_IDS: readonly MixInId[] = ['pearls'];\n\nconst createPearlSprite = (): HTMLCanvasElement => {\n  const canvas = document.createElement('canvas');\n  canvas.width = 64;\n  canvas.height = 64;\n  const context = canvas.getContext('2d');\n  if (!context) throw new Error('Pearl sprite requires Canvas 2D.');\n  const radius = 30;\n  const gradient = context.createRadialGradient(23, 22, 1, 32, 32, radius);\n  gradient.addColorStop(0, 'rgba(255,255,255,0.99)');\n  gradient.addColorStop(0.44, 'rgba(238,232,255,0.97)');\n  gradient.addColorStop(0.78, 'rgba(202,216,242,0.94)');\n  gradient.addColorStop(1, 'rgba(146,178,214,0.90)');\n  context.fillStyle = gradient;\n  context.beginPath();\n  context.arc(32, 32, radius, 0, Math.PI * 2);\n  context.fill();\n  context.strokeStyle = 'rgba(255,255,255,0.48)';\n  context.lineWidth = 1.5;\n  context.stroke();\n  return canvas;\n};\n\nconst clamp01''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''  private readonly accessoryCanvas: HTMLCanvasElement;\n  private readonly accessoryContext: CanvasRenderingContext2D;\n  private readonly stageTitle:''',
+              '''  private readonly accessoryCanvas: HTMLCanvasElement;\n  private readonly accessoryContext: CanvasRenderingContext2D;\n  private readonly rigidMixinCanvas: HTMLCanvasElement;\n  private readonly rigidMixinContext: CanvasRenderingContext2D;\n  private readonly pearlSprite = createPearlSprite();\n  private readonly stageTitle:''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''  private accessoryFrame = 0;\n  private accessoryRestU = 0;''',
+              '''  private accessoryFrame = 0;\n  private rigidMixinFrame = 0;\n  private accessoryRestU = 0;''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''    if (!accessoryContext) throw new Error('Sandbox accessory overlay requires Canvas 2D.');\n    this.accessoryContext = accessoryContext;\n    this.stageTitle =''',
+              '''    if (!accessoryContext) throw new Error('Sandbox accessory overlay requires Canvas 2D.');\n    this.accessoryContext = accessoryContext;\n    this.rigidMixinCanvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-rigid-mixins]');\n    const rigidMixinContext = this.rigidMixinCanvas.getContext('2d');\n    if (!rigidMixinContext) throw new Error('Sandbox rigid mix-in overlay requires Canvas 2D.');\n    this.rigidMixinContext = rigidMixinContext;\n    this.stageTitle =''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''    if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);\n    this.abortController.abort();''',
+              '''    if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);\n    if (this.rigidMixinFrame !== 0) cancelAnimationFrame(this.rigidMixinFrame);\n    this.abortController.abort();''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''          <canvas class="sandbox-accessory-layer" data-sandbox-accessory aria-hidden="true" hidden></canvas>\n          <canvas class="sandbox-canvas" data-sandbox-canvas aria-label="Squishy"></canvas>''',
+              '''          <canvas class="sandbox-accessory-layer" data-sandbox-accessory aria-hidden="true" hidden></canvas>\n          <canvas class="sandbox-canvas" data-sandbox-canvas aria-label="Squishy"></canvas>\n          <canvas class="sandbox-rigid-mixin-layer" data-sandbox-rigid-mixins aria-hidden="true" hidden></canvas>''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''    this.draft = { ...this.draft, appearance: next };\n    replayAppearanceDocument(this.appearanceContext, next);\n    this.scheduleTextureUpload();\n    this.updateAppearanceDataset();\n  }\n\n  private undoPaint''',
+              '''    this.draft = { ...this.draft, appearance: next };\n    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS });\n    this.scheduleTextureUpload();\n    this.refreshRigidMixins();\n    this.updateAppearanceDataset();\n  }\n\n  private undoPaint''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''  private refreshAccessoryGraphic(): void {''',
+              '''  private refreshRigidMixins(): void {\n    const hasRigidMixins = this.draft.appearance.mixins.some((placement) => RIGID_MIXIN_IDS.includes(getMixInId(placement)));\n    if (!hasRigidMixins) {\n      this.rigidMixinCanvas.hidden = true;\n      if (this.rigidMixinFrame !== 0) cancelAnimationFrame(this.rigidMixinFrame);\n      this.rigidMixinFrame = 0;\n      this.rigidMixinContext.clearRect(0, 0, this.rigidMixinCanvas.width, this.rigidMixinCanvas.height);\n      return;\n    }\n    this.rigidMixinCanvas.hidden = false;\n    if (this.rigidMixinFrame === 0) this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);\n  }\n\n  private readonly updateRigidMixinOverlay = (): void => {\n    const rigidPlacements = this.draft.appearance.mixins.filter((placement) => RIGID_MIXIN_IDS.includes(getMixInId(placement)));\n    if (this.disposed || rigidPlacements.length === 0) {\n      this.rigidMixinFrame = 0;\n      this.rigidMixinCanvas.hidden = true;\n      return;\n    }\n\n    const canvasRect = this.canvas.getBoundingClientRect();\n    const stageRect = this.canvas.parentElement?.getBoundingClientRect();\n    if (stageRect && canvasRect.width > 0 && canvasRect.height > 0) {\n      const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));\n      const pixelWidth = Math.max(1, Math.round(canvasRect.width * dpr));\n      const pixelHeight = Math.max(1, Math.round(canvasRect.height * dpr));\n      if (this.rigidMixinCanvas.width !== pixelWidth || this.rigidMixinCanvas.height !== pixelHeight) {\n        this.rigidMixinCanvas.width = pixelWidth;\n        this.rigidMixinCanvas.height = pixelHeight;\n      }\n      this.rigidMixinCanvas.style.left = `${(canvasRect.left - stageRect.left).toFixed(2)}px`;\n      this.rigidMixinCanvas.style.top = `${(canvasRect.top - stageRect.top).toFixed(2)}px`;\n      this.rigidMixinCanvas.style.width = `${canvasRect.width.toFixed(2)}px`;\n      this.rigidMixinCanvas.style.height = `${canvasRect.height.toFixed(2)}px`;\n\n      const context = this.rigidMixinContext;\n      context.setTransform(dpr, 0, 0, dpr, 0, 0);\n      context.clearRect(0, 0, canvasRect.width, canvasRect.height);\n      const appearanceScale = Math.min(canvasRect.width, canvasRect.height) * 0.68 / APPEARANCE_TEXTURE_SIZE;\n      for (const placement of rigidPlacements) {\n        const center = this.renderer.projectUvToCanvas(placement.x / 255, placement.y / 255);\n        const radius = Math.max(3.5, placement.s * appearanceScale * 0.5);\n        context.drawImage(this.pearlSprite, center.x - radius, center.y - radius, radius * 2, radius * 2);\n      }\n    }\n\n    this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);\n  };\n\n  private refreshAccessoryGraphic(): void {''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''    replayAppearanceDocument(this.appearanceContext, this.draft.appearance);\n    renderSurfaceDecor''',
+              '''    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS });\n    renderSurfaceDecor''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''    this.uploadAppearanceNow();\n    this.updateAppearanceDataset();\n  }\n\n  private updateAppearanceDataset''',
+              '''    this.uploadAppearanceNow();\n    this.refreshRigidMixins();\n    this.updateAppearanceDataset();\n  }\n\n  private updateAppearanceDataset''',
+          )
+
+          css = Path('src/sandbox-polish-01.css')
+          css.write_text(css.read_text() + '''\n\n/* Pearls are rigid inclusions: their UV anchors follow the deformed surface, but the\n   rendered bead itself keeps a circular screen-space shape instead of stretching like\n   the squishy skin. */\n.sandbox-rigid-mixin-layer {\n  position: absolute;\n  z-index: 3;\n  display: block;\n  pointer-events: none;\n}\n.sandbox-rigid-mixin-layer[hidden] { display: none; }\n''')
+          PY
+      - name: Validate build
+        run: npm install && npm run build
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/sandbox/appearance.ts src/sandbox/SandboxApp.ts src/sandbox-polish-01.css
+          git commit -m "Project rigid pearls without stretching"
+          git push origin HEAD:sandbox-polish-feedback-01
