@@ -1,0 +1,39 @@
+name: Sandbox S4 Temporary Review Transport
+
+on:
+  push:
+    branches:
+      - sandbox-pivot-s4-ideas-titles
+    paths:
+      - '.github/workflows/sandbox-s4-review.yml'
+      - 'scripts/build-s4-visual-review.mjs'
+
+permissions:
+  contents: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: sandbox-pivot-s4-ideas-titles
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install chromium
+      - name: Build review thumbnails
+        run: node scripts/build-s4-visual-review.mjs
+      - name: Commit review transport
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/s4-visual/review
+          git commit -m "Prepare Sandbox S4 visual review thumbnails"
+          git push
