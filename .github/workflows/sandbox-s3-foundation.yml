@@ -1,0 +1,35 @@
+name: Sandbox S3 Temporary Foundation
+
+on:
+  push:
+    branches:
+      - sandbox-pivot-s3-decor
+
+permissions:
+  contents: write
+
+jobs:
+  foundation:
+    if: startsWith(github.event.head_commit.message, 'Arm Sandbox S3 foundation validation')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: sandbox-pivot-s3-decor
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Apply S3 foundation
+        run: node scripts/apply-sandbox-s3-foundation.mjs
+      - run: npm install
+      - run: npm run release:check
+      - name: Commit validated S3 foundation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/platform/saveV3.ts src/sandbox/SandboxApp.ts src/sandbox/decor.ts src/sandbox/libraryThumbnail.ts src/squish/SquishSurface.ts tests/release/release.spec.ts
+          git diff --cached --check
+          git commit -m "Build Sandbox S3 decor foundation"
+          git push origin HEAD:sandbox-pivot-s3-decor
