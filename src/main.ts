@@ -5,6 +5,7 @@ import './release.css';
 import './ui-ux-pass-01.css';
 import './feel-art-audio-pass-01.css';
 import './ui-ux-overhaul-02.css';
+import './sandbox-core.css';
 import { bootstrapSquishyApp } from './app/bootstrap';
 import { getGameCopy, normalizeLanguage } from './i18n';
 
