@@ -27,6 +27,27 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Capture production visual states
         run: npx playwright test tests/release/s3-visual.spec.ts --config=playwright.release.config.ts
+      - name: Prepare text review previews
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import base64
+          import io
+
+          root = Path('artifacts/s3-visual')
+          review = root / 'review'
+          review.mkdir(parents=True, exist_ok=True)
+          for src in sorted(root.glob('*.png')):
+              image = Image.open(src).convert('RGB')
+              if image.width > 640:
+                  height = round(image.height * 640 / image.width)
+                  image = image.resize((640, height))
+              buf = io.BytesIO()
+              image.save(buf, format='JPEG', quality=35, optimize=True)
+              (review / f'{src.stem}.b64').write_text(base64.b64encode(buf.getvalue()).decode('ascii'))
+          PY
       - name: Commit temporary visual evidence
         run: |
           git config user.name "github-actions[bot]"
