@@ -1,0 +1,35 @@
+name: Sandbox S3 Temporary Compact Decor
+
+on:
+  push:
+    branches:
+      - sandbox-pivot-s3-decor
+
+permissions:
+  contents: write
+
+jobs:
+  compact:
+    if: startsWith(github.event.head_commit.message, 'Arm Sandbox S3 compact decor persistence')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: sandbox-pivot-s3-decor
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Apply compact decor persistence
+        run: node scripts/apply-sandbox-s3-compact-decor.mjs
+      - run: npm install
+      - run: npm run release:check
+      - name: Commit compact persistence
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/sandbox/decor.ts src/platform/saveV3.ts
+          git diff --cached --check
+          git commit -m "Compact Sandbox S3 decor persistence"
+          git push origin HEAD:sandbox-pivot-s3-decor
