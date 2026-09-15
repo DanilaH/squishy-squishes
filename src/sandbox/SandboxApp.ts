@@ -12,6 +12,7 @@ import {
   drawAppearanceSegment,
   drawAppearanceStamp,
   estimateAppearanceBytes,
+  getMixInId,
   replayAppearanceDocument,
   type AppearanceDocumentV1,
   type AppearancePoint,
@@ -223,6 +224,29 @@ const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'he
 const MIX_DISTANCE_FOR_COMPLETE_PX = 1_650;
 const MIXIN_SPACING_PX = 24;
 const BASE_PALETTE_ID = 'milk' as const;
+const RIGID_MIXIN_IDS: readonly MixInId[] = ['pearls'];
+
+const createPearlSprite = (): HTMLCanvasElement => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Pearl sprite requires Canvas 2D.');
+  const radius = 30;
+  const gradient = context.createRadialGradient(23, 22, 1, 32, 32, radius);
+  gradient.addColorStop(0, 'rgba(255,255,255,0.99)');
+  gradient.addColorStop(0.44, 'rgba(238,232,255,0.97)');
+  gradient.addColorStop(0.78, 'rgba(202,216,242,0.94)');
+  gradient.addColorStop(1, 'rgba(146,178,214,0.90)');
+  context.fillStyle = gradient;
+  context.beginPath();
+  context.arc(32, 32, radius, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = 'rgba(255,255,255,0.48)';
+  context.lineWidth = 1.5;
+  context.stroke();
+  return canvas;
+};
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
@@ -255,6 +279,9 @@ export class SandboxApp {
   private readonly canvas: HTMLCanvasElement;
   private readonly accessoryCanvas: HTMLCanvasElement;
   private readonly accessoryContext: CanvasRenderingContext2D;
+  private readonly rigidMixinCanvas: HTMLCanvasElement;
+  private readonly rigidMixinContext: CanvasRenderingContext2D;
+  private readonly pearlSprite = createPearlSprite();
   private readonly stageTitle: HTMLElement;
   private readonly stageHint: HTMLElement;
   private readonly stageStep: HTMLElement;
@@ -290,6 +317,7 @@ export class SandboxApp {
   private mixDistance = 0;
   private uploadFrame = 0;
   private accessoryFrame = 0;
+  private rigidMixinFrame = 0;
   private accessoryRestU = 0;
   private accessoryRestV = 0;
   private muted = false;
@@ -324,6 +352,10 @@ export class SandboxApp {
     const accessoryContext = this.accessoryCanvas.getContext('2d');
     if (!accessoryContext) throw new Error('Sandbox accessory overlay requires Canvas 2D.');
     this.accessoryContext = accessoryContext;
+    this.rigidMixinCanvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-rigid-mixins]');
+    const rigidMixinContext = this.rigidMixinCanvas.getContext('2d');
+    if (!rigidMixinContext) throw new Error('Sandbox rigid mix-in overlay requires Canvas 2D.');
+    this.rigidMixinContext = rigidMixinContext;
     this.stageTitle = this.requireElement<HTMLElement>('[data-sandbox-title]');
     this.stageHint = this.requireElement<HTMLElement>('[data-sandbox-hint]');
     this.stageStep = this.requireElement<HTMLElement>('[data-sandbox-step]');
@@ -357,6 +389,7 @@ export class SandboxApp {
     this.disposed = true;
     if (this.uploadFrame !== 0) cancelAnimationFrame(this.uploadFrame);
     if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);
+    if (this.rigidMixinFrame !== 0) cancelAnimationFrame(this.rigidMixinFrame);
     this.abortController.abort();
     this.renderer.dispose();
     this.audio.dispose();
@@ -429,6 +462,7 @@ export class SandboxApp {
           <div class="sandbox-glow" aria-hidden="true"></div>
           <canvas class="sandbox-accessory-layer" data-sandbox-accessory aria-hidden="true" hidden></canvas>
           <canvas class="sandbox-canvas" data-sandbox-canvas aria-label="Squishy"></canvas>
+          <canvas class="sandbox-rigid-mixin-layer" data-sandbox-rigid-mixins aria-hidden="true" hidden></canvas>
         </section>
 
         <section class="sandbox-controls">
@@ -774,8 +808,9 @@ export class SandboxApp {
       return;
     }
     this.draft = { ...this.draft, appearance: next };
-    replayAppearanceDocument(this.appearanceContext, next);
+    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS });
     this.scheduleTextureUpload();
+    this.refreshRigidMixins();
     this.updateAppearanceDataset();
   }
 
@@ -930,6 +965,56 @@ export class SandboxApp {
     this.refreshAccessoryGraphic();
   }
 
+  private refreshRigidMixins(): void {
+    const hasRigidMixins = this.draft.appearance.mixins.some((placement) => RIGID_MIXIN_IDS.includes(getMixInId(placement)));
+    if (!hasRigidMixins) {
+      this.rigidMixinCanvas.hidden = true;
+      if (this.rigidMixinFrame !== 0) cancelAnimationFrame(this.rigidMixinFrame);
+      this.rigidMixinFrame = 0;
+      this.rigidMixinContext.clearRect(0, 0, this.rigidMixinCanvas.width, this.rigidMixinCanvas.height);
+      return;
+    }
+    this.rigidMixinCanvas.hidden = false;
+    if (this.rigidMixinFrame === 0) this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);
+  }
+
+  private readonly updateRigidMixinOverlay = (): void => {
+    const rigidPlacements = this.draft.appearance.mixins.filter((placement) => RIGID_MIXIN_IDS.includes(getMixInId(placement)));
+    if (this.disposed || rigidPlacements.length === 0) {
+      this.rigidMixinFrame = 0;
+      this.rigidMixinCanvas.hidden = true;
+      return;
+    }
+
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const stageRect = this.canvas.parentElement?.getBoundingClientRect();
+    if (stageRect && canvasRect.width > 0 && canvasRect.height > 0) {
+      const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+      const pixelWidth = Math.max(1, Math.round(canvasRect.width * dpr));
+      const pixelHeight = Math.max(1, Math.round(canvasRect.height * dpr));
+      if (this.rigidMixinCanvas.width !== pixelWidth || this.rigidMixinCanvas.height !== pixelHeight) {
+        this.rigidMixinCanvas.width = pixelWidth;
+        this.rigidMixinCanvas.height = pixelHeight;
+      }
+      this.rigidMixinCanvas.style.left = `${(canvasRect.left - stageRect.left).toFixed(2)}px`;
+      this.rigidMixinCanvas.style.top = `${(canvasRect.top - stageRect.top).toFixed(2)}px`;
+      this.rigidMixinCanvas.style.width = `${canvasRect.width.toFixed(2)}px`;
+      this.rigidMixinCanvas.style.height = `${canvasRect.height.toFixed(2)}px`;
+
+      const context = this.rigidMixinContext;
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      context.clearRect(0, 0, canvasRect.width, canvasRect.height);
+      const appearanceScale = Math.min(canvasRect.width, canvasRect.height) * 0.68 / APPEARANCE_TEXTURE_SIZE;
+      for (const placement of rigidPlacements) {
+        const center = this.renderer.projectUvToCanvas(placement.x / 255, placement.y / 255);
+        const radius = Math.max(3.5, placement.s * appearanceScale * 0.5);
+        context.drawImage(this.pearlSprite, center.x - radius, center.y - radius, radius * 2, radius * 2);
+      }
+    }
+
+    this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);
+  };
+
   private refreshAccessoryGraphic(): void {
     const accessory = this.draft.decor.accessory;
     this.accessoryRestU = 0;
@@ -1052,9 +1137,10 @@ export class SandboxApp {
   }
 
   private replayAndUpload(): void {
-    replayAppearanceDocument(this.appearanceContext, this.draft.appearance);
+    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS });
     renderSurfaceDecor(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
     this.uploadAppearanceNow();
+    this.refreshRigidMixins();
     this.updateAppearanceDataset();
   }
 

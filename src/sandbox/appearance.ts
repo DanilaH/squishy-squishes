@@ -306,6 +306,7 @@ const drawMixIn = (context: CanvasRenderingContext2D, placement: MixInPlacementV
 export const replayAppearanceDocument = (
   context: CanvasRenderingContext2D,
   document: AppearanceDocumentV1,
+  options: { readonly excludeMixIns?: readonly MixInId[] } = {},
 ): void => {
   context.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
   for (const stroke of document.strokes) {
@@ -317,5 +318,8 @@ export const replayAppearanceDocument = (
       drawAppearanceSegment(context, stroke.m, stroke.c, stroke.s, points[index - 1]!, points[index]!);
     }
   }
-  for (const mixin of document.mixins) drawMixIn(context, mixin);
+  const excludedMixIns = new Set(options.excludeMixIns ?? []);
+  for (const mixin of document.mixins) {
+    if (!excludedMixIns.has(getMixInId(mixin))) drawMixIn(context, mixin);
+  }
 };

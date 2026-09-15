@@ -72,3 +72,15 @@
     height: min(64vh, 280px);
   }
 }
+
+
+/* Pearls are rigid inclusions: their UV anchors follow the deformed surface, but the
+   rendered bead itself keeps a circular screen-space shape instead of stretching like
+   the squishy skin. */
+.sandbox-rigid-mixin-layer {
+  position: absolute;
+  z-index: 3;
+  display: block;
+  pointer-events: none;
+}
+.sandbox-rigid-mixin-layer[hidden] { display: none; }
