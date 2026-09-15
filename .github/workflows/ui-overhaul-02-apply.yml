@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   apply:
-    if: github.sha == '20226f5a90a08fe0ed4ed6f304b22da16dcd1fd8'
+    if: startsWith(github.event.head_commit.message, 'Arm UI Overhaul 02 source apply')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
