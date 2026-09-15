@@ -28,7 +28,9 @@ export interface SandboxAppOptions {
   readonly language: SandboxLanguage;
   readonly muted: boolean;
   readonly savedSquishy: SavedSquishy | null;
-  readonly onSaveSquishy: (draft: SandboxDraft) => Promise<SavedSquishy>;
+  readonly startSavedInSqueeze?: boolean;
+  readonly onExitToLibrary?: () => void;
+  readonly onSaveSquishy: (draft: SandboxDraft) => Promise<SavedSquishy | null>;
   readonly onMutedChange: (muted: boolean) => void | Promise<void>;
 }
 
@@ -221,7 +223,7 @@ export class SandboxApp {
     this.copy = COPY[options.language];
     this.savedSquishy = options.savedSquishy;
     this.muted = options.muted;
-    this.stage = this.savedSquishy ? 'home' : 'shape';
+    this.stage = this.savedSquishy ? (options.startSavedInSqueeze ? 'squeeze' : 'home') : 'shape';
 
     this.appearanceCanvas.width = APPEARANCE_TEXTURE_SIZE;
     this.appearanceCanvas.height = APPEARANCE_TEXTURE_SIZE;
@@ -435,7 +437,10 @@ export class SandboxApp {
     else if (action === 'save') void this.saveDraft();
     else if (action === 'play-saved') this.openSavedForSqueeze();
     else if (action === 'new') this.startNew();
-    else if (action === 'home') this.setStage(this.savedSquishy ? 'home' : 'shape');
+    else if (action === 'home') {
+      if (this.options.onExitToLibrary) this.options.onExitToLibrary();
+      else this.setStage(this.savedSquishy ? 'home' : 'shape');
+    }
     else if (action === 'mute') this.toggleMuted();
   };
 
@@ -616,6 +621,10 @@ export class SandboxApp {
     this.saveButton.textContent = this.copy.saving;
     try {
       const saved = await this.options.onSaveSquishy(this.draft);
+      if (!saved) {
+        this.status.textContent = '';
+        return;
+      }
       this.savedSquishy = saved;
       this.shell.dataset.savedSquishyId = saved.id;
       this.shell.dataset.saveComplete = 'true';
