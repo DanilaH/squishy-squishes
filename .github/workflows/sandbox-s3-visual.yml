@@ -41,12 +41,14 @@ jobs:
           review.mkdir(parents=True, exist_ok=True)
           for src in sorted(root.glob('*.png')):
               image = Image.open(src).convert('RGB')
-              if image.width > 640:
-                  height = round(image.height * 640 / image.width)
-                  image = image.resize((640, height))
+              if image.width > 320:
+                  height = round(image.height * 320 / image.width)
+                  image = image.resize((320, height))
               buf = io.BytesIO()
-              image.save(buf, format='JPEG', quality=35, optimize=True)
-              (review / f'{src.stem}.b64').write_text(base64.b64encode(buf.getvalue()).decode('ascii'))
+              image.save(buf, format='JPEG', quality=25, optimize=True)
+              encoded = base64.b64encode(buf.getvalue()).decode('ascii')
+              wrapped = '\n'.join(encoded[i:i + 120] for i in range(0, len(encoded), 120))
+              (review / f'{src.stem}.b64').write_text(wrapped)
           PY
       - name: Commit temporary visual evidence
         run: |
