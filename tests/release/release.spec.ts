@@ -99,7 +99,7 @@ const yandexState = async (page: Page): Promise<{
   };
 });
 
-test('Pages production build boots into the recipe-first catalog', async ({ page }) => {
+test('Pages production build boots into the toy-first choose screen and shelf', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(PAGES_URL);
@@ -107,14 +107,19 @@ test('Pages production build boots into the recipe-first catalog', async ({ page
   const shell = page.locator('.lab-shell');
   await expect(shell).toHaveAttribute('data-stage', 'select');
   await expect(page.locator('.recipe-dock')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Browse recipes' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'All squishies' })).toBeVisible();
   await expect(page.locator('[data-shape-choice], [data-palette-choice], [data-filling-choice]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'QA' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Browse recipes' }).click();
+  await page.getByRole('button', { name: 'All squishies' }).click();
   await expect(page.locator('.collection-overlay')).toBeVisible();
   await expect(page.locator('.collection-card')).toHaveCount(24);
   await expect(page.locator('.recipe-thumb')).toHaveCount(24);
+  await expect(page.locator('.collection-reset-button')).toBeHidden();
+  const cubeCards = page.locator('.collection-group').first().locator('.collection-card');
+  await expect(cubeCards.nth(0)).toHaveAttribute('data-recipe-id', 'grape-smooth');
+  await expect(cubeCards.nth(1)).toHaveAttribute('data-recipe-id', 'strawberry-smooth');
+  await expect(cubeCards.nth(2)).toHaveAttribute('data-recipe-id', 'grape-beads');
 
   expect(fatalErrors).toEqual([]);
 });
@@ -131,7 +136,11 @@ for (const viewport of [
     await expect(page.locator('.lab-shell')).toHaveAttribute('data-stage', 'select');
     await expectInViewport(page, page.locator('.recipe-dock'));
     await expectInViewport(page, page.locator('.recipe-dock__actions'));
-    await expectInViewport(page, page.locator('.stage-copy'));
+    if (viewport.name === 'phone landscape') {
+      await expect(page.locator('.stage-copy')).toBeHidden();
+    } else {
+      await expectInViewport(page, page.locator('.stage-copy'));
+    }
     expect(fatalErrors).toEqual([]);
   });
 }
@@ -144,22 +153,22 @@ test('Yandex production build honors SDK lifecycle, RU locale, QA exclusion and 
 
   const shell = page.locator('.lab-shell');
   await expect(shell).toHaveAttribute('data-stage', 'select');
-  await expect(page.getByRole('button', { name: 'Рецепты' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Все сквиши' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'QA' })).toHaveCount(0);
   await expect.poll(async () => (await yandexState(page)).loadingReady).toBe(1);
   await expect.poll(async () => (await yandexState(page)).gameplayStart).toBeGreaterThanOrEqual(1);
 
   const startBeforeMenu = (await yandexState(page)).gameplayStart;
-  await page.getByRole('button', { name: 'Рецепты' }).click();
+  await page.getByRole('button', { name: 'Все сквиши' }).click();
   await expect(page.locator('.collection-card')).toHaveCount(24);
   await expect.poll(async () => (await yandexState(page)).gameplayStop).toBeGreaterThanOrEqual(1);
-  await page.getByRole('button', { name: 'Закрыть' }).click();
+  await page.getByRole('button', { name: 'Назад' }).click();
   await expect.poll(async () => (await yandexState(page)).gameplayStart).toBeGreaterThan(startBeforeMenu);
 
-  await page.getByRole('button', { name: 'Выключить звук' }).click();
+  await page.getByRole('button', { name: 'Звук выкл.' }).click();
   await expect.poll(async () => page.evaluate(() => localStorage.getItem('squishy.settings.v1'))).toContain('"muted":true');
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Включить звук' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Звук вкл.' })).toBeVisible();
   await expect.poll(async () => (await yandexState(page)).loadingReady).toBe(1);
 
   expect(fatalErrors).toEqual([]);
@@ -227,7 +236,13 @@ const finishMold = async (page: Page): Promise<void> => {
   const target = page.locator('.mold-target');
   for (let press = 0; press < 18; press += 1) {
     if ((await shell.getAttribute('data-stage')) !== 'mold') return;
-    await expect(target).toBeVisible();
+    await page.waitForFunction(() => {
+      const shellElement = document.querySelector('.lab-shell');
+      if (shellElement?.getAttribute('data-stage') !== 'mold') return true;
+      const targetElement = document.querySelector('.mold-target');
+      return targetElement instanceof HTMLButtonElement && !targetElement.hidden && !targetElement.disabled;
+    }, null, { timeout: 800 });
+    if ((await shell.getAttribute('data-stage')) !== 'mold') return;
     await target.dispatchEvent('pointerdown', {
       bubbles: true,
       pointerId: press + 1,
@@ -252,8 +267,10 @@ test('fresh save completes one real standard craft and persists collection progr
 
   const shell = page.locator('.lab-shell');
   await expect(shell).toHaveAttribute('data-stage', 'select');
-  await page.getByRole('button', { name: 'Make squishy' }).click();
+  await page.getByRole('button', { name: 'MAKE' }).click();
   await expect(shell).toHaveAttribute('data-stage', 'pour');
+  await expect(page.locator('.recipe-dock')).toBeHidden();
+  await expect(page.locator('.lab-topbar')).toHaveCSS('opacity', '0');
 
   await paintDefaultShape(page);
   await expect(shell).toHaveAttribute('data-stage', 'mix', { timeout: 4_000 });
@@ -263,16 +280,23 @@ test('fresh save completes one real standard craft and persists collection progr
   await finishMold(page);
   await expect(shell).toHaveAttribute('data-stage', 'test', { timeout: 5_000 });
 
-  await page.getByRole('button', { name: 'Collect' }).click();
+  await page.getByRole('button', { name: 'KEEP IT' }).click();
+  await expect(shell).toHaveAttribute('data-stage', 'collect');
+  await expect(page.locator('.progression-feedback')).toContainText('+100');
   await expect(shell).toHaveAttribute('data-stage', 'select', { timeout: 2_000 });
+  await expect(page.locator('.progression-feedback')).toBeHidden();
+  await expect(page.locator('.variant-preview')).toHaveText('Berry Heart');
+  await expect(page.getByRole('button', { name: 'MAKE' })).toBeVisible();
   await expect(page.locator('.made-count')).toContainText('1 / 24');
 
   await page.reload();
   await expect(page.locator('.made-count')).toContainText('1 / 24');
-  await page.getByRole('button', { name: 'Browse recipes' }).click();
+  await page.getByRole('button', { name: 'All squishies' }).click();
   await expect(page.locator('.collection-card--completed')).toHaveCount(1);
-  await expect(page.locator('.collection-card--completed').getByRole('button', { name: 'Make again' })).toBeVisible();
-  await expect(page.locator('.collection-card--completed').getByRole('button', { name: 'Squeeze' })).toBeVisible();
+  const completedActions = page.locator('.collection-card--completed .collection-card__actions button');
+  await expect(completedActions).toHaveCount(2);
+  await expect(completedActions.nth(0)).toHaveText('Squeeze');
+  await expect(completedActions.nth(1)).toHaveText('Again');
 
   expect(fatalErrors).toEqual([]);
 });
