@@ -8,7 +8,6 @@ import {
   MAX_APPEARANCE_STROKES,
   MAX_MIXIN_PLACEMENTS,
   createAppearanceStroke,
-  createEmptyAppearanceDocument,
   createMixInPlacement,
   drawAppearanceSegment,
   drawAppearanceStamp,
@@ -196,20 +195,19 @@ export class SandboxApp {
   private draft: SandboxDraft = createSandboxDraft();
   private savedSquishy: SavedSquishy | null;
   private paintTool: PaintTool = 'paint';
-  private paintColor = PAINT_COLORS[0];
-  private brushSize = BRUSH_SIZES[1];
+  private paintColor: number = PAINT_COLORS[0];
+  private brushSize: number = BRUSH_SIZES[1];
   private selectedMixIn: MixInId = 'glitter';
   private authoredPointerId: number | null = null;
   private authoredPoints: AppearancePoint[] = [];
   private authoredStrokeMode: AppearanceStrokeMode = 0;
-  private authoredStrokeColor = PAINT_COLORS[0];
+  private authoredStrokeColor: number = PAINT_COLORS[0];
   private lastMixinClientX = 0;
   private lastMixinClientY = 0;
   private mixPointerId: number | null = null;
   private mixLastX = 0;
   private mixLastY = 0;
   private mixDistance = 0;
-  private latestMetrics: SquishMetrics | null = null;
   private uploadFrame = 0;
   private muted = false;
   private activityBlocked = false;
@@ -766,7 +764,6 @@ export class SandboxApp {
   }
 
   private readonly handleMetrics = (metrics: SquishMetrics): void => {
-    this.latestMetrics = metrics;
     if (!this.shell || this.disposed) return;
     this.shell.dataset.sandboxSqueezes = String(metrics.squeezes);
     this.shell.dataset.fps = String(Math.round(metrics.fps));
