@@ -1,14 +1,17 @@
 import { installReleaseSession } from '../platform/releaseSession';
 import { createSquishyPlatformRuntime } from '../platform/runtime';
 import {
+  appendSavedSquishy,
   createDefaultSaveV3,
   createSaveV3Repository,
   createSavedSquishy,
+  deleteSavedSquishy,
   loadSaveV3WithMigration,
-  saveSingleS1Squishy,
+  replaceSavedSquishy,
 } from '../platform/saveV3';
 import { createDefaultSettings, createSettingsRepository } from '../platform/settings';
-import { SandboxApp, type SandboxLanguage } from '../sandbox/SandboxApp';
+import { SandboxLibraryApp } from '../sandbox/SandboxLibraryApp';
+import type { SandboxLanguage } from '../sandbox/SandboxApp';
 
 export interface SquishyAppHandle {
   dispose(): Promise<void>;
@@ -55,18 +58,34 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     (error) => reportError('settings-load', error),
   );
 
+  const persistSave = async (nextState: typeof saveState): Promise<void> => {
+    await saveRepository.write(nextState);
+    await saveRepository.flush();
+    saveState = nextState;
+  };
+
   const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
-  const app = new SandboxApp(root, {
+  const app = new SandboxLibraryApp(root, {
     language,
     muted: settingsState.muted,
-    savedSquishy: saveState.library[0] ?? null,
-    onSaveSquishy: async (draft) => {
+    initialLibrary: saveState.library,
+    libraryCapacity: saveState.libraryCapacity,
+    onAppendSquishy: async (draft) => {
       const savedSquishy = createSavedSquishy(draft);
-      const nextState = saveSingleS1Squishy(saveState, savedSquishy);
-      await saveRepository.write(nextState);
-      await saveRepository.flush();
-      saveState = nextState;
-      return savedSquishy;
+      const nextState = appendSavedSquishy(saveState, savedSquishy);
+      await persistSave(nextState);
+      return { savedSquishy, library: nextState.library };
+    },
+    onReplaceSquishy: async (targetId, draft) => {
+      const savedSquishy = createSavedSquishy(draft);
+      const nextState = replaceSavedSquishy(saveState, targetId, savedSquishy);
+      await persistSave(nextState);
+      return { savedSquishy, library: nextState.library };
+    },
+    onDeleteSquishy: async (targetId) => {
+      const nextState = deleteSavedSquishy(saveState, targetId);
+      await persistSave(nextState);
+      return nextState.library;
     },
     onMutedChange: (muted) => {
       settingsState = { version: 1, muted };
