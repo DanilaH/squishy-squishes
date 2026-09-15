@@ -732,7 +732,15 @@ for (const viewport of [
     await expectInViewport(page, page.locator('.sandbox-decor-tabs'));
     await expectInViewport(page, page.locator('[data-action="decor-continue"]'));
     await page.locator('[data-decor-section="accessory"]').click();
+    const accessoryPanel = page.locator('[data-decor-panel="accessory"]');
     await expectInViewport(page, page.locator('[data-decor-accessory="crown"]'));
+    if (viewport.name === 'short landscape') {
+      for (const internalId of ['cat-ears', 'bunny-ears', 'horns', 'bow', 'crown']) {
+        const option = accessoryPanel.locator(`[data-decor-accessory="${internalId}"]`);
+        await expect(option).toBeVisible();
+        await expect(option).not.toContainText(internalId);
+      }
+    }
   });
 }
 
