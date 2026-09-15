@@ -18,7 +18,7 @@ const writeWrapped = (name, encoded) => {
 
 for (const name of files) {
   const png = readBase64(name);
-  const maxWidth = name.startsWith('06-') ? 360 : name.startsWith('05-') ? 320 : 180;
+  const maxWidth = name.startsWith('06-') ? 150 : name.startsWith('05-') ? 140 : 90;
   const encoded = await page.evaluate(async ({ data, maxWidth }) => {
     const image = new Image();
     image.src = `data:image/png;base64,${data}`;
@@ -30,7 +30,7 @@ for (const name of files) {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Missing 2D context');
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', 0.25).split(',')[1];
+    return canvas.toDataURL('image/jpeg', 0.1).split(',')[1];
   }, { data: png, maxWidth });
   if (!encoded) throw new Error(`Failed to encode ${name}`);
   writeWrapped(name.replace(/\.png$/, '.b64'), encoded);
@@ -91,4 +91,4 @@ const responsiveContact = await makeContact([
 writeWrapped('contact-responsive.b64', responsiveContact);
 
 await browser.close();
-console.log(`Prepared ${files.length} thumbnails + 2 ultra-tiny S4 visual contact sheets.`);
+console.log(`Prepared ${files.length} readable tiny snapshots + 2 ultra-tiny contact sheets.`);
