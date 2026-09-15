@@ -1,0 +1,42 @@
+name: Sandbox S4 Temporary QA
+
+on:
+  push:
+    branches:
+      - sandbox-pivot-s4-ideas-titles
+    paths:
+      - '.github/workflows/sandbox-s4-qa.yml'
+      - 'tests/release/s4-ideas.spec.ts'
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: sandbox-pivot-s4-ideas-titles
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run full release QA
+        run: npm run qa:release
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sandbox-s4-qa-failure
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
