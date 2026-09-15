@@ -550,7 +550,7 @@ export class VerticalSliceApp {
       case 'collect':
         this.setStageCopy(
           this.options.copy.stage.collectedTitle,
-          this.collectFeedbackText || this.options.copy.stage.collectedHint,
+          this.options.copy.stage.collectedHint,
         );
         this.audio.playCollect(getPresentationTier(this.selected));
         this.transitionTimer = window.setTimeout(() => this.setStage('select'), 1300);
@@ -1072,6 +1072,12 @@ export class VerticalSliceApp {
     this.updateCollectionUi();
     this.presentCollectOutcome(outcome);
     this.setStage('collect');
+
+    const nextRecipe = getCollectionSnapshot(outcome.next.labXp, outcome.next.completedVariantIds).byShape
+      .flatMap((group) => group.recipes)
+      .filter((recipe) => recipe.state === 'available')
+      .sort((left, right) => left.requiredRank - right.requiredRank)[0];
+    if (nextRecipe) this.selected = nextRecipe.choice;
   }
 
   private formatCopy(template: string, values: Readonly<Record<string, string | number>>): string {
@@ -1232,15 +1238,13 @@ export class VerticalSliceApp {
       parts.push(this.formatCopy(this.options.copy.progress.rankUp, { rank: outcome.currentRank }));
     }
     if (outcome.newlyUnlockedIds.length > 0) {
-      const names = outcome.newlyUnlockedIds
-        .map((id) => {
-          const variant = getVariantSpec(id);
-          return getRecipeDisplayLabel(this.options.copy, id, variant?.label ?? id);
-        })
-        .join(' · ');
-      parts.push(this.formatCopy(this.options.copy.progress.newUnlocks, { names }));
+      parts.push(this.formatCopy(this.options.copy.progress.newUnlocks, {
+        names: outcome.newlyUnlockedIds.length,
+      }));
     }
-    if (outcome.milestone) parts.push(this.milestoneLabel(outcome.milestone));
+    if (outcome.milestone && outcome.milestone !== 'first-squishy') {
+      parts.push(this.milestoneLabel(outcome.milestone));
+    }
 
     this.collectFeedbackText = parts.join(' · ');
     this.progressionFeedback.textContent = this.collectFeedbackText;
