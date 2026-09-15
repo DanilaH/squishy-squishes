@@ -72,31 +72,41 @@ test('capture Sandbox S5 rewarded shelf visual states', async ({ browser }) => {
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const phonePage = await phone.newPage();
   await seed(phonePage, fullSave());
+  const phoneOffer = phonePage.locator('[data-library-reward-offer]');
   await expect(phonePage.locator('[data-library-expand-reward]')).toBeVisible();
-  await phonePage.screenshot({ path: `${OUTPUT}/01-phone-full-offer.png`, fullPage: true });
+  await phoneOffer.scrollIntoViewIfNeeded();
+  await phonePage.screenshot({ path: `${OUTPUT}/01-phone-full-offer.png` });
   await phonePage.locator('[data-library-expand-reward]').click();
   await expect(phonePage.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '10');
-  await phonePage.screenshot({ path: `${OUTPUT}/02-phone-expanded.png`, fullPage: true });
+  const rewardMessage = phonePage.locator('[data-library-reward-message]');
+  await expect(rewardMessage).toBeVisible();
+  await rewardMessage.scrollIntoViewIfNeeded();
+  await phonePage.screenshot({ path: `${OUTPUT}/02-phone-expanded.png` });
   await phone.close();
 
   const landscape = await browser.newContext({ viewport: { width: 844, height: 390 } });
   const landscapePage = await landscape.newPage();
   await seed(landscapePage, fullSave());
+  const landscapeOffer = landscapePage.locator('[data-library-reward-offer]');
   await expect(landscapePage.locator('[data-library-expand-reward]')).toBeVisible();
-  await landscapePage.screenshot({ path: `${OUTPUT}/03-landscape-full-offer.png`, fullPage: true });
+  await landscapeOffer.scrollIntoViewIfNeeded();
+  await landscapePage.screenshot({ path: `${OUTPUT}/03-landscape-full-offer.png` });
   await landscape.close();
 
   const desktop = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const desktopPage = await desktop.newPage();
   await seed(desktopPage, fullSave());
-  await desktopPage.screenshot({ path: `${OUTPUT}/04-desktop-full-offer.png`, fullPage: true });
+  await expect(desktopPage.locator('[data-library-reward-offer]')).toBeVisible();
+  await desktopPage.screenshot({ path: `${OUTPUT}/04-desktop-full-offer.png` });
   await desktop.close();
 
   const ru = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await installRuYandex(ru);
   const ruPage = await ru.newPage();
   await seed(ruPage, fullSave(), YANDEX_URL);
+  const ruOffer = ruPage.locator('[data-library-reward-offer]');
   await expect(ruPage.locator('[data-library-expand-reward]')).toContainText('РЕКЛАМА');
-  await ruPage.screenshot({ path: `${OUTPUT}/05-phone-ru-full-offer.png`, fullPage: true });
+  await ruOffer.scrollIntoViewIfNeeded();
+  await ruPage.screenshot({ path: `${OUTPUT}/05-phone-ru-full-offer.png` });
   await ru.close();
 });
