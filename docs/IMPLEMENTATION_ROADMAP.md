@@ -1,12 +1,12 @@
 # Squishy Squishes — Implementation Roadmap
 
-**Status:** REAL-DEVICE PRODUCT ACCEPTANCE
-**Current gate:** hands-on phone feel / visual / audio / performance review
+**Status:** UI/UX OVERHAUL 02 ENGINEERING COMPLETE / REAL-DEVICE PRODUCT ACCEPTANCE
+**Current gate:** merge/deploy the validated toy-first shell, then perform hands-on phone feel / visual / audio / performance review
 **Catalog target:** 6 production shapes / 24 canonical recipes — ENGINEERING COMPLETE
 
-RC01 established release infrastructure, then UI/UX Pass 01, Feel / Art / Audio Pass 01 and Release QA 01 closed the remaining broad engineering passes. The project is now at a deliberately manual product gate: automation can prove production integration, but it cannot prove tactile quality, visual taste, audio fatigue or real-phone performance.
+The repository now has a stable tactile core, reproducible Pages/Yandex release pipeline, permanent production-browser QA and a screenshot-reviewed toy-first product shell. Automation has reached the point where the remaining high-value evidence must come from an actual phone: thumb comfort, tactile feel, aesthetic taste, audio fatigue and device performance.
 
-Do not interpret this gate as permission to add more catalog or systems. Any issue found now should become a bounded evidence-driven release patch.
+Do not interpret this gate as permission to add more catalog or systems. Any issue found now should become a bounded evidence-driven product patch.
 
 ---
 
@@ -115,7 +115,7 @@ Canonical docs: `REPRESENTATIVE_CONTENT_01*.md`.
 
 Added Mochi + Peach Puff, two reusable palettes and four curated recipes without renderer/physics/audio/save changes.
 
-### 7B — Mushroom + Paw — ENGINEERING COMPLETE / MANUAL QA PENDING
+### 7B — Mushroom + Paw — ENGINEERING COMPLETE / REAL-DEVICE ACCEPTANCE PENDING
 
 Added Mushroom + Paw and four curated recipes with zero new palettes/materials/fillings and no renderer/shader/physics/audio/save changes.
 
@@ -124,7 +124,7 @@ Result:
 - **6 production shapes**;
 - **24 canonical recipes**.
 
-Manual phone inspection of Mushroom/Paw was previously deferred. It is now part of the current real-device product gate.
+Manual phone inspection of Mushroom/Paw is part of the current real-device product gate.
 
 **Catalog freeze:** do not automatically add Blob Creature, more recipes, new finishes or new gameplay systems before release evidence.
 
@@ -136,7 +136,6 @@ Canonical docs: `CATALOG_PRODUCTION_7A*.md`, `CATALOG_PRODUCTION_7B*.md`.
 
 RC01 established a reproducible shipping foundation:
 
-- release presentation layer around the existing craft surface;
 - Yandex runtime lifecycle integration;
 - compact analytics seam with optional Metrica transport;
 - conservative post-loop interstitial policy;
@@ -152,143 +151,193 @@ Canonical docs: `RELEASE_CANDIDATE_01*.md`.
 
 ---
 
-## UI/UX Pass 01 — Recipe-first shell — ENGINEERING COMPLETE / MANUAL QA PENDING
+## UI/UX Pass 01 — Recipe-first shell — SUPERSEDED BY OVERHAUL 02
 
-Delivered:
+This pass removed the old Shape / Color / Texture builder and proved that the 24 canonical recipes could be browsed from the existing Collection surface without creating a second catalog.
 
-- legacy Shape / Color / Texture builder removed from the player-facing select surface;
-- selected canonical recipe + metadata shown directly in the lab;
-- one Recipes/Browse control opens the existing Collection surface;
-- Collection promoted into the primary canonical recipe browser;
-- all 24 recipes represented from the existing progression snapshot;
-- completed recipes expose both `Make again` and `Squeeze`;
-- generic card thumbnails derive from canonical `ShapeDefinition.boundary` geometry;
-- material/filling thumbnail cues remain generic/reusable;
-- available / completed / locked hierarchy strengthened;
-- RU/EN copy updated;
-- no content/progression/save/renderer/audio/tactile changes.
+Its information architecture and dark lab presentation were later judged insufficient for the target product/audience. Preserve its useful architectural decisions — canonical recipe browser, shared geometry thumbnails, completed revisit path — but treat Overhaul 02 as the current player-facing design.
 
-Validation and permanent release checks passed, and the pass is deployed on main Pages.
-
-Canonical docs:
-
-- `UI_UX_PASS_01.md`;
-- `UI_UX_PASS_01_REVIEW.md`;
-- `UI_UX_PASS_01_IMPLEMENTATION_REVIEW.md`.
-
-Manual phone visual acceptance remains part of the current gate.
+Canonical docs: `UI_UX_PASS_01*.md`.
 
 ---
 
-## Feel / Art / Audio Pass 01 — ENGINEERING COMPLETE / MANUAL QA PENDING
+## Feel / Art / Audio Pass 01 — ENGINEERING COMPLETE / REAL-DEVICE ACCEPTANCE PENDING
 
 Delivered a bounded cosmetic reward hierarchy without changing gameplay semantics:
 
 - reusable `standard | special | showcase` presentation tiers derived only from existing material/filling choices;
 - reveal anticipation/environment/halo/result settle choreography;
-- clearer Collect ownership choreography;
 - tier-sensitive reveal/collect WebAudio contours;
 - showcase results gain richness through layering rather than simply higher volume;
 - deterministic stage-complete tone variation to reduce repetition fatigue;
-- prototype copy residue removed;
 - shader, renderer, spring physics, tactile squeeze, catalog, progression and save unchanged.
 
-Validation, PR Release Check, main Release Check and Pages deployment all passed.
+The toy-first shell now composes around these reward mechanics. Audio fatigue and material taste remain part of real-device acceptance.
 
-Canonical docs:
-
-- `FEEL_ART_AUDIO_PASS_01.md`;
-- `FEEL_ART_AUDIO_PASS_01_REVIEW.md`;
-- `FEEL_ART_AUDIO_PASS_01_IMPLEMENTATION_REVIEW.md`.
-
-Visual taste and audio fatigue are intentionally still subject to the current hands-on gate.
+Canonical docs: `FEEL_ART_AUDIO_PASS_01*.md`.
 
 ---
 
 ## Release QA 01 — ENGINEERING COMPLETE
 
-Release QA 01 converts high-value integration checks into a permanent real-browser production gate.
+Release QA established permanent real-browser production validation against actual `dist` and `dist-yandex` artifacts.
 
-### Permanent browser coverage
+Core coverage includes:
 
-Against the actual built artifacts:
+- Pages and Yandex production boot;
+- phone portrait, phone landscape and short-desktop containment;
+- Yandex RU locale and QA exclusion;
+- LoadingAPI / GameplayAPI lifecycle;
+- settings persistence;
+- one complete fresh-save craft through real pointer-driven paint, WebGL Mix, mold, reveal and Collect;
+- collection persistence after reload.
 
-- Pages production boot;
-- recipe-first UI and exactly 24 canonical recipe cards;
-- Pages-only QA availability;
-- phone portrait, phone landscape and short-desktop viewport containment;
-- Yandex RU locale;
-- Yandex QA exclusion;
-- `LoadingAPI.ready()` contract;
-- `GameplayAPI.start/stop` around Recipe Book state;
-- settings persistence after reload;
-- one complete fresh-save standard craft through real pointer-driven paint, WebGL Mix, mold, reveal and Collect;
-- collection persistence after reload;
-- completed-recipe `Make again` + `Squeeze` actions.
+No hidden stage-completion API, save seeding, private app-state mutation, gameplay threshold reduction or test-only production path was introduced.
 
-Validation run `34878254553` passed the normal release build/verifier path and **6/6 Chromium tests**.
+`Release Browser QA` remains a permanent CI workflow on PRs to `main` and pushes to `main`, separate from the faster `Release Check` packaging workflow.
 
-The full-craft smoke uses production event handlers and real browser pointer input. No hidden stage-completion API, save seeding, private app-state mutation, gameplay threshold reduction or test-only production path was introduced.
+Canonical docs: `RELEASE_QA_01*.md`.
 
-`Release Browser QA` is a permanent CI workflow on PRs to `main` and pushes to `main`, separate from the faster `Release Check` packaging workflow.
+---
+
+## UI/UX Overhaul 02 — TOY-FIRST PRODUCT SHELL — ENGINEERING COMPLETE
+
+Overhaul 02 was triggered by competitor/audience research and direct visual evidence that the previous interface still behaved like a polished utility/dashboard rather than a kids-oriented tactile toy.
+
+### Product model
+
+Working audience hypothesis: approximately ages **6–12**, touch-first and low-reading-dependency, while remaining visually acceptable to teens/adults arriving through Yandex recommendations.
+
+New player-facing loop:
+
+`desired squishy → one clear action → tactile craft → big reveal → squeeze → ownership → next desired squishy`
+
+Principles:
+
+- object before chrome;
+- gesture before explanation;
+- one important action at a time;
+- visual progress before exact numeric progress;
+- large touch targets;
+- reward gets screen time;
+- locked content creates desire rather than looking dead;
+- no toddler aesthetic or generic rainbow overload.
+
+### Delivered shell
+
+- light soft-toy workshop/playroom replaces the dark lab as the player-facing visual language;
+- WebGL squishy is the dominant visual object;
+- Choose reduces to localized toy identity, `MAKE / СДЕЛАТЬ`, `All squishies / Все сквиши`, compact star progress and sound;
+- exact XP and technical material/filling metadata leave the primary hierarchy;
+- all 24 recipes keep their canonical IDs but receive short RU/EN presentation names;
+- Collection becomes a toy shelf, reusing the existing canonical collection snapshot rather than creating a second catalog;
+- cards sort by existing required rank for an understandable coming-next sequence;
+- locked toys stay visible with secondary lock/star metadata;
+- player-facing destructive progress reset is removed from the shelf and remains available through Pages QA;
+- completed toys prioritise tactile `Squeeze / Жмякать`, with replay secondary;
+- active craft removes progression/navigation chrome and uses short verbs plus presentation-only gesture cues;
+- result remains focused on the finished toy and one ownership action;
+- Collect is a perceived ownership beat with a compact reward chip rather than an XP receipt;
+- reward feedback is scoped to Collect and cannot overlap the next Choose CTA;
+- after ownership, the next currently available uncollected recipe becomes the hero automatically using the existing progression snapshot.
+
+### Screenshot-driven review
+
+Repeated production Chromium captures at **390×844**, **844×390** and **1280×720** were used as an explicit visual gate. The review caught and corrected landscape overlap, hidden-surface CSS regression, technical naming leakage, weak paint silhouette, maintenance UI in the shelf, incorrect locked ordering, oversized Collect receipt behavior and reward feedback leaking into the next CTA.
+
+Final visual evidence accepts:
+
+`Choose → Shelf → Craft → Result → Ownership → Next toy`.
 
 Canonical docs:
 
-- `RELEASE_QA_01.md`;
-- `RELEASE_QA_01_REVIEW.md`;
-- `RELEASE_QA_01_IMPLEMENTATION_REVIEW.md`.
+- `UI_UX_OVERHAUL_02.md`;
+- `UI_UX_OVERHAUL_02_RESEARCH.md`;
+- `UI_UX_OVERHAUL_02_REVIEW.md`;
+- `UI_UX_OVERHAUL_02_VISUAL_REVIEW_01..04.md`;
+- `UI_UX_OVERHAUL_02_IMPLEMENTATION_REVIEW.md`.
+
+### Permanent QA contract after Overhaul 02
+
+The production Browser QA now protects product invariants as well as integration:
+
+- toy-first Choose + 24-card shelf;
+- player-facing reset hidden;
+- shelf ordering follows required rank;
+- active craft hides recipe/navigation chrome;
+- Yandex lifecycle/locale/settings remain correct;
+- real full craft still uses production pointer handlers;
+- ownership reward exists only during Collect;
+- first completion advances the hero to the next available uncollected toy;
+- completed-card action priority is `Squeeze`, then `Again`;
+- collection persistence survives reload.
+
+Branch validation run **34942213823** passed strict TypeScript, Pages build, Yandex build/verifier and **6/6 Chromium tests**.
+
+### Explicitly not added
+
+- no faces/decal system yet;
+- no new recipes/shapes;
+- no currency/shop/orders;
+- no mystery-box RNG;
+- no new craft minigame;
+- no renderer/physics rewrite;
+- no save migration;
+- no shared-kit upgrade.
+
+Faces/decor may be tested later only if real-device/post-launch evidence says stronger character identity is needed after the shell itself is accepted.
 
 ---
 
 ## Real-device product acceptance — CURRENT HARD GATE
 
-Automation is complete enough. The next evidence must come from an actual phone.
+Automation and desktop visual review are complete enough. The next evidence must come from an actual phone running the deployed Overhaul 02 Pages build.
 
-Use the Pages build and the Pages-only QA panel:
-
-`QA → Rank 8 → Снять все → Рецепты`
+Use the Pages-only QA panel for fast representative seeding. The player-facing shelf itself must remain free of reset/debug controls.
 
 Representative acceptance matrix:
 
 1. **Phone portrait + landscape shell**
-   - Recipe Book and recipe dock feel comfortable;
-   - no meaningful clipping/overlap;
+   - hero, toy name and primary CTA feel obvious without reading instructions;
+   - `Все сквиши` shelf is comfortable to browse and cards feel tappable;
    - controls remain easy to reach;
-   - no accidental browser scrolling/selection during craft.
+   - no meaningful clipping/overlap or accidental browser scrolling.
 
-2. **Mushroom full Make**
+2. **Fresh first craft / repeat desire**
+   - short action verbs and gesture cues teach the loop adequately;
+   - Result feels rewarding;
+   - `ТВОЙ!` ownership beat is perceptible but not slow;
+   - next uncollected toy appearing after Collect creates a clear reason to continue.
+
+3. **Mushroom full Make**
    - silhouette reads immediately;
    - paint/mix/mold work naturally on the shape;
    - result does not look like a broken generic mask.
 
-3. **Paw full Make**
+4. **Paw full Make**
    - toes/palm remain readable during deformation;
    - interaction does not expose awkward boundary artifacts.
 
-4. **Representative Jelly recipe**
+5. **Representative Jelly recipe**
    - material remains dense/readable rather than washed out;
    - reveal tier feels meaningfully richer than standard without visual noise.
 
-5. **Representative Holo + Pearl recipe**
-   - showcase reveal/settle/collect feels premium;
+6. **Representative Holo + Pearl recipe**
+   - showcase reveal/settle/ownership feels premium;
    - holo remains broad/stable rather than flickery rainbow noise;
    - pearls stay readable through deformation.
 
-6. **Three to five consecutive crafts with sound enabled**
+7. **Three to five consecutive crafts with sound enabled**
    - stage-complete sounds do not become irritating;
    - reveal/collect hierarchy is noticeable but not obnoxious;
    - tactile audio remains pleasant under repetition.
 
-7. **Real-phone performance / thermal feel**
+8. **Real-phone performance / thermal feel**
    - no obvious frame collapse during Mix or showcase reveal;
    - no escalating stutter after several loops;
    - no concerning thermal/battery behavior during a short session.
 
-8. **Pages QA panel usability**
-   - rank/completion controls work comfortably on phone;
-   - progress manipulation does not corrupt normal craft/reload behavior.
-
-**Exit condition:** owner hands-on acceptance or a concrete defect list that can be converted into bounded release patches.
+**Exit condition:** owner hands-on acceptance or a concrete defect list converted into bounded product patches.
 
 Do not mark this section complete from desktop automation.
 
@@ -315,8 +364,10 @@ Observe:
 
 - activation and craft completion;
 - first-completion vs repeat behavior;
+- shelf opens / recipe selections;
+- second-craft start rate after ownership;
 - recipe/shape engagement;
-- recipe browser opens/revisits/recrafts;
+- completed-toy squeeze revisits;
 - result squeeze behavior;
 - interstitial request/show behavior;
 - retention signals available from the platform.

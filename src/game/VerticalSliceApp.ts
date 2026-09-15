@@ -18,6 +18,7 @@ import {
   type CollectionMilestone,
   type CompletionOutcome,
 } from './progression';
+import { getRecipeDisplayLabel, getShapeDisplayLabel } from './catalogPresentation';
 import { SquishyAudio } from './SquishyAudio';
 import { getPresentationTier } from './presentation';
 import {
@@ -423,7 +424,7 @@ export class VerticalSliceApp {
     const unlocked = selectedSpec ? isVariantUnlocked(selectedId, this.labXp) : false;
     if (selectedSpec) {
       const requiredRank = getRequiredRank(selectedId);
-      this.variantPreview.textContent = selectedSpec.label;
+      this.variantPreview.textContent = getRecipeDisplayLabel(this.options.copy, selectedSpec.id, selectedSpec.label);
       this.variantMeta.textContent = unlocked
         ? `${palette.label} · ${material.label} · ${filling.label}`
         : this.options.copy.progress.lockedAtRank.replace('{rank}', String(requiredRank));
@@ -457,6 +458,11 @@ export class VerticalSliceApp {
   private setStage(next: CraftStage): void {
     this.clearTransitionTimer();
     this.clearMoldTargetTimer();
+    if (next !== 'collect' && this.feedbackTimer !== null) {
+      window.clearTimeout(this.feedbackTimer);
+      this.feedbackTimer = null;
+      this.progressionFeedback.hidden = true;
+    }
     this.audio.stopPour();
     this.stage = next;
     this.collectionButton.disabled = next !== 'select' || this.activityBlocked;
@@ -533,7 +539,11 @@ export class VerticalSliceApp {
         const isNew = !this.revisitMode && !this.discovered.has(variantId(this.selected));
         this.renderer.setMoldProgress(0);
         this.setStageCopy(
-          getVariantSpec(variantId(this.selected))?.label ?? variantLabel(this.selected),
+          getRecipeDisplayLabel(
+            this.options.copy,
+            variantId(this.selected),
+            getVariantSpec(variantId(this.selected))?.label ?? variantLabel(this.selected),
+          ),
           this.revisitMode ? this.options.copy.stage.revisitHint : this.options.copy.stage.testHint,
         );
         this.collectButton.textContent = this.revisitMode ? this.options.copy.actions.backToLab : this.options.copy.actions.collect;
@@ -545,10 +555,10 @@ export class VerticalSliceApp {
       case 'collect':
         this.setStageCopy(
           this.options.copy.stage.collectedTitle,
-          this.collectFeedbackText || this.options.copy.stage.collectedHint,
+          this.options.copy.stage.collectedHint,
         );
         this.audio.playCollect(getPresentationTier(this.selected));
-        this.transitionTimer = window.setTimeout(() => this.setStage('select'), 520);
+        this.transitionTimer = window.setTimeout(() => this.setStage('select'), 1300);
         break;
     }
   }
@@ -736,11 +746,13 @@ export class VerticalSliceApp {
     context.clearRect(0, 0, PAINT_CANVAS_SIZE, PAINT_CANVAS_SIZE);
     const palette = getPalette(this.selected.palette);
     context.save();
-    context.fillStyle = 'rgba(255, 255, 255, 0.045)';
+    context.globalAlpha = 0.1;
+    context.fillStyle = palette.accentCss;
     context.fill(this.paintShapePath);
-    context.lineWidth = 2;
-    context.strokeStyle = palette.accentSoftCss;
-    context.shadowBlur = 12;
+    context.globalAlpha = 0.34;
+    context.lineWidth = 2.4;
+    context.strokeStyle = palette.accentCss;
+    context.shadowBlur = 14;
     context.shadowColor = palette.accentSoftCss;
     context.stroke(this.paintShapePath);
     context.restore();
@@ -1065,6 +1077,12 @@ export class VerticalSliceApp {
     this.updateCollectionUi();
     this.presentCollectOutcome(outcome);
     this.setStage('collect');
+
+    const nextRecipe = getCollectionSnapshot(outcome.next.labXp, outcome.next.completedVariantIds).byShape
+      .flatMap((group) => group.recipes)
+      .filter((recipe) => recipe.state === 'available')
+      .sort((left, right) => left.requiredRank - right.requiredRank)[0];
+    if (nextRecipe) this.selected = nextRecipe.choice;
   }
 
   private formatCopy(template: string, values: Readonly<Record<string, string | number>>): string {
@@ -1113,7 +1131,9 @@ export class VerticalSliceApp {
   private updateCollectionUi(): void {
     const snapshot = getCollectionSnapshot(this.labXp, [...this.discovered]);
     this.collectionGroups.innerHTML = snapshot.byShape.map((group) => {
-      const cards = group.recipes.map((recipe) => {
+      const cards = [...group.recipes]
+        .sort((left, right) => left.requiredRank - right.requiredRank)
+        .map((recipe) => {
         const palette = getPalette(recipe.choice.palette);
         const material = getMaterial(recipe.choice.material);
         const filling = getFilling(recipe.choice.filling);
@@ -1122,27 +1142,24 @@ export class VerticalSliceApp {
           : recipe.state === 'available'
             ? this.options.copy.collection.available
             : this.options.copy.collection.locked;
-        const makeLabel = recipe.state === 'completed'
-          ? this.options.copy.collection.makeAgain
-          : this.options.copy.collection.make;
-        const makeButton = `<button class="collection-card__action" type="button" data-make-id="${recipe.id}">${makeLabel}</button>`;
+        const displayLabel = getRecipeDisplayLabel(this.options.copy, recipe.id, recipe.label);
         const action = recipe.state === 'locked'
           ? `<span class="collection-card__rank">${this.formatCopy(this.options.copy.collection.requiredRank, { rank: recipe.requiredRank })}</span>`
           : recipe.state === 'completed'
-            ? `<div class="collection-card__actions">${makeButton}<button class="collection-card__action collection-card__action--secondary" type="button" data-revisit-id="${recipe.id}">${this.options.copy.collection.squeeze}</button></div>`
-            : `<div class="collection-card__actions">${makeButton}</div>`;
+            ? `<div class="collection-card__actions"><button class="collection-card__action" type="button" data-revisit-id="${recipe.id}">${this.options.copy.collection.squeeze}</button><button class="collection-card__action collection-card__action--secondary" type="button" data-make-id="${recipe.id}">${this.options.copy.collection.makeAgain}</button></div>`
+            : `<div class="collection-card__actions"><button class="collection-card__action" type="button" data-make-id="${recipe.id}">${this.options.copy.collection.make}</button></div>`;
         return `<article class="collection-card collection-card--${recipe.state}" data-recipe-id="${recipe.id}" style="--card-accent: ${palette.accentCss}; --card-accent-soft: ${palette.accentSoftCss}">
           ${this.renderRecipeThumbnail(recipe.id, recipe.choice)}
           <div class="collection-card__body">
-            <strong>${recipe.label}</strong>
+            <strong>${displayLabel}</strong>
             <span>${status}</span>
             <span class="collection-card__meta">${material.label} · ${filling.label}</span>
           </div>
           ${action}
         </article>`;
-      }).join('');
+        }).join('');
       return `<section class="collection-group">
-        <header><strong>${group.shapeLabel}</strong><span>${group.completed} / ${group.total}</span></header>
+        <header><strong>${getShapeDisplayLabel(this.options.copy, group.shapeId, group.shapeLabel)}</strong><span>${group.completed} / ${group.total}</span></header>
         <div class="collection-grid">${cards}</div>
       </section>`;
     }).join('');
@@ -1226,12 +1243,13 @@ export class VerticalSliceApp {
       parts.push(this.formatCopy(this.options.copy.progress.rankUp, { rank: outcome.currentRank }));
     }
     if (outcome.newlyUnlockedIds.length > 0) {
-      const names = outcome.newlyUnlockedIds
-        .map((id) => getVariantSpec(id)?.label ?? id)
-        .join(' · ');
-      parts.push(this.formatCopy(this.options.copy.progress.newUnlocks, { names }));
+      parts.push(this.formatCopy(this.options.copy.progress.newUnlocks, {
+        names: outcome.newlyUnlockedIds.length,
+      }));
     }
-    if (outcome.milestone) parts.push(this.milestoneLabel(outcome.milestone));
+    if (outcome.milestone && outcome.milestone !== 'first-squishy') {
+      parts.push(this.milestoneLabel(outcome.milestone));
+    }
 
     this.collectFeedbackText = parts.join(' · ');
     this.progressionFeedback.textContent = this.collectFeedbackText;
