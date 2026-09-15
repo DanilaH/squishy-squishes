@@ -1,0 +1,59 @@
+name: Sandbox S4 Final Cleanup
+
+on:
+  push:
+    branches:
+      - sandbox-pivot-s4-ideas-titles
+    paths:
+      - '.github/workflows/sandbox-s4-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: sandbox-pivot-s4-ideas-titles
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Remove temporary S4 scaffolding and evidence
+        run: |
+          git rm -r --ignore-unmatch \
+            .github/workflows/sandbox-s4-cleanup.yml \
+            .github/workflows/sandbox-s4-guide-polish.yml \
+            .github/workflows/sandbox-s4-polish.yml \
+            .github/workflows/sandbox-s4-qa.yml \
+            .github/workflows/sandbox-s4-review.yml \
+            .github/workflows/sandbox-s4-visual.yml \
+            .github/workflows/sandbox-s4.yml \
+            artifacts/s4-visual \
+            scripts/apply-sandbox-s4-guide-polish.mjs \
+            scripts/apply-sandbox-s4-visual-polish.mjs \
+            scripts/apply-sandbox-s4.mjs \
+            scripts/build-s4-visual-review.mjs \
+            scripts/fix-sandbox-s4-exact-optional.mjs \
+            scripts/fix-sandbox-s4-test-locators.mjs \
+            tests/release/s4-visual.spec.ts
+      - name: Check cleanup diff
+        run: git diff --check
+      - name: Install dependencies
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Validate clean release tree
+        run: npm run qa:release
+      - name: Commit validated cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Clean Sandbox S4 implementation branch"
+          git push
