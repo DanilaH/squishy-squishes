@@ -20,7 +20,7 @@ replaceOnce(
   "test('Pages production build boots into the toy-first choose screen and shelf', async ({ page }) => {",
   'Pages test name',
 );
-replaceExpected("name: 'Browse recipes'", "name: 'All squishies'", 2, 'EN shelf actions');
+replaceExpected("name: 'Browse recipes'", "name: 'All squishies'", 3, 'EN shelf actions');
 replaceExpected("name: 'Рецепты'", "name: 'Все сквиши'", 2, 'RU shelf actions');
 replaceOnce("name: 'Закрыть'", "name: 'Назад'", 'RU shelf close');
 replaceOnce("name: 'Выключить звук'", "name: 'Звук выкл.'", 'RU mute');
