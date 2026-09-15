@@ -1,0 +1,74 @@
+/* Player-feedback polish layered after the sandbox source styles. */
+
+/* Decor has the tallest control stack. Keep the toy visibly separated from the tabs
+   instead of letting the workbench and controls visually occupy the same space. */
+.sandbox-shell[data-stage="decor"] .sandbox-stage {
+  padding-bottom: 18px;
+}
+
+.sandbox-shell[data-stage="decor"] .sandbox-canvas {
+  width: min(76vw, 390px);
+  height: min(76vw, 390px);
+}
+
+/* Give Jelly a saturated gel cue in the selector too; the old pale orb reinforced the
+   same washed-out impression that the shader had. */
+.sandbox-material__orb--jelly {
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255,255,255,.92) 0 8%, transparent 18%),
+    radial-gradient(circle at 58% 64%, rgba(75,205,207,.34), transparent 48%),
+    linear-gradient(145deg, rgba(191,255,248,.82), rgba(72,199,205,.68));
+  border: 1px solid rgba(55, 174, 184, .18);
+  box-shadow:
+    inset -7px -8px 13px rgba(24, 119, 132, .24),
+    inset 6px 6px 10px rgba(255,255,255,.68),
+    0 2px 7px rgba(54, 166, 174, .12);
+}
+
+/* Desktop browser chrome often leaves 700–900px of usable height. The original 430px
+   decor canvas was too ambitious there and touched/covered the Face-Stickers-Head row. */
+@media (min-width: 700px) and (max-height: 900px) {
+  .sandbox-shell[data-stage="decor"] .sandbox-canvas {
+    width: min(43vh, 360px);
+    height: min(43vh, 360px);
+  }
+
+  .sandbox-shell[data-stage="decor"] .sandbox-glow {
+    width: min(50vh, 410px);
+  }
+}
+
+@media (min-width: 700px) and (max-height: 780px) {
+  .sandbox-shell[data-stage="decor"] .sandbox-copy {
+    min-height: 58px;
+  }
+
+  .sandbox-shell[data-stage="decor"] .sandbox-copy h1 {
+    font-size: 28px;
+  }
+
+  .sandbox-shell[data-stage="decor"] .sandbox-copy p {
+    margin-top: 4px;
+  }
+
+  .sandbox-shell[data-stage="decor"] .sandbox-stage {
+    padding-bottom: 14px;
+  }
+
+  .sandbox-shell[data-stage="decor"] .sandbox-canvas {
+    width: min(40vh, 315px);
+    height: min(40vh, 315px);
+  }
+}
+
+/* Preserve the existing dedicated short-landscape two-column layout. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .sandbox-shell[data-stage="decor"] .sandbox-stage {
+    padding-bottom: 0;
+  }
+
+  .sandbox-shell[data-stage="decor"] .sandbox-canvas {
+    width: min(64vh, 280px);
+    height: min(64vh, 280px);
+  }
+}
