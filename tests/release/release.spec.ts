@@ -160,6 +160,10 @@ test('Pages production build boots into Sandbox S1 with all six shapes open', as
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await expect(page.locator('.sandbox-shape')).toHaveCount(6);
   await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);
+  for (const shapeId of ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw']) {
+    await page.locator(`[data-shape="${shapeId}"]`).click();
+    await expect(shell).toHaveAttribute('data-shape', shapeId);
+  }
   await expect(page.locator('.lab-shell')).toHaveCount(0);
   await expect(page.locator('.mold-target')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'CONTINUE' })).toBeVisible();
@@ -264,7 +268,7 @@ test('real Sandbox S1 craft persists authored Paw + paint + hearts + Holo, reloa
   let cx = box.x + box.width * 0.5;
   let cy = box.y + box.height * 0.5;
   await drawSandboxStroke(page, [[cx - 22, cy - 12], [cx, cy], [cx + 24, cy + 12]]);
-  await page.locator('[data-paint-color="6547162"]').click();
+  await page.locator('.sandbox-swatch').nth(1).click();
   await drawSandboxStroke(page, [[cx - 8, cy - 30], [cx, cy], [cx + 8, cy + 30]]);
   await expect(shell).toHaveAttribute('data-paint-strokes', '2');
   expect(Number(await shell.getAttribute('data-appearance-bytes'))).toBeLessThanOrEqual(6_000);
