@@ -1,0 +1,189 @@
+name: Sandbox S0 Finalize Apply
+
+on:
+  push:
+    branches:
+      - sandbox-pivot-s0-appearance-probe
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: startsWith(github.event.head_commit.message, 'Finalize S0 permanent QA')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: sandbox-pivot-s0-appearance-probe
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Add permanent S0 regression contract
+        run: |
+          if grep -q "Pages appearance probe persists custom paint" tests/release/release.spec.ts; then
+            echo "Permanent S0 test already present" >&2
+            exit 1
+          fi
+          cat >> tests/release/release.spec.ts <<'TEST'
+
+          test('Pages appearance probe persists custom paint and keeps it on the real squeeze surface', async ({ page }) => {
+            const fatalErrors = watchFatalBrowserErrors(page);
+            await page.setViewportSize({ width: 390, height: 844 });
+            await page.goto(`${PAGES_URL}?appearanceProbe=1`);
+            await page.evaluate(() => {
+              localStorage.clear();
+              sessionStorage.clear();
+            });
+            await page.reload();
+
+            const shell = page.locator('[data-appearance-probe]');
+            const canvas = page.locator('[data-probe-canvas]');
+            await expect(shell).toBeVisible();
+            await expect(shell).toHaveAttribute('data-probe-loaded', 'true');
+            const box = await canvas.boundingBox();
+            expect(box).not.toBeNull();
+            if (!box) return;
+            const cx = box.x + box.width / 2;
+            const cy = box.y + box.height / 2;
+
+            const drawStroke = async (points: readonly [number, number][]): Promise<void> => {
+              const first = points[0];
+              if (!first) throw new Error('appearance probe stroke needs points');
+              await page.mouse.move(first[0], first[1]);
+              await page.mouse.down();
+              for (const [x, y] of points.slice(1)) await page.mouse.move(x, y, { steps: 3 });
+              await page.mouse.up();
+            };
+
+            await drawStroke([[cx - 56, cy - 18], [cx - 12, cy - 4], [cx + 48, cy + 14]]);
+            await page.locator('[data-probe-tool="color-b"]').click();
+            await drawStroke([[cx - 8, cy - 58], [cx - 2, cy], [cx + 10, cy + 58]]);
+            await page.locator('[data-probe-tool="erase"]').click();
+            await page.locator('[data-probe-size="18"]').click();
+            await drawStroke([[cx + 8, cy - 4], [cx + 28, cy + 12], [cx + 42, cy + 20]]);
+
+            await expect(shell).toHaveAttribute('data-probe-strokes', '3');
+            await expect(shell).toHaveAttribute('data-probe-budget', 'pass');
+            expect(Number(await shell.getAttribute('data-probe-bytes'))).toBeLessThanOrEqual(6_000);
+            await page.locator('[data-probe-action="save"]').click();
+            await expect(shell).toHaveAttribute('data-probe-saved', 'true');
+
+            await page.reload();
+            const reloadedShell = page.locator('[data-appearance-probe]');
+            await expect(reloadedShell).toHaveAttribute('data-probe-loaded', 'true');
+            await expect(reloadedShell).toHaveAttribute('data-probe-strokes', '3');
+            await expect(reloadedShell).toHaveAttribute('data-probe-budget', 'pass');
+
+            await page.locator('[data-probe-mode="squeeze"]').click();
+            const squeezeBox = await page.locator('[data-probe-canvas]').boundingBox();
+            expect(squeezeBox).not.toBeNull();
+            if (!squeezeBox) return;
+            const sx = squeezeBox.x + squeezeBox.width * 0.48;
+            const sy = squeezeBox.y + squeezeBox.height * 0.5;
+            await page.mouse.move(sx, sy);
+            await page.mouse.down();
+            await page.mouse.move(sx + squeezeBox.width * 0.24, sy + squeezeBox.height * 0.07, { steps: 10 });
+            await page.mouse.up();
+            await expect.poll(async () => Number(await reloadedShell.getAttribute('data-probe-squeezes'))).toBeGreaterThan(0);
+
+            expect(fatalErrors).toEqual([]);
+          });
+          TEST
+      - name: Add temporary richer-drawing storage stress proof
+        run: |
+          cat > tests/release/appearance-probe-stress.s0.spec.ts <<'TEST'
+          import { expect, test } from '@playwright/test';
+
+          test('S0 richer custom drawing stays within the representative per-toy storage budget', async ({ page }) => {
+            await page.setViewportSize({ width: 390, height: 844 });
+            await page.goto('/squishy-squishes/?appearanceProbe=1');
+            await page.evaluate(() => {
+              localStorage.clear();
+              sessionStorage.clear();
+            });
+            await page.reload();
+            const shell = page.locator('[data-appearance-probe]');
+            const canvas = page.locator('[data-probe-canvas]');
+            await expect(shell).toBeVisible();
+
+            await canvas.evaluate((element) => {
+              const rect = element.getBoundingClientRect();
+              const left = rect.left + rect.width * 0.26;
+              const right = rect.left + rect.width * 0.74;
+              const top = rect.top + rect.height * 0.27;
+              const bottom = rect.top + rect.height * 0.73;
+
+              for (let stroke = 0; stroke < 48; stroke += 1) {
+                const pointerId = 1000 + stroke;
+                const phase = stroke / 47;
+                const yBase = top + (bottom - top) * phase;
+                const startX = stroke % 2 === 0 ? left : right;
+                const endX = stroke % 2 === 0 ? right : left;
+                element.dispatchEvent(new PointerEvent('pointerdown', {
+                  bubbles: true,
+                  pointerId,
+                  pointerType: 'mouse',
+                  button: 0,
+                  buttons: 1,
+                  clientX: startX,
+                  clientY: yBase,
+                }));
+                for (let point = 1; point <= 18; point += 1) {
+                  const t = point / 18;
+                  const wave = Math.sin((t * Math.PI * 2) + stroke * 0.47) * rect.height * 0.045;
+                  element.dispatchEvent(new PointerEvent('pointermove', {
+                    bubbles: true,
+                    pointerId,
+                    pointerType: 'mouse',
+                    button: 0,
+                    buttons: 1,
+                    clientX: startX + (endX - startX) * t,
+                    clientY: yBase + wave,
+                  }));
+                }
+                element.dispatchEvent(new PointerEvent('pointerup', {
+                  bubbles: true,
+                  pointerId,
+                  pointerType: 'mouse',
+                  button: 0,
+                  buttons: 0,
+                  clientX: endX,
+                  clientY: yBase,
+                }));
+              }
+            });
+
+            await expect(shell).toHaveAttribute('data-probe-strokes', '48');
+            const bytes = Number(await shell.getAttribute('data-probe-bytes'));
+            console.log(`S0_STRESS_BYTES=${bytes}`);
+            expect(bytes).toBeGreaterThan(1_000);
+            expect(bytes).toBeLessThanOrEqual(6_000);
+            await expect(shell).toHaveAttribute('data-probe-budget', 'pass');
+
+            await page.locator('[data-probe-action="save"]').click();
+            await expect(shell).toHaveAttribute('data-probe-saved', 'true');
+            await page.reload();
+            await expect(page.locator('[data-appearance-probe]')).toHaveAttribute('data-probe-strokes', '48');
+          });
+          TEST
+      - name: Install dependencies
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Validate full release contract including permanent S0 test
+        run: npm run qa:release
+      - name: Run richer-drawing storage stress proof
+        run: npx playwright test tests/release/appearance-probe-stress.s0.spec.ts --config=playwright.release.config.ts
+      - name: Commit permanent S0 regression test
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/release/release.spec.ts
+          git diff --cached --check
+          git commit -m "Protect S0 custom appearance persistence"
+          git push origin HEAD:sandbox-pivot-s0-appearance-probe
