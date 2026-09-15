@@ -230,7 +230,7 @@ const pointToSegmentDistance = (
   const lengthSquared = abX * abX + abY * abY;
   const t = lengthSquared <= 1e-9
     ? 0
-    : Math.min(1, Math.max(0, ((px - ax) * abX + (py - ay)) / lengthSquared));
+    : Math.min(1, Math.max(0, ((px - ax) * abX + (py - ay) * abY) / lengthSquared));
   return Math.hypot(px - (ax + abX * t), py - (ay + abY * t));
 };
 
