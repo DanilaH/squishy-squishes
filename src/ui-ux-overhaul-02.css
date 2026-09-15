@@ -1042,3 +1042,108 @@ body[data-release-build="production"] .debug-button[data-action="mute"] {
     opacity: 0.72;
   }
 }
+
+
+/* Screenshot review iteration 02 */
+
+/* Keep hidden player surfaces actually hidden despite late-layer layout overrides. */
+.recipe-panel.recipe-dock[hidden],
+.collect-button[hidden],
+.collection-overlay[hidden] {
+  display: none !important;
+}
+
+/* Active craft is full-screen: progression/navigation chrome gets out of the way. */
+.lab-shell:not([data-stage="select"]) .lab-topbar {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Softer playroom atmosphere; avoid wallpaper-like dot noise. */
+.lab-shell::before {
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255,255,255,0.66), transparent 19%),
+    radial-gradient(circle at 87% 20%, rgba(255,255,255,0.62), transparent 18%),
+    radial-gradient(circle at 50% 52%, rgba(255,255,255,0.30), transparent 48%);
+}
+
+/* Toy names may use two lines; never truncate the identity into database-like ellipses. */
+.collection-card__body strong {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: clip;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.collection-card__actions {
+  justify-content: stretch;
+}
+
+.collection-card__action {
+  width: 100%;
+}
+
+/* The ownership beat stays visible during the longer collect state. */
+.lab-shell[data-stage="collect"] .object-stack {
+  animation: toy-owned-settle 1.2s cubic-bezier(.16,.86,.2,1) both;
+}
+
+.lab-shell[data-stage="collect"] .result-halo {
+  animation: toy-owned-halo 1.2s ease-out both;
+}
+
+@keyframes toy-owned-settle {
+  0% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1); }
+  28% { transform: translateY(-7px) scale(1.035); opacity: 1; filter: brightness(1.08); }
+  100% { transform: translateY(-2px) scale(0.96); opacity: 1; filter: brightness(1.02); }
+}
+
+@keyframes toy-owned-halo {
+  0% { opacity: var(--reward-halo-opacity); transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: var(--reward-halo-rest); transform: translate(-50%, -50%) scale(1.05); }
+}
+
+/* Give the choose-state name breathing room under the hero. */
+@keyframes toy-idle-select {
+  0%, 100% { transform: translateY(-18px); }
+  50% { transform: translateY(-24px); }
+}
+
+.lab-shell[data-stage="select"] .object-stack {
+  animation: toy-idle-select 4.2s ease-in-out infinite;
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .lab-shell[data-stage="select"] .stage-copy {
+    display: none;
+  }
+
+  .lab-shell[data-stage="select"] .workspace-vignette {
+    left: 32%;
+  }
+
+  .lab-shell[data-stage="select"] .contact-shadow {
+    left: 32%;
+  }
+
+  .lab-shell[data-stage="select"] .object-stack {
+    animation: toy-idle-select-landscape 4.2s ease-in-out infinite;
+  }
+
+  .recipe-panel.recipe-dock {
+    width: min(39vw, 350px);
+  }
+
+  .recipe-dock__identity .variant-preview {
+    max-width: 100%;
+    font-size: 17px;
+    line-height: 1.05;
+  }
+
+  @keyframes toy-idle-select-landscape {
+    0%, 100% { transform: translateX(-18vw) translateY(-3px); }
+    50% { transform: translateX(-18vw) translateY(-8px); }
+  }
+}

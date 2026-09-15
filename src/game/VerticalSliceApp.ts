@@ -18,6 +18,7 @@ import {
   type CollectionMilestone,
   type CompletionOutcome,
 } from './progression';
+import { getRecipeDisplayLabel, getShapeDisplayLabel } from './catalogPresentation';
 import { SquishyAudio } from './SquishyAudio';
 import { getPresentationTier } from './presentation';
 import {
@@ -423,7 +424,7 @@ export class VerticalSliceApp {
     const unlocked = selectedSpec ? isVariantUnlocked(selectedId, this.labXp) : false;
     if (selectedSpec) {
       const requiredRank = getRequiredRank(selectedId);
-      this.variantPreview.textContent = selectedSpec.label;
+      this.variantPreview.textContent = getRecipeDisplayLabel(this.options.copy, selectedSpec.id, selectedSpec.label);
       this.variantMeta.textContent = unlocked
         ? `${palette.label} · ${material.label} · ${filling.label}`
         : this.options.copy.progress.lockedAtRank.replace('{rank}', String(requiredRank));
@@ -533,7 +534,11 @@ export class VerticalSliceApp {
         const isNew = !this.revisitMode && !this.discovered.has(variantId(this.selected));
         this.renderer.setMoldProgress(0);
         this.setStageCopy(
-          getVariantSpec(variantId(this.selected))?.label ?? variantLabel(this.selected),
+          getRecipeDisplayLabel(
+            this.options.copy,
+            variantId(this.selected),
+            getVariantSpec(variantId(this.selected))?.label ?? variantLabel(this.selected),
+          ),
           this.revisitMode ? this.options.copy.stage.revisitHint : this.options.copy.stage.testHint,
         );
         this.collectButton.textContent = this.revisitMode ? this.options.copy.actions.backToLab : this.options.copy.actions.collect;
@@ -548,7 +553,7 @@ export class VerticalSliceApp {
           this.collectFeedbackText || this.options.copy.stage.collectedHint,
         );
         this.audio.playCollect(getPresentationTier(this.selected));
-        this.transitionTimer = window.setTimeout(() => this.setStage('select'), 520);
+        this.transitionTimer = window.setTimeout(() => this.setStage('select'), 1300);
         break;
     }
   }
@@ -1122,19 +1127,16 @@ export class VerticalSliceApp {
           : recipe.state === 'available'
             ? this.options.copy.collection.available
             : this.options.copy.collection.locked;
-        const makeLabel = recipe.state === 'completed'
-          ? this.options.copy.collection.makeAgain
-          : this.options.copy.collection.make;
-        const makeButton = `<button class="collection-card__action" type="button" data-make-id="${recipe.id}">${makeLabel}</button>`;
+        const displayLabel = getRecipeDisplayLabel(this.options.copy, recipe.id, recipe.label);
         const action = recipe.state === 'locked'
           ? `<span class="collection-card__rank">${this.formatCopy(this.options.copy.collection.requiredRank, { rank: recipe.requiredRank })}</span>`
           : recipe.state === 'completed'
-            ? `<div class="collection-card__actions">${makeButton}<button class="collection-card__action collection-card__action--secondary" type="button" data-revisit-id="${recipe.id}">${this.options.copy.collection.squeeze}</button></div>`
-            : `<div class="collection-card__actions">${makeButton}</div>`;
+            ? `<div class="collection-card__actions"><button class="collection-card__action" type="button" data-revisit-id="${recipe.id}">${this.options.copy.collection.squeeze}</button><button class="collection-card__action collection-card__action--secondary" type="button" data-make-id="${recipe.id}">${this.options.copy.collection.makeAgain}</button></div>`
+            : `<div class="collection-card__actions"><button class="collection-card__action" type="button" data-make-id="${recipe.id}">${this.options.copy.collection.make}</button></div>`;
         return `<article class="collection-card collection-card--${recipe.state}" data-recipe-id="${recipe.id}" style="--card-accent: ${palette.accentCss}; --card-accent-soft: ${palette.accentSoftCss}">
           ${this.renderRecipeThumbnail(recipe.id, recipe.choice)}
           <div class="collection-card__body">
-            <strong>${recipe.label}</strong>
+            <strong>${displayLabel}</strong>
             <span>${status}</span>
             <span class="collection-card__meta">${material.label} · ${filling.label}</span>
           </div>
@@ -1142,7 +1144,7 @@ export class VerticalSliceApp {
         </article>`;
       }).join('');
       return `<section class="collection-group">
-        <header><strong>${group.shapeLabel}</strong><span>${group.completed} / ${group.total}</span></header>
+        <header><strong>${getShapeDisplayLabel(this.options.copy, group.shapeId, group.shapeLabel)}</strong><span>${group.completed} / ${group.total}</span></header>
         <div class="collection-grid">${cards}</div>
       </section>`;
     }).join('');
@@ -1227,7 +1229,10 @@ export class VerticalSliceApp {
     }
     if (outcome.newlyUnlockedIds.length > 0) {
       const names = outcome.newlyUnlockedIds
-        .map((id) => getVariantSpec(id)?.label ?? id)
+        .map((id) => {
+          const variant = getVariantSpec(id);
+          return getRecipeDisplayLabel(this.options.copy, id, variant?.label ?? id);
+        })
         .join(' · ');
       parts.push(this.formatCopy(this.options.copy.progress.newUnlocks, { names }));
     }
