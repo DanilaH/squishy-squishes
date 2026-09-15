@@ -22,7 +22,9 @@ jobs:
         with:
           node-version: 24
       - name: Apply permanent S3 QA
-        run: node scripts/apply-sandbox-s3-qa.mjs
+        run: |
+          node scripts/apply-sandbox-s3-qa.mjs
+          node scripts/fix-sandbox-s3-qa.mjs
       - run: npm install
       - run: npx playwright install --with-deps chromium
       - name: Run complete release QA
