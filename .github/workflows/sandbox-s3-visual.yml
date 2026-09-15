@@ -1,6 +1,5 @@
 name: Sandbox S3 Temporary Visual Review
 
-# retry with an explicit Pages build before the release-QA server starts
 on:
   push:
     branches:
@@ -27,29 +26,13 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Capture production visual states
         run: npx playwright test tests/release/s3-visual.spec.ts --config=playwright.release.config.ts
-      - name: Prepare text review previews
-        run: |
-          python3 -m pip install --quiet pillow
-          python3 - <<'PY'
-          from pathlib import Path
-          from PIL import Image
-          import base64
-          import io
-
-          root = Path('artifacts/s3-visual')
-          review = root / 'review'
-          review.mkdir(parents=True, exist_ok=True)
-          for src in sorted(root.glob('*.png')):
-              image = Image.open(src).convert('RGB')
-              if image.width > 320:
-                  height = round(image.height * 320 / image.width)
-                  image = image.resize((320, height))
-              buf = io.BytesIO()
-              image.save(buf, format='JPEG', quality=25, optimize=True)
-              encoded = base64.b64encode(buf.getvalue()).decode('ascii')
-              wrapped = '\n'.join(encoded[i:i + 120] for i in range(0, len(encoded), 120))
-              (review / f'{src.stem}.b64').write_text(wrapped)
-          PY
+      - name: Upload temporary visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: s3-visual-review
+          path: artifacts/s3-visual/*.png
+          if-no-files-found: error
+          retention-days: 1
       - name: Commit temporary visual evidence
         run: |
           git config user.name "github-actions[bot]"
