@@ -1,3 +1,4 @@
+import { getShape } from '../game/shapes';
 import { SandboxApp, type SandboxLanguage } from './SandboxApp';
 import {
   SQUISHY_IDEAS,
@@ -120,6 +121,12 @@ const escapeAttribute = (value: string): string => value
   .replaceAll('"', '&quot;')
   .replaceAll('<', '&lt;')
   .replaceAll('>', '&gt;');
+
+const ideaShapeSvg = (idea: SquishyIdea): string => {
+  const shape = getShape(idea.shapeId);
+  const points = shape.boundary.map((point) => `${50 + point.x * 40},${50 - point.y * 40}`).join(' ');
+  return `<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${points}" /></svg>`;
+};
 
 const RU_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
   'soft-square': 'Кубик',
@@ -255,16 +262,20 @@ export class SandboxLibraryApp {
       const done = completed.has(idea.id);
       const mixin = getIdeaMixinLabel(idea, this.options.language);
       return `
-        <button class="sandbox-idea-card${done ? ' is-complete' : ''}" type="button" data-idea-id="${escapeAttribute(idea.id)}" aria-pressed="${done}">
+        <button class="sandbox-idea-card${done ? ' is-complete' : ''}" type="button" data-idea-id="${escapeAttribute(idea.id)}" aria-pressed="${done}" style="--idea-color:#${idea.paintColor.toString(16).padStart(6, '0')}">
           <span class="sandbox-idea-card__top">
             <span class="sandbox-idea-card__shape">${getIdeaShapeLabel(idea, this.options.language)}</span>
             ${done ? `<strong>✓ ${this.copy.completed}</strong>` : ''}
           </span>
-          <span class="sandbox-idea-card__name">${getIdeaLabel(idea, this.options.language)}</span>
-          <span class="sandbox-idea-card__cues">
-            <i style="--idea-color:#${idea.paintColor.toString(16).padStart(6, '0')}"></i>
-            <span>${getIdeaMaterialLabel(idea, this.options.language)}</span>
-            ${mixin ? `<span>· ${mixin}</span>` : ''}
+          <span class="sandbox-idea-card__hero">
+            <span class="sandbox-idea-card__preview">${ideaShapeSvg(idea)}</span>
+            <span class="sandbox-idea-card__copy">
+              <span class="sandbox-idea-card__name">${getIdeaLabel(idea, this.options.language)}</span>
+              <span class="sandbox-idea-card__cues">
+                <span>${getIdeaMaterialLabel(idea, this.options.language)}</span>
+                ${mixin ? `<span>· ${mixin}</span>` : ''}
+              </span>
+            </span>
           </span>
         </button>
       `;

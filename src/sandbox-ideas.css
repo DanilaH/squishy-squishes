@@ -76,7 +76,7 @@
 
 .sandbox-idea-card {
   min-width: 0;
-  min-height: 112px;
+  min-height: 126px;
   padding: 11px;
   border: 1px solid rgba(88, 64, 112, .12);
   border-radius: 18px;
@@ -114,6 +114,44 @@
 
 .sandbox-idea-card__top strong { color: #4f9a6c; }
 
+.sandbox-idea-card__hero {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sandbox-idea-card__preview {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.95), rgba(255,255,255,.54));
+  box-shadow: inset 0 0 0 1px rgba(88,64,112,.08), 0 5px 12px rgba(78,56,97,.08);
+}
+
+.sandbox-idea-card__preview svg {
+  width: 42px;
+  height: 42px;
+  overflow: visible;
+  filter: drop-shadow(0 4px 4px rgba(75,53,92,.14));
+}
+
+.sandbox-idea-card__preview polygon {
+  fill: var(--idea-color);
+  stroke: rgba(255,255,255,.92);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.sandbox-idea-card__copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
 .sandbox-idea-card__name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -130,7 +168,6 @@
   font-weight: 750;
 }
 
-.sandbox-idea-card__cues i,
 .sandbox-idea-guide i {
   width: 14px;
   height: 14px;
@@ -191,7 +228,10 @@
   .sandbox-library-heading__actions { gap: 6px; }
   .sandbox-library-ideas { min-height: 40px; padding-inline: 11px; }
   .sandbox-ideas-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .sandbox-idea-card { min-height: 104px; padding: 9px; border-radius: 15px; }
+  .sandbox-idea-card { min-height: 116px; padding: 9px; border-radius: 15px; }
+  .sandbox-idea-card__hero { gap: 8px; }
+  .sandbox-idea-card__preview { width: 44px; height: 44px; flex-basis: 44px; border-radius: 14px; }
+  .sandbox-idea-card__preview svg { width: 36px; height: 36px; }
   .sandbox-idea-guide { top: max(48px, calc(env(safe-area-inset-top) + 42px)); font-size: 9px; gap: 6px; }
   .sandbox-idea-guide strong { max-width: 42%; overflow: hidden; text-overflow: ellipsis; }
 }
@@ -204,8 +244,12 @@
   .sandbox-ideas-heading > span { align-self: end; }
   .sandbox-ideas-heading h1 { font-size: 20px; }
   .sandbox-ideas-heading p { margin: 0; max-width: none; font-size: 10px; }
-  .sandbox-ideas-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
-  .sandbox-idea-card { min-height: 84px; padding: 7px; gap: 5px; border-radius: 13px; }
+  .sandbox-ideas-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+  .sandbox-idea-card { min-height: 86px; padding: 7px; gap: 5px; border-radius: 13px; }
+  .sandbox-idea-card__hero { gap: 6px; }
+  .sandbox-idea-card__preview { width: 32px; height: 32px; flex-basis: 32px; border-radius: 10px; }
+  .sandbox-idea-card__preview svg { width: 27px; height: 27px; }
+  .sandbox-idea-card__copy { gap: 3px; }
   .sandbox-idea-card__name { font-size: 10px; }
   .sandbox-idea-card__top, .sandbox-idea-card__cues { font-size: 8px; }
   .sandbox-idea-guide { top: 47px; width: min(calc(100vw - 28px), 520px); }
