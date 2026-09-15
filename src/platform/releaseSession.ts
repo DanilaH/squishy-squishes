@@ -49,6 +49,7 @@ export const installReleaseSession = (
   let previousStage = currentStage();
   let collectionOpen = legacyCollection ? !legacyCollection.hidden : false;
   let completedCrafts = 0;
+  let pendingCompletedSaveActions = 0;
   let adInFlight = false;
 
   runtime.analytics.track('session_ready', {
@@ -63,9 +64,20 @@ export const installReleaseSession = (
     return stage === 'select' && !collectionOpen;
   };
 
-  const showInterstitialIfEligible = async (): Promise<void> => {
-    if (disposed || runtime.kind !== 'yandex' || adInFlight || !isNaturalBreak()) return;
-    if (!gate.recordEligibleAction()) return;
+  const showInterstitialIfEligible = async (eligibleActions = 1): Promise<void> => {
+    if (
+      disposed
+      || runtime.kind !== 'yandex'
+      || adInFlight
+      || !isNaturalBreak()
+      || eligibleActions < 1
+    ) return;
+
+    let shouldRequest = false;
+    for (let index = 0; index < eligibleActions; index += 1) {
+      if (gate.recordEligibleAction()) shouldRequest = true;
+    }
+    if (!shouldRequest) return;
 
     adInFlight = true;
     runtime.analytics.track('interstitial_request', { completedCrafts });
@@ -98,14 +110,18 @@ export const installReleaseSession = (
       }
       if (previousStage === 'finish' && stage === 'squeeze') {
         completedCrafts += 1;
+        pendingCompletedSaveActions += 1;
         runtime.analytics.track('craft_save', {
           ...selectionParams(sandboxShell),
           completedCrafts,
         });
       }
-      const returnedToLibraryAfterPlay = previousStage === 'squeeze' && stage === 'library';
+
+      const enteredLibrary = stage === 'library' && previousStage !== 'library';
+      const eligibleActions = enteredLibrary ? pendingCompletedSaveActions : 0;
+      if (enteredLibrary) pendingCompletedSaveActions = 0;
       previousStage = stage;
-      if (returnedToLibraryAfterPlay) void showInterstitialIfEligible();
+      if (eligibleActions > 0) void showInterstitialIfEligible(eligibleActions);
       return;
     }
 
