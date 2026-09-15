@@ -5,15 +5,30 @@ const PAGES_URL = '/squishy-squishes/';
 const OUT = 'artifacts/s3-visual';
 
 test.use({ locale: 'ru-RU' });
+test.setTimeout(120_000);
 
 const shot = async (page: Page, name: string): Promise<void> => {
   mkdirSync(OUT, { recursive: true });
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
 };
 
-const clearAndReload = async (page: Page): Promise<void> => {
-  await page.evaluate(() => localStorage.clear());
+const bootEmpty = async (page: Page): Promise<void> => {
+  await page.goto(PAGES_URL);
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem('squishy.save.v3', JSON.stringify({
+      version: 3,
+      library: [],
+      libraryCapacity: 8,
+      completedRecipeIds: [],
+      unlockedRewardIds: [],
+      totalCrafts: 0,
+      updatedAt: 0,
+    }));
+  });
   await page.reload();
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '0');
 };
 
 const canvasBox = async (page: Page) => {
@@ -24,32 +39,48 @@ const canvasBox = async (page: Page) => {
 
 const completeMix = async (page: Page): Promise<void> => {
   const box = await canvasBox(page);
-  const y = box.y + box.height * 0.5;
-  const left = box.x + box.width * 0.37;
-  const right = box.x + box.width * 0.63;
-  await page.mouse.move((left + right) * 0.5, y);
+  const cx = box.x + box.width * 0.5;
+  const cy = box.y + box.height * 0.5;
+  const dx = Math.min(72, box.width * 0.2);
+  const dy = Math.min(64, box.height * 0.18);
+  const points = [
+    [cx + dx, cy],
+    [cx, cy - dy],
+    [cx - dx, cy],
+    [cx, cy + dy],
+  ] as const;
+  await page.mouse.move(cx, cy);
   await page.mouse.down();
-  for (let index = 0; index < 18; index += 1) {
-    await page.mouse.move(index % 2 === 0 ? left : right, y + (index % 3 - 1) * 16, { steps: 2 });
+  for (let index = 0; index < 36; index += 1) {
+    const [x, y] = points[index % points.length]!;
+    await page.mouse.move(x, y, { steps: 2 });
   }
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
+  await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-mix-progress')))
+    .toBeGreaterThanOrEqual(1);
 };
 
 const advanceToDecor = async (page: Page, shape = 'heart'): Promise<void> => {
   await page.locator('[data-library-new]').first().click();
   const shell = page.locator('[data-sandbox-app]');
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator(`.sandbox-shape[data-shape="${shape}"]`).click();
   await page.locator('[data-action="shape-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'paint');
   await page.locator('[data-action="paint-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'mixins');
   await page.locator('[data-action="mixin-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'mix');
   await completeMix(page);
   await page.locator('[data-action="mix-continue"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
 };
 
 const seedLibrary = async (page: Page): Promise<void> => {
+  await page.goto(PAGES_URL);
   await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
     const toys = [
       {
         id: 'visual-heart', createdAt: 1, shapeId: 'heart', materialId: 'holo',
@@ -83,8 +114,7 @@ const seedLibrary = async (page: Page): Promise<void> => {
 
 test('capture S3 production visual lifecycle', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(PAGES_URL);
-  await clearAndReload(page);
+  await bootEmpty(page);
   await advanceToDecor(page, 'heart');
   const shell = page.locator('[data-sandbox-app]');
 
@@ -118,7 +148,6 @@ test('capture S3 production visual lifecycle', async ({ page }) => {
   await shot(page, '04-phone-squeeze-pull');
   await page.mouse.up();
 
-  await page.locator('[data-action="home"]').click();
   await seedLibrary(page);
   await shot(page, '05-phone-library-3');
   await page.locator('[data-library-play-id="visual-mochi"]').click();
@@ -126,8 +155,7 @@ test('capture S3 production visual lifecycle', async ({ page }) => {
   await shot(page, '06-phone-reopen');
 
   await page.setViewportSize({ width: 844, height: 390 });
-  await page.goto(PAGES_URL);
-  await clearAndReload(page);
+  await bootEmpty(page);
   await advanceToDecor(page, 'mochi');
   await page.locator('[data-decor-eyes="dot"]').click();
   await page.locator('[data-decor-mouth="smile"]').click();
@@ -136,7 +164,6 @@ test('capture S3 production visual lifecycle', async ({ page }) => {
   await shot(page, '07-landscape-decor');
 
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto(PAGES_URL);
   await seedLibrary(page);
   await shot(page, '08-desktop-library');
 });
