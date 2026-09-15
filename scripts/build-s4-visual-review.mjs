@@ -12,7 +12,7 @@ const page = await browser.newPage();
 
 for (const name of files) {
   const png = fs.readFileSync(path.join(inputDir, name)).toString('base64');
-  const maxWidth = name.startsWith('06-') ? 560 : name.startsWith('05-') ? 500 : 300;
+  const maxWidth = name.startsWith('06-') ? 360 : name.startsWith('05-') ? 320 : 180;
   const encoded = await page.evaluate(async ({ data, maxWidth }) => {
     const image = new Image();
     image.src = `data:image/png;base64,${data}`;
@@ -24,7 +24,7 @@ for (const name of files) {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Missing 2D context');
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', 0.38).split(',')[1];
+    return canvas.toDataURL('image/jpeg', 0.25).split(',')[1];
   }, { data: png, maxWidth });
   if (!encoded) throw new Error(`Failed to encode ${name}`);
   const wrapped = encoded.match(/.{1,76}/g)?.join('\n') ?? encoded;
@@ -32,4 +32,4 @@ for (const name of files) {
 }
 
 await browser.close();
-console.log(`Prepared ${files.length} S4 visual review thumbnails.`);
+console.log(`Prepared ${files.length} compact S4 visual review thumbnails.`);
