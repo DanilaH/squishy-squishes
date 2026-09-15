@@ -57,3 +57,5 @@ jobs:
           git diff --cached --check
           git commit -m "Clean Sandbox S4 implementation branch"
           git push
+
+# Armed after final visual acceptance.
