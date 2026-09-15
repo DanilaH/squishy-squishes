@@ -63,7 +63,7 @@ export const renderLibraryThumbnail = (
   if (toy.decor.accessory) {
     const frame = getDecorFrame(shape);
     const localX = frame.headAnchor.u * 2 - 1;
-    const localY = frame.headAnchor.v * 2 - 1;
+    const localY = (frame.headAnchor.v + frame.headSeatOffsetV) * 2 - 1;
     const scale = Math.min(THUMBNAIL_SIZE, THUMBNAIL_SIZE) * 0.5 - SHAPE_PADDING;
     const anchorX = THUMBNAIL_SIZE * 0.5 + localX * scale;
     const anchorY = THUMBNAIL_SIZE * 0.5 - localY * scale;

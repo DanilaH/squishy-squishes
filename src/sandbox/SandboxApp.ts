@@ -965,6 +965,7 @@ export class SandboxApp {
     const normUy = basisU.y / lengthU;
     const normVx = basisV.x / lengthV;
     const normVy = basisV.y / lengthV;
+    const seatOffsetPx = (frame.headSeatOffsetV / frame.headBasisV) * lengthV;
     const a = normUx * ratioU;
     const b = normUy * ratioU;
     const c = normVx * ratioV;
@@ -972,8 +973,8 @@ export class SandboxApp {
     const canvasRect = this.canvas.getBoundingClientRect();
     const stageRect = this.canvas.parentElement?.getBoundingClientRect();
     if (stageRect) {
-      const anchorX = canvasRect.left - stageRect.left + anchor.x;
-      const anchorY = canvasRect.top - stageRect.top + anchor.y;
+      const anchorX = canvasRect.left - stageRect.left + anchor.x - normVx * seatOffsetPx;
+      const anchorY = canvasRect.top - stageRect.top + anchor.y - normVy * seatOffsetPx;
       const width = this.accessoryCanvas.offsetWidth || 160;
       const height = this.accessoryCanvas.offsetHeight || 107;
       this.accessoryCanvas.style.left = (anchorX - width * 0.5).toFixed(2) + 'px';

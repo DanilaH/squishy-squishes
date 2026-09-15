@@ -50,6 +50,7 @@ export interface DecorFrame {
   readonly headAnchor: AppearancePoint;
   readonly headBasisU: number;
   readonly headBasisV: number;
+  readonly headSeatOffsetV: number;
 }
 
 const eyeIdSet = new Set<string>(EYE_STYLE_IDS);
@@ -247,6 +248,11 @@ export const getDecorFrame = (shape: ShapeDefinition): DecorFrame => {
   }
   const headSurfaceY = Number.isFinite(topBoundaryY) ? topBoundaryY : maxY;
   const headY = headSurfaceY - height * 0.025;
+  // Keep the accessory's familiar visual seat near the top of the shape, but derive
+  // deformation from a real surface point. The offset is replayed along the live
+  // projected vertical basis, so concave shapes do not float or swallow accessories.
+  const headSeatY = maxY - height * 0.055;
+  const headSeatOffsetV = (headSeatY - headY) * 0.5;
   return {
     eyesLeft: toUv(centerX - eyeDx, eyeY),
     eyesRight: toUv(centerX + eyeDx, eyeY),
@@ -256,6 +262,7 @@ export const getDecorFrame = (shape: ShapeDefinition): DecorFrame => {
     headAnchor: toUv(centerX, headY),
     headBasisU: clamp(width * 0.11 * 0.5, 0.055, 0.12),
     headBasisV: clamp(height * 0.09 * 0.5, 0.045, 0.10),
+    headSeatOffsetV,
   };
 };
 
