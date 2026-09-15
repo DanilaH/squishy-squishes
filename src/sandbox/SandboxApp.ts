@@ -18,7 +18,7 @@ import {
   type AppearanceStrokeMode,
   type MixInId,
 } from './appearance';
-import { hasSurfaceDecor, renderSurfaceDecor } from './decor';
+import { drawAccessoryGraphic, getDecorFrame, hasSurfaceDecor, renderSurfaceDecor } from './decor';
 import { createSandboxDraft, type SandboxDraft, type SavedSquishy } from './types';
 
 export type SandboxLanguage = 'en' | 'ru';
@@ -180,6 +180,8 @@ export class SandboxApp {
   private readonly abortController = new AbortController();
   private readonly shell: HTMLElement;
   private readonly canvas: HTMLCanvasElement;
+  private readonly accessoryCanvas: HTMLCanvasElement;
+  private readonly accessoryContext: CanvasRenderingContext2D;
   private readonly stageTitle: HTMLElement;
   private readonly stageHint: HTMLElement;
   private readonly stageStep: HTMLElement;
@@ -212,6 +214,9 @@ export class SandboxApp {
   private mixLastY = 0;
   private mixDistance = 0;
   private uploadFrame = 0;
+  private accessoryFrame = 0;
+  private accessoryRestU = 0;
+  private accessoryRestV = 0;
   private muted = false;
   private activityBlocked = false;
   private saving = false;
@@ -235,6 +240,12 @@ export class SandboxApp {
     root.innerHTML = this.renderShell();
     this.shell = this.requireElement<HTMLElement>('[data-sandbox-app]');
     this.canvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-canvas]');
+    this.accessoryCanvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-accessory]');
+    this.accessoryCanvas.width = 180;
+    this.accessoryCanvas.height = 120;
+    const accessoryContext = this.accessoryCanvas.getContext('2d');
+    if (!accessoryContext) throw new Error('Sandbox accessory overlay requires Canvas 2D.');
+    this.accessoryContext = accessoryContext;
     this.stageTitle = this.requireElement<HTMLElement>('[data-sandbox-title]');
     this.stageHint = this.requireElement<HTMLElement>('[data-sandbox-hint]');
     this.stageStep = this.requireElement<HTMLElement>('[data-sandbox-step]');
@@ -267,6 +278,7 @@ export class SandboxApp {
     if (this.disposed) return;
     this.disposed = true;
     if (this.uploadFrame !== 0) cancelAnimationFrame(this.uploadFrame);
+    if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);
     this.abortController.abort();
     this.renderer.dispose();
     this.audio.dispose();
@@ -312,6 +324,7 @@ export class SandboxApp {
 
         <section class="sandbox-stage" aria-label="Squishy workbench">
           <div class="sandbox-glow" aria-hidden="true"></div>
+          <canvas class="sandbox-accessory-layer" data-sandbox-accessory aria-hidden="true" hidden></canvas>
           <canvas class="sandbox-canvas" data-sandbox-canvas aria-label="Squishy"></canvas>
         </section>
 
@@ -686,7 +699,68 @@ export class SandboxApp {
     this.applyMaterial(this.draft.materialId);
     this.shell.dataset.shape = this.draft.shapeId;
     this.shell.dataset.material = this.draft.materialId;
+    this.refreshAccessoryGraphic();
   }
+
+  private refreshAccessoryGraphic(): void {
+    const accessory = this.draft.decor.accessory;
+    this.accessoryRestU = 0;
+    this.accessoryRestV = 0;
+    if (!accessory) {
+      this.accessoryCanvas.hidden = true;
+      this.accessoryCanvas.removeAttribute('data-accessory-id');
+      if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);
+      this.accessoryFrame = 0;
+      return;
+    }
+    this.accessoryCanvas.hidden = false;
+    this.accessoryCanvas.dataset.accessoryId = accessory;
+    drawAccessoryGraphic(this.accessoryContext, accessory, this.accessoryCanvas.width, this.accessoryCanvas.height);
+    if (this.accessoryFrame === 0) this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
+  }
+
+  private readonly updateAccessoryOverlay = (): void => {
+    if (this.disposed || !this.draft.decor.accessory) {
+      this.accessoryFrame = 0;
+      return;
+    }
+    const frame = getDecorFrame(getShape(this.draft.shapeId));
+    const anchor = this.renderer.projectUvToCanvas(frame.headAnchor.u, frame.headAnchor.v);
+    const right = this.renderer.projectUvToCanvas(frame.headAnchor.u + frame.headBasisU, frame.headAnchor.v);
+    const down = this.renderer.projectUvToCanvas(frame.headAnchor.u, frame.headAnchor.v - frame.headBasisV);
+    const basisU = { x: right.x - anchor.x, y: right.y - anchor.y };
+    const basisV = { x: down.x - anchor.x, y: down.y - anchor.y };
+    const lengthU = Math.max(0.001, Math.hypot(basisU.x, basisU.y));
+    const lengthV = Math.max(0.001, Math.hypot(basisV.x, basisV.y));
+    if (this.accessoryRestU <= 0) this.accessoryRestU = lengthU;
+    if (this.accessoryRestV <= 0) this.accessoryRestV = lengthV;
+    const clampRatio = (value: number): number => Math.min(1.35, Math.max(0.72, value));
+    const ratioU = clampRatio(lengthU / this.accessoryRestU);
+    const ratioV = clampRatio(lengthV / this.accessoryRestV);
+    const normUx = basisU.x / lengthU;
+    const normUy = basisU.y / lengthU;
+    const normVx = basisV.x / lengthV;
+    const normVy = basisV.y / lengthV;
+    const a = normUx * ratioU;
+    const b = normUy * ratioU;
+    const c = normVx * ratioV;
+    const d = normVy * ratioV;
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const stageRect = this.canvas.parentElement?.getBoundingClientRect();
+    if (stageRect) {
+      const anchorX = canvasRect.left - stageRect.left + anchor.x;
+      const anchorY = canvasRect.top - stageRect.top + anchor.y;
+      const width = this.accessoryCanvas.offsetWidth || 160;
+      const height = this.accessoryCanvas.offsetHeight || 107;
+      this.accessoryCanvas.style.left = (anchorX - width * 0.5).toFixed(2) + 'px';
+      this.accessoryCanvas.style.top = (anchorY - height * 0.92).toFixed(2) + 'px';
+      this.accessoryCanvas.style.transform = 'matrix(' + [a, b, c, d].map((value) => value.toFixed(4)).join(',') + ',0,0)';
+      this.accessoryCanvas.dataset.accessoryAnchorX = anchorX.toFixed(2);
+      this.accessoryCanvas.dataset.accessoryAnchorY = anchorY.toFixed(2);
+      this.accessoryCanvas.dataset.accessoryMatrix = [a, b, c, d].map((value) => value.toFixed(4)).join(',');
+    }
+    this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
+  };
 
   private applyMaterial(materialId: MaterialId): void {
     const palette = getPalette(BASE_PALETTE_ID);
