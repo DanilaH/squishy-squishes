@@ -241,6 +241,7 @@ const createFixtureToy = (index: number, rich = false): SavedSquishy => ({
   shapeId: FIXTURE_SHAPES[index % FIXTURE_SHAPES.length]!,
   materialId: FIXTURE_MATERIALS[index % FIXTURE_MATERIALS.length]!,
   appearance: createFixtureAppearance(index, rich),
+  decor: createEmptyDecorDocument(),
 });
 
 const createFixtureSave = (count: number, rich = false): SaveStateV3 => ({

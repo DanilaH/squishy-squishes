@@ -18,6 +18,7 @@ import {
   type AppearanceStrokeMode,
   type MixInId,
 } from './appearance';
+import { hasSurfaceDecor, renderSurfaceDecor } from './decor';
 import { createSandboxDraft, type SandboxDraft, type SavedSquishy } from './types';
 
 export type SandboxLanguage = 'en' | 'ru';
@@ -671,10 +672,10 @@ export class SandboxApp {
       shapeId: saved.shapeId,
       materialId: saved.materialId,
       appearance: saved.appearance,
+      decor: saved.decor,
     };
-    replayAppearanceDocument(this.appearanceContext, saved.appearance);
     this.applyDraftToRenderer();
-    this.uploadAppearanceNow();
+    this.replayAndUpload();
     this.updatePressed('[data-shape]', 'shape', saved.shapeId);
     this.updatePressed('[data-material]', 'material', saved.materialId);
     this.updateAppearanceDataset();
@@ -742,12 +743,13 @@ export class SandboxApp {
 
   private uploadAppearanceNow(): void {
     const appearance = this.draft.appearance;
-    if (appearance.strokes.length === 0 && appearance.mixins.length === 0) this.renderer.setAppearanceTexture(null);
+    if (appearance.strokes.length === 0 && appearance.mixins.length === 0 && !hasSurfaceDecor(this.draft.decor)) this.renderer.setAppearanceTexture(null);
     else this.renderer.setAppearanceTexture(this.appearanceCanvas);
   }
 
   private replayAndUpload(): void {
     replayAppearanceDocument(this.appearanceContext, this.draft.appearance);
+    renderSurfaceDecor(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
     this.uploadAppearanceNow();
     this.updateAppearanceDataset();
   }

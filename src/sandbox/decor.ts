@@ -139,6 +139,9 @@ export const stickerPlacementPoint = (placement: StickerPlacementV1): Appearance
 export const estimateDecorBytes = (decor: DecorDocumentV1): number =>
   new TextEncoder().encode(JSON.stringify(decor)).byteLength;
 
+export const hasSurfaceDecor = (decor: DecorDocumentV1): boolean =>
+  decor.eyes !== null || decor.mouth !== null || decor.blush || decor.stickers.length > 0;
+
 export const getDecorFrame = (shape: ShapeDefinition): DecorFrame => {
   let minX = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;

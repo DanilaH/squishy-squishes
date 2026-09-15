@@ -2,6 +2,7 @@ import { JsonStorageRepository, type StorageAdapter } from '@danilah/mini-games-
 import { ALL_VARIANT_IDS, MATERIALS, type MaterialId } from '../game/content';
 import { SHAPES, type ShapeId } from '../game/shapes';
 import { decodeAppearanceDocument } from '../sandbox/appearance';
+import { createEmptyDecorDocument, decodeDecorDocument } from '../sandbox/decor';
 import type { SavedSquishy } from '../sandbox/types';
 import {
   SAVE_STORAGE_KEY as SAVE_V2_STORAGE_KEY,
@@ -85,6 +86,7 @@ const readSavedSquishy = (value: unknown): SavedSquishy => {
     shapeId: value.shapeId as ShapeId,
     materialId: value.materialId as MaterialId,
     appearance: decodeAppearanceDocument(value.appearance),
+    decor: value.decor === undefined ? createEmptyDecorDocument() : decodeDecorDocument(value.decor),
   };
 };
 
@@ -201,6 +203,7 @@ export const createSavedSquishy = (
   shapeId: input.shapeId,
   materialId: input.materialId,
   appearance: input.appearance,
+  decor: input.decor,
 });
 
 const assertCandidateIdAvailable = (

@@ -401,6 +401,35 @@ export class SquishSurface {
     };
   }
 
+  public projectUvToCanvas(u: number, v: number): { x: number; y: number } {
+    const gridU = clamp01(u) * GRID_CELLS;
+    const gridV = clamp01(v) * GRID_CELLS;
+    const x0 = Math.min(GRID_CELLS - 1, Math.floor(gridU));
+    const y0 = Math.min(GRID_CELLS - 1, Math.floor(gridV));
+    const x1 = Math.min(GRID_CELLS, x0 + 1);
+    const y1 = Math.min(GRID_CELLS, y0 + 1);
+    const tx = gridU - x0;
+    const ty = gridV - y0;
+    const row = GRID_CELLS + 1;
+    const a = this.vertices[y0 * row + x0]!;
+    const b = this.vertices[y0 * row + x1]!;
+    const c = this.vertices[y1 * row + x0]!;
+    const d = this.vertices[y1 * row + x1]!;
+    const topX = a.x + (b.x - a.x) * tx;
+    const topY = a.y + (b.y - a.y) * tx;
+    const bottomX = c.x + (d.x - c.x) * tx;
+    const bottomY = c.y + (d.y - c.y) * tx;
+    const localX = topX + (bottomX - topX) * ty;
+    const localY = topY + (bottomY - topY) * ty;
+    const rect = this.canvas.getBoundingClientRect();
+    const ndcX = localX * this.scaleX;
+    const ndcY = localY * this.scaleY;
+    return {
+      x: (ndcX * 0.5 + 0.5) * rect.width,
+      y: (0.5 - ndcY * 0.5) * rect.height,
+    };
+  }
+
   public primeAudio(): Promise<void> {
     return this.audio.prime();
   }
