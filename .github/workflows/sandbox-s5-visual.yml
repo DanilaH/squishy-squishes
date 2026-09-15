@@ -41,3 +41,5 @@ jobs:
           path: artifacts/s5-visual
           if-no-files-found: error
           retention-days: 7
+
+# Armed after implementation QA passed 33/33.
