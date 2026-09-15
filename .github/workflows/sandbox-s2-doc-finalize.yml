@@ -1,0 +1,33 @@
+name: Sandbox S2 Temporary Doc Finalization
+
+on:
+  push:
+    branches:
+      - sandbox-pivot-s2-library
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: startsWith(github.event.head_commit.message, 'Arm S2 doc finalization')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: sandbox-pivot-s2-library
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Finalize canonical S2 docs
+        run: node scripts/finalize-sandbox-s2-docs.mjs
+      - name: Commit canonical S2 docs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/IMPLEMENTATION_ROADMAP.md docs/SANDBOX_PIVOT_S2_LIBRARY.md
+          git diff --cached --check
+          git commit -m "Finalize Sandbox S2 roadmap"
+          git push origin HEAD:sandbox-pivot-s2-library
