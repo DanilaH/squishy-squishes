@@ -139,7 +139,10 @@ export class SquishSurface {
   private readonly triangleIndexBuffer: WebGLBuffer;
   private readonly lineIndexBuffer: WebGLBuffer;
   private readonly shapeTexture: WebGLTexture;
+  private readonly appearanceTexture: WebGLTexture;
   private readonly shapeFieldUniform: WebGLUniformLocation;
+  private readonly appearanceTextureUniform: WebGLUniformLocation;
+  private readonly appearanceEnabledUniform: WebGLUniformLocation;
   private readonly shapeFieldCache = new Map<ShapeId, Uint8Array>();
   private readonly vertices: VertexState[] = [];
   private readonly triangleIndices: Uint16Array;
@@ -191,6 +194,7 @@ export class SquishSurface {
   private fillingStyle = 0;
   private fillProgress = 1;
   private moldProgress = 0;
+  private appearanceEnabled = false;
   private animationFrame = 0;
   private lastFrameAt = performance.now();
   private frameTimes: number[] = [];
@@ -215,6 +219,8 @@ export class SquishSurface {
     this.program = createProgram(gl);
     this.scaleUniform = requireUniform(gl, this.program, 'uScale');
     this.shapeFieldUniform = requireUniform(gl, this.program, 'uShapeField');
+    this.appearanceTextureUniform = requireUniform(gl, this.program, 'uAppearanceTexture');
+    this.appearanceEnabledUniform = requireUniform(gl, this.program, 'uAppearanceEnabled');
     this.pointerUvUniform = requireUniform(gl, this.program, 'uPointerUv');
     this.compressionUniform = requireUniform(gl, this.program, 'uCompression');
     this.pressDepthUniform = requireUniform(gl, this.program, 'uPressDepth');
@@ -237,14 +243,16 @@ export class SquishSurface {
     const triangleIndexBuffer = gl.createBuffer();
     const lineIndexBuffer = gl.createBuffer();
     const shapeTexture = gl.createTexture();
-    if (!vao || !vertexBuffer || !triangleIndexBuffer || !lineIndexBuffer || !shapeTexture) {
-      throw new Error('Unable to allocate WebGL buffers or shape texture.');
+    const appearanceTexture = gl.createTexture();
+    if (!vao || !vertexBuffer || !triangleIndexBuffer || !lineIndexBuffer || !shapeTexture || !appearanceTexture) {
+      throw new Error('Unable to allocate WebGL buffers or textures.');
     }
     this.vao = vao;
     this.vertexBuffer = vertexBuffer;
     this.triangleIndexBuffer = triangleIndexBuffer;
     this.lineIndexBuffer = lineIndexBuffer;
     this.shapeTexture = shapeTexture;
+    this.appearanceTexture = appearanceTexture;
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.shapeTexture);
@@ -254,6 +262,26 @@ export class SquishSurface {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     this.uploadShapeField(this.shape);
     gl.bindTexture(gl.TEXTURE_2D, null);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.appearanceTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      1,
+      1,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      new Uint8Array([0, 0, 0, 0]),
+    );
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.activeTexture(gl.TEXTURE0);
 
     const triangleIndices: number[] = [];
     const lineIndices: number[] = [];
@@ -335,6 +363,44 @@ export class SquishSurface {
     this.moldProgress = clamp01(progress);
   }
 
+  public setAppearanceTexture(source: TexImageSource | null): void {
+    const gl = this.gl;
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.appearanceTexture);
+
+    if (source === null) {
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        1,
+        1,
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        new Uint8Array([0, 0, 0, 0]),
+      );
+      this.appearanceEnabled = false;
+    } else {
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+      this.appearanceEnabled = true;
+    }
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.activeTexture(gl.TEXTURE0);
+  }
+
+  public clientPointToUv(clientX: number, clientY: number): { u: number; v: number } | null {
+    const local = this.clientPointToLocal(clientX, clientY);
+    if (!this.isInsideObject(local.x, local.y)) return null;
+    return {
+      u: clamp01(local.x * 0.5 + 0.5),
+      v: clamp01(local.y * 0.5 + 0.5),
+    };
+  }
+
   public primeAudio(): Promise<void> {
     return this.audio.prime();
   }
@@ -356,6 +422,7 @@ export class SquishSurface {
     this.gl.deleteBuffer(this.triangleIndexBuffer);
     this.gl.deleteBuffer(this.lineIndexBuffer);
     this.gl.deleteTexture(this.shapeTexture);
+    this.gl.deleteTexture(this.appearanceTexture);
     this.gl.deleteVertexArray(this.vao);
     this.gl.deleteProgram(this.program);
   }
@@ -499,9 +566,13 @@ export class SquishSurface {
   }
 
   private pointerToLocal(event: PointerEvent): { x: number; y: number } {
+    return this.clientPointToLocal(event.clientX, event.clientY);
+  }
+
+  private clientPointToLocal(clientX: number, clientY: number): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
-    const ndcX = ((event.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
-    const ndcY = 1 - ((event.clientY - rect.top) / Math.max(1, rect.height)) * 2;
+    const ndcX = ((clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+    const ndcY = 1 - ((clientY - rect.top) / Math.max(1, rect.height)) * 2;
     return {
       x: ndcX / Math.max(0.0001, this.scaleX),
       y: ndcY / Math.max(0.0001, this.scaleY),
@@ -718,6 +789,11 @@ export class SquishSurface {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.shapeTexture);
     gl.uniform1i(this.shapeFieldUniform, 0);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.appearanceTexture);
+    gl.uniform1i(this.appearanceTextureUniform, 1);
+    gl.uniform1i(this.appearanceEnabledUniform, this.appearanceEnabled ? 1 : 0);
+    gl.activeTexture(gl.TEXTURE0);
     gl.uniform2f(this.scaleUniform, this.scaleX, this.scaleY);
     gl.uniform2f(
       this.pointerUvUniform,

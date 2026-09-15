@@ -24,6 +24,7 @@ walk(root);
 let totalBytes = 0;
 let sdkReferenceFound = false;
 let qaMarkerFound = false;
+let appearanceProbeMarkerFound = false;
 for (const path of files) {
   const size = statSync(path).size;
   totalBytes += size;
@@ -31,10 +32,12 @@ for (const path of files) {
   const text = readFileSync(path, 'utf8');
   if (text.includes('/sdk.js')) sdkReferenceFound = true;
   if (text.includes('squishy.phone-qa.open.v1')) qaMarkerFound = true;
+  if (text.includes('squishy.appearance-probe.v1')) appearanceProbeMarkerFound = true;
 }
 
 if (!sdkReferenceFound) throw new Error('Yandex SDK /sdk.js reference was not found in the release bundle');
 if (qaMarkerFound) throw new Error('Phone QA code leaked into the Yandex release bundle');
+if (appearanceProbeMarkerFound) throw new Error('Appearance probe code leaked into the Yandex release bundle');
 if (totalBytes > 5 * 1024 * 1024) throw new Error(`Yandex dist exceeds 5 MiB budget: ${totalBytes} bytes`);
 
 console.log(`Verified Yandex dist: ${files.length} files, ${totalBytes} bytes`);

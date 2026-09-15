@@ -306,3 +306,66 @@ test('fresh save completes one real standard craft and persists collection progr
 
   expect(fatalErrors).toEqual([]);
 });
+
+test('Pages appearance probe persists custom paint and keeps it on the real squeeze surface', async ({ page }) => {
+  const fatalErrors = watchFatalBrowserErrors(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${PAGES_URL}?appearanceProbe=1`);
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+  await page.reload();
+
+  const shell = page.locator('[data-appearance-probe]');
+  const canvas = page.locator('[data-probe-canvas]');
+  await expect(shell).toBeVisible();
+  await expect(shell).toHaveAttribute('data-probe-loaded', 'true');
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+
+  const drawStroke = async (points: readonly [number, number][]): Promise<void> => {
+    const first = points[0];
+    if (!first) throw new Error('appearance probe stroke needs points');
+    await page.mouse.move(first[0], first[1]);
+    await page.mouse.down();
+    for (const [x, y] of points.slice(1)) await page.mouse.move(x, y, { steps: 3 });
+    await page.mouse.up();
+  };
+
+  await drawStroke([[cx - 56, cy - 18], [cx - 12, cy - 4], [cx + 48, cy + 14]]);
+  await page.locator('[data-probe-tool="color-b"]').click();
+  await drawStroke([[cx - 8, cy - 58], [cx - 2, cy], [cx + 10, cy + 58]]);
+  await page.locator('[data-probe-tool="erase"]').click();
+  await page.locator('[data-probe-size="18"]').click();
+  await drawStroke([[cx + 8, cy - 4], [cx + 28, cy + 12], [cx + 42, cy + 20]]);
+
+  await expect(shell).toHaveAttribute('data-probe-strokes', '3');
+  await expect(shell).toHaveAttribute('data-probe-budget', 'pass');
+  expect(Number(await shell.getAttribute('data-probe-bytes'))).toBeLessThanOrEqual(6_000);
+  await page.locator('[data-probe-action="save"]').click();
+  await expect(shell).toHaveAttribute('data-probe-saved', 'true');
+
+  await page.reload();
+  const reloadedShell = page.locator('[data-appearance-probe]');
+  await expect(reloadedShell).toHaveAttribute('data-probe-loaded', 'true');
+  await expect(reloadedShell).toHaveAttribute('data-probe-strokes', '3');
+  await expect(reloadedShell).toHaveAttribute('data-probe-budget', 'pass');
+
+  await page.locator('[data-probe-mode="squeeze"]').click();
+  const squeezeBox = await page.locator('[data-probe-canvas]').boundingBox();
+  expect(squeezeBox).not.toBeNull();
+  if (!squeezeBox) return;
+  const sx = squeezeBox.x + squeezeBox.width * 0.48;
+  const sy = squeezeBox.y + squeezeBox.height * 0.5;
+  await page.mouse.move(sx, sy);
+  await page.mouse.down();
+  await page.mouse.move(sx + squeezeBox.width * 0.24, sy + squeezeBox.height * 0.07, { steps: 10 });
+  await page.mouse.up();
+  await expect.poll(async () => Number(await reloadedShell.getAttribute('data-probe-squeezes'))).toBeGreaterThan(0);
+
+  expect(fatalErrors).toEqual([]);
+});

@@ -26,6 +26,8 @@ precision highp float;
 in vec2 vUv;
 
 uniform sampler2D uShapeField;
+uniform sampler2D uAppearanceTexture;
+uniform bool uAppearanceEnabled;
 uniform vec2 uPointerUv;
 uniform vec2 uStrainDirection;
 uniform vec3 uColorLow;
@@ -106,6 +108,10 @@ void main() {
 
   float vertical = smoothstep(0.0, 1.0, vUv.y);
   vec3 base = mix(uColorLow, uColorHigh, vertical);
+  if (uAppearanceEnabled) {
+    vec4 appearance = texture(uAppearanceTexture, vUv);
+    base = mix(base, appearance.rgb, clamp(appearance.a, 0.0, 1.0));
+  }
 
   float edge = smoothstep(0.5, 1.0, shape);
   base *= 1.0 - edge * 0.26;
