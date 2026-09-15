@@ -1,0 +1,22 @@
+name: Sandbox S1 Temporary Browser Gate
+
+on:
+  push:
+    branches:
+      - sandbox-pivot-s1-core
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run qa:release
