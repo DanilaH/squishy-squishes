@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - name: Harden persisted ids and short landscape empty state
+      - name: Apply S2 security, responsive and QA hardening
         run: node scripts/apply-sandbox-s2-hardening.mjs
       - run: npm install
       - run: npx playwright install --with-deps chromium
@@ -30,7 +30,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/sandbox/SandboxLibraryApp.ts src/sandbox-library.css
+          git add src/sandbox/SandboxLibraryApp.ts src/sandbox-library.css tests/release/release.spec.ts
           git diff --cached --check
           git commit -m "Harden Sandbox S2 library"
           git push origin HEAD:sandbox-pivot-s2-library
