@@ -313,6 +313,7 @@ export class SandboxLibraryApp {
     const idea = SQUISHY_IDEAS.find((candidate) => candidate.id === ideaId);
     if (!idea) return;
     this.root.querySelector('[data-idea-complete]')?.remove();
+    this.root.querySelector('[data-idea-guide]')?.remove();
     const notice = document.createElement('aside');
     notice.className = 'sandbox-idea-complete';
     notice.dataset.ideaComplete = '';
