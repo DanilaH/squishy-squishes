@@ -458,6 +458,11 @@ export class VerticalSliceApp {
   private setStage(next: CraftStage): void {
     this.clearTransitionTimer();
     this.clearMoldTargetTimer();
+    if (next !== 'collect' && this.feedbackTimer !== null) {
+      window.clearTimeout(this.feedbackTimer);
+      this.feedbackTimer = null;
+      this.progressionFeedback.hidden = true;
+    }
     this.audio.stopPour();
     this.stage = next;
     this.collectionButton.disabled = next !== 'select' || this.activityBlocked;
