@@ -194,7 +194,7 @@ test('S6 interstitial cadence counts completed saves, not saved-toy revisits, an
   // Save two more toys without a Library break between them. Both completions must be retained.
   await startAndCompleteToy(page, 'paw');
   expect((await readYandexState(page)).fullscreenRequests).toBe(0);
-  await page.locator('[data-action="new"]').click();
+  await page.getByRole('button', { name: 'NEW SQUISHY', exact: true }).click();
   await completeToyFromShape(page, 'peach');
   expect((await readYandexState(page)).fullscreenRequests).toBe(0);
 
