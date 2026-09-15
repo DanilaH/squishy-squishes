@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   visual:
-    if: startsWith(github.event.head_commit.message, 'Arm Sandbox S3 visual review') || startsWith(github.event.head_commit.message, 'Apply Sandbox S3 visual polish')
+    if: startsWith(github.event.head_commit.message, 'Arm Sandbox S3 visual review') || startsWith(github.event.head_commit.message, 'Apply Sandbox S3 visual polish') || startsWith(github.event.head_commit.message, 'Apply Sandbox S3 accessory seat correction')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -24,6 +24,9 @@ jobs:
       - name: Apply visual polish patch
         if: startsWith(github.event.head_commit.message, 'Apply Sandbox S3 visual polish')
         run: node scripts/apply-sandbox-s3-visual-polish.mjs
+      - name: Apply accessory seat correction
+        if: startsWith(github.event.head_commit.message, 'Apply Sandbox S3 accessory seat correction')
+        run: node scripts/apply-sandbox-s3-accessory-seat.mjs
       - run: npm install
       - run: npm run build
       - run: npx playwright install --with-deps chromium
@@ -40,7 +43,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+DanilaH@users.noreply.github.com"
-          git add src/sandbox/SandboxApp.ts src/sandbox/decor.ts artifacts/s3-visual
+          git add src/sandbox/SandboxApp.ts src/sandbox/decor.ts src/sandbox/libraryThumbnail.ts artifacts/s3-visual
           git diff --cached --check
-          git commit -m "Polish Sandbox S3 visual acceptance"
+          git commit -m "Seat S3 accessories on live surface projection"
           git push origin HEAD:sandbox-pivot-s3-decor
