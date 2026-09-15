@@ -30,6 +30,7 @@ jobs:
           s = s.replace('  createEmptyAppearanceDocument,\n', '')
           s = s.replace('  private paintColor = PAINT_COLORS[0];', '  private paintColor: number = PAINT_COLORS[0];')
           s = s.replace('  private brushSize = BRUSH_SIZES[1];', '  private brushSize: number = BRUSH_SIZES[1];')
+          s = s.replace('  private authoredStrokeColor = PAINT_COLORS[0];', '  private authoredStrokeColor: number = PAINT_COLORS[0];')
           s = s.replace('  private latestMetrics: SquishMetrics | null = null;\n', '')
           s = s.replace('    this.latestMetrics = metrics;\n', '')
           p.write_text(s)
