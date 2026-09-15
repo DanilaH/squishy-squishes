@@ -8,6 +8,7 @@ import './ui-ux-overhaul-02.css';
 import './sandbox-core.css';
 import './sandbox-library.css';
 import './sandbox-ideas.css';
+import './sandbox-polish-01.css';
 import { bootstrapSquishyApp } from './app/bootstrap';
 import { getGameCopy, normalizeLanguage } from './i18n';
 
