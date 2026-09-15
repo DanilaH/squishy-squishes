@@ -2,6 +2,7 @@ import { JsonStorageRepository, type StorageAdapter } from '@danilah/mini-games-
 import { ALL_VARIANT_IDS, MATERIALS, type MaterialId } from '../game/content';
 import { SHAPES, type ShapeId } from '../game/shapes';
 import { decodeAppearanceDocument } from '../sandbox/appearance';
+import { createEmptyDecorDocument, decodeDecorDocument, encodeDecorDocument } from '../sandbox/decor';
 import type { SavedSquishy } from '../sandbox/types';
 import {
   SAVE_STORAGE_KEY as SAVE_V2_STORAGE_KEY,
@@ -85,6 +86,7 @@ const readSavedSquishy = (value: unknown): SavedSquishy => {
     shapeId: value.shapeId as ShapeId,
     materialId: value.materialId as MaterialId,
     appearance: decodeAppearanceDocument(value.appearance),
+    decor: value.decor === undefined ? createEmptyDecorDocument() : decodeDecorDocument(value.decor),
   };
 };
 
@@ -129,6 +131,14 @@ export const decodeSaveStateV3 = (value: unknown): SaveStateV3 => {
   };
 };
 
+export const encodeSaveStateV3 = (state: SaveStateV3): unknown => ({
+  ...state,
+  library: state.library.map((toy) => ({
+    ...toy,
+    decor: encodeDecorDocument(toy.decor),
+  })),
+});
+
 export const createSaveV3Repository = (storage: StorageAdapter): JsonStorageRepository<SaveStateV3> =>
   new JsonStorageRepository({
     storage,
@@ -136,7 +146,7 @@ export const createSaveV3Repository = (storage: StorageAdapter): JsonStorageRepo
     createDefault: createDefaultSaveV3,
     codec: {
       decode: decodeSaveStateV3,
-      encode: (state) => state,
+      encode: encodeSaveStateV3,
     },
   });
 
@@ -201,6 +211,7 @@ export const createSavedSquishy = (
   shapeId: input.shapeId,
   materialId: input.materialId,
   appearance: input.appearance,
+  decor: input.decor,
 });
 
 const assertCandidateIdAvailable = (
@@ -263,7 +274,7 @@ export const deleteSavedSquishy = (
 };
 
 export const estimateSaveStateV3Bytes = (state: SaveStateV3): number =>
-  new TextEncoder().encode(JSON.stringify(state)).byteLength;
+  new TextEncoder().encode(JSON.stringify(encodeSaveStateV3(state))).byteLength;
 
 /** @deprecated S1 compatibility helper. S2 should use append/replace/delete operations. */
 export const saveSingleS1Squishy = (

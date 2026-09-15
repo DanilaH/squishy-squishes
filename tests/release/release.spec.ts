@@ -5,6 +5,12 @@ import {
   estimateAppearanceBytes,
   type AppearanceDocumentV1,
 } from '../../src/sandbox/appearance';
+import {
+  createEmptyDecorDocument,
+  createStickerPlacement,
+  estimateDecorBytes,
+  type DecorDocumentV1,
+} from '../../src/sandbox/decor';
 import type { SavedSquishy } from '../../src/sandbox/types';
 import {
   createDefaultSaveV3,
@@ -129,8 +135,10 @@ const seedSaveV3 = async (page: Page, save: SaveStateV3, url = PAGES_URL): Promi
   await page.reload();
 };
 
-const readBrowserSave = async (page: Page): Promise<SaveStateV3> =>
-  page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as SaveStateV3);
+const readBrowserSave = async (page: Page): Promise<SaveStateV3> => {
+  const raw = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as unknown);
+  return decodeSaveStateV3(raw);
+};
 
 const getCanvasBox = async (page: Page): Promise<{ x: number; y: number; width: number; height: number }> => {
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
@@ -198,10 +206,52 @@ const craftMinimalToy = async (
   await expect(shell).toHaveAttribute('data-stage', 'mix');
   await performRealMix(page);
   await page.locator('[data-action="mix-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'decor');
+  await page.locator('[data-action="decor-continue"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'finish');
   await page.locator(`.sandbox-material[data-material="${materialId}"]`).click();
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+};
+
+const advanceFreshToyToDecor = async (
+  page: Page,
+  shapeId: SavedSquishy['shapeId'] = 'soft-square',
+): Promise<Locator> => {
+  await page.locator('[data-library-new]').first().click();
+  const shell = page.locator('[data-sandbox-app]');
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
+  await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();
+  await page.locator('[data-action="shape-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'paint');
+  await page.locator('[data-action="paint-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'mixins');
+  await page.locator('[data-action="mixin-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'mix');
+  await performRealMix(page);
+  await page.locator('[data-action="mix-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'decor');
+  return shell;
+};
+
+const createFixtureDecor = (seed: number, rich = false): DecorDocumentV1 => {
+  const stickerCount = rich ? 12 : 2;
+  const stickerIds = ['heart', 'star', 'flower', 'sparkle'] as const;
+  return {
+    v: 1,
+    eyes: seed % 2 === 0 ? 'happy' : 'dot',
+    mouth: seed % 3 === 0 ? 'cat' : 'smile',
+    blush: seed % 2 === 0,
+    stickers: Array.from({ length: stickerCount }, (_, index) => createStickerPlacement(
+      stickerIds[(seed + index) % stickerIds.length]!,
+      {
+        u: 0.20 + ((seed * 19 + index * 17) % 60) / 100,
+        v: 0.22 + ((seed * 11 + index * 23) % 56) / 100,
+      },
+      index,
+    )),
+    accessory: seed % 2 === 0 ? 'crown' : 'cat-ears',
+  };
 };
 
 const createFixtureAppearance = (seed: number, rich = false): AppearanceDocumentV1 => {
@@ -241,6 +291,7 @@ const createFixtureToy = (index: number, rich = false): SavedSquishy => ({
   shapeId: FIXTURE_SHAPES[index % FIXTURE_SHAPES.length]!,
   materialId: FIXTURE_MATERIALS[index % FIXTURE_MATERIALS.length]!,
   appearance: createFixtureAppearance(index, rich),
+  decor: rich ? createFixtureDecor(index, true) : createEmptyDecorDocument(),
 });
 
 const createFixtureSave = (count: number, rich = false): SaveStateV3 => ({
@@ -330,7 +381,35 @@ test('SaveStateV2 migrates to V3 and boots the empty Library without fabricating
   expect(fatalErrors).toEqual([]);
 });
 
-test('Yandex S2 Library honors SDK lifecycle, RU copy, QA exclusion and settings persistence', async ({ page }) => {
+test('an S2-era V3 toy without decor normalizes to empty decor without losing authored data', async ({ page }) => {
+  const fatalErrors = watchFatalBrowserErrors(page);
+  const canonical = createFixtureSave(1);
+  const legacy = JSON.parse(JSON.stringify(canonical)) as { library: Array<Record<string, unknown>> };
+  delete legacy.library[0]!.decor;
+
+  const decoded = decodeSaveStateV3(legacy);
+  expect(decoded.library[0]!.decor).toEqual(createEmptyDecorDocument());
+  expect(decoded.library[0]!.appearance).toEqual(canonical.library[0]!.appearance);
+  expect(decoded.library[0]!.shapeId).toBe(canonical.library[0]!.shapeId);
+
+  await page.goto(PAGES_URL);
+  await page.evaluate((value) => {
+    localStorage.clear();
+    localStorage.setItem('squishy.save.v3', JSON.stringify(value));
+  }, legacy);
+  await page.reload();
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
+  await page.locator('[data-library-play-id="fixture-0"]').click();
+  const shell = page.locator('[data-sandbox-app]');
+  await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+  await expect(shell).toHaveAttribute('data-decor-eyes', 'none');
+  await expect(shell).toHaveAttribute('data-decor-mouth', 'none');
+  await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');
+  await expect(shell).toHaveAttribute('data-decor-accessory', 'none');
+  expect(fatalErrors).toEqual([]);
+});
+
+test('Yandex S3 Library honors SDK lifecycle, RU copy, QA exclusion and settings persistence', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await installYandexStub(page, 'ru');
   await page.setViewportSize({ width: 390, height: 844 });
@@ -354,7 +433,7 @@ test('Yandex S2 Library honors SDK lifecycle, RU copy, QA exclusion and settings
   expect(fatalErrors).toEqual([]);
 });
 
-test('real S2 crafts append in order, reload, and a non-latest saved toy opens directly into Squeeze', async ({ page }) => {
+test('real sandbox crafts append in order, reload, and a non-latest saved toy opens directly into Squeeze', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(PAGES_URL);
@@ -442,6 +521,9 @@ test('full 8-slot Library allows creation, mutates nothing before replacement, s
   await page.locator('[data-action="mixin-continue"]').click();
   await performRealMix(page);
   await page.locator('[data-action="mix-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'decor');
+  await page.locator('[data-action="decor-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'finish');
   await page.locator('.sandbox-material[data-material="holo"]').click();
   await page.locator('[data-action="save"]').click();
 
@@ -471,7 +553,198 @@ test('full 8-slot Library allows creation, mutates nothing before replacement, s
   expect(fatalErrors).toEqual([]);
 });
 
-test('S2 payload evidence measures valid 1 / 8 / 24-slot V3 envelopes', async () => {
+test('S3 Decor authors identity through real UI, preserves paint/mix-ins, saves, reloads and reopens non-latest', async ({ page }) => {
+  const fatalErrors = watchFatalBrowserErrors(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(PAGES_URL);
+  await clearStorageAndReload(page);
+
+  await page.locator('[data-library-new]').first().click();
+  const shell = page.locator('[data-sandbox-app]');
+  await page.locator('.sandbox-shape[data-shape="heart"]').click();
+  await page.locator('[data-action="shape-continue"]').click();
+  const box = await getCanvasBox(page);
+  const cx = box.x + box.width * 0.5;
+  const cy = box.y + box.height * 0.5;
+  await drawSandboxStroke(page, [[cx - 26, cy - 12], [cx, cy], [cx + 28, cy + 14]]);
+  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-mixin="hearts"]').click();
+  await page.mouse.click(cx - 22, cy + 10);
+  await page.mouse.click(cx + 24, cy + 18);
+  await page.locator('[data-action="mixin-continue"]').click();
+  await performRealMix(page);
+  await page.locator('[data-action="mix-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'decor');
+  await expect(shell).toContainText('5 / 6');
+  const decorBox = await getCanvasBox(page);
+  const decorCx = decorBox.x + decorBox.width * 0.5;
+  const decorCy = decorBox.y + decorBox.height * 0.5;
+
+  const paintStrokes = await shell.getAttribute('data-paint-strokes');
+  const mixinCount = await shell.getAttribute('data-mixin-count');
+  expect(Number(paintStrokes)).toBeGreaterThan(0);
+  expect(Number(mixinCount)).toBeGreaterThan(0);
+
+  await page.locator('[data-decor-eyes="happy"]').click();
+  await page.locator('[data-decor-mouth="cat"]').click();
+  await page.locator('[data-action="decor-blush"]').click();
+  await expect(shell).toHaveAttribute('data-decor-eyes', 'happy');
+  await expect(shell).toHaveAttribute('data-decor-mouth', 'cat');
+  await expect(shell).toHaveAttribute('data-decor-blush', 'true');
+
+  await page.locator('[data-decor-section="stickers"]').click();
+  await page.locator('[data-decor-sticker="star"]').click();
+  await page.mouse.click(decorCx - 30, decorCy + 25);
+  await page.locator('[data-decor-sticker="flower"]').click();
+  await page.mouse.click(decorCx + 34, decorCy + 28);
+  await expect(shell).toHaveAttribute('data-decor-sticker-count', '2');
+  await page.locator('[data-action="decor-undo"]').click();
+  await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
+  await page.locator('[data-action="decor-clear"]').click();
+  await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');
+  await page.locator('[data-decor-sticker="sparkle"]').click();
+  await page.mouse.click(decorCx + 5, decorCy - 16);
+  await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
+  await expect(shell).toHaveAttribute('data-paint-strokes', paintStrokes ?? '0');
+  await expect(shell).toHaveAttribute('data-mixin-count', mixinCount ?? '0');
+
+  await page.locator('[data-decor-section="accessory"]').click();
+  await page.locator('[data-decor-accessory="crown"]').click();
+  await expect(shell).toHaveAttribute('data-decor-accessory', 'crown');
+  await expect(page.locator('[data-sandbox-accessory]')).toBeVisible();
+  await page.locator('[data-decor-accessory="none"]').click();
+  await expect(shell).toHaveAttribute('data-decor-accessory', 'none');
+  await expect(page.locator('[data-sandbox-accessory]')).toBeHidden();
+  await page.locator('[data-decor-accessory="cat-ears"]').click();
+  await expect(shell).toHaveAttribute('data-decor-accessory', 'cat-ears');
+
+  await page.locator('[data-action="decor-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'finish');
+  await expect(shell).toContainText('6 / 6');
+  await page.locator('[data-action="finish-back"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'decor');
+  await expect(shell).toHaveAttribute('data-decor-eyes', 'happy');
+  await expect(shell).toHaveAttribute('data-decor-accessory', 'cat-ears');
+  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('.sandbox-material[data-material="holo"]').click();
+  await page.locator('[data-action="save"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+
+  const saved = await readBrowserSave(page);
+  expect(saved.library).toHaveLength(1);
+  const first = saved.library[0]!;
+  expect(first.decor).toMatchObject({ eyes: 'happy', mouth: 'cat', blush: true, accessory: 'cat-ears' });
+  expect(first.decor.stickers).toHaveLength(1);
+  expect(first.appearance.strokes.length).toBe(Number(paintStrokes));
+  expect(first.appearance.mixins.length).toBe(Number(mixinCount));
+
+  const accessory = page.locator('[data-sandbox-accessory]');
+  await expect(accessory).toBeVisible();
+  expect(await accessory.evaluate((node) => getComputedStyle(node).pointerEvents)).toBe('none');
+  await expect.poll(async () => accessory.getAttribute('data-accessory-matrix')).not.toBeNull();
+  const before = await accessory.evaluate((node) => ({
+    x: Number((node as HTMLElement).dataset.accessoryAnchorX),
+    y: Number((node as HTMLElement).dataset.accessoryAnchorY),
+    matrix: (node as HTMLElement).dataset.accessoryMatrix ?? '',
+  }));
+  const squeezeBox = await getCanvasBox(page);
+  const sx = squeezeBox.x + squeezeBox.width * 0.5;
+  const sy = squeezeBox.y + squeezeBox.height * 0.34;
+  await page.mouse.move(sx, sy);
+  await page.mouse.down();
+  await page.mouse.move(sx + Math.min(82, squeezeBox.width * 0.22), sy + 18, { steps: 12 });
+  await expect.poll(async () => accessory.evaluate((node, baseline) => {
+    const element = node as HTMLElement;
+    const x = Number(element.dataset.accessoryAnchorX);
+    const y = Number(element.dataset.accessoryAnchorY);
+    const matrix = element.dataset.accessoryMatrix ?? '';
+    return Math.hypot(x - baseline.x, y - baseline.y) > 1.5 || matrix !== baseline.matrix;
+  }, before)).toBe(true);
+  await page.mouse.up();
+  await expect.poll(async () => Number(await shell.getAttribute('data-sandbox-squeezes'))).toBeGreaterThan(0);
+
+  await page.locator('[data-action="home"]').click();
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
+  const decoratedThumb = page.locator(`[data-library-thumbnail="${first.id}"]`).first();
+  const decoratedThumbData = await decoratedThumb.evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
+  expect(decoratedThumbData.length).toBeGreaterThan(200);
+
+  await craftMinimalToy(page, 'paw', 'soft', 3);
+  await page.locator('[data-action="home"]').click();
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '2');
+  await page.reload();
+  const reloaded = await readBrowserSave(page);
+  expect(reloaded.library[0]!.decor).toEqual(first.decor);
+  await page.locator(`[data-library-play-id="${first.id}"]`).click();
+  const reopened = page.locator('[data-sandbox-app]');
+  await expect(reopened).toHaveAttribute('data-stage', 'squeeze');
+  await expect(reopened).toHaveAttribute('data-decor-eyes', 'happy');
+  await expect(reopened).toHaveAttribute('data-decor-mouth', 'cat');
+  await expect(reopened).toHaveAttribute('data-decor-blush', 'true');
+  await expect(reopened).toHaveAttribute('data-decor-sticker-count', '1');
+  await expect(reopened).toHaveAttribute('data-decor-accessory', 'cat-ears');
+  expect(fatalErrors).toEqual([]);
+});
+
+test('Library thumbnails render saved decor distinctly from an otherwise identical undecorated toy', async ({ page }) => {
+  const base = createFixtureToy(0);
+  const decorated: SavedSquishy = { ...base, id: 'decorated-twin', createdAt: 2_000, decor: createFixtureDecor(2, false) };
+  const plain: SavedSquishy = { ...base, id: 'plain-twin', createdAt: 2_001, decor: createEmptyDecorDocument() };
+  const save: SaveStateV3 = { ...createDefaultSaveV3(), library: [decorated, plain], totalCrafts: 2, updatedAt: 2_001 };
+  await seedSaveV3(page, save);
+  const decoratedData = await page.locator('[data-library-thumbnail="decorated-twin"]').evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
+  const plainData = await page.locator('[data-library-thumbnail="plain-twin"]').evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
+  expect(decoratedData).not.toBe(plainData);
+});
+
+test('the same S3 decor document renders and opens across all six production shapes', async ({ page }) => {
+  const decor = createFixtureDecor(4, false);
+  const library = FIXTURE_SHAPES.map((shapeId, index): SavedSquishy => ({
+    ...createFixtureToy(index),
+    id: `decor-shape-${shapeId}`,
+    shapeId,
+    decor,
+  }));
+  const save: SaveStateV3 = { ...createDefaultSaveV3(), library, totalCrafts: library.length, updatedAt: 77 };
+  await seedSaveV3(page, save);
+  await expect(page.locator('[data-library-toy]')).toHaveCount(6);
+  for (const toy of library) {
+    await page.locator(`[data-library-play-id="${toy.id}"]`).click();
+    const shell = page.locator('[data-sandbox-app]');
+    await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+    await expect(shell).toHaveAttribute('data-shape', toy.shapeId);
+    await expect(shell).toHaveAttribute('data-decor-accessory', decor.accessory ?? 'none');
+    await expect(page.locator('[data-sandbox-accessory]')).toBeVisible();
+    await page.locator('[data-action="home"]').click();
+  }
+});
+
+for (const viewport of [
+  { name: 'phone portrait', width: 390, height: 844 },
+  { name: 'short landscape', width: 844, height: 390 },
+] as const) {
+  test(`S3 Decor controls remain contained in ${viewport.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto(PAGES_URL);
+    await clearStorageAndReload(page);
+    const shell = await advanceFreshToyToDecor(page, 'mochi');
+    await expect(shell).toHaveAttribute('data-stage', 'decor');
+    await expectInViewport(page, page.locator('.sandbox-decor-tabs'));
+    await expectInViewport(page, page.locator('[data-action="decor-continue"]'));
+    await page.locator('[data-decor-section="accessory"]').click();
+    const accessoryPanel = page.locator('[data-decor-panel="accessory"]');
+    await expectInViewport(page, page.locator('[data-decor-accessory="crown"]'));
+    if (viewport.name === 'short landscape') {
+      for (const internalId of ['cat-ears', 'bunny-ears', 'horns', 'bow', 'crown']) {
+        const option = accessoryPanel.locator(`[data-decor-accessory="${internalId}"]`);
+        await expect(option).toBeVisible();
+        await expect(option).not.toContainText(internalId);
+      }
+    }
+  });
+}
+
+test('S3 payload evidence measures valid decorated 1 / 8 / 24-slot V3 envelopes', async () => {
   const one = createFixtureSave(1, true);
   const eight = createFixtureSave(8, true);
   const stress = createFixtureSave(24, true);
@@ -484,12 +757,16 @@ test('S2 payload evidence measures valid 1 / 8 / 24-slot V3 envelopes', async ()
   const eightBytes = estimateSaveStateV3Bytes(eight);
   const stressBytes = estimateSaveStateV3Bytes(stress);
   const largestAppearance = Math.max(...stress.library.map((toy) => estimateAppearanceBytes(toy.appearance)));
+  const largestDecor = Math.max(...stress.library.map((toy) => estimateDecorBytes(toy.decor)));
+  const typicalDecor = estimateDecorBytes(createFixtureDecor(0, false));
 
-  console.info(`[squishy:s2-payload] one=${oneBytes} eight=${eightBytes} stress24=${stressBytes} largestAppearance=${largestAppearance}`);
+  console.info(`[squishy:s3-payload] one=${oneBytes} eight=${eightBytes} stress24=${stressBytes} largestAppearance=${largestAppearance} largestDecor=${largestDecor} typicalDecor=${typicalDecor}`);
   expect(oneBytes).toBeGreaterThan(0);
   expect(eightBytes).toBeGreaterThan(oneBytes);
   expect(stressBytes).toBeGreaterThan(eightBytes);
+  expect(stressBytes).toBeLessThan(100_000);
   expect(largestAppearance).toBeLessThanOrEqual(6_000);
+  expect(largestDecor).toBeLessThan(512);
 });
 
 test('Pages appearance probe still persists custom paint and uses the real squeeze surface', async ({ page }) => {

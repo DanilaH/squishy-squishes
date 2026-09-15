@@ -4,6 +4,7 @@ import {
   APPEARANCE_TEXTURE_SIZE,
   replayAppearanceDocument,
 } from './appearance';
+import { drawAccessoryGraphic, getDecorFrame, renderSurfaceDecor } from './decor';
 import type { SavedSquishy } from './types';
 
 const THUMBNAIL_SIZE = 256;
@@ -57,6 +58,27 @@ export const renderLibraryThumbnail = (
   if (!context) return;
 
   context.clearRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+
+  const shape = getShape(toy.shapeId);
+  if (toy.decor.accessory) {
+    const frame = getDecorFrame(shape);
+    const localX = frame.headAnchor.u * 2 - 1;
+    const localY = (frame.headAnchor.v + frame.headSeatOffsetV) * 2 - 1;
+    const scale = Math.min(THUMBNAIL_SIZE, THUMBNAIL_SIZE) * 0.5 - SHAPE_PADDING;
+    const anchorX = THUMBNAIL_SIZE * 0.5 + localX * scale;
+    const anchorY = THUMBNAIL_SIZE * 0.5 - localY * scale;
+    const accessoryCanvas = document.createElement('canvas');
+    accessoryCanvas.width = 180;
+    accessoryCanvas.height = 120;
+    const accessoryContext = accessoryCanvas.getContext('2d');
+    if (accessoryContext) {
+      drawAccessoryGraphic(accessoryContext, toy.decor.accessory, 180, 120);
+      const drawWidth = 112;
+      const drawHeight = 75;
+      context.drawImage(accessoryCanvas, anchorX - drawWidth * 0.5, anchorY - drawHeight * 0.9, drawWidth, drawHeight);
+    }
+  }
+
   context.save();
   context.shadowColor = 'rgba(69, 47, 89, 0.18)';
   context.shadowBlur = 18;
@@ -79,6 +101,7 @@ export const renderLibraryThumbnail = (
   const appearanceContext = appearanceCanvas.getContext('2d');
   if (appearanceContext) {
     replayAppearanceDocument(appearanceContext, toy.appearance);
+    renderSurfaceDecor(appearanceContext, toy.decor, shape);
     context.drawImage(appearanceCanvas, 0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   }
 
