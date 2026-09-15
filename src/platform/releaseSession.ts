@@ -1,7 +1,8 @@
 import { ActionInterstitialGate } from '@danilah/mini-games-kit/platform';
 import type { SquishyPlatformRuntime } from './runtime';
 
-const ACTIVE_CRAFT_STAGES = new Set(['pour', 'add', 'mix', 'mold', 'reveal', 'test']);
+const LEGACY_ACTIVE_CRAFT_STAGES = new Set(['pour', 'add', 'mix', 'mold', 'reveal', 'test']);
+const SANDBOX_ACTIVE_CRAFT_STAGES = new Set(['paint', 'mixins', 'mix', 'finish']);
 
 export interface ReleaseSessionHandle {
   dispose(): void;
@@ -9,18 +10,17 @@ export interface ReleaseSessionHandle {
 
 const selectionParams = (shell: HTMLElement): Readonly<Record<string, string>> => ({
   shape: shell.dataset.shape ?? 'unknown',
-  palette: shell.dataset.palette ?? 'unknown',
   material: shell.dataset.material ?? 'unknown',
-  filling: shell.dataset.filling ?? 'unknown',
 });
 
 export const installReleaseSession = (
   root: HTMLDivElement,
   runtime: SquishyPlatformRuntime,
 ): ReleaseSessionHandle => {
-  const shell = root.querySelector<HTMLElement>('.lab-shell');
+  const shell = root.querySelector<HTMLElement>('.sandbox-shell, .lab-shell');
+  if (!shell) throw new Error('Release session requires the mounted game shell.');
   const collection = root.querySelector<HTMLElement>('.collection-overlay');
-  if (!shell || !collection) throw new Error('Release session requires the mounted game shell.');
+  const sandbox = shell.classList.contains('sandbox-shell');
 
   const gate = new ActionInterstitialGate(
     () => performance.now(),
@@ -33,19 +33,25 @@ export const installReleaseSession = (
   gate.markReady();
 
   let disposed = false;
-  let previousStage = shell.dataset.stage ?? 'select';
-  let collectionOpen = !collection.hidden;
+  let previousStage = shell.dataset.stage ?? (sandbox ? 'shape' : 'select');
+  let collectionOpen = collection ? !collection.hidden : false;
   let completedCrafts = 0;
   let adInFlight = false;
 
   runtime.analytics.track('session_ready', {
     platform: runtime.kind,
     language: runtime.language,
+    mode: sandbox ? 'sandbox' : 'legacy',
   });
 
+  const isNaturalBreak = (): boolean => {
+    const stage = shell.dataset.stage ?? '';
+    if (sandbox) return stage === 'home';
+    return stage === 'select' && !collectionOpen;
+  };
+
   const showInterstitialIfEligible = async (): Promise<void> => {
-    if (disposed || runtime.kind !== 'yandex' || adInFlight) return;
-    if (shell.dataset.stage !== 'select' || !collection.hidden) return;
+    if (disposed || runtime.kind !== 'yandex' || adInFlight || !isNaturalBreak()) return;
     if (!gate.recordEligibleAction()) return;
 
     adInFlight = true;
@@ -69,13 +75,27 @@ export const installReleaseSession = (
   };
 
   const handleStageChange = (): void => {
-    const stage = shell.dataset.stage ?? 'select';
+    const stage = shell.dataset.stage ?? '';
     if (stage === previousStage) return;
 
-    if (stage === 'pour') {
-      runtime.analytics.track('craft_start', selectionParams(shell));
+    if (sandbox) {
+      if (previousStage === 'shape' && stage === 'paint') {
+        runtime.analytics.track('craft_start', selectionParams(shell));
+      }
+      if (previousStage === 'finish' && stage === 'squeeze') {
+        completedCrafts += 1;
+        runtime.analytics.track('craft_save', {
+          ...selectionParams(shell),
+          completedCrafts,
+        });
+      }
+      const returnedHomeAfterPlay = previousStage === 'squeeze' && stage === 'home';
+      previousStage = stage;
+      if (returnedHomeAfterPlay) void showInterstitialIfEligible();
+      return;
     }
 
+    if (stage === 'pour') runtime.analytics.track('craft_start', selectionParams(shell));
     if (stage === 'collect') {
       completedCrafts += 1;
       runtime.analytics.track('craft_collect', {
@@ -83,7 +103,6 @@ export const installReleaseSession = (
         completedCrafts,
       });
     }
-
     const completedLoopReturnedToSelect = previousStage === 'collect' && stage === 'select';
     previousStage = stage;
     if (completedLoopReturnedToSelect) void showInterstitialIfEligible();
@@ -92,16 +111,18 @@ export const installReleaseSession = (
   const stageObserver = new MutationObserver(handleStageChange);
   stageObserver.observe(shell, { attributes: true, attributeFilter: ['data-stage'] });
 
-  const handleCollectionChange = (): void => {
-    const isOpen = !collection.hidden;
-    if (isOpen === collectionOpen) return;
-    collectionOpen = isOpen;
-    runtime.activity.setGameplayDesired(!isOpen);
-    runtime.analytics.track(isOpen ? 'catalog_open' : 'catalog_close');
-  };
-
-  const collectionObserver = new MutationObserver(handleCollectionChange);
-  collectionObserver.observe(collection, { attributes: true, attributeFilter: ['hidden'] });
+  let collectionObserver: MutationObserver | null = null;
+  if (collection) {
+    const handleCollectionChange = (): void => {
+      const isOpen = !collection.hidden;
+      if (isOpen === collectionOpen) return;
+      collectionOpen = isOpen;
+      runtime.activity.setGameplayDesired(!isOpen);
+      runtime.analytics.track(isOpen ? 'catalog_open' : 'catalog_close');
+    };
+    collectionObserver = new MutationObserver(handleCollectionChange);
+    collectionObserver.observe(collection, { attributes: true, attributeFilter: ['hidden'] });
+  }
 
   const handleClick = (event: MouseEvent): void => {
     const target = event.target instanceof Element ? event.target : null;
@@ -130,11 +151,11 @@ export const installReleaseSession = (
       if (disposed) return;
       disposed = true;
       stageObserver.disconnect();
-      collectionObserver.disconnect();
+      collectionObserver?.disconnect();
       root.removeEventListener('click', handleClick);
-      if (ACTIVE_CRAFT_STAGES.has(shell.dataset.stage ?? '')) {
-        runtime.analytics.track('session_end_mid_craft', { stage: shell.dataset.stage ?? 'unknown' });
-      }
+      const stage = shell.dataset.stage ?? '';
+      const activeStages = sandbox ? SANDBOX_ACTIVE_CRAFT_STAGES : LEGACY_ACTIVE_CRAFT_STAGES;
+      if (activeStages.has(stage)) runtime.analytics.track('session_end_mid_craft', { stage });
     },
   };
 };

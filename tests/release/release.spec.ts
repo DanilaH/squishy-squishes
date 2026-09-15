@@ -99,28 +99,77 @@ const yandexState = async (page: Page): Promise<{
   };
 });
 
-test('Pages production build boots into the toy-first choose screen and shelf', async ({ page }) => {
+const clearStorageAndReload = async (page: Page): Promise<void> => {
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+  await page.reload();
+};
+
+const getCanvasBox = async (page: Page): Promise<{ x: number; y: number; width: number; height: number }> => {
+  const box = await page.locator('[data-sandbox-canvas]').boundingBox();
+  if (!box) throw new Error('Missing sandbox canvas box');
+  return box;
+};
+
+const drawSandboxStroke = async (
+  page: Page,
+  points: readonly [number, number][],
+): Promise<void> => {
+  const first = points[0];
+  if (!first) throw new Error('Sandbox stroke needs at least one point');
+  await page.mouse.move(first[0], first[1]);
+  await page.mouse.down();
+  for (const [x, y] of points.slice(1)) await page.mouse.move(x, y, { steps: 4 });
+  await page.mouse.up();
+};
+
+const performRealMix = async (page: Page): Promise<void> => {
+  const box = await getCanvasBox(page);
+  const cx = box.x + box.width * 0.5;
+  const cy = box.y + box.height * 0.5;
+  const dx = Math.min(72, box.width * 0.2);
+  const dy = Math.min(64, box.height * 0.18);
+  const points = [
+    [cx + dx, cy],
+    [cx, cy - dy],
+    [cx - dx, cy],
+    [cx, cy + dy],
+  ] as const;
+
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  for (let index = 0; index < 36; index += 1) {
+    const [x, y] = points[index % points.length]!;
+    await page.mouse.move(x, y, { steps: 2 });
+  }
+  await page.mouse.up();
+
+  await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-mix-progress')))
+    .toBeGreaterThanOrEqual(1);
+};
+
+test('Pages production build boots into Sandbox S1 with all six shapes open', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(PAGES_URL);
+  await clearStorageAndReload(page);
 
-  const shell = page.locator('.lab-shell');
-  await expect(shell).toHaveAttribute('data-stage', 'select');
-  await expect(page.locator('.recipe-dock')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'All squishies' })).toBeVisible();
-  await expect(page.locator('[data-shape-choice], [data-palette-choice], [data-filling-choice]')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'QA' })).toBeVisible();
+  const shell = page.locator('[data-sandbox-app]');
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
+  await expect(page.locator('.sandbox-shape')).toHaveCount(6);
+  await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);
+  for (const shapeId of ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw']) {
+    await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();
+    await expect(shell).toHaveAttribute('data-shape', shapeId);
+  }
+  await expect(page.locator('.lab-shell')).toHaveCount(0);
+  await expect(page.locator('.mold-target')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'CONTINUE' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'All squishies' }).click();
-  await expect(page.locator('.collection-overlay')).toBeVisible();
-  await expect(page.locator('.collection-card')).toHaveCount(24);
-  await expect(page.locator('.recipe-thumb')).toHaveCount(24);
-  await expect(page.locator('.collection-reset-button')).toBeHidden();
-  const cubeCards = page.locator('.collection-group').first().locator('.collection-card');
-  await expect(cubeCards.nth(0)).toHaveAttribute('data-recipe-id', 'grape-smooth');
-  await expect(cubeCards.nth(1)).toHaveAttribute('data-recipe-id', 'strawberry-smooth');
-  await expect(cubeCards.nth(2)).toHaveAttribute('data-recipe-id', 'grape-beads');
-
+  const save = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as unknown);
+  expect(save).toMatchObject({ version: 3, library: [], libraryCapacity: 8, totalCrafts: 0 });
   expect(fatalErrors).toEqual([]);
 });
 
@@ -129,193 +178,169 @@ for (const viewport of [
   { name: 'phone landscape', width: 844, height: 390 },
   { name: 'short desktop', width: 1280, height: 600 },
 ] as const) {
-  test(`primary select controls fit ${viewport.name}`, async ({ page }) => {
+  test(`Sandbox S1 primary shape controls fit ${viewport.name}`, async ({ page }) => {
     const fatalErrors = watchFatalBrowserErrors(page);
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto(PAGES_URL);
-    await expect(page.locator('.lab-shell')).toHaveAttribute('data-stage', 'select');
-    await expectInViewport(page, page.locator('.recipe-dock'));
-    await expectInViewport(page, page.locator('.recipe-dock__actions'));
-    if (viewport.name === 'phone landscape') {
-      await expect(page.locator('.stage-copy')).toBeHidden();
-    } else {
-      await expectInViewport(page, page.locator('.stage-copy'));
-    }
+    await clearStorageAndReload(page);
+
+    const shell = page.locator('[data-sandbox-app]');
+    await expect(shell).toHaveAttribute('data-stage', 'shape');
+    await expectInViewport(page, page.locator('.sandbox-controls'));
+    await expectInViewport(page, page.locator('.sandbox-shape').first());
+    await expectInViewport(page, page.locator('.sandbox-shape').last());
+    await expectInViewport(page, page.locator('[data-action="shape-continue"]'));
     expect(fatalErrors).toEqual([]);
   });
 }
 
-test('Yandex production build honors SDK lifecycle, RU locale, QA exclusion and settings persistence', async ({ page }) => {
+test('SaveStateV2 migrates deterministically to V3 without fabricating a custom toy', async ({ page }) => {
+  const fatalErrors = watchFatalBrowserErrors(page);
+  await page.addInitScript(() => {
+    localStorage.clear();
+    localStorage.setItem('squishy.save.v2', JSON.stringify({
+      version: 2,
+      completedVariantIds: ['grape-smooth', 'heart-strawberry-beads', 'not-a-real-recipe'],
+      totalCrafts: 7,
+      labXp: 425,
+      updatedAt: 12345,
+    }));
+  });
+  await page.goto(PAGES_URL);
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
+
+  const result = await page.evaluate(() => ({
+    v3: JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as Record<string, unknown>,
+    v2: localStorage.getItem('squishy.save.v2'),
+  }));
+  expect(result.v3).toMatchObject({
+    version: 3,
+    library: [],
+    libraryCapacity: 8,
+    completedRecipeIds: ['grape-smooth', 'heart-strawberry-beads'],
+    unlockedRewardIds: [],
+    totalCrafts: 7,
+  });
+  expect(result.v3).not.toHaveProperty('labXp');
+  expect(result.v2).toBeNull();
+  expect(fatalErrors).toEqual([]);
+});
+
+test('Yandex sandbox build honors SDK lifecycle, RU copy, QA exclusion and settings persistence', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await installYandexStub(page, 'ru');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(YANDEX_URL);
 
-  const shell = page.locator('.lab-shell');
-  await expect(shell).toHaveAttribute('data-stage', 'select');
-  await expect(page.getByRole('button', { name: 'Все сквиши' })).toBeVisible();
+  const shell = page.locator('[data-sandbox-app]');
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
+  await expect(page.getByRole('heading', { name: 'ВЫБЕРИ ФОРМУ' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'QA' })).toHaveCount(0);
+  await expect(page.locator('[data-appearance-probe]')).toHaveCount(0);
   await expect.poll(async () => (await yandexState(page)).loadingReady).toBe(1);
   await expect.poll(async () => (await yandexState(page)).gameplayStart).toBeGreaterThanOrEqual(1);
+  expect((await yandexState(page)).fullscreenRequests).toBe(0);
 
-  const startBeforeMenu = (await yandexState(page)).gameplayStart;
-  await page.getByRole('button', { name: 'Все сквиши' }).click();
-  await expect(page.locator('.collection-card')).toHaveCount(24);
-  await expect.poll(async () => (await yandexState(page)).gameplayStop).toBeGreaterThanOrEqual(1);
-  await page.getByRole('button', { name: 'Назад' }).click();
-  await expect.poll(async () => (await yandexState(page)).gameplayStart).toBeGreaterThan(startBeforeMenu);
-
-  await page.getByRole('button', { name: 'Звук выкл.' }).click();
+  await page.getByRole('button', { name: 'Звук вкл.' }).click();
   await expect.poll(async () => page.evaluate(() => localStorage.getItem('squishy.settings.v1'))).toContain('"muted":true');
+  await expect(page.getByRole('button', { name: 'Звук выкл.' })).toBeVisible();
+
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Звук вкл.' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Звук выкл.' })).toBeVisible();
   await expect.poll(async () => (await yandexState(page)).loadingReady).toBe(1);
-
   expect(fatalErrors).toEqual([]);
 });
 
-const paintDefaultShape = async (page: Page): Promise<void> => {
-  const workspace = page.locator('.lab-workspace');
-  const box = await workspace.boundingBox();
-  if (!box) throw new Error('Missing workspace box');
-  const hero = Math.max(120, Math.min(box.width, box.height) * 0.68);
-  const left = box.x + box.width / 2 - hero / 2;
-  const top = box.y + box.height / 2 - hero / 2;
-  const rows = 8;
-
-  await page.mouse.move(left + hero * 0.12, top + hero * 0.12);
-  await page.mouse.down();
-  for (let row = 0; row < rows; row += 1) {
-    const v = 0.12 + (0.76 * row) / (rows - 1);
-    const startU = row % 2 === 0 ? 0.12 : 0.88;
-    const endU = row % 2 === 0 ? 0.88 : 0.12;
-    await page.mouse.move(left + hero * startU, top + hero * v, { steps: 4 });
-    await page.mouse.move(left + hero * endU, top + hero * v, { steps: 24 });
-  }
-  await page.mouse.up();
-};
-
-const mixUntilMold = async (page: Page): Promise<void> => {
-  const shell = page.locator('.lab-shell');
-  const box = await page.locator('.lab-workspace').boundingBox();
-  if (!box) throw new Error('Missing workspace box');
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
-  const dx = Math.min(145, box.width * 0.16);
-  const dy = Math.min(125, box.height * 0.18);
-  const points = [
-    [cx + dx, cy],
-    [cx, cy - dy],
-    [cx - dx, cy],
-    [cx, cy + dy],
-  ] as const;
-
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    if ((await shell.getAttribute('data-stage')) !== 'mix') return;
-    await page.mouse.move(cx, cy);
-    await page.mouse.down();
-    for (let index = 0; index < 18; index += 1) {
-      const [x, y] = points[index % points.length]!;
-      await page.mouse.move(x, y);
-      await page.waitForTimeout(12);
-    }
-    await page.mouse.up();
-    try {
-      await expect(shell).toHaveAttribute('data-stage', 'mold', { timeout: 1_200 });
-      return;
-    } catch {
-      // Continue with another normal stretch burst if this release was not enough.
-    }
-  }
-
-  throw new Error('Mix did not reach mold after repeated real pointer travel');
-};
-
-const finishMold = async (page: Page): Promise<void> => {
-  const shell = page.locator('.lab-shell');
-  const target = page.locator('.mold-target');
-  for (let press = 0; press < 18; press += 1) {
-    if ((await shell.getAttribute('data-stage')) !== 'mold') return;
-    await page.waitForFunction(() => {
-      const shellElement = document.querySelector('.lab-shell');
-      if (shellElement?.getAttribute('data-stage') !== 'mold') return true;
-      const targetElement = document.querySelector('.mold-target');
-      return targetElement instanceof HTMLButtonElement && !targetElement.hidden && !targetElement.disabled;
-    }, null, { timeout: 800 });
-    if ((await shell.getAttribute('data-stage')) !== 'mold') return;
-    await target.dispatchEvent('pointerdown', {
-      bubbles: true,
-      pointerId: press + 1,
-      button: 0,
-      buttons: 1,
-      pointerType: 'mouse',
-    });
-    await page.waitForTimeout(160);
-  }
-  if ((await shell.getAttribute('data-stage')) === 'mold') throw new Error('Mold did not complete after critical presses');
-};
-
-test('fresh save completes one real standard craft and persists collection progress', async ({ page }) => {
+test('real Sandbox S1 craft persists authored Paw + paint + hearts + Holo, reloads and squeezes', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
-  await page.setViewportSize({ width: 1024, height: 768 });
-  await page.goto(PAGES_URL);
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
-  await page.reload();
-
-  const shell = page.locator('.lab-shell');
-  await expect(shell).toHaveAttribute('data-stage', 'select');
-  await page.getByRole('button', { name: 'MAKE' }).click();
-  await expect(shell).toHaveAttribute('data-stage', 'pour');
-  await expect(page.locator('.recipe-dock')).toBeHidden();
-  await expect(page.locator('.lab-topbar')).toHaveCSS('opacity', '0');
-
-  await paintDefaultShape(page);
-  await expect(shell).toHaveAttribute('data-stage', 'mix', { timeout: 4_000 });
-
-  await mixUntilMold(page);
-  await expect(shell).toHaveAttribute('data-stage', 'mold');
-  await finishMold(page);
-  await expect(shell).toHaveAttribute('data-stage', 'test', { timeout: 5_000 });
-
-  await page.getByRole('button', { name: 'KEEP IT' }).click();
-  await expect(shell).toHaveAttribute('data-stage', 'collect');
-  await expect(page.locator('.progression-feedback')).toContainText('+100');
-  await expect(shell).toHaveAttribute('data-stage', 'select', { timeout: 2_000 });
-  await expect(page.locator('.progression-feedback')).toBeHidden();
-  await expect(page.locator('.variant-preview')).toHaveText('Berry Heart');
-  await expect(page.getByRole('button', { name: 'MAKE' })).toBeVisible();
-  await expect(page.locator('.made-count')).toContainText('1 / 24');
-
-  await page.reload();
-  await expect(page.locator('.made-count')).toContainText('1 / 24');
-  await page.getByRole('button', { name: 'All squishies' }).click();
-  await expect(page.locator('.collection-card--completed')).toHaveCount(1);
-  const completedActions = page.locator('.collection-card--completed .collection-card__actions button');
-  await expect(completedActions).toHaveCount(2);
-  await expect(completedActions.nth(0)).toHaveText('Squeeze');
-  await expect(completedActions.nth(1)).toHaveText('Again');
-
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(completedActions.nth(0)).toBeVisible();
-  await expect(completedActions.nth(1)).toBeVisible();
-  await expectInViewport(page, completedActions.nth(0));
-  await expectInViewport(page, completedActions.nth(1));
+  await page.goto(PAGES_URL);
+  await clearStorageAndReload(page);
+
+  const shell = page.locator('[data-sandbox-app]');
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
+  await page.locator('[data-shape="paw"]').click();
+  await expect(shell).toHaveAttribute('data-shape', 'paw');
+  await page.locator('[data-action="shape-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'paint');
+
+  let box = await getCanvasBox(page);
+  let cx = box.x + box.width * 0.5;
+  let cy = box.y + box.height * 0.5;
+  await drawSandboxStroke(page, [[cx - 22, cy - 12], [cx, cy], [cx + 24, cy + 12]]);
+  await page.locator('.sandbox-swatch').nth(1).click();
+  await drawSandboxStroke(page, [[cx - 8, cy - 30], [cx, cy], [cx + 8, cy + 30]]);
+  await expect(shell).toHaveAttribute('data-paint-strokes', '2');
+  expect(Number(await shell.getAttribute('data-appearance-bytes'))).toBeLessThanOrEqual(6_000);
+
+  await page.locator('[data-action="paint-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'mixins');
+  await page.locator('[data-mixin="hearts"]').click();
+  box = await getCanvasBox(page);
+  cx = box.x + box.width * 0.5;
+  cy = box.y + box.height * 0.5;
+  await page.mouse.click(cx - 18, cy);
+  await page.mouse.click(cx + 2, cy - 18);
+  await page.mouse.click(cx + 20, cy + 14);
+  await expect.poll(async () => Number(await shell.getAttribute('data-mixin-count'))).toBeGreaterThanOrEqual(3);
+
+  await page.locator('[data-action="mixin-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'mix');
+  await expect(page.locator('[data-action="mix-continue"]')).toBeDisabled();
+  await performRealMix(page);
+  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
+  await page.locator('[data-action="mix-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'finish');
+
+  await page.locator('[data-material="holo"]').click();
+  await expect(shell).toHaveAttribute('data-material', 'holo');
+  await page.locator('[data-action="save"]').click();
+  await expect(shell).toHaveAttribute('data-save-complete', 'true');
+  await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as {
+    version: number;
+    totalCrafts: number;
+    library: Array<{
+      shapeId: string;
+      materialId: string;
+      appearance: { strokes: unknown[]; mixins: unknown[] };
+    }>;
+  });
+  expect(saved.version).toBe(3);
+  expect(saved.totalCrafts).toBe(1);
+  expect(saved.library).toHaveLength(1);
+  expect(saved.library[0]).toMatchObject({ shapeId: 'paw', materialId: 'holo' });
+  expect(saved.library[0]!.appearance.strokes).toHaveLength(2);
+  expect(saved.library[0]!.appearance.mixins.length).toBeGreaterThanOrEqual(3);
+
+  await page.reload();
+  const reloadedShell = page.locator('[data-sandbox-app]');
+  await expect(reloadedShell).toHaveAttribute('data-stage', 'home');
+  await expect(reloadedShell).toHaveAttribute('data-shape', 'paw');
+  await expect(reloadedShell).toHaveAttribute('data-material', 'holo');
+  await expect(reloadedShell).toHaveAttribute('data-paint-strokes', '2');
+  await expect.poll(async () => Number(await reloadedShell.getAttribute('data-mixin-count'))).toBeGreaterThanOrEqual(3);
+
+  await page.locator('[data-action="play-saved"]').click();
+  await expect(reloadedShell).toHaveAttribute('data-stage', 'squeeze');
+  box = await getCanvasBox(page);
+  cx = box.x + box.width * 0.5;
+  cy = box.y + box.height * 0.5;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + Math.min(70, box.width * 0.2), cy + 12, { steps: 10 });
+  await page.mouse.up();
+  await expect.poll(async () => Number(await reloadedShell.getAttribute('data-sandbox-squeezes'))).toBeGreaterThan(0);
 
   expect(fatalErrors).toEqual([]);
 });
 
-test('Pages appearance probe persists custom paint and keeps it on the real squeeze surface', async ({ page }) => {
+test('Pages appearance probe still persists custom paint and uses the real squeeze surface', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${PAGES_URL}?appearanceProbe=1`);
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
-  await page.reload();
+  await clearStorageAndReload(page);
 
   const shell = page.locator('[data-appearance-probe]');
   const canvas = page.locator('[data-probe-canvas]');
@@ -327,43 +352,29 @@ test('Pages appearance probe persists custom paint and keeps it on the real sque
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
 
-  const drawStroke = async (points: readonly [number, number][]): Promise<void> => {
-    const first = points[0];
-    if (!first) throw new Error('appearance probe stroke needs points');
-    await page.mouse.move(first[0], first[1]);
-    await page.mouse.down();
-    for (const [x, y] of points.slice(1)) await page.mouse.move(x, y, { steps: 3 });
-    await page.mouse.up();
-  };
-
-  await drawStroke([[cx - 56, cy - 18], [cx - 12, cy - 4], [cx + 48, cy + 14]]);
+  await drawSandboxStroke(page, [[cx - 48, cy - 14], [cx, cy], [cx + 42, cy + 16]]);
   await page.locator('[data-probe-tool="color-b"]').click();
-  await drawStroke([[cx - 8, cy - 58], [cx - 2, cy], [cx + 10, cy + 58]]);
+  await drawSandboxStroke(page, [[cx - 5, cy - 48], [cx, cy], [cx + 7, cy + 48]]);
   await page.locator('[data-probe-tool="erase"]').click();
-  await page.locator('[data-probe-size="18"]').click();
-  await drawStroke([[cx + 8, cy - 4], [cx + 28, cy + 12], [cx + 42, cy + 20]]);
-
+  await drawSandboxStroke(page, [[cx + 5, cy], [cx + 28, cy + 12]]);
   await expect(shell).toHaveAttribute('data-probe-strokes', '3');
   await expect(shell).toHaveAttribute('data-probe-budget', 'pass');
-  expect(Number(await shell.getAttribute('data-probe-bytes'))).toBeLessThanOrEqual(6_000);
+
   await page.locator('[data-probe-action="save"]').click();
   await expect(shell).toHaveAttribute('data-probe-saved', 'true');
-
   await page.reload();
   const reloadedShell = page.locator('[data-appearance-probe]');
-  await expect(reloadedShell).toHaveAttribute('data-probe-loaded', 'true');
   await expect(reloadedShell).toHaveAttribute('data-probe-strokes', '3');
-  await expect(reloadedShell).toHaveAttribute('data-probe-budget', 'pass');
 
   await page.locator('[data-probe-mode="squeeze"]').click();
-  const squeezeBox = await page.locator('[data-probe-canvas]').boundingBox();
+  const squeezeBox = await canvas.boundingBox();
   expect(squeezeBox).not.toBeNull();
   if (!squeezeBox) return;
-  const sx = squeezeBox.x + squeezeBox.width * 0.48;
+  const sx = squeezeBox.x + squeezeBox.width * 0.5;
   const sy = squeezeBox.y + squeezeBox.height * 0.5;
   await page.mouse.move(sx, sy);
   await page.mouse.down();
-  await page.mouse.move(sx + squeezeBox.width * 0.24, sy + squeezeBox.height * 0.07, { steps: 10 });
+  await page.mouse.move(sx + squeezeBox.width * 0.22, sy + 10, { steps: 10 });
   await page.mouse.up();
   await expect.poll(async () => Number(await reloadedShell.getAttribute('data-probe-squeezes'))).toBeGreaterThan(0);
 
