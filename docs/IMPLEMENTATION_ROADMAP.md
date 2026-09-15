@@ -1,23 +1,28 @@
 # Squishy Squishes — Implementation Roadmap
 
-**Status:** SANDBOX PIVOT ACTIVE / S0 APPEARANCE PROBE PASSED
-**Current gate:** S1 — Sandbox Core
+**Status:** SANDBOX PIVOT ACTIVE / S1 SANDBOX CORE ENGINEERING PASSED
+**Current development gate:** S2 — Personal Library
+**External release gate:** real-phone/manual touch acceptance is still outstanding
 **Current product thesis:** open creative squishy sandbox + personal library; recipes are optional inspiration/meta, never content gates
 
-The project direction changed after UI/UX Overhaul 02. The existing recipe-first game remains valuable technical evidence and a working release baseline, but it is no longer the target product model.
+The recipe-first version remains useful technical evidence, but it is no longer the target product model.
 
-The new source of truth is:
+Current source of truth:
 
 - `SANDBOX_PIVOT_01_MASTER_PLAN.md`;
 - `SANDBOX_PIVOT_01_REVIEW.md`;
 - `SANDBOX_PIVOT_01_ASSET_PLAN.md`;
-- `SANDBOX_PIVOT_S0_APPEARANCE_PROBE*.md`.
+- `SANDBOX_PIVOT_S0_APPEARANCE_PROBE*.md`;
+- `SANDBOX_PIVOT_S1_CORE.md`;
+- `SANDBOX_PIVOT_S1_CORE_REVIEW.md`;
+- `SANDBOX_PIVOT_S1_VISUAL_REVIEW.md`;
+- `SANDBOX_PIVOT_S1_IMPLEMENTATION_REVIEW.md`.
 
-The target loop is now:
+Target product loop:
 
 `Library → New Squishy → Shape → Free Paint → Mix-ins → Mix → Decorate → Save → Squeeze → New Squishy`
 
-Core content should be broadly available from the start. Progression becomes optional humorous status/recipe meta rather than an unlock wall.
+Core creation content should be broadly available from the start. Progression is optional humorous status/recipe meta rather than an unlock wall.
 
 ---
 
@@ -31,97 +36,113 @@ Blocking question:
 
 Result: **yes**.
 
-Delivered/proved:
+Proved:
 
-- optional RGBA appearance texture sampled in stable squishy UV space;
+- optional RGBA appearance texture in stable squishy UV space;
 - 256×256 paint surface;
-- semi-transparent color overlap/blending;
+- semi-transparent overlap/blending;
 - soft eraser;
 - three brush sizes + Undo;
 - compact quantized stroke codec;
 - save → reload reconstruction;
-- real squeeze interaction with custom appearance attached to deformation;
-- Pages-only probe via `?appearanceProbe=1`;
-- explicit Yandex bundle-exclusion verifier;
+- real squeeze with authored appearance attached to deformation;
+- Pages-only probe with explicit Yandex bundle exclusion;
 - permanent production-browser regression.
 
-Measured persistence evidence:
+Persistence evidence:
 
 - representative 3-stroke appearance: **219 B**;
 - richer 48-stroke stress appearance: **4,195 B**;
-- representative target: **≤ 6 KB**.
-
-Visual evidence also accepted the painted pattern during an actively held stretch, not merely after spring release.
-
-S0 deliberately did **not** introduce SaveState V3, library, mix-ins, decals, recipe meta or ads.
-
-Canonical docs: `SANDBOX_PIVOT_S0_APPEARANCE_PROBE.md`, `SANDBOX_PIVOT_S0_APPEARANCE_PROBE_REVIEW.md`.
+- per-toy authored appearance target: **≤ 6 KB**.
 
 ---
 
-## S1 — Sandbox Core — CURRENT HARD GATE
+## S1 — Sandbox Core — PASS / ENGINEERING COMPLETE
 
-Goal: replace the recipe-gated craft path with one coherent player-facing sandbox flow while keeping scope limited to **one custom squishy lifecycle**.
+S1 replaced the normal recipe-gated player path with one coherent single-toy sandbox lifecycle:
 
-Target S1 flow:
+`Shape → Free Paint → Mix-ins → Mix & Stretch → Finish → Save → Squeeze`
 
-`Shape → Free Paint / Finish → Mix-ins → Mix → Finish → Save → Reopen → Squeeze`
+After reload:
 
-### Required S1 product behavior
+`Home → Squeeze / New Squishy`
 
-- all existing production shapes available immediately;
-- shape selection is visual and has no rank requirement;
-- free paint has no coverage/completion threshold;
-- player may continue after any amount of painting;
-- paint supports multiple colors, soft overlap/blending, eraser, brush size and Undo;
-- material/finish selection is embedded in the maker rather than becoming another long stage;
-- basic mix-ins are combinable without a simulated-particle architecture;
-- existing tactile Mix interaction is reused where it still feels appropriate;
-- one custom squishy can be saved, reloaded and squeezed;
-- SaveState V3 stores authored appearance rather than canonical recipe completion as the primary object;
-- old SaveState V2 is handled deliberately rather than silently corrupted.
+Delivered/proved:
 
-### S1 architecture constraints
+- all six production shapes available immediately;
+- no rank/XP/recipe gate in core creation;
+- free paint with no coverage threshold;
+- six colors, three brush sizes, eraser, Undo and Clear;
+- six lightweight procedural mix-in families;
+- existing real pointer-travel Mix interaction reused;
+- Soft / Jelly / Holo finish selection;
+- SaveState V3 with bounded authored appearance;
+- conservative V2 → V3 migration without fabricated custom toys;
+- one custom squishy saves, reloads and squeezes with authored shape/material/paint/mix-ins intact;
+- generic `SquishSurface` retained; no per-shape renderer/physics branches;
+- Save → first Squeeze ownership beat protected from interstitial interruption;
+- responsive phone portrait / short landscape / desktop shell;
+- Yandex lifecycle/build verifier retained;
+- S0 appearance probe remains a production-browser regression.
 
-- preserve one generic `SquishSurface` and one shared deformation model;
-- no bespoke physics per shape;
-- no bitmap screenshots in saves;
-- no raw float point arrays;
-- keep per-toy appearance around the proven S0 budget unless evidence requires a justified change;
-- keep total future 24-slot model plausibly within Yandex player-data limits;
-- do not introduce the multi-slot library yet;
-- do not introduce recipes/titles yet;
-- do not introduce rewarded monetization yet;
-- do not introduce draggable ears/reactive accessory physics yet.
+Final branch evidence before PR cleanup:
 
-### S1 exit evidence
+- validation run **34958564679** — strict typecheck + Pages build + Yandex build + verifier: **PASS**;
+- browser run **34958564795** — `npm run qa:release`: **8/8 PASS**;
+- visual run **34958564725** — production lifecycle screenshots after bounded hero scale correction: **PASS**.
 
-S1 is complete only when production-browser and hands-on evidence proves:
+Important scope boundary:
 
-1. each existing shape can enter the free-paint maker without rank gating;
-2. paint can be minimal or extensive and still continue;
-3. appearance survives the full maker path;
-4. mix-ins/finish do not break the generic renderer;
-5. a custom toy saves and restores through SaveState V3;
-6. restored toy squeezes with its authored appearance intact;
-7. old release/Yandex lifecycle still builds and boots correctly;
-8. save-size measurements remain credible.
+- S1 intentionally persists exactly **one** custom toy even though V3 already uses a `library[]` envelope;
+- multi-slot behavior belongs to S2;
+- S1 enforces the **6 KB per-toy appearance budget**, but does not fake a final eight-/24-slot payload measurement before the real multi-slot implementation exists.
+
+Canonical final review: `SANDBOX_PIVOT_S1_IMPLEMENTATION_REVIEW.md`.
+
+**Release note:** S1 engineering completion is not real-device acceptance. A physical phone/touch pass is still required before release/moderation claims.
 
 ---
 
-## S2 — Personal Library
+## S2 — Personal Library — CURRENT DEVELOPMENT GATE
 
-After one custom toy lifecycle is solid, introduce the retention backbone:
+Goal: turn the proven one-toy lifecycle into the retention backbone without changing the sandbox thesis.
 
-- personal saved-squishy cards;
-- initial target: **8 free slots**;
+Required behavior:
+
+- initial target: **8 free saved-squishy slots**;
+- cards represent actual authored toys, not canonical recipes;
 - open any saved toy directly into squeeze mode;
-- delete/replace a toy for free;
 - create a new squishy from the library;
-- slot-cap behavior must never hard-block continued free play;
-- target expandable ceiling: roughly 24 slots, subject to real save-size evidence.
+- delete a toy for free;
+- replace a toy for free;
+- full library must never hard-block continued free play;
+- deterministic slot ordering and persistence across reload;
+- safe behavior for malformed/partial library data;
+- no XP/rank gate on slots or creation tools.
 
-No rewarded ad is required to keep playing: a full library must always allow free delete/replace.
+Required persistence evidence:
+
+- measure real serialized V3 envelope with representative 1-, 8- and stress-library contents;
+- validate the practical ceiling before treating **24 slots** as committed;
+- keep each authored appearance bounded and compact;
+- do not switch to bitmap screenshots or raw float point arrays.
+
+Required UX evidence:
+
+- phone portrait library remains toy-first rather than database-like;
+- saved creations are visually distinguishable enough to choose;
+- New Squishy is always obvious;
+- delete/replace is understandable but not dangerously prominent;
+- opening a saved toy gets to tactile squeeze immediately;
+- no slot-cap monetization can strand a player.
+
+Explicit S2 non-goals:
+
+- no decor/face subsystem;
+- no recipes/titles meta;
+- no rewarded ads;
+- no shop/currency;
+- no draggable appendage physics.
 
 ---
 
@@ -136,15 +157,13 @@ Add reusable identity after library persistence is stable:
 - hearts/stars/stickers;
 - simple anchored accessories such as ears, bows, horns and crown.
 
-Surface decals should use the same stable appearance/deformation principles proven by S0 where appropriate.
-
-Do not start with draggable ears or custom face physics. First prove that decoration makes saved toys more desirable and recognizable.
+Reuse stable appearance/deformation principles where appropriate. Do not begin with draggable ears or custom accessory physics.
 
 ---
 
 ## S4 — Ideas / Recipes + Humorous Titles
 
-Repurpose the existing canonical recipe work as optional inspiration rather than gating.
+Repurpose canonical recipe work as optional inspiration rather than gating.
 
 Target behavior:
 
@@ -161,9 +180,7 @@ The existing 24 recipes are input material, not a mandatory final catalog contra
 
 ## S5 — Rewarded Monetization
 
-Introduce rewarded ads only after the free sandbox/library loop already works.
-
-Good candidates:
+Only after free sandbox + library retention works:
 
 - permanent cosmetic/material packs;
 - premium finish packs;
@@ -172,7 +189,7 @@ Good candidates:
 
 Rules:
 
-- rewards are additive/permanent where practical;
+- rewards additive/permanent where practical;
 - no “watch or you cannot continue” gate;
 - no currency economy required;
 - no loot-box duplicate loop;
@@ -182,13 +199,11 @@ Rules:
 
 ## S6 — Interstitial Adaptation
 
-Adapt the existing conservative interstitial system to the new lifecycle.
+Logical pauses may include:
 
-Good logical pauses include:
-
-- after saving and returning to the library;
+- after saving and returning to library;
 - after leaving a squeeze/revisit session;
-- other clearly completed loops validated by product evidence.
+- other clearly completed loops validated by evidence.
 
 Never interrupt:
 
@@ -196,44 +211,33 @@ Never interrupt:
 - mix-ins;
 - Mix;
 - decorating;
-- save/reveal ownership beat.
+- Save → first ownership/squeeze beat.
 
 ---
 
 ## S7 — Expressive Polish
 
-Only after the core sandbox retains its appeal:
+Only after the core sandbox/library loop proves its appeal:
 
-- independently draggable ears or appendages;
+- independently draggable ears/appendages;
 - richer face response under stretch;
 - additional premium materials/finishes;
 - stronger ASMR/juice;
 - other expressive interactions backed by evidence.
 
-This phase is polish, not a prerequisite for validating the sandbox model.
-
 ---
 
-# Historical baseline retained from the recipe-first version
+# Historical baseline retained from recipe-first version
 
-The work below remains technically valuable and should be reused rather than discarded, but its old product assumptions no longer control the roadmap.
+## Tactile interaction foundation — REUSABLE
 
-## Tactile interaction foundation — COMPLETE
+Validated mechanics include pointer painting, motion-driven Add/filling shake, real pointer-travel Mix/stretch, generic spring/deformation response, and squeeze/release audio lifecycle.
 
-Validated reusable mechanics include:
+Do not retune accepted mechanics merely because IA changes. Reuse where they serve the sandbox and delete obsolete stages where they do not.
 
-- pointer-driven painting infrastructure;
-- motion-driven Add/filling shake;
-- real pointer-travel Mix/stretch;
-- mold target interaction;
-- generic spring/deformation response;
-- squeeze/release audio and interaction lifecycle.
+## Renderer / shape foundation — REUSABLE
 
-Do not retune accepted mechanics merely because the IA changes. Reuse the interaction where it serves the sandbox; remove obsolete stages where it does not.
-
-## Renderer / shape reuse — COMPLETE
-
-The existing raw WebGL2 renderer supports six shapes through shared geometry/boundary/deformation logic:
+Raw WebGL2 still supports six shapes through shared geometry/boundary/deformation logic:
 
 - Soft Square;
 - Heart;
@@ -242,11 +246,11 @@ The existing raw WebGL2 renderer supports six shapes through shared geometry/bou
 - Mushroom;
 - Paw.
 
-S0 further proved that authored appearance can ride on stable UVs without a per-shape rendering branch.
+S0/S1 prove authored appearance rides the same stable UV/deformation path without per-shape branches.
 
-## Production skeleton / platform integration — COMPLETE
+## Production skeleton / platform integration — REUSABLE
 
-Reusable infrastructure includes:
+Retained infrastructure includes:
 
 - app bootstrap boundary;
 - mock + Yandex runtime seam;
@@ -259,47 +263,42 @@ Reusable infrastructure includes:
 - permanent production Chromium QA;
 - GitHub Pages deployment.
 
-Pinned shared kit remains `mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b` unless a later phase has concrete evidence requiring an upgrade.
+Pinned shared kit remains:
+
+`mini-games-kit@d17ba31fce2a71335dcc3095f772c3fdd87fe97b`
+
+unless a later phase has concrete evidence requiring an upgrade.
 
 ## Recipe progression / collection — SUPERSEDED AS PRODUCT MODEL
 
-The old system delivered:
+SaveState V2, Lab XP, ranks 1–8, deterministic recipe unlocks and the 24 canonical recipes remain migration/reference material only.
 
-- SaveState V2;
-- Lab XP;
-- ranks 1–8;
-- deterministic recipe unlocks;
-- 24 canonical recipes;
-- completed recipe revisits.
-
-This code/history is useful migration/reference material, but **XP/rank must no longer gate shapes, materials, recipes or the ability to create** under the sandbox thesis.
+XP/rank must not regain authority over shapes, materials, recipes or the ability to create.
 
 ## UI/UX Overhaul 02 — SUPERSEDED AS IA, RETAINED AS VISUAL/QA EVIDENCE
 
-Overhaul 02 successfully established:
+Keep its strongest lessons:
 
-- toy-first object hierarchy;
+- toy-first hierarchy;
 - touch-first responsive shell;
 - child-readable concise copy;
-- strong result/ownership presentation;
+- strong ownership presentation;
 - production screenshot review discipline;
-- browser QA for phone portrait/landscape/desktop containment.
+- phone portrait/landscape/desktop QA.
 
-The recipe shelf/next-unlock IA is no longer the target. Preserve the toy-first visual lessons and QA methodology while rebuilding around Library + New Squishy.
-
-## Feel / Art / Audio Pass 01 — REUSABLE
-
-Existing material/reveal/audio layering remains a useful presentation vocabulary. Reuse selectively; do not let old `standard | special | showcase` recipe tiers force the new sandbox data model.
+Do not restore the recipe shelf/next-unlock dashboard model.
 
 ---
 
-# Save/model migration rule
+# Save/model migration rule — S1 RESULT
 
-Do not mutate SaveState V2 into the new library shape piecemeal.
+SaveState V3 is now the production boundary.
 
-S1 must define an explicit SaveState V3 boundary. Migration policy must decide what historical V2 progress becomes — likely lightweight legacy/meta credit rather than attempting to fabricate custom authored toys that never existed.
+Historical V2 progress migrates conservatively as legacy/meta credit. It does **not** fabricate authored toys that never existed.
 
-A corrupted or ambiguous migration is worse than a conservative migration.
+The V2 key is removed only after successful V3 write/flush. Corrupt/invalid V3 falls back safely rather than being partially trusted.
+
+S2 must extend V3 through the existing bounded library envelope rather than inventing another persistence format without evidence.
 
 ---
 
@@ -308,7 +307,7 @@ A corrupted or ambiguous migration is worse than a conservative migration.
 Stop and reassess if:
 
 - custom appearance starts requiring bitmap screenshots in player storage;
-- average authored toy size makes the planned library implausible under platform limits;
+- real multi-slot payload makes the library implausible under platform limits;
 - raw WebGL work becomes the dominant production burden;
 - shapes require bespoke deformation/paint code;
 - mix-ins demand hundreds of simulated physical particles;
