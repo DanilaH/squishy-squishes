@@ -140,6 +140,8 @@ jobs:
               await page.waitForFunction(() => document.querySelector('.lab-shell')?.getAttribute('data-stage') === 'collect', null, { timeout: 1200 });
               await page.waitForTimeout(220);
               await page.screenshot({ path: 'ui-overhaul-02-screens/phone-portrait-collect.png', fullPage: true });
+              await page.waitForFunction(() => document.querySelector('.lab-shell')?.getAttribute('data-stage') === 'select', null, { timeout: 2200 });
+              await page.screenshot({ path: 'ui-overhaul-02-screens/phone-portrait-next.png', fullPage: true });
             }
             await context.close();
           }
