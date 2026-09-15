@@ -1,0 +1,70 @@
+name: UI Overhaul 02 Visual Validation
+
+on:
+  push:
+    branches:
+      - ui-ux-overhaul-02
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ui-ux-overhaul-02
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Validate production builds
+        run: npm run release:check
+      - name: Capture production screenshots
+        run: |
+          node scripts/serve-release-qa.mjs > /tmp/squishy-visual-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          node --input-type=module <<'NODE'
+          import { chromium } from '@playwright/test';
+          import fs from 'node:fs/promises';
+
+          await fs.mkdir('ui-overhaul-02-screens', { recursive: true });
+          const browser = await chromium.launch({ headless: true });
+          const targets = [
+            ['phone-portrait', 390, 844],
+            ['phone-landscape', 844, 390],
+            ['desktop', 1280, 720],
+          ];
+
+          for (const [name, width, height] of targets) {
+            const context = await browser.newContext({ viewport: { width, height }, locale: 'ru-RU' });
+            const page = await context.newPage();
+            await page.goto('http://127.0.0.1:4177/squishy-squishes/', { waitUntil: 'networkidle' });
+            await page.locator('.lab-shell').waitFor();
+            await page.screenshot({ path: `ui-overhaul-02-screens/${name}-choose.png`, fullPage: true });
+            await page.getByRole('button', { name: 'Все сквиши' }).click();
+            await page.locator('.collection-overlay').waitFor({ state: 'visible' });
+            await page.screenshot({ path: `ui-overhaul-02-screens/${name}-collection.png`, fullPage: true });
+            await page.getByRole('button', { name: 'Назад' }).click();
+            if (name === 'phone-portrait') {
+              await page.getByRole('button', { name: 'СДЕЛАТЬ' }).click();
+              await page.locator('.lab-shell[data-stage="pour"]').waitFor();
+              await page.screenshot({ path: 'ui-overhaul-02-screens/phone-portrait-craft.png', fullPage: true });
+            }
+            await context.close();
+          }
+          await browser.close();
+          NODE
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-overhaul-02-screens
+          path: ui-overhaul-02-screens
