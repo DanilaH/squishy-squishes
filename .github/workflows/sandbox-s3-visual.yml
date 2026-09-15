@@ -1,5 +1,6 @@
 name: Sandbox S3 Temporary Visual Review
 
+# retry with explicit empty V3 boot and longer visual timeout
 on:
   push:
     branches:
@@ -28,7 +29,7 @@ jobs:
       - name: Commit temporary visual evidence
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+DanilaH@users.noreply.github.com"
           git add artifacts/s3-visual
           git diff --cached --check
           git commit -m "Capture temporary S3 visual evidence"
