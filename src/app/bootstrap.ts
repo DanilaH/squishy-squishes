@@ -25,6 +25,27 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
   const runtime = await createSquishyPlatformRuntime();
   document.body.dataset.releasePlatform = runtime.kind;
   document.body.dataset.releaseBuild = import.meta.env.PROD ? 'production' : 'development';
+
+  if (
+    import.meta.env.VITE_PLATFORM !== 'yandex'
+    && new URLSearchParams(window.location.search).get('appearanceProbe') === '1'
+  ) {
+    const { installAppearanceProbe } = await import('../debug/installAppearanceProbe');
+    const removeAppearanceProbe = await installAppearanceProbe(root, runtime.storage);
+    runtime.activity.setGameplayDesired(true);
+    runtime.markReady();
+    let probeDisposed = false;
+    return {
+      async dispose() {
+        if (probeDisposed) return;
+        probeDisposed = true;
+        runtime.activity.setGameplayDesired(false);
+        removeAppearanceProbe();
+        runtime.destroy();
+      },
+    };
+  }
+
   const saveRepository = createSaveRepository(runtime.storage);
   const settingsRepository = createSettingsRepository(runtime.storage);
 

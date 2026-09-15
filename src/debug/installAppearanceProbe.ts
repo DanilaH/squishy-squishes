@@ -186,6 +186,7 @@ export const installAppearanceProbe = async (
 
   let documentState = await readStoredDocument(storage);
   replayDocument(paintContext, documentState);
+  shell.dataset.probeLoaded = 'true';
   if (documentState.strokes.length > 0) surface.setAppearanceTexture(paintCanvas);
 
   let tool: ProbeTool = 'color-a';
@@ -206,6 +207,7 @@ export const installAppearanceProbe = async (
     shell.dataset.probeBytes = String(bytes);
     shell.dataset.probeStrokes = String(documentState.strokes.length);
     shell.dataset.probeBudget = bytes <= SAVE_BUDGET_BYTES ? 'pass' : 'fail';
+    shell.dataset.probeSqueezes = String(latestMetrics.squeezes);
     stats.textContent = `${documentState.strokes.length} strokes · ${bytes} B / ${SAVE_BUDGET_BYTES} B · ${Math.round(latestMetrics.fps)} FPS · p95 ${latestMetrics.p95FrameMs.toFixed(1)} ms`;
     stats.classList.toggle('is-over-budget', bytes > SAVE_BUDGET_BYTES);
   };
