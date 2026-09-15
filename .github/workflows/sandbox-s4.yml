@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/sandbox-s4.yml'
       - 'scripts/apply-sandbox-s4.mjs'
+      - 'scripts/fix-sandbox-s4-exact-optional.mjs'
 
 permissions:
   contents: write
@@ -25,7 +26,9 @@ jobs:
         with:
           node-version: 24
       - name: Apply S4 patch
-        run: node scripts/apply-sandbox-s4.mjs
+        run: |
+          node scripts/apply-sandbox-s4.mjs
+          node scripts/fix-sandbox-s4-exact-optional.mjs
       - name: Install dependencies
         run: npm install
       - name: Typecheck
