@@ -48,13 +48,13 @@ test('S3 head accessory follows real mesh deformation without intercepting squee
   await page.mouse.down();
   await page.mouse.move(startX + Math.min(82, box.width * 0.22), startY + 18, { steps: 12 });
 
-  await expect.poll(async () => accessory.evaluate((node) => {
+  await expect.poll(async () => accessory.evaluate((node, baseline) => {
     const element = node as HTMLElement;
     const x = Number(element.dataset.accessoryAnchorX);
     const y = Number(element.dataset.accessoryAnchorY);
     const matrix = element.dataset.accessoryMatrix ?? '';
-    return Math.hypot(x - before.x, y - before.y) > 1.5 || matrix !== before.matrix;
-  })).toBe(true);
+    return Math.hypot(x - baseline.x, y - baseline.y) > 1.5 || matrix !== baseline.matrix;
+  }, before)).toBe(true);
 
   await page.mouse.up();
   await expect.poll(async () => Number(await shell.getAttribute('data-sandbox-squeezes'))).toBeGreaterThan(0);
