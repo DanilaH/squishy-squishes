@@ -97,7 +97,7 @@ const finishAndSave = async (page: Page): Promise<void> => {
   await expect(shell).toHaveAttribute('data-stage', 'decor');
   await page.locator('[data-action="decor-continue"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'finish');
-  await page.locator('[data-material="soft"]').click();
+  await page.locator('.sandbox-material[data-material="soft"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
 };
