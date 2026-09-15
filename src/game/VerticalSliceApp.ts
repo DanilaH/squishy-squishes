@@ -741,11 +741,13 @@ export class VerticalSliceApp {
     context.clearRect(0, 0, PAINT_CANVAS_SIZE, PAINT_CANVAS_SIZE);
     const palette = getPalette(this.selected.palette);
     context.save();
-    context.fillStyle = 'rgba(255, 255, 255, 0.045)';
+    context.globalAlpha = 0.1;
+    context.fillStyle = palette.accentCss;
     context.fill(this.paintShapePath);
-    context.lineWidth = 2;
-    context.strokeStyle = palette.accentSoftCss;
-    context.shadowBlur = 12;
+    context.globalAlpha = 0.34;
+    context.lineWidth = 2.4;
+    context.strokeStyle = palette.accentCss;
+    context.shadowBlur = 14;
     context.shadowColor = palette.accentSoftCss;
     context.stroke(this.paintShapePath);
     context.restore();
@@ -1118,7 +1120,9 @@ export class VerticalSliceApp {
   private updateCollectionUi(): void {
     const snapshot = getCollectionSnapshot(this.labXp, [...this.discovered]);
     this.collectionGroups.innerHTML = snapshot.byShape.map((group) => {
-      const cards = group.recipes.map((recipe) => {
+      const cards = [...group.recipes]
+        .sort((left, right) => left.requiredRank - right.requiredRank)
+        .map((recipe) => {
         const palette = getPalette(recipe.choice.palette);
         const material = getMaterial(recipe.choice.material);
         const filling = getFilling(recipe.choice.filling);
@@ -1142,7 +1146,7 @@ export class VerticalSliceApp {
           </div>
           ${action}
         </article>`;
-      }).join('');
+        }).join('');
       return `<section class="collection-group">
         <header><strong>${getShapeDisplayLabel(this.options.copy, group.shapeId, group.shapeLabel)}</strong><span>${group.completed} / ${group.total}</span></header>
         <div class="collection-grid">${cards}</div>

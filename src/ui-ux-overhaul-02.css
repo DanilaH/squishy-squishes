@@ -1147,3 +1147,64 @@ body[data-release-build="production"] .debug-button[data-action="mute"] {
     50% { transform: translateX(-18vw) translateY(-8px); }
   }
 }
+
+
+/* Screenshot review iteration 03 */
+
+/* Progress reset belongs to the Pages QA panel, not the child-facing shelf. */
+.collection-reset-button {
+  display: none !important;
+}
+
+/* Completion count lives on the shelf; keep the game surface top bar almost empty. */
+.collection-summary__row {
+  display: none !important;
+}
+
+/* Locked state already has lock + star requirement. Repeating “coming soon” on every toy is noise. */
+.collection-card--locked .collection-card__body > span:not(.collection-card__meta) {
+  display: none;
+}
+
+/* A compact icon-like sound control keeps text chrome away from the toy. */
+body[data-release-build="production"] .debug-button[data-action="mute"] {
+  width: 50px;
+  min-width: 50px;
+  padding: 0;
+  font-size: 0;
+}
+
+body[data-release-build="production"] .debug-button[data-action="mute"]::before {
+  content: "♪";
+  font-size: 22px;
+  line-height: 1;
+}
+
+body[data-release-build="production"] .debug-button[data-action="mute"][aria-pressed="true"]::before {
+  content: "×♪";
+  font-size: 17px;
+}
+
+/* Gesture hint belongs on the interaction object rather than under the instruction copy. */
+.lab-shell[data-stage="pour"] .stage-copy::after,
+.lab-shell[data-stage="add"] .stage-copy::after,
+.lab-shell[data-stage="mix"] .stage-copy::after,
+.lab-shell[data-stage="mold"] .stage-copy::after,
+.lab-shell[data-stage="test"] .stage-copy::after {
+  top: clamp(168px, 25vh, 220px);
+}
+
+.lab-shell[data-stage="pour"] .workspace-vignette {
+  opacity: 0.72;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-soft) 88%, white 12%), transparent 61%);
+}
+
+@media (max-width: 480px) and (orientation: portrait) {
+  .lab-shell[data-stage="pour"] .stage-copy::after,
+  .lab-shell[data-stage="add"] .stage-copy::after,
+  .lab-shell[data-stage="mix"] .stage-copy::after,
+  .lab-shell[data-stage="mold"] .stage-copy::after,
+  .lab-shell[data-stage="test"] .stage-copy::after {
+    top: clamp(175px, 25vh, 215px);
+  }
+}
