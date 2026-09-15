@@ -1,0 +1,96 @@
+name: Sandbox S0 Active Squeeze Visual
+
+on:
+  push:
+    branches:
+      - sandbox-pivot-s0-appearance-probe
+
+jobs:
+  capture:
+    if: startsWith(github.event.head_commit.message, 'Capture S0 active squeeze evidence')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build production Pages artifact
+        run: npm run build
+      - name: Add temporary active-squeeze capture
+        run: |
+          mkdir -p s0-active-artifacts
+          cat > tests/release/appearance-probe-active.s0.spec.ts <<'TEST'
+          import { expect, test, type Page } from '@playwright/test';
+
+          const PAGES_URL = '/squishy-squishes/?appearanceProbe=1';
+
+          const drawStroke = async (page: Page, points: readonly [number, number][]): Promise<void> => {
+            const first = points[0];
+            if (!first) throw new Error('stroke needs at least one point');
+            await page.mouse.move(first[0], first[1]);
+            await page.mouse.down();
+            for (const [x, y] of points.slice(1)) await page.mouse.move(x, y, { steps: 5 });
+            await page.mouse.up();
+          };
+
+          test('captures custom appearance while the squishy is actively stretched', async ({ page }) => {
+            await page.setViewportSize({ width: 390, height: 844 });
+            await page.goto(PAGES_URL);
+            const shell = page.locator('[data-appearance-probe]');
+            await expect(shell).toBeVisible();
+
+            const canvas = page.locator('[data-probe-canvas]');
+            const box = await canvas.boundingBox();
+            expect(box).not.toBeNull();
+            if (!box) return;
+            const cx = box.x + box.width / 2;
+            const cy = box.y + box.height / 2;
+
+            await drawStroke(page, [[cx - 68, cy - 24], [cx - 34, cy - 14], [cx, cy - 2], [cx + 34, cy + 10], [cx + 66, cy + 22]]);
+            await page.locator('[data-probe-tool="color-b"]').click();
+            await drawStroke(page, [[cx - 12, cy - 72], [cx - 8, cy - 34], [cx - 2, cy], [cx + 7, cy + 34], [cx + 14, cy + 72]]);
+            await page.locator('[data-probe-tool="erase"]').click();
+            await page.locator('[data-probe-size="18"]').click();
+            await drawStroke(page, [[cx + 4, cy - 6], [cx + 24, cy + 8], [cx + 42, cy + 19]]);
+
+            await page.locator('[data-probe-action="save"]').click();
+            await expect(shell).toHaveAttribute('data-probe-saved', 'true');
+            await page.reload();
+            const reloadedShell = page.locator('[data-appearance-probe]');
+            await expect(reloadedShell).toHaveAttribute('data-probe-strokes', '3');
+            await page.locator('[data-probe-mode="squeeze"]').click();
+
+            const squeezeBox = await page.locator('[data-probe-canvas]').boundingBox();
+            expect(squeezeBox).not.toBeNull();
+            if (!squeezeBox) return;
+            const sx = squeezeBox.x + squeezeBox.width * 0.47;
+            const sy = squeezeBox.y + squeezeBox.height * 0.50;
+
+            await page.mouse.move(sx, sy);
+            await page.mouse.down();
+            await page.mouse.move(
+              sx + squeezeBox.width * 0.31,
+              sy + squeezeBox.height * 0.10,
+              { steps: 16 },
+            );
+            await page.waitForTimeout(180);
+            await page.screenshot({ path: 's0-active-artifacts/appearance-probe-active-squeeze.png', fullPage: true });
+            await page.mouse.up();
+          });
+          TEST
+      - name: Capture active deformation
+        run: npx playwright test tests/release/appearance-probe-active.s0.spec.ts --config=playwright.release.config.ts
+      - name: Upload active squeeze screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sandbox-s0-active-squeeze
+          path: s0-active-artifacts
+          if-no-files-found: error
