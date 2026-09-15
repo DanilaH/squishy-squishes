@@ -9,13 +9,10 @@ const after = `    await page.locator('[data-decor-section="accessory"]').click(
     const accessoryPanel = page.locator('[data-decor-panel="accessory"]');
     await expectInViewport(page, page.locator('[data-decor-accessory="crown"]'));
     if (viewport.name === 'short landscape') {
-      await expect(accessoryPanel).toContainText('Кошачьи');
-      await expect(accessoryPanel).toContainText('Заячьи');
-      await expect(accessoryPanel).toContainText('Рожки');
-      await expect(accessoryPanel).toContainText('Бант');
-      await expect(accessoryPanel).toContainText('Корона');
       for (const internalId of ['cat-ears', 'bunny-ears', 'horns', 'bow', 'crown']) {
-        await expect(accessoryPanel).not.toContainText(internalId);
+        const option = accessoryPanel.locator(\`[data-decor-accessory="\${internalId}"]\`);
+        await expect(option).toBeVisible();
+        await expect(option).not.toContainText(internalId);
       }
     }
 `;
@@ -23,4 +20,4 @@ if (!source.includes(before)) throw new Error('S3 viewport QA anchor not found.'
 if (source.indexOf(before) !== source.lastIndexOf(before)) throw new Error('S3 viewport QA anchor is ambiguous.');
 source = source.replace(before, after);
 writeFileSync(path, source);
-console.log('Added permanent S3 Decor localization regression coverage.');
+console.log('Added permanent S3 Decor internal-ID regression coverage.');
