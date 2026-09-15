@@ -1,19 +1,31 @@
+import { getShape } from '../game/shapes';
 import { SandboxApp, type SandboxLanguage } from './SandboxApp';
+import {
+  SQUISHY_IDEAS,
+  getIdeaLabel,
+  getIdeaMaterialLabel,
+  getIdeaMixinLabel,
+  getIdeaShapeLabel,
+  type SquishyIdea,
+} from './ideas';
 import { renderLibraryThumbnail } from './libraryThumbnail';
+import { getSquishyTitle } from './titles';
 import type { SandboxDraft, SavedSquishy } from './types';
 
 export interface SandboxLibraryCommitResult {
   readonly savedSquishy: SavedSquishy;
   readonly library: readonly SavedSquishy[];
+  readonly completedRecipeIds: readonly string[];
 }
 
 export interface SandboxLibraryAppOptions {
   readonly language: SandboxLanguage;
   readonly muted: boolean;
   readonly initialLibrary: readonly SavedSquishy[];
+  readonly initialCompletedRecipeIds: readonly string[];
   readonly libraryCapacity: number;
-  readonly onAppendSquishy: (draft: SandboxDraft) => Promise<SandboxLibraryCommitResult>;
-  readonly onReplaceSquishy: (targetId: string, draft: SandboxDraft) => Promise<SandboxLibraryCommitResult>;
+  readonly onAppendSquishy: (draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
+  readonly onReplaceSquishy: (targetId: string, draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
   readonly onDeleteSquishy: (targetId: string) => Promise<readonly SavedSquishy[]>;
   readonly onMutedChange: (muted: boolean) => void | Promise<void>;
 }
@@ -37,7 +49,15 @@ interface LibraryCopy {
   readonly sound: string;
   readonly muted: string;
   readonly saveFailed: string;
+  readonly ideas: string;
+  readonly ideasTitle: string;
+  readonly ideasHint: string;
+  readonly backToLibrary: string;
+  readonly completed: string;
+  readonly goal: string;
+  readonly ideaComplete: string;
 }
+
 
 const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
   en: {
@@ -59,6 +79,13 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     sound: 'Sound on',
     muted: 'Sound off',
     saveFailed: 'Could not update the shelf. Try again.',
+    ideas: 'IDEAS',
+    ideasTitle: 'SQUISHY IDEAS',
+    ideasHint: 'Pick a target if you want a little inspiration. You can still make it your way.',
+    backToLibrary: 'BACK TO LIBRARY',
+    completed: 'DONE',
+    goal: 'IDEA',
+    ideaComplete: 'IDEA COMPLETE',
   },
   ru: {
     studio: 'СКВИШ-СТУДИЯ',
@@ -79,6 +106,13 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     sound: 'Звук вкл.',
     muted: 'Звук выкл.',
     saveFailed: 'Не получилось обновить полку. Попробуй ещё раз.',
+    ideas: 'ИДЕИ',
+    ideasTitle: 'ИДЕИ ДЛЯ СКВИШЕЙ',
+    ideasHint: 'Выбери цель для вдохновения. Делать по-своему всё равно можно.',
+    backToLibrary: 'НАЗАД К ПОЛКЕ',
+    completed: 'ГОТОВО',
+    goal: 'ИДЕЯ',
+    ideaComplete: 'ИДЕЯ ГОТОВА',
   },
 };
 
@@ -87,6 +121,12 @@ const escapeAttribute = (value: string): string => value
   .replaceAll('"', '&quot;')
   .replaceAll('<', '&lt;')
   .replaceAll('>', '&gt;');
+
+const ideaShapeSvg = (idea: SquishyIdea): string => {
+  const shape = getShape(idea.shapeId);
+  const points = shape.boundary.map((point) => `${50 + point.x * 40},${50 - point.y * 40}`).join(' ');
+  return `<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${points}" /></svg>`;
+};
 
 const RU_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
   'soft-square': 'Кубик',
@@ -120,6 +160,7 @@ const EN_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {
 
 interface PendingReplacement {
   readonly draft: SandboxDraft;
+  readonly ideaId: string | null;
   readonly resolve: (saved: SavedSquishy | null) => void;
 }
 
@@ -127,7 +168,9 @@ export class SandboxLibraryApp {
   private readonly abortController = new AbortController();
   private readonly copy: LibraryCopy;
   private library: readonly SavedSquishy[];
+  private completedRecipeIds: readonly string[];
   private muted: boolean;
+  private activeIdea: SquishyIdea | null = null;
   private currentMaker: SandboxApp | null = null;
   private pendingReplacement: PendingReplacement | null = null;
   private pendingDeleteId: string | null = null;
@@ -140,6 +183,7 @@ export class SandboxLibraryApp {
   ) {
     this.copy = COPY[options.language];
     this.library = [...options.initialLibrary];
+    this.completedRecipeIds = [...options.initialCompletedRecipeIds];
     this.muted = options.muted;
     this.root.addEventListener('click', this.handleClick, { signal: this.abortController.signal });
     this.renderLibrary();
@@ -148,7 +192,7 @@ export class SandboxLibraryApp {
   public setActivityBlocked(blocked: boolean): void {
     this.activityBlocked = blocked;
     this.currentMaker?.setActivityBlocked(blocked);
-    this.root.querySelector<HTMLElement>('[data-sandbox-library]')?.classList.toggle('is-blocked', blocked);
+    this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]')?.classList.toggle('is-blocked', blocked);
   }
 
   public dispose(): void {
@@ -165,6 +209,7 @@ export class SandboxLibraryApp {
   private renderLibrary(): void {
     this.currentMaker?.dispose();
     this.currentMaker = null;
+    this.activeIdea = null;
     this.pendingDeleteId = null;
     const count = this.library.length;
     const capacity = this.options.libraryCapacity;
@@ -179,10 +224,13 @@ export class SandboxLibraryApp {
         </header>
         <section class="sandbox-library-heading">
           <div>
-            <span>${count} / ${capacity}</span>
+            <span class="sandbox-library-status">${getSquishyTitle(this.completedRecipeIds.length, this.options.language)} · ${count} / ${capacity}</span>
             <h1>${this.copy.title}</h1>
           </div>
-          <button class="sandbox-library-new" type="button" data-library-new>${this.copy.newSquishy}</button>
+          <div class="sandbox-library-heading__actions">
+            <button class="sandbox-library-ideas" type="button" data-library-ideas>${this.copy.ideas}</button>
+            <button class="sandbox-library-new" type="button" data-library-new>${this.copy.newSquishy}</button>
+          </div>
         </section>
         ${count === 0 ? `
           <section class="sandbox-library-empty">
@@ -201,6 +249,76 @@ export class SandboxLibraryApp {
       </main>
     `;
     this.renderVisibleThumbnails();
+  }
+
+  private renderIdeas(): void {
+    this.currentMaker?.dispose();
+    this.currentMaker = null;
+    this.activeIdea = null;
+    this.pendingDeleteId = null;
+    const completed = new Set(this.completedRecipeIds);
+    const title = getSquishyTitle(this.completedRecipeIds.length, this.options.language);
+    const cards = SQUISHY_IDEAS.map((idea) => {
+      const done = completed.has(idea.id);
+      const mixin = getIdeaMixinLabel(idea, this.options.language);
+      return `
+        <button class="sandbox-idea-card${done ? ' is-complete' : ''}" type="button" data-idea-id="${escapeAttribute(idea.id)}" aria-pressed="${done}" style="--idea-color:#${idea.paintColor.toString(16).padStart(6, '0')}">
+          <span class="sandbox-idea-card__top">
+            <span class="sandbox-idea-card__shape">${getIdeaShapeLabel(idea, this.options.language)}</span>
+            ${done ? `<strong>✓ ${this.copy.completed}</strong>` : ''}
+          </span>
+          <span class="sandbox-idea-card__hero">
+            <span class="sandbox-idea-card__preview">${ideaShapeSvg(idea)}</span>
+            <span class="sandbox-idea-card__copy">
+              <span class="sandbox-idea-card__name">${getIdeaLabel(idea, this.options.language)}</span>
+              <span class="sandbox-idea-card__cues">
+                <span>${getIdeaMaterialLabel(idea, this.options.language)}</span>
+                ${mixin ? `<span>· ${mixin}</span>` : ''}
+              </span>
+            </span>
+          </span>
+        </button>
+      `;
+    }).join('');
+
+    this.root.innerHTML = `
+      <main class="sandbox-library-shell sandbox-ideas-shell${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-ideas data-stage="ideas" data-ideas-count="${SQUISHY_IDEAS.length}" data-completed-count="${this.completedRecipeIds.length}">
+        <header class="sandbox-library-topbar">
+          <strong>${this.copy.studio}</strong>
+          <button class="sandbox-sound" type="button" data-library-mute aria-pressed="${this.muted}">${this.muted ? this.copy.muted : this.copy.sound}</button>
+        </header>
+        <section class="sandbox-ideas-heading">
+          <button class="sandbox-library-ideas sandbox-library-ideas--back" type="button" data-ideas-back>← ${this.copy.backToLibrary}</button>
+          <span>${title} · ${this.completedRecipeIds.length} / ${SQUISHY_IDEAS.length}</span>
+          <h1>${this.copy.ideasTitle}</h1>
+          <p>${this.copy.ideasHint}</p>
+        </section>
+        <section class="sandbox-ideas-grid" aria-label="${this.copy.ideasTitle}">${cards}</section>
+      </main>
+    `;
+  }
+
+  private renderIdeaGuideMarkup(idea: SquishyIdea): string {
+    const mixin = getIdeaMixinLabel(idea, this.options.language);
+    return `
+      <aside class="sandbox-idea-guide" data-idea-guide data-idea-active="${escapeAttribute(idea.id)}">
+        <strong>${this.copy.goal}: ${getIdeaLabel(idea, this.options.language)}</strong>
+        <span><i style="--idea-color:#${idea.paintColor.toString(16).padStart(6, '0')}"></i>${getIdeaShapeLabel(idea, this.options.language)} · ${getIdeaMaterialLabel(idea, this.options.language)}${mixin ? ` · ${mixin}` : ''}</span>
+      </aside>
+    `;
+  }
+
+  private renderIdeaCompletion(ideaId: string, previousCompleted: readonly string[]): void {
+    if (previousCompleted.includes(ideaId) || !this.completedRecipeIds.includes(ideaId)) return;
+    const idea = SQUISHY_IDEAS.find((candidate) => candidate.id === ideaId);
+    if (!idea) return;
+    this.root.querySelector('[data-idea-complete]')?.remove();
+    this.root.querySelector('[data-idea-guide]')?.remove();
+    const notice = document.createElement('aside');
+    notice.className = 'sandbox-idea-complete';
+    notice.dataset.ideaComplete = '';
+    notice.innerHTML = `<strong>✓ ${this.copy.ideaComplete}</strong><span>${getIdeaLabel(idea, this.options.language)} · ${getSquishyTitle(this.completedRecipeIds.length, this.options.language)}</span>`;
+    this.root.append(notice);
   }
 
   private renderToyCard(toy: SavedSquishy): string {
@@ -227,16 +345,18 @@ export class SandboxLibraryApp {
     }
   }
 
-  private startMaker(toy: SavedSquishy | null): void {
+  private startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): void {
     this.currentMaker?.dispose();
     this.currentMaker = null;
-    this.root.innerHTML = '<div class="sandbox-maker-host" data-sandbox-maker-host></div>';
+    this.activeIdea = toy ? null : idea;
+    this.root.innerHTML = `<div class="sandbox-maker-host" data-sandbox-maker-host></div>${idea ? this.renderIdeaGuideMarkup(idea) : ''}`;
     const host = this.root.querySelector<HTMLDivElement>('[data-sandbox-maker-host]');
     if (!host) throw new Error('Sandbox library failed to mount maker host.');
     this.currentMaker = new SandboxApp(host, {
       language: this.options.language,
       muted: this.muted,
       savedSquishy: toy,
+      ...(toy === null && idea ? { initialShapeId: idea.shapeId } : {}),
       startSavedInSqueeze: toy !== null,
       onExitToLibrary: () => this.renderLibrary(),
       onSaveSquishy: (draft) => this.handleSaveRequest(draft),
@@ -246,15 +366,19 @@ export class SandboxLibraryApp {
   }
 
   private async handleSaveRequest(draft: SandboxDraft): Promise<SavedSquishy | null> {
+    const ideaId = this.activeIdea?.id ?? null;
     if (this.library.length < this.options.libraryCapacity) {
-      const result = await this.options.onAppendSquishy(draft);
+      const previousCompleted = this.completedRecipeIds;
+      const result = await this.options.onAppendSquishy(draft, ideaId);
       this.library = [...result.library];
+      this.completedRecipeIds = [...result.completedRecipeIds];
+      if (ideaId) this.renderIdeaCompletion(ideaId, previousCompleted);
       return result.savedSquishy;
     }
 
     if (this.pendingReplacement) return null;
     return new Promise<SavedSquishy | null>((resolve) => {
-      this.pendingReplacement = { draft, resolve };
+      this.pendingReplacement = { draft, ideaId, resolve };
       this.renderReplaceOverlay();
     });
   }
@@ -335,6 +459,20 @@ export class SandboxLibraryApp {
       target.textContent = this.muted ? this.copy.muted : this.copy.sound;
       return;
     }
+    if (target.hasAttribute('data-library-ideas')) {
+      this.renderIdeas();
+      return;
+    }
+    if (target.hasAttribute('data-ideas-back')) {
+      this.renderLibrary();
+      return;
+    }
+    const ideaId = target.dataset.ideaId;
+    if (ideaId) {
+      const idea = SQUISHY_IDEAS.find((candidate) => candidate.id === ideaId);
+      if (idea) this.startMaker(null, idea);
+      return;
+    }
     if (target.hasAttribute('data-library-new')) {
       this.startMaker(null);
       return;
@@ -362,10 +500,13 @@ export class SandboxLibraryApp {
     const overlay = this.root.querySelector<HTMLElement>('[data-library-replace-overlay]');
     overlay?.setAttribute('aria-busy', 'true');
     try {
-      const result = await this.options.onReplaceSquishy(targetId, pending.draft);
+      const previousCompleted = this.completedRecipeIds;
+      const result = await this.options.onReplaceSquishy(targetId, pending.draft, pending.ideaId);
       this.library = [...result.library];
+      this.completedRecipeIds = [...result.completedRecipeIds];
       this.pendingReplacement = null;
       overlay?.remove();
+      if (pending.ideaId) this.renderIdeaCompletion(pending.ideaId, previousCompleted);
       pending.resolve(result.savedSquishy);
     } catch (error: unknown) {
       console.error('[squishy:library-replace]', error);
