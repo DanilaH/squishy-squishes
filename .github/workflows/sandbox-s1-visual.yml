@@ -1,0 +1,131 @@
+name: Sandbox S1 Temporary Visual Review
+
+on:
+  push:
+    branches:
+      - sandbox-pivot-s1-core
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run release:check
+      - name: Add temporary production screenshot spec
+        run: |
+          cat > tests/release/sandbox-s1-visual.temp.spec.ts <<'TEST'
+          import { expect, test, type Page } from '@playwright/test';
+
+          const URL = '/squishy-squishes/';
+
+          const reset = async (page: Page): Promise<void> => {
+            await page.goto(URL);
+            await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+            await page.reload();
+            await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
+          };
+
+          const canvasBox = async (page: Page) => {
+            const box = await page.locator('[data-sandbox-canvas]').boundingBox();
+            if (!box) throw new Error('canvas missing');
+            return box;
+          };
+
+          const stroke = async (page: Page, points: readonly [number, number][]): Promise<void> => {
+            const first = points[0];
+            if (!first) throw new Error('stroke missing points');
+            await page.mouse.move(first[0], first[1]);
+            await page.mouse.down();
+            for (const [x, y] of points.slice(1)) await page.mouse.move(x, y, { steps: 4 });
+            await page.mouse.up();
+          };
+
+          const mix = async (page: Page): Promise<void> => {
+            const box = await canvasBox(page);
+            const cx = box.x + box.width * .5;
+            const cy = box.y + box.height * .5;
+            const dx = Math.min(72, box.width * .2);
+            const dy = Math.min(64, box.height * .18);
+            const points = [[cx + dx, cy], [cx, cy - dy], [cx - dx, cy], [cx, cy + dy]] as const;
+            await page.mouse.move(cx, cy);
+            await page.mouse.down();
+            for (let i = 0; i < 36; i += 1) {
+              const [x, y] = points[i % points.length]!;
+              await page.mouse.move(x, y, { steps: 2 });
+            }
+            await page.mouse.up();
+            await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-mix-progress'))).toBeGreaterThanOrEqual(1);
+          };
+
+          test('capture S1 portrait lifecycle', async ({ page }) => {
+            await page.setViewportSize({ width: 390, height: 844 });
+            await reset(page);
+            await page.screenshot({ path: 's1-visual/01-phone-shape.png', fullPage: true });
+
+            const shell = page.locator('[data-sandbox-app]');
+            await page.locator('[data-shape="paw"]').click();
+            await page.locator('[data-action="shape-continue"]').click();
+            await expect(shell).toHaveAttribute('data-stage', 'paint');
+            let box = await canvasBox(page);
+            let cx = box.x + box.width * .5;
+            let cy = box.y + box.height * .5;
+            await stroke(page, [[cx - 34, cy - 18], [cx - 8, cy], [cx + 34, cy + 16]]);
+            await page.locator('.sandbox-swatch').nth(1).click();
+            await stroke(page, [[cx - 10, cy - 46], [cx, cy - 4], [cx + 12, cy + 43]]);
+            await page.screenshot({ path: 's1-visual/02-phone-paint.png', fullPage: true });
+
+            await page.locator('[data-action="paint-continue"]').click();
+            await page.locator('[data-mixin="hearts"]').click();
+            box = await canvasBox(page); cx = box.x + box.width * .5; cy = box.y + box.height * .5;
+            await page.mouse.click(cx - 36, cy - 4);
+            await page.mouse.click(cx - 8, cy - 34);
+            await page.mouse.click(cx + 22, cy - 8);
+            await page.mouse.click(cx + 10, cy + 30);
+            await page.screenshot({ path: 's1-visual/03-phone-mixins.png', fullPage: true });
+
+            await page.locator('[data-action="mixin-continue"]').click();
+            await expect(shell).toHaveAttribute('data-stage', 'mix');
+            await page.screenshot({ path: 's1-visual/04-phone-mix.png', fullPage: true });
+            await mix(page);
+            await page.locator('[data-action="mix-continue"]').click();
+            await page.locator('[data-material="holo"]').click();
+            await page.screenshot({ path: 's1-visual/05-phone-finish.png', fullPage: true });
+
+            await page.locator('[data-action="save"]').click();
+            await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+            await page.screenshot({ path: 's1-visual/06-phone-squeeze.png', fullPage: true });
+
+            await page.reload();
+            await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'home');
+            await page.screenshot({ path: 's1-visual/07-phone-home.png', fullPage: true });
+          });
+
+          test('capture S1 landscape shape', async ({ page }) => {
+            await page.setViewportSize({ width: 844, height: 390 });
+            await reset(page);
+            await page.screenshot({ path: 's1-visual/08-landscape-shape.png', fullPage: true });
+          });
+
+          test('capture S1 desktop shape', async ({ page }) => {
+            await page.setViewportSize({ width: 1280, height: 720 });
+            await reset(page);
+            await page.screenshot({ path: 's1-visual/09-desktop-shape.png', fullPage: true });
+          });
+          TEST
+      - name: Capture production visuals
+        run: npx playwright test tests/release/sandbox-s1-visual.temp.spec.ts --config=playwright.release.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sandbox-s1-visuals
+          path: s1-visual
+          if-no-files-found: error
