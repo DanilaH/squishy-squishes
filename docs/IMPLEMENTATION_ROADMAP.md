@@ -1,7 +1,7 @@
 # Squishy Squishes — Implementation Roadmap
 
-**Status:** SANDBOX PIVOT ACTIVE / S3 DECOR ENGINEERING PASSED
-**Current development gate:** S4 — Ideas / Recipes + Humorous Titles
+**Status:** SANDBOX PIVOT ACTIVE / S4 IDEAS ENGINEERING PASSED
+**Current development gate:** S5 — Rewarded Monetization
 **External release gate:** real-phone/manual touch acceptance is still outstanding
 **Current product thesis:** open creative squishy sandbox + personal library; recipes are optional inspiration/meta, never content gates
 
@@ -20,7 +20,11 @@ Current source of truth:
 - `SANDBOX_PIVOT_S2_LIBRARY.md`;
 - `SANDBOX_PIVOT_S2_LIBRARY_REVIEW.md`;
 - `SANDBOX_PIVOT_S2_VISUAL_REVIEW.md`;
-- `SANDBOX_PIVOT_S2_IMPLEMENTATION_REVIEW.md`.
+- `SANDBOX_PIVOT_S2_IMPLEMENTATION_REVIEW.md`;
+- `SANDBOX_PIVOT_S3_DECOR.md`;
+- `SANDBOX_PIVOT_S4_IDEAS_TITLES.md`;
+- `SANDBOX_PIVOT_S4_IDEAS_TITLES_REVIEW.md`;
+- `SANDBOX_PIVOT_S4_IMPLEMENTATION_REVIEW.md`.
 
 Target product loop:
 
@@ -174,20 +178,33 @@ Physical-device/manual touch acceptance remains an external release gate.
 
 ---
 
-## S4 — Ideas / Recipes + Humorous Titles
+## S4 — Ideas / Recipes + Humorous Titles — PASS / ENGINEERING COMPLETE
 
-Repurpose canonical recipe work as optional inspiration rather than gating.
+S4 repurposes canonical recipe metadata as optional inspiration instead of restoring recipe-gated progression.
 
-Target behavior:
+Delivered/proved:
 
-- all sandbox tools remain available regardless of title;
-- Ideas/Recipes suggest combinations to try;
-- matching/completing an idea contributes to light meta progress;
-- meta yields humorous titles such as `Новичок`, `Молодой сквишер`, `Жмякатель`, `Сквиш-стилист`, `Крутой сквишер`, `Сквишер-могер` and later tiers;
-- exact XP should not dominate player-facing UI;
-- titles never unlock required core content.
+- 24 optional Ideas derived from stable canonical variant IDs;
+- same `SandboxApp` maker reused, with only the suggested shape preselected;
+- all six shapes and all normal sandbox tools remain available in Idea mode;
+- metadata-only matching over shape + used paint color + material + optional mapped mix-in;
+- completion awarded only after a successful matching save;
+- distinct completion persisted through existing SaveState V3 `completedRecipeIds` with no V4;
+- repeating an Idea never duplicates completion credit;
+- titles derive from completed-Idea count at 0/2/5/8/12/16/20/24 and have no unlock authority;
+- Library remains primary; Ideas is a secondary action;
+- responsive shape-preview cards replace the rejected spreadsheet-like presentation;
+- active Idea guidance is non-blocking and kept clear of maker controls/copy;
+- matching completion gets a small ownership-safe beat rather than a blocking progression modal.
 
-The existing 24 recipes are input material, not a mandatory final catalog contract.
+Final evidence:
+
+- final production visual capture run **34988213046** — **PASS** after direct inspection of phone portrait, short landscape and desktop states;
+- clean-tree validation run **34988760225** — typecheck + Pages build + Yandex build/verifier + `git diff --check` + Browser QA: **27/27 PASS**;
+- temporary S4 workflows, patch scripts, screenshots/review transport and visual-only test removed before PR;
+- canonical final review: `SANDBOX_PIVOT_S4_IMPLEMENTATION_REVIEW.md`.
+
+Physical-device/manual touch acceptance remains an external release gate.
 
 ---
 
@@ -303,15 +320,15 @@ Do not restore the recipe shelf/next-unlock dashboard model.
 
 ---
 
-# Save/model migration rule — S1 RESULT
+# Save/model migration rule — CURRENT
 
-SaveState V3 is now the production boundary.
+SaveState V3 remains the production boundary through S4.
 
 Historical V2 progress migrates conservatively as legacy/meta credit. It does **not** fabricate authored toys that never existed.
 
 The V2 key is removed only after successful V3 write/flush. Corrupt/invalid V3 falls back safely rather than being partially trusted.
 
-S2 must extend V3 through the existing bounded library envelope rather than inventing another persistence format without evidence.
+Subsequent phases must extend the existing bounded V3 model unless concrete evidence justifies a schema change.
 
 ---
 
