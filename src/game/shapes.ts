@@ -17,8 +17,8 @@ const HEART_POINTS = 128;
 const MOCHI_POINTS = 112;
 const PEACH_POINTS = 128;
 const MUSHROOM_SIDE_POINTS = 72;
-const PAW_TOP_POINTS = 72;
-const PAW_PALM_POINTS = 72;
+const PAW_TOP_POINTS = 112;
+const PAW_PALM_POINTS = 76;
 
 const createSoftSquareBoundary = (): readonly ShapePoint[] =>
   Array.from({ length: SOFT_SQUARE_POINTS }, (_, index) => {
@@ -132,29 +132,33 @@ const createMushroomBoundary = (): readonly ShapePoint[] => {
 };
 
 const createPawBoundary = (): readonly ShapePoint[] => {
-  const toeCenters = [-0.54, -0.18, 0.18, 0.54] as const;
+  // The old paw kept the valleys between toes too high, so at gameplay size it read as
+  // a generic scalloped blob. Use four wider toe pads with deliberate valleys and a
+  // larger rounded palm so the silhouette survives both the selector thumbnail and the
+  // deformed WebGL surface.
+  const toeCenters = [-0.57, -0.19, 0.19, 0.57] as const;
   const top = Array.from({ length: PAW_TOP_POINTS }, (_, index) => {
-    const x = -0.72 + (index / (PAW_TOP_POINTS - 1)) * 1.44;
-    let y = 0.5;
-    for (const center of toeCenters) y += 0.28 * Math.exp(-(((x - center) / 0.105) ** 2));
+    const x = -0.78 + (index / (PAW_TOP_POINTS - 1)) * 1.56;
+    let y = 0.26;
+    for (const center of toeCenters) y += 0.52 * Math.exp(-(((x - center) / 0.15) ** 2));
     return { x, y };
   });
 
   const lowerPalm = Array.from({ length: PAW_PALM_POINTS }, (_, index) => {
     const angle = -((index + 1) / (PAW_PALM_POINTS + 1)) * Math.PI;
     return {
-      x: 0.8 * Math.cos(angle),
-      y: 0.18 + 0.78 * Math.sin(angle),
+      x: 0.84 * Math.cos(angle),
+      y: 0.08 + 0.82 * Math.sin(angle),
     };
   });
 
   const raw: readonly ShapePoint[] = [
     ...top,
-    { x: 0.76, y: 0.42 },
-    { x: 0.8, y: 0.18 },
+    { x: 0.8, y: 0.24 },
+    { x: 0.84, y: 0.08 },
     ...lowerPalm,
-    { x: -0.8, y: 0.18 },
-    { x: -0.76, y: 0.42 },
+    { x: -0.84, y: 0.08 },
+    { x: -0.8, y: 0.24 },
   ];
 
   return normalizeBoundary(raw, 0.94);
