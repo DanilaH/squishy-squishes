@@ -76,7 +76,6 @@ jobs:
               }
               await page.mouse.up();
               try {
-                await shell.waitFor({ state: 'visible' });
                 await page.waitForFunction(() => document.querySelector('.lab-shell')?.getAttribute('data-stage') === 'mold', null, { timeout: 1200 });
                 return;
               } catch {}
@@ -89,7 +88,13 @@ jobs:
             const target = page.locator('.mold-target');
             for (let press = 0; press < 18; press += 1) {
               if ((await shell.getAttribute('data-stage')) !== 'mold') return;
-              await target.waitFor({ state: 'visible' });
+              await page.waitForFunction(() => {
+                const shellElement = document.querySelector('.lab-shell');
+                if (shellElement?.getAttribute('data-stage') !== 'mold') return true;
+                const targetElement = document.querySelector('.mold-target');
+                return targetElement instanceof HTMLButtonElement && !targetElement.hidden && !targetElement.disabled;
+              }, null, { timeout: 800 });
+              if ((await shell.getAttribute('data-stage')) !== 'mold') return;
               await target.dispatchEvent('pointerdown', {
                 bubbles: true,
                 pointerId: press + 1,
