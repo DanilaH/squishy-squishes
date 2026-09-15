@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   apply:
-    if: startsWith(github.event.head_commit.message, 'Arm UI Overhaul 02 ownership corrections')
+    if: startsWith(github.event.head_commit.message, 'Arm UI Overhaul 02 ownership lifecycle fix')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,8 +22,8 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 24
-      - name: Apply ownership correction patch
-        run: node scripts/apply-ui-overhaul-02c.mjs
+      - name: Apply ownership lifecycle patch
+        run: node scripts/apply-ui-overhaul-02d.mjs
       - name: Install and validate
         run: |
           npm install
@@ -35,7 +35,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/game/VerticalSliceApp.ts src/ui-ux-overhaul-02.css src/i18n/en.ts src/i18n/ru.ts
+          git add src/game/VerticalSliceApp.ts
           git diff --cached --check
-          git commit -m "Apply UI Overhaul 02 ownership corrections"
+          git commit -m "Apply UI Overhaul 02 ownership lifecycle fix"
           git push origin HEAD:ui-ux-overhaul-02
