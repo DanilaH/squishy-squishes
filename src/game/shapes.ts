@@ -17,7 +17,6 @@ const HEART_POINTS = 128;
 const MOCHI_POINTS = 112;
 const PEACH_POINTS = 128;
 const MUSHROOM_SIDE_POINTS = 72;
-const PAW_TOP_POINTS = 112;
 const PAW_PALM_POINTS = 76;
 
 const createSoftSquareBoundary = (): readonly ShapePoint[] =>
@@ -132,36 +131,51 @@ const createMushroomBoundary = (): readonly ShapePoint[] => {
 };
 
 const createPawBoundary = (): readonly ShapePoint[] => {
-  // The old paw kept the valleys between toes too high, so at gameplay size it read as
-  // a generic scalloped blob. Use four wider toe pads with deliberate valleys and a
-  // larger rounded palm so the silhouette survives both the selector thumbnail and the
-  // deformed WebGL surface.
-  const toeCenters = [-0.57, -0.19, 0.19, 0.57] as const;
-  const top = Array.from({ length: PAW_TOP_POINTS }, (_, index) => {
-    const x = -0.78 + (index / (PAW_TOP_POINTS - 1)) * 1.56;
-    let y = 0.26;
-    for (const center of toeCenters) y += 0.52 * Math.exp(-(((x - center) / 0.15) ** 2));
-    return { x, y };
-  });
+  // Build actual rounded toe lobes instead of a sinusoidal/scalloped top. Deep valleys
+  // between the lobes are intentional: they are what keeps the silhouette reading as a
+  // paw rather than a crown once the 16x16 deformation grid starts moving it.
+  const toes = [
+    { x: -0.57, y: 0.30, rx: 0.155, ry: 0.23 },
+    { x: -0.19, y: 0.32, rx: 0.16, ry: 0.285 },
+    { x: 0.19, y: 0.32, rx: 0.16, ry: 0.285 },
+    { x: 0.57, y: 0.30, rx: 0.155, ry: 0.23 },
+  ] as const;
+  const top: ShapePoint[] = [{ x: -0.8, y: 0.04 }, { x: -0.74, y: 0.18 }];
+
+  for (let toeIndex = 0; toeIndex < toes.length; toeIndex += 1) {
+    const toe = toes[toeIndex]!;
+    const samples = 18;
+    for (let index = 0; index <= samples; index += 1) {
+      const angle = Math.PI - (index / samples) * Math.PI;
+      top.push({
+        x: toe.x + Math.cos(angle) * toe.rx,
+        y: toe.y + Math.sin(angle) * toe.ry,
+      });
+    }
+    const next = toes[toeIndex + 1];
+    if (next) {
+      top.push({
+        x: (toe.x + toe.rx + next.x - next.rx) * 0.5,
+        y: 0.15,
+      });
+    }
+  }
+  top.push({ x: 0.74, y: 0.18 }, { x: 0.8, y: 0.04 });
 
   const lowerPalm = Array.from({ length: PAW_PALM_POINTS }, (_, index) => {
     const angle = -((index + 1) / (PAW_PALM_POINTS + 1)) * Math.PI;
     return {
-      x: 0.84 * Math.cos(angle),
-      y: 0.08 + 0.82 * Math.sin(angle),
+      x: 0.8 * Math.cos(angle),
+      y: -0.04 + 0.72 * Math.sin(angle),
     };
   });
 
-  const raw: readonly ShapePoint[] = [
+  return normalizeBoundary([
     ...top,
-    { x: 0.8, y: 0.24 },
-    { x: 0.84, y: 0.08 },
+    { x: 0.8, y: -0.04 },
     ...lowerPalm,
-    { x: -0.84, y: 0.08 },
-    { x: -0.8, y: 0.24 },
-  ];
-
-  return normalizeBoundary(raw, 0.94);
+    { x: -0.8, y: -0.04 },
+  ], 0.94);
 };
 
 export const SHAPES: readonly ShapeDefinition[] = [
@@ -216,7 +230,7 @@ const pointToSegmentDistance = (
   const lengthSquared = abX * abX + abY * abY;
   const t = lengthSquared <= 1e-9
     ? 0
-    : Math.min(1, Math.max(0, ((px - ax) * abX + (py - ay) * abY) / lengthSquared));
+    : Math.min(1, Math.max(0, ((px - ax) * abX + (py - ay)) / lengthSquared));
   return Math.hypot(px - (ax + abX * t), py - (ay + abY * t));
 };
 
