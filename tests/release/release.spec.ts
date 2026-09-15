@@ -298,5 +298,11 @@ test('fresh save completes one real standard craft and persists collection progr
   await expect(completedActions.nth(0)).toHaveText('Squeeze');
   await expect(completedActions.nth(1)).toHaveText('Again');
 
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(completedActions.nth(0)).toBeVisible();
+  await expect(completedActions.nth(1)).toBeVisible();
+  await expectInViewport(page, completedActions.nth(0));
+  await expectInViewport(page, completedActions.nth(1));
+
   expect(fatalErrors).toEqual([]);
 });
