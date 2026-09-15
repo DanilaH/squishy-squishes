@@ -41,7 +41,7 @@ const advanceToDecor = async (page: Page, shape = 'soft-square') => {
   await page.reload();
   await page.locator('[data-library-new]').first().click();
   const shell = page.locator('[data-sandbox-app]');
-  await page.locator(`[data-shape="${shape}"]`).click();
+  await page.locator(`.sandbox-shape[data-shape="${shape}"]`).click();
   await page.locator('[data-action="shape-continue"]').click();
   const box = await canvasBox(page);
   const cx = box.x + box.width * 0.5;
@@ -91,7 +91,7 @@ test('capture player-feedback polish states', async ({ page }) => {
 
   await page.locator('[data-action="new"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'shape');
-  await page.locator('[data-shape="paw"]').click();
+  await page.locator('.sandbox-shape[data-shape="paw"]').click();
   await page.setViewportSize({ width: 1293, height: 853 });
   await page.screenshot({ path: 'visual-artifacts/paw-1293x853.png', fullPage: true });
 });
