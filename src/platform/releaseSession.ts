@@ -8,19 +8,21 @@ export interface ReleaseSessionHandle {
   dispose(): void;
 }
 
-const selectionParams = (shell: HTMLElement): Readonly<Record<string, string>> => ({
-  shape: shell.dataset.shape ?? 'unknown',
-  material: shell.dataset.material ?? 'unknown',
+const selectionParams = (shell: HTMLElement | null): Readonly<Record<string, string>> => ({
+  shape: shell?.dataset.shape ?? 'unknown',
+  material: shell?.dataset.material ?? 'unknown',
 });
 
 export const installReleaseSession = (
   root: HTMLDivElement,
   runtime: SquishyPlatformRuntime,
 ): ReleaseSessionHandle => {
-  const shell = root.querySelector<HTMLElement>('.sandbox-shell, .lab-shell');
-  if (!shell) throw new Error('Release session requires the mounted game shell.');
-  const collection = root.querySelector<HTMLElement>('.collection-overlay');
-  const sandbox = shell.classList.contains('sandbox-shell');
+  const sandboxMode = root.querySelector('[data-sandbox-library], [data-sandbox-app]') !== null;
+  const legacyCollection = root.querySelector<HTMLElement>('.collection-overlay');
+
+  if (!sandboxMode && !root.querySelector('.lab-shell')) {
+    throw new Error('Release session requires the mounted game shell.');
+  }
 
   const gate = new ActionInterstitialGate(
     () => performance.now(),
@@ -32,21 +34,32 @@ export const installReleaseSession = (
   );
   gate.markReady();
 
+  const getSandboxShell = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>('[data-sandbox-app]');
+  const getLibraryShell = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>('[data-sandbox-library]');
+  const getLegacyShell = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>('.lab-shell');
+  const currentStage = (): string => {
+    if (sandboxMode) return getSandboxShell()?.dataset.stage ?? getLibraryShell()?.dataset.stage ?? 'library';
+    return getLegacyShell()?.dataset.stage ?? 'select';
+  };
+
   let disposed = false;
-  let previousStage = shell.dataset.stage ?? (sandbox ? 'shape' : 'select');
-  let collectionOpen = collection ? !collection.hidden : false;
+  let previousStage = currentStage();
+  let collectionOpen = legacyCollection ? !legacyCollection.hidden : false;
   let completedCrafts = 0;
   let adInFlight = false;
 
   runtime.analytics.track('session_ready', {
     platform: runtime.kind,
     language: runtime.language,
-    mode: sandbox ? 'sandbox' : 'legacy',
+    mode: sandboxMode ? 'sandbox' : 'legacy',
   });
 
   const isNaturalBreak = (): boolean => {
-    const stage = shell.dataset.stage ?? '';
-    if (sandbox) return stage === 'home';
+    const stage = currentStage();
+    if (sandboxMode) return stage === 'library';
     return stage === 'select' && !collectionOpen;
   };
 
@@ -75,31 +88,33 @@ export const installReleaseSession = (
   };
 
   const handleStageChange = (): void => {
-    const stage = shell.dataset.stage ?? '';
+    const stage = currentStage();
     if (stage === previousStage) return;
 
-    if (sandbox) {
+    if (sandboxMode) {
+      const sandboxShell = getSandboxShell();
       if (previousStage === 'shape' && stage === 'paint') {
-        runtime.analytics.track('craft_start', selectionParams(shell));
+        runtime.analytics.track('craft_start', selectionParams(sandboxShell));
       }
       if (previousStage === 'finish' && stage === 'squeeze') {
         completedCrafts += 1;
         runtime.analytics.track('craft_save', {
-          ...selectionParams(shell),
+          ...selectionParams(sandboxShell),
           completedCrafts,
         });
       }
-      const returnedHomeAfterPlay = previousStage === 'squeeze' && stage === 'home';
+      const returnedToLibraryAfterPlay = previousStage === 'squeeze' && stage === 'library';
       previousStage = stage;
-      if (returnedHomeAfterPlay) void showInterstitialIfEligible();
+      if (returnedToLibraryAfterPlay) void showInterstitialIfEligible();
       return;
     }
 
-    if (stage === 'pour') runtime.analytics.track('craft_start', selectionParams(shell));
+    const legacyShell = getLegacyShell();
+    if (stage === 'pour') runtime.analytics.track('craft_start', selectionParams(legacyShell));
     if (stage === 'collect') {
       completedCrafts += 1;
       runtime.analytics.track('craft_collect', {
-        ...selectionParams(shell),
+        ...selectionParams(legacyShell),
         completedCrafts,
       });
     }
@@ -109,20 +124,12 @@ export const installReleaseSession = (
   };
 
   const stageObserver = new MutationObserver(handleStageChange);
-  stageObserver.observe(shell, { attributes: true, attributeFilter: ['data-stage'] });
-
-  let collectionObserver: MutationObserver | null = null;
-  if (collection) {
-    const handleCollectionChange = (): void => {
-      const isOpen = !collection.hidden;
-      if (isOpen === collectionOpen) return;
-      collectionOpen = isOpen;
-      runtime.activity.setGameplayDesired(!isOpen);
-      runtime.analytics.track(isOpen ? 'catalog_open' : 'catalog_close');
-    };
-    collectionObserver = new MutationObserver(handleCollectionChange);
-    collectionObserver.observe(collection, { attributes: true, attributeFilter: ['hidden'] });
-  }
+  stageObserver.observe(root, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['data-stage', 'hidden'],
+  });
 
   const handleClick = (event: MouseEvent): void => {
     const target = event.target instanceof Element ? event.target : null;
@@ -134,7 +141,7 @@ export const installReleaseSession = (
     const make = target.closest<HTMLElement>('[data-make-id]')?.dataset.makeId;
     if (make) runtime.analytics.track('catalog_recipe_start', { recipeId: make });
 
-    const mute = target.closest<HTMLElement>('[data-action="mute"]');
+    const mute = target.closest<HTMLElement>('[data-action="mute"], [data-library-mute]');
     if (mute) {
       queueMicrotask(() => {
         runtime.analytics.track('mute_toggle', {
@@ -151,10 +158,9 @@ export const installReleaseSession = (
       if (disposed) return;
       disposed = true;
       stageObserver.disconnect();
-      collectionObserver?.disconnect();
       root.removeEventListener('click', handleClick);
-      const stage = shell.dataset.stage ?? '';
-      const activeStages = sandbox ? SANDBOX_ACTIVE_CRAFT_STAGES : LEGACY_ACTIVE_CRAFT_STAGES;
+      const stage = currentStage();
+      const activeStages = sandboxMode ? SANDBOX_ACTIVE_CRAFT_STAGES : LEGACY_ACTIVE_CRAFT_STAGES;
       if (activeStages.has(stage)) runtime.analytics.track('session_end_mid_craft', { stage });
     },
   };

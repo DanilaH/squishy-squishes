@@ -1,4 +1,17 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import {
+  createAppearanceStroke,
+  createMixInPlacement,
+  estimateAppearanceBytes,
+  type AppearanceDocumentV1,
+} from '../../src/sandbox/appearance';
+import type { SavedSquishy } from '../../src/sandbox/types';
+import {
+  createDefaultSaveV3,
+  decodeSaveStateV3,
+  estimateSaveStateV3Bytes,
+  type SaveStateV3,
+} from '../../src/platform/saveV3';
 
 const PAGES_URL = '/squishy-squishes/';
 const YANDEX_URL = '/yandex/';
@@ -107,6 +120,18 @@ const clearStorageAndReload = async (page: Page): Promise<void> => {
   await page.reload();
 };
 
+const seedSaveV3 = async (page: Page, save: SaveStateV3, url = PAGES_URL): Promise<void> => {
+  await page.goto(url);
+  await page.evaluate((value) => {
+    localStorage.clear();
+    localStorage.setItem('squishy.save.v3', JSON.stringify(value));
+  }, save);
+  await page.reload();
+};
+
+const readBrowserSave = async (page: Page): Promise<SaveStateV3> =>
+  page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as SaveStateV3);
+
 const getCanvasBox = async (page: Page): Promise<{ x: number; y: number; width: number; height: number }> => {
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!box) throw new Error('Missing sandbox canvas box');
@@ -150,25 +175,105 @@ const performRealMix = async (page: Page): Promise<void> => {
     .toBeGreaterThanOrEqual(1);
 };
 
-test('Pages production build boots into Sandbox S1 with all six shapes open', async ({ page }) => {
+const craftMinimalToy = async (
+  page: Page,
+  shapeId: SavedSquishy['shapeId'],
+  materialId: SavedSquishy['materialId'],
+  paintColorIndex = 0,
+): Promise<void> => {
+  await page.locator('[data-library-new]').first().click();
+  const shell = page.locator('[data-sandbox-app]');
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
+  await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();
+  await page.locator('[data-action="shape-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'paint');
+
+  const box = await getCanvasBox(page);
+  const cx = box.x + box.width * 0.5;
+  const cy = box.y + box.height * 0.5;
+  await page.locator('.sandbox-swatch').nth(paintColorIndex).click();
+  await drawSandboxStroke(page, [[cx - 18, cy - 10], [cx, cy], [cx + 20, cy + 12]]);
+  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-action="mixin-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'mix');
+  await performRealMix(page);
+  await page.locator('[data-action="mix-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'finish');
+  await page.locator(`.sandbox-material[data-material="${materialId}"]`).click();
+  await page.locator('[data-action="save"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+};
+
+const createFixtureAppearance = (seed: number, rich = false): AppearanceDocumentV1 => {
+  const strokeCount = rich ? 30 : 4;
+  const mixinCount = rich ? 44 : 6;
+  const strokes = Array.from({ length: strokeCount }, (_, index) => {
+    const offset = ((seed * 13 + index * 7) % 70) / 100;
+    return createAppearanceStroke(
+      0,
+      [0xd58cff, 0x63e6e2, 0xff79a8, 0x92df83][(seed + index) % 4]!,
+      [18, 34, 56][index % 3]!,
+      [
+        { u: 0.18 + offset * 0.2, v: 0.22 + (index % 5) * 0.08 },
+        { u: 0.34 + offset * 0.18, v: 0.34 + (index % 4) * 0.08 },
+        { u: 0.50 + offset * 0.12, v: 0.48 + (index % 3) * 0.07 },
+        { u: 0.66 - offset * 0.10, v: 0.60 - (index % 4) * 0.05 },
+        { u: 0.80 - offset * 0.12, v: 0.72 - (index % 5) * 0.04 },
+      ],
+    );
+  });
+  const mixinIds = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti'] as const;
+  const mixins = Array.from({ length: mixinCount }, (_, index) => createMixInPlacement(
+    mixinIds[(seed + index) % mixinIds.length]!,
+    { u: 0.15 + ((index * 23 + seed) % 70) / 100, v: 0.16 + ((index * 31 + seed * 3) % 68) / 100 },
+    10 + (index % 13),
+    ((index * 37 + seed * 11) % 255) / 255,
+  ));
+  return { v: 1, strokes, mixins };
+};
+
+const FIXTURE_SHAPES = ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw'] as const;
+const FIXTURE_MATERIALS = ['soft', 'jelly', 'holo'] as const;
+
+const createFixtureToy = (index: number, rich = false): SavedSquishy => ({
+  id: `fixture-${index}`,
+  createdAt: 1_000 + index,
+  shapeId: FIXTURE_SHAPES[index % FIXTURE_SHAPES.length]!,
+  materialId: FIXTURE_MATERIALS[index % FIXTURE_MATERIALS.length]!,
+  appearance: createFixtureAppearance(index, rich),
+});
+
+const createFixtureSave = (count: number, rich = false): SaveStateV3 => ({
+  ...createDefaultSaveV3(),
+  library: Array.from({ length: count }, (_, index) => createFixtureToy(index, rich)),
+  libraryCapacity: count > 8 ? 24 : 8,
+  totalCrafts: count,
+  updatedAt: 12_345,
+});
+
+test('Pages production build boots into an empty personal Library and all six maker shapes remain open', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(PAGES_URL);
   await clearStorageAndReload(page);
 
+  const library = page.locator('[data-sandbox-library]');
+  await expect(library).toHaveAttribute('data-stage', 'library');
+  await expect(library).toHaveAttribute('data-library-count', '0');
+  await expect(page.getByRole('heading', { name: 'MY SQUISHIES' })).toBeVisible();
+  await page.locator('[data-library-new]').first().click();
+
   const shell = page.locator('[data-sandbox-app]');
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await expect(page.locator('.sandbox-shape')).toHaveCount(6);
   await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);
-  for (const shapeId of ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw']) {
+  for (const shapeId of FIXTURE_SHAPES) {
     await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();
     await expect(shell).toHaveAttribute('data-shape', shapeId);
   }
-  await expect(page.locator('.lab-shell')).toHaveCount(0);
   await expect(page.locator('.mold-target')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'CONTINUE' })).toBeVisible();
 
-  const save = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as unknown);
+  const save = await readBrowserSave(page);
   expect(save).toMatchObject({ version: 3, library: [], libraryCapacity: 8, totalCrafts: 0 });
   expect(fatalErrors).toEqual([]);
 });
@@ -178,23 +283,22 @@ for (const viewport of [
   { name: 'phone landscape', width: 844, height: 390 },
   { name: 'short desktop', width: 1280, height: 600 },
 ] as const) {
-  test(`Sandbox S1 primary shape controls fit ${viewport.name}`, async ({ page }) => {
+  test(`Sandbox S2 empty Library primary actions fit ${viewport.name}`, async ({ page }) => {
     const fatalErrors = watchFatalBrowserErrors(page);
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto(PAGES_URL);
     await clearStorageAndReload(page);
 
-    const shell = page.locator('[data-sandbox-app]');
-    await expect(shell).toHaveAttribute('data-stage', 'shape');
-    await expectInViewport(page, page.locator('.sandbox-controls'));
-    await expectInViewport(page, page.locator('.sandbox-shape').first());
-    await expectInViewport(page, page.locator('.sandbox-shape').last());
-    await expectInViewport(page, page.locator('[data-action="shape-continue"]'));
+    const library = page.locator('[data-sandbox-library]');
+    await expect(library).toHaveAttribute('data-stage', 'library');
+    await expectInViewport(page, page.locator('.sandbox-library-heading'));
+    await expectInViewport(page, page.locator('[data-library-new]').first());
+    await expectInViewport(page, page.locator('.sandbox-library-empty__toy'));
     expect(fatalErrors).toEqual([]);
   });
 }
 
-test('SaveStateV2 migrates deterministically to V3 without fabricating a custom toy', async ({ page }) => {
+test('SaveStateV2 migrates to V3 and boots the empty Library without fabricating a toy', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.addInitScript(() => {
     localStorage.clear();
@@ -207,7 +311,7 @@ test('SaveStateV2 migrates deterministically to V3 without fabricating a custom 
     }));
   });
   await page.goto(PAGES_URL);
-  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-stage', 'library');
 
   const result = await page.evaluate(() => ({
     v3: JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as Record<string, unknown>,
@@ -226,22 +330,21 @@ test('SaveStateV2 migrates deterministically to V3 without fabricating a custom 
   expect(fatalErrors).toEqual([]);
 });
 
-test('Yandex sandbox build honors SDK lifecycle, RU copy, QA exclusion and settings persistence', async ({ page }) => {
+test('Yandex S2 Library honors SDK lifecycle, RU copy, QA exclusion and settings persistence', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await installYandexStub(page, 'ru');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(YANDEX_URL);
 
-  const shell = page.locator('[data-sandbox-app]');
-  await expect(shell).toHaveAttribute('data-stage', 'shape');
-  await expect(page.getByRole('heading', { name: 'ВЫБЕРИ ФОРМУ' })).toBeVisible();
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-stage', 'library');
+  await expect(page.getByRole('heading', { name: 'МОИ СКВИШИ' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'QA' })).toHaveCount(0);
   await expect(page.locator('[data-appearance-probe]')).toHaveCount(0);
   await expect.poll(async () => (await yandexState(page)).loadingReady).toBe(1);
   await expect.poll(async () => (await yandexState(page)).gameplayStart).toBeGreaterThanOrEqual(1);
   expect((await yandexState(page)).fullscreenRequests).toBe(0);
 
-  await page.getByRole('button', { name: 'Звук вкл.' }).click();
+  await page.locator('[data-library-mute]').click();
   await expect.poll(async () => page.evaluate(() => localStorage.getItem('squishy.settings.v1'))).toContain('"muted":true');
   await expect(page.getByRole('button', { name: 'Звук выкл.' })).toBeVisible();
 
@@ -251,89 +354,142 @@ test('Yandex sandbox build honors SDK lifecycle, RU copy, QA exclusion and setti
   expect(fatalErrors).toEqual([]);
 });
 
-test('real Sandbox S1 craft persists authored Paw + paint + hearts + Holo, reloads and squeezes', async ({ page }) => {
+test('real S2 crafts append in order, reload, and a non-latest saved toy opens directly into Squeeze', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(PAGES_URL);
   await clearStorageAndReload(page);
 
-  const shell = page.locator('[data-sandbox-app]');
-  await expect(shell).toHaveAttribute('data-stage', 'shape');
-  await page.locator('[data-shape="paw"]').click();
-  await expect(shell).toHaveAttribute('data-shape', 'paw');
-  await page.locator('[data-action="shape-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'paint');
+  await craftMinimalToy(page, 'soft-square', 'soft', 0);
+  await page.locator('[data-action="home"]').click();
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
 
-  let box = await getCanvasBox(page);
-  let cx = box.x + box.width * 0.5;
-  let cy = box.y + box.height * 0.5;
-  await drawSandboxStroke(page, [[cx - 22, cy - 12], [cx, cy], [cx + 24, cy + 12]]);
-  await page.locator('.sandbox-swatch').nth(1).click();
-  await drawSandboxStroke(page, [[cx - 8, cy - 30], [cx, cy], [cx + 8, cy + 30]]);
-  await expect(shell).toHaveAttribute('data-paint-strokes', '2');
-  expect(Number(await shell.getAttribute('data-appearance-bytes'))).toBeLessThanOrEqual(6_000);
+  await craftMinimalToy(page, 'heart', 'jelly', 1);
+  await page.locator('[data-action="home"]').click();
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '2');
 
-  await page.locator('[data-action="paint-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'mixins');
-  await page.locator('[data-mixin="hearts"]').click();
-  box = await getCanvasBox(page);
-  cx = box.x + box.width * 0.5;
-  cy = box.y + box.height * 0.5;
-  await page.mouse.click(cx - 18, cy);
-  await page.mouse.click(cx + 2, cy - 18);
-  await page.mouse.click(cx + 20, cy + 14);
-  await expect.poll(async () => Number(await shell.getAttribute('data-mixin-count'))).toBeGreaterThanOrEqual(3);
+  await craftMinimalToy(page, 'paw', 'holo', 2);
+  await page.locator('[data-action="home"]').click();
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '3');
 
-  await page.locator('[data-action="mixin-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'mix');
-  await expect(page.locator('[data-action="mix-continue"]')).toBeDisabled();
-  await performRealMix(page);
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'finish');
-
-  await page.locator('[data-material="holo"]').click();
-  await expect(shell).toHaveAttribute('data-material', 'holo');
-  await page.locator('[data-action="save"]').click();
-  await expect(shell).toHaveAttribute('data-save-complete', 'true');
-  await expect(shell).toHaveAttribute('data-stage', 'squeeze');
-
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as {
-    version: number;
-    totalCrafts: number;
-    library: Array<{
-      shapeId: string;
-      materialId: string;
-      appearance: { strokes: unknown[]; mixins: unknown[] };
-    }>;
-  });
-  expect(saved.version).toBe(3);
-  expect(saved.totalCrafts).toBe(1);
-  expect(saved.library).toHaveLength(1);
-  expect(saved.library[0]).toMatchObject({ shapeId: 'paw', materialId: 'holo' });
-  expect(saved.library[0]!.appearance.strokes).toHaveLength(2);
-  expect(saved.library[0]!.appearance.mixins.length).toBeGreaterThanOrEqual(3);
+  const savedBeforeReload = await readBrowserSave(page);
+  expect(savedBeforeReload.library.map((toy) => toy.shapeId)).toEqual(['soft-square', 'heart', 'paw']);
+  expect(savedBeforeReload.library.map((toy) => toy.materialId)).toEqual(['soft', 'jelly', 'holo']);
+  expect(savedBeforeReload.totalCrafts).toBe(3);
 
   await page.reload();
-  const reloadedShell = page.locator('[data-sandbox-app]');
-  await expect(reloadedShell).toHaveAttribute('data-stage', 'home');
-  await expect(reloadedShell).toHaveAttribute('data-shape', 'paw');
-  await expect(reloadedShell).toHaveAttribute('data-material', 'holo');
-  await expect(reloadedShell).toHaveAttribute('data-paint-strokes', '2');
-  await expect.poll(async () => Number(await reloadedShell.getAttribute('data-mixin-count'))).toBeGreaterThanOrEqual(3);
+  await expect(page.locator('[data-library-toy]')).toHaveCount(3);
+  const firstId = savedBeforeReload.library[0]!.id;
+  await page.locator(`[data-library-play-id="${firstId}"]`).click();
+  const shell = page.locator('[data-sandbox-app]');
+  await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+  await expect(shell).toHaveAttribute('data-shape', 'soft-square');
+  await expect(shell).toHaveAttribute('data-material', 'soft');
 
-  await page.locator('[data-action="play-saved"]').click();
-  await expect(reloadedShell).toHaveAttribute('data-stage', 'squeeze');
-  box = await getCanvasBox(page);
-  cx = box.x + box.width * 0.5;
-  cy = box.y + box.height * 0.5;
+  const box = await getCanvasBox(page);
+  const cx = box.x + box.width * 0.5;
+  const cy = box.y + box.height * 0.5;
   await page.mouse.move(cx, cy);
   await page.mouse.down();
   await page.mouse.move(cx + Math.min(70, box.width * 0.2), cy + 12, { steps: 10 });
   await page.mouse.up();
-  await expect.poll(async () => Number(await reloadedShell.getAttribute('data-sandbox-squeezes'))).toBeGreaterThan(0);
-
+  await expect.poll(async () => Number(await shell.getAttribute('data-sandbox-squeezes'))).toBeGreaterThan(0);
   expect(fatalErrors).toEqual([]);
+});
+
+test('delete is explicit, removes a middle toy only after confirmation, and persists order', async ({ page }) => {
+  const fatalErrors = watchFatalBrowserErrors(page);
+  const seeded = createFixtureSave(3);
+  await seedSaveV3(page, seeded);
+
+  const middleId = seeded.library[1]!.id;
+  const beforeRaw = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+  await page.locator(`[data-library-delete-id="${middleId}"]`).click();
+  await expect(page.locator('[data-library-delete-overlay]')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
+
+  await page.locator('[data-library-delete-cancel]').click();
+  await expect(page.locator('[data-library-delete-overlay]')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
+
+  await page.locator(`[data-library-delete-id="${middleId}"]`).click();
+  await page.locator('[data-library-delete-confirm]').click();
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '2');
+
+  const after = await readBrowserSave(page);
+  expect(after.library.map((toy) => toy.id)).toEqual([seeded.library[0]!.id, seeded.library[2]!.id]);
+  expect(after.totalCrafts).toBe(seeded.totalCrafts);
+  await page.reload();
+  await expect(page.locator('[data-library-toy]')).toHaveCount(2);
+  expect((await readBrowserSave(page)).library.map((toy) => toy.id)).toEqual([seeded.library[0]!.id, seeded.library[2]!.id]);
+  expect(fatalErrors).toEqual([]);
+});
+
+test('full 8-slot Library allows creation, mutates nothing before replacement, supports cancel, then replaces an explicit slot', async ({ page }) => {
+  const fatalErrors = watchFatalBrowserErrors(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const seeded = createFixtureSave(8);
+  await seedSaveV3(page, seeded);
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
+  await expect(page.locator('[data-library-new]').first()).toBeVisible();
+
+  const beforeRaw = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+  await page.locator('[data-library-new]').first().click();
+  const shell = page.locator('[data-sandbox-app]');
+  await page.locator('.sandbox-shape[data-shape="paw"]').click();
+  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-action="mixin-continue"]').click();
+  await performRealMix(page);
+  await page.locator('[data-action="mix-continue"]').click();
+  await page.locator('.sandbox-material[data-material="holo"]').click();
+  await page.locator('[data-action="save"]').click();
+
+  await expect(page.locator('[data-library-replace-overlay]')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
+  await page.locator('[data-library-replace-cancel]').click();
+  await expect(page.locator('[data-library-replace-overlay]')).toHaveCount(0);
+  await expect(shell).toHaveAttribute('data-stage', 'finish');
+  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
+
+  const targetIndex = 2;
+  const targetId = seeded.library[targetIndex]!.id;
+  await page.locator('[data-action="save"]').click();
+  await expect(page.locator('[data-library-replace-overlay]')).toBeVisible();
+  await page.locator(`[data-library-replace-id="${targetId}"]`).click();
+  await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+  await expect(shell).toHaveAttribute('data-shape', 'paw');
+  await expect(shell).toHaveAttribute('data-material', 'holo');
+
+  const after = await readBrowserSave(page);
+  expect(after.library).toHaveLength(8);
+  expect(after.library[targetIndex]!.id).not.toBe(targetId);
+  expect(after.library[targetIndex]).toMatchObject({ shapeId: 'paw', materialId: 'holo' });
+  expect(after.library.filter((_, index) => index !== targetIndex).map((toy) => toy.id))
+    .toEqual(seeded.library.filter((_, index) => index !== targetIndex).map((toy) => toy.id));
+  expect(after.totalCrafts).toBe(seeded.totalCrafts + 1);
+  expect(fatalErrors).toEqual([]);
+});
+
+test('S2 payload evidence measures valid 1 / 8 / 24-slot V3 envelopes', async () => {
+  const one = createFixtureSave(1, true);
+  const eight = createFixtureSave(8, true);
+  const stress = createFixtureSave(24, true);
+
+  expect(decodeSaveStateV3(JSON.parse(JSON.stringify(one)) as unknown).library).toHaveLength(1);
+  expect(decodeSaveStateV3(JSON.parse(JSON.stringify(eight)) as unknown).library).toHaveLength(8);
+  expect(decodeSaveStateV3(JSON.parse(JSON.stringify(stress)) as unknown).library).toHaveLength(24);
+
+  const oneBytes = estimateSaveStateV3Bytes(one);
+  const eightBytes = estimateSaveStateV3Bytes(eight);
+  const stressBytes = estimateSaveStateV3Bytes(stress);
+  const largestAppearance = Math.max(...stress.library.map((toy) => estimateAppearanceBytes(toy.appearance)));
+
+  console.info(`[squishy:s2-payload] one=${oneBytes} eight=${eightBytes} stress24=${stressBytes} largestAppearance=${largestAppearance}`);
+  expect(oneBytes).toBeGreaterThan(0);
+  expect(eightBytes).toBeGreaterThan(oneBytes);
+  expect(stressBytes).toBeGreaterThan(eightBytes);
+  expect(largestAppearance).toBeLessThanOrEqual(6_000);
 });
 
 test('Pages appearance probe still persists custom paint and uses the real squeeze surface', async ({ page }) => {
@@ -377,6 +533,5 @@ test('Pages appearance probe still persists custom paint and uses the real squee
   await page.mouse.move(sx + squeezeBox.width * 0.22, sy + 10, { steps: 10 });
   await page.mouse.up();
   await expect.poll(async () => Number(await reloadedShell.getAttribute('data-probe-squeezes'))).toBeGreaterThan(0);
-
   expect(fatalErrors).toEqual([]);
 });

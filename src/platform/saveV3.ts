@@ -203,6 +203,69 @@ export const createSavedSquishy = (
   appearance: input.appearance,
 });
 
+const assertCandidateIdAvailable = (
+  state: SaveStateV3,
+  squishy: SavedSquishy,
+  replacedId: string | null = null,
+): void => {
+  if (state.library.some((candidate) => candidate.id === squishy.id && candidate.id !== replacedId)) {
+    throw new TypeError('Saved squishy id already exists in the library.');
+  }
+};
+
+export const appendSavedSquishy = (
+  state: SaveStateV3,
+  squishy: SavedSquishy,
+  updatedAt = Date.now(),
+): SaveStateV3 => {
+  if (state.library.length >= state.libraryCapacity) throw new RangeError('Squishy library is full.');
+  assertCandidateIdAvailable(state, squishy);
+  return {
+    ...state,
+    library: [...state.library, squishy],
+    totalCrafts: state.totalCrafts + 1,
+    updatedAt,
+  };
+};
+
+export const replaceSavedSquishy = (
+  state: SaveStateV3,
+  targetId: string,
+  squishy: SavedSquishy,
+  updatedAt = Date.now(),
+): SaveStateV3 => {
+  const targetIndex = state.library.findIndex((candidate) => candidate.id === targetId);
+  if (targetIndex < 0) throw new RangeError('Replacement target does not exist.');
+  if (squishy.id === targetId) throw new TypeError('Replacement must use a new saved squishy id.');
+  assertCandidateIdAvailable(state, squishy, targetId);
+  const library = [...state.library];
+  library[targetIndex] = squishy;
+  return {
+    ...state,
+    library,
+    totalCrafts: state.totalCrafts + 1,
+    updatedAt,
+  };
+};
+
+export const deleteSavedSquishy = (
+  state: SaveStateV3,
+  targetId: string,
+  updatedAt = Date.now(),
+): SaveStateV3 => {
+  const targetIndex = state.library.findIndex((candidate) => candidate.id === targetId);
+  if (targetIndex < 0) throw new RangeError('Delete target does not exist.');
+  return {
+    ...state,
+    library: state.library.filter((candidate) => candidate.id !== targetId),
+    updatedAt,
+  };
+};
+
+export const estimateSaveStateV3Bytes = (state: SaveStateV3): number =>
+  new TextEncoder().encode(JSON.stringify(state)).byteLength;
+
+/** @deprecated S1 compatibility helper. S2 should use append/replace/delete operations. */
 export const saveSingleS1Squishy = (
   state: SaveStateV3,
   squishy: SavedSquishy,
