@@ -161,7 +161,7 @@ test('Pages production build boots into Sandbox S1 with all six shapes open', as
   await expect(page.locator('.sandbox-shape')).toHaveCount(6);
   await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);
   for (const shapeId of ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw']) {
-    await page.locator(`[data-shape="${shapeId}"]`).click();
+    await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();
     await expect(shell).toHaveAttribute('data-shape', shapeId);
   }
   await expect(page.locator('.lab-shell')).toHaveCount(0);

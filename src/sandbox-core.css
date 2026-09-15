@@ -68,7 +68,7 @@
 
 .sandbox-glow {
   position: absolute;
-  width: min(72vw, 390px);
+  width: min(88vw, 470px);
   aspect-ratio: 1;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255,255,255,.95) 0 35%, rgba(211,191,242,.24) 56%, transparent 72%);
@@ -79,8 +79,8 @@
 .sandbox-canvas {
   position: relative;
   z-index: 1;
-  width: min(70vw, 370px);
-  height: min(70vw, 370px);
+  width: min(82vw, 430px);
+  height: min(82vw, 430px);
   max-width: 100%;
   max-height: 100%;
   display: block;
@@ -170,7 +170,7 @@
   .sandbox-copy { min-height: 58px; }
   .sandbox-copy h1 { font-size: 24px; }
   .sandbox-copy p { margin-top: 4px; font-size: 11px; }
-  .sandbox-canvas { width: min(54vw, 310px); height: min(54vw, 310px); }
+  .sandbox-canvas { width: min(68vw, 330px); height: min(68vw, 330px); }
   .sandbox-shape { min-height: 60px !important; }
   .sandbox-shape__icon { width: 25px; height: 25px; }
   .sandbox-panel button { min-height: 40px; }
@@ -189,8 +189,8 @@
   .sandbox-copy h1 { font-size: 21px; }
   .sandbox-copy p { max-width: 280px; margin: 4px 0 0; font-size: 10px; }
   .sandbox-stage { grid-column: 1; grid-row: 2; padding-top: 45px; }
-  .sandbox-canvas { width: min(37vh, 250px); height: min(37vh, 250px); min-width: 210px; min-height: 210px; }
-  .sandbox-glow { width: min(43vh, 280px); }
+  .sandbox-canvas { width: min(64vh, 280px); height: min(64vh, 280px); min-width: 220px; min-height: 220px; }
+  .sandbox-glow { width: min(70vh, 320px); }
   .sandbox-controls { grid-column: 2; grid-row: 2; min-height: 0; display: grid; align-content: center; width: 100%; }
   .sandbox-status { grid-column: 1 / -1; grid-row: 3; min-height: 16px; }
   .sandbox-shape { min-height: 58px !important; }
