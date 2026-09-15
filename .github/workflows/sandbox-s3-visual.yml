@@ -1,6 +1,6 @@
 name: Sandbox S3 Temporary Visual Review
 
-# retry with explicit empty V3 boot and longer visual timeout
+# retry with an explicit Pages build before the release-QA server starts
 on:
   push:
     branches:
@@ -23,6 +23,7 @@ jobs:
         with:
           node-version: 24
       - run: npm install
+      - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Capture production visual states
         run: npx playwright test tests/release/s3-visual.spec.ts --config=playwright.release.config.ts
