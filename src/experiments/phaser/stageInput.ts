@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { getShape, isPointInsideShape, type ShapeId } from '../../game/shapes';
+import { getShape, isPointInsideShape } from '../../game/shapes';
 import {
   APPEARANCE_TARGET_BYTES,
   MAX_APPEARANCE_STROKES,
@@ -12,12 +12,12 @@ import {
   type AppearancePoint,
 } from '../../sandbox/appearance';
 import { createStickerPlacement, MAX_DECOR_STICKERS, type DecorDocumentV1 } from '../../sandbox/decor';
-import { StageGestureRouter, type StagePointer, type StudioGestureStage, type StudioDecorSection } from '../../sandbox/StageGestureRouter';
+import { PhaserStudioGestureBridge } from '../../sandbox/PhaserStudioGestureBridge';
+import type { StudioGestureStage, StudioDecorSection } from '../../sandbox/StageGestureRouter';
 import { PhaserSquishCandidate } from './PhaserSquishCandidate';
 
-// Temporary browser integration gate. Unlike a synthetic router unit test, every
-// gesture below enters through Phaser.Input and authors canonical game documents.
-// The production Library, storage and monetization are deliberately absent.
+// Browser integration fixture, not the shipping Library, V3 repository or SDK.
+// The reusable PhaserStudioGestureBridge owns all playfield pointer listeners.
 declare global {
   interface Window {
     __squishyStageInput?: {
@@ -74,21 +74,16 @@ const destroy = (): void => {
 
 class StudioInputScene extends Phaser.Scene {
   private squish: PhaserSquishCandidate | null = null;
-  private router: StageGestureRouter | null = null;
-  private readonly pointers = new Map<number, Phaser.Input.Pointer>();
+  private bridge: PhaserStudioGestureBridge | null = null;
   private readonly appearance: { value: AppearanceDocumentV1 } = { value: createEmptyAppearanceDocument() };
   private readonly decor: { value: DecorDocumentV1 } = { value: { v: 1, eyes: null, mouth: null, blush: false, stickers: [], accessory: null } };
   private strokePoints: AppearancePoint[] = [];
-  private shapeId: ShapeId = 'soft-square';
   private stage: StudioGestureStage = 'shape';
   private decorSection: StudioDecorSection = 'face';
   private blocked = false;
   private mixProgress = 0;
   private cleaned = false;
   private readonly abort = new AbortController();
-  private readonly onBlur = (): void => this.router?.cancel();
-  private readonly onHidden = (): void => { if (document.hidden) this.router?.cancel(); };
-  private readonly onNativeCancel = (): void => this.router?.cancel();
 
   constructor() { super({ key: 'SquishyStageInputScene' }); }
 
@@ -107,22 +102,21 @@ class StudioInputScene extends Phaser.Scene {
     const squish = new PhaserSquishCandidate(this, gl!);
     this.squish = squish;
     this.add.existing(squish);
-    const router = new StageGestureRouter({
+    const bridge = new PhaserStudioGestureBridge(this, canvas, {
       pointToUv: (x, y) => {
         const radius = Math.max(1, Math.min(this.scale.width, this.scale.height) * 0.34);
         const localX = (x - this.scale.width / 2) / radius;
         const localY = (this.scale.height / 2 - y) / radius;
-        if (!isPointInsideShape(getShape(this.shapeId), localX, localY)) return null;
+        if (!isPointInsideShape(getShape('soft-square'), localX, localY)) return null;
         return { u: Math.min(1, Math.max(0, localX * 0.5 + 0.5)), v: Math.min(1, Math.max(0, localY * 0.5 + 0.5)) };
       },
-      beginSquish: (p) => { const source = this.pointers.get(p.id); return source ? squish.begin(source) : false; },
-      moveSquish: (p) => { const source = this.pointers.get(p.id); if (source) squish.move(source); },
-      endSquish: (id) => { const source = this.pointers.get(id); if (source) squish.end(source); },
+      beginSquish: (pointer) => squish.begin(pointer),
+      moveSquish: (pointer) => squish.move(pointer),
+      endSquish: (pointer) => squish.end(pointer),
       cancelSquish: () => squish.cancel(),
       paintStamp: (point) => { this.strokePoints = [point]; this.replay(); },
       paintSegment: (_from, to) => {
-        // The V1 codec permits at most 512 UV points per stroke (1024 base64 chars
-        // is stricter in practice). Avoid creating a corrupt transient document.
+        // Keep the transient V1 document within its point encoding limit.
         if (this.strokePoints.length < 320) this.strokePoints.push(to);
         this.replay();
       },
@@ -152,27 +146,8 @@ class StudioInputScene extends Phaser.Scene {
         shell.dataset.mixDistance = distance.toFixed(1);
       },
     });
-    this.router = router;
-    router.setStage(this.stage);
-    const point = (p: Phaser.Input.Pointer): StagePointer => {
-      const rect = canvas.getBoundingClientRect();
-      return { id: p.id, x: p.x, y: p.y, clientX: rect.left + p.x * rect.width / Math.max(1, this.scale.width), clientY: rect.top + p.y * rect.height / Math.max(1, this.scale.height) };
-    };
-    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      this.pointers.set(p.id, p);
-      if (router.down(point(p))) {
-        if (p.event instanceof PointerEvent) {
-          try { canvas.setPointerCapture(p.event.pointerId); } catch { /* Some browsers do not permit capture. */ }
-        }
-      } else this.pointers.delete(p.id);
-    });
-    this.input.on('pointermove', (p: Phaser.Input.Pointer) => { this.pointers.set(p.id, p); router.move(point(p)); });
-    const release = (p: Phaser.Input.Pointer): void => { router.up(p.id); this.pointers.delete(p.id); };
-    this.input.on('pointerup', release);
-    this.input.on('pointerupoutside', release);
-    canvas.addEventListener('pointercancel', this.onNativeCancel);
-    window.addEventListener('blur', this.onBlur);
-    document.addEventListener('visibilitychange', this.onHidden);
+    this.bridge = bridge;
+    bridge.setStage(this.stage);
     shell.addEventListener('click', (event) => {
       const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
       if (!button) return;
@@ -180,7 +155,7 @@ class StudioInputScene extends Phaser.Scene {
       else if (button.hasAttribute('data-gesture-stickers')) this.setStage('decor', 'stickers');
       else if (button.hasAttribute('data-gesture-block')) {
         this.blocked = !this.blocked;
-        router.setBlocked(this.blocked);
+        bridge.setBlocked(this.blocked);
         shell.dataset.blocked = String(this.blocked);
       }
     }, { signal: this.abort.signal });
@@ -190,19 +165,18 @@ class StudioInputScene extends Phaser.Scene {
     shell.dataset.gestureReady = 'ready';
     status.textContent = 'Phaser owns input · canonical paint/mix-in/sticker documents';
     window.__squishyStageInput = {
-      snapshot: () => ({ stage: this.stage, paintStrokes: this.appearance.value.strokes.length, mixinCount: this.appearance.value.mixins.length, stickerCount: this.decor.value.stickers.length, mixProgress: this.mixProgress, squeezes: squish.snapshot().squeezes, active: squish.snapshot().active, owner: router.snapshot().owner, canvasCount: host.querySelectorAll('canvas').length }),
+      snapshot: () => ({ stage: this.stage, paintStrokes: this.appearance.value.strokes.length, mixinCount: this.appearance.value.mixins.length, stickerCount: this.decor.value.stickers.length, mixProgress: this.mixProgress, squeezes: squish.snapshot().squeezes, active: squish.snapshot().active, owner: bridge.snapshot().owner, canvasCount: host.querySelectorAll('canvas').length }),
       stage: (stage, section) => this.setStage(stage, section),
-      blocked: (value) => { this.blocked = value; router.setBlocked(value); shell.dataset.blocked = String(value); },
+      blocked: (value) => { this.blocked = value; bridge.setBlocked(value); shell.dataset.blocked = String(value); },
       destroy,
     };
   }
 
   private setStage(stage: StudioGestureStage, section: StudioDecorSection = this.decorSection): void {
-    this.router?.setStage(stage, section);
+    this.bridge?.setStage(stage, section);
     this.stage = stage;
     this.decorSection = section;
     shell.dataset.stage = stage;
-    canvas.style.pointerEvents = stage === 'finish' ? 'none' : 'auto';
     shell.querySelectorAll<HTMLButtonElement>('[data-gesture-stage]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.gestureStage === stage)));
   }
 
@@ -211,13 +185,9 @@ class StudioInputScene extends Phaser.Scene {
   public cleanup(): void {
     if (this.cleaned) return;
     this.cleaned = true;
-    this.router?.cancel();
-    this.router = null;
-    this.pointers.clear();
+    this.bridge?.dispose();
+    this.bridge = null;
     this.abort.abort();
-    canvas.removeEventListener('pointercancel', this.onNativeCancel);
-    window.removeEventListener('blur', this.onBlur);
-    document.removeEventListener('visibilitychange', this.onHidden);
     this.squish?.dispose();
     this.squish = null;
     currentScene = null;
