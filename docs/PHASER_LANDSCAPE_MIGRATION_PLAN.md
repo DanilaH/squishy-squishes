@@ -1,128 +1,128 @@
-# Squishy Squishes → Phaser 4 + landscape: reviewed migration plan
+# Squishy Squishes → Phaser 4: current-layout migration plan
 
-**Status:** reviewed implementation plan, **not an implemented migration or release approval**. 2026-09-16.  
-**Reference:** working `main` commit `1c6f30e0e126ea2ffda96a85be04fc821a70a0cf`; isolated Phaser spike PR [#31](https://github.com/DanilaH/squishy-squishes/pull/31) at `495ed990a306eb163eb9742f0d3f1be31e200dc5`; kit exact ref `797b5689767e9dc1059514e0446479e054bf1352`. Recheck all refs at implementation start.  
-**New authoritative user requirement:** Squishy is becoming a **landscape** game. Portrait is a rotation-gate state, not an alternate fully playable layout. This supersedes the old portrait-first architectural choice **for the migration only**. Independent critical second pass: [PHASER_LANDSCAPE_MIGRATION_REVIEW.md](PHASER_LANDSCAPE_MIGRATION_REVIEW.md).
+**Status:** revised implementation plan, not a completed migration or release approval. 2026-09-16. **Decision:** migrate the existing game to Phaser first, keeping its current responsive portrait-first appearance, interaction and UX; evaluate landscape separately after Phaser acceptance. This decision supersedes the earlier landscape-first proposal in this document. Critical review: [PHASER_LANDSCAPE_MIGRATION_REVIEW.md](PHASER_LANDSCAPE_MIGRATION_REVIEW.md).
 
-## A. Goal and non-negotiables
+**Source baseline:** working `main` at `1c6f30e0e126ea2ffda96a85be04fc821a70a0cf`; isolated proof PR [#31](https://github.com/DanilaH/squishy-squishes/pull/31) at `495ed990a306eb163eb9742f0d3f1be31e200dc5`; `mini-games-kit` pinned to `797b5689767e9dc1059514e0446479e054bf1352`. Verify refs before code edits. PR #31 is a technical reference, not a candidate for blind merge.
 
-Move the **existing sandbox** `Library → New → Shape → Paint → Mix-ins → Mix → Decorate → Finish/Save → Squeeze` onto the common Yandex + Phaser 4.2.1 boot, lifecycle, orientation, startup, diagnostics and release pipeline. Phaser owns the game scene, one visible WebGL2 context/canvas, render frames and playfield input. Keep the production 16×16 spring behavior, original GLSL, shape field, all current six shapes/materials, content IDs, UV-authored appearance/decor, tactile audio, user creations and the kit-backed Yandex services. **Never substitute a screenshot/sprite for the deformable toy.**
+## 1. Goal, scope and honest completion claim
 
-Do **not** fold in UI-pack procurement, new appearance art, visual style overhaul, recipe/XP economy, new progression, new material physics, save format change or ads monetization changes. Landscape requires real usability/layout work, not a gratuitous full art redesign. Existing `docs/SANDBOX_PIVOT_01_MASTER_PLAN.md` and `AGENTS.md` define current sandbox intent; historical recipe/XP plans do not.
+Migrate the existing `Library → New Squishy → Shape → Paint → Mix-ins → Mix → Decorate → Finish/Save → Squeeze` game to **Phaser 4.2.1's scene lifecycle, update/render loop, playfield pointer routing and one shared on-screen WebGL2 context**, with the kit's Yandex/Phaser startup and release contracts. Preserve current screen geometry, portrait-first responsive CSS, visible styling, localized copy, DOM Library/control panels, gameplay, current shaders and tactile feel. Landscape remains playable exactly to the extent it already is; **do not introduce a portrait-blocking rotation gate or redesign for landscape now**. Later landscape work has its own product decision, UX acceptance, PR and testing.
 
-**Definitions:** one visible *WebGL* game renderer does not ban offscreen Canvas 2D for appearance baking. Existing visible accessory/rigid-pearl 2D overlays and independent RAF loops should be replaced by Phaser display objects; an exception must be named, tested and accepted, not left behind under “where feasible.” DOM Library/controls may remain an intentionally supported accessible presenter: this is still a Phaser **engine/platform** migration, not a claim that every UI button is Phaser-rendered. Decide that boundary explicitly by M2; a fully Phaser-drawn HUD would be a separate scope decision.
+The original shape field, 16×16 spring mesh, six shapes and materials, appearance/decor data and IDs, audio character, SaveState V3/key, ad rules, rewarded 8→10 shelf expansion, analytics semantics and old-save compatibility are invariants. A Phaser sprite/screenshot instead of deformable GLSL is not a migration. No new art pack, new monetization, recipe/XP revival, UI makeover or physics tuning in this work.
 
-## B. Evidence and gaps (do not inflate the spike)
+**Precise ownership:** Phaser owns the game frame, GPU canvas and playfield input; the current DOM-based library, buttons and controls remain an intentional accessible UI presenter. Offscreen Canvas 2D appearance baking is allowed. Existing visible accessory and rigid-pearl Canvas 2D layers can remain for visual parity **if driven from the Phaser frame/update, not separate independently scheduled visible render loops**. Do not claim the whole UI is Phaser-rendered. If layering forces a different implementation, require comparison evidence and a separate, bounded change.
 
-| Existing source | What exists | What has NOT been proven |
+**Done means:** normal Pages and Yandex builds launch the new Phaser game at the existing URLs with substantially identical presentation and gestures on the same portrait, desktop and existing landscape viewports; full create/save/reopen/delete/reward flows and real platform behavior pass; actual phone touch and hosted Yandex DRAFT are accepted; old V3 saves are readable; rollback to the old build remains safe. A green 3-test spike is not sufficient.
+
+## 2. Evidence, existing infrastructure and risks
+
+| Source | Preserve / reuse | Gap before cutover |
 | --- | --- | --- |
-| `src/squish/SquishSurface.ts` | One raw WebGL2 canvas, its own RAF/pointer handlers, 16×16 spring mesh, shape-field texture, shaders, material/appearance uniforms and metrics. | Engine-independent simulation, parity under Phaser's frame timing and external GL state. |
-| `SandboxApp.ts`, `SandboxLibraryApp.ts`, `sandbox-core.css` | DOM stage control, paint offscreen canvas + UV, mix-ins, rigid pearl and accessory *visible* canvas overlays, library/Ideas/delete/replace, portrait-first layout with limited landscape CSS. | Complete landscape controls, Phaser pointer ownership, overlay compositing after rotation. |
-| `platform/runtime.ts`, `app/bootstrap.ts`, `platform/saveV3.ts`, `platform/releaseSession.ts` | Already use shared kit Yandex runtime/mock, activity, analytics/storage, V3 save and rewarded expansion; ad/analytics milestones currently inferred from DOM mutations. | A single new startup owner, semantic presentable/GameplayAPI boundaries, stage event parity, rollback with old V3 reader. |
-| PR #31 | Original shaders/soft-square field inside Phaser `Extern` sharing one WebGL2 context; 3 green Chromium tests (render/drag desktop, render/drag “phone”, teardown). | **Phone test is 390×844 portrait with Playwright MOUSE.** Physics copied, one shape/material, no paint/decor/save/audio, no real touch, landscape, hosted Yandex or complex Phaser GL compositing. |
+| `src/squish/SquishSurface.ts` | Original mesh, springs, GLSL, field, materials, UV, appearance, squeeze metrics. | Today it owns its own GL context, RAF, DOM pointer handlers and audio calls. Extract and rehome each responsibility without changing response. |
+| `src/sandbox/SandboxApp.ts` + `SandboxLibraryApp.ts` | Entire current DOM experience, Paint/Decor 2D composition, UV overlays, library and localized text. | Swap `SquishSurface` behind an adapter and move playfield input/visible overlay scheduling into Phaser. Preserve DOM structure/CSS where possible. |
+| `src/platform/runtime.ts`, `src/app/bootstrap.ts`, `src/platform/saveV3.ts` | Already use kit's Yandex runtime, activity, storage, Metrica, SaveState V3 and reward semantics. | Do not initialize a second runtime, change storage keys or overwrite user data with a bootstrap default. Adjust only lifecycle/readiness seams. |
+| `src/platform/releaseSession.ts` | Existing ad eligibility and analytics tied to real stage/save events. | Its `MutationObserver` on DOM stages is fragile under scene transitions; capture traces before replacing with typed domain events. |
+| Spike PR #31 | Phaser 4 `Extern` + real GLSL and field on one WebGL2 context. | Copies physics; only one shape/material, no appearance/save/audio; phone-size test is 390×844 **with Playwright mouse**, not touch hardware. Also tests no complex GL compositing. |
+| Kit bootstrap | Yandex real/mock split, loading/readiness, activity, diagnostic/preload, runtime images, build audit and browser viewport mechanisms. | Its stock orientation policy blocks portrait and its landscape sizing is inappropriate for unchanged Squishy. Adapt/omit these *policies* explicitly while adopting shared mechanisms. |
 
-**Template rule:** kit `bootstrap/yandex-phaser` is the mandatory source of Phaser/Yandex contracts for new projects. Its generator refuses a nonempty folder; generate a temporary clean reference and **diff every manifest contract** against Squishy. Port/adapt the *mechanisms* into the existing repo, do not overwrite it with a fresh placeholder or silently inherit Signal 2000's asset, layout, storage or ads policy. Use kit `docs/API.md`, `docs/BOOTSTRAP.md`, `bootstrap/yandex-phaser/BOOTSTRAP.md`, `BOOTSTRAP_MANIFEST.json` and hosted DRAFT playbook at the exact pinned SHA.
+Bootstrap generator requires an empty directory: generate a **temporary reference project**, compare its `BOOTSTRAP_MANIFEST.json` and behavior contract by contract, integrate into existing repo. Do not overwrite Squishy or import new project-owned save/ad defaults. The current `AGENTS.md` and `docs/PROJECT_DECISIONS.md` prohibit Phaser: a **scoped, reviewed migration exception in the implementation branch is required before code edits**, preserving all other safety rules; update canonical docs at final cutover.
 
-## C. Intended ownership
+## 3. Target technical topology
 
 ```text
-App entry / startup: kit preload + real Yandex-or-mock + image format + fatal/debug
-  ├─ ONE PlatformRuntime(activity, ads, analytics, language, storage)
-  ├─ ONE SaveStateV3 repository + settings (unchanged keys/codecs)
-  └─ ONE Phaser.Game: WEBGL2, scene lifecycle, frame loop and playfield input
-       ├─ Library / landscape presenter + first usable-frame signal
-       └─ Studio scene + typed stage controller
-            ├─ SquishSimulation: deterministic physics, mesh, UV/projection (no GL/DOM/audio/Phaser)
-            ├─ SquishExtern: own shader/program/texture resources in Phaser's context
-            ├─ offscreen 2D appearance/decor baker → texture upload
-            └─ Phaser accessory + rigid inclusion display objects
+Existing entry / kit-compatible startup
+  ├─ one PlatformRuntime (activity, ads, analytics, storage, language)
+  ├─ existing V3 repository and settings, same keys/codecs
+  ├─ existing DOM Library, stages, controls and portrait-first CSS
+  └─ Phaser.Game (one on-screen WEBGL2 context and frame/input owner)
+       └─ SquishyScene
+            ├─ SquishSimulation (mesh, springs, gesture state, UV projection)
+            ├─ SquishExtern (original GLSL, field and appearance GPU resources)
+            ├─ stage-aware Phaser pointer input → normalized playfield coordinates
+            └─ existing accessory/rigid Canvas 2D presenters, updated in Phaser frame
 
-Typed domain events → analytics and interstitial eligibility. One activity coordinator
-→ cancel active gesture, mute/resume WebAudio, pause play and gate Phaser input.
+Typed stage/save events → existing analytics and ad policy;
+activity blockers → gesture cancellation + WebAudio mute + gameplay desired.
 ```
 
-`Library` and control panels can be DOM **presentation only** behind typed commands; no DOM MutationObserver as the gameplay event source and no second competing pointer owner. The scene must remain renderable and input-safe through resize, rotate, foreground/background and `pagehide`/bfcache. Do not import the spike's `pagehide { once: true }`: a persisted bfcache navigation can consume the one-shot listener and prevent later teardown.
+One on-screen **WebGL2** canvas does not mean literally one `<canvas>`: offscreen 2D baking and the existing accessory/pearl 2D overlays are permitted as specified above. Do not create a second concurrent WebGL game or its own animation loop. Preserve existing CSS canvas size/position and layer order; establish one consistent `client coordinates → Phaser pointer → simulation local/UV → CSS overlay` transform. Do not copy the spike's `pagehide` `{ once: true }` listener; bfcache must remain recoverable.
 
-## D. Dependency-ordered packages (reviewable PRs with exit gates)
+## 4. Dependency-ordered implementation with mandatory gates
 
-### M0 — Authoritative exception, reference fixtures and landscape proof
+### M0 — Freeze the current game and unblock repository instructions
 
-1. On a dedicated implementation branch **first update its `AGENTS.md` and `docs/PROJECT_DECISIONS.md`** with the user-approved Phaser/landscape exception; the existing blanket “do not introduce Phaser” is stale for this migration. Keep current `main`/production safety instructions until cutover. Record what the kit replaces, what remains product-owned, and why portfolio-wide unification matters.
-2. Inventory active routes, scripts, fields, CSS, audio callbacks and actual stage transitions. Capture anonymized deterministic V3 fixtures: empty; paint+mix-ins+decor; each shape/material ID; 8-capacity full shelf; rewarded 10-capacity shelf; completed Ideas; mute settings; V2→V3 migration. Preserve ID/timestamp/order/content values, exact storage key `squishy.save.v3` and grant ID. Never use real user data in fixtures or clear real storage.
-3. Build before/after parity harness: the old renderer's input trace → vertex/UV/compression/squeeze trace; before/after screenshot/gesture/material/paint/decor comparison; session/reward/ad event traces; current Pages/Yandex uncompressed ZIP, FPS/p95, first usable frame and touch responsiveness on matched test hardware. Define measurement method and tolerances from baseline, not invented benchmark constants.
-4. Prototype **landscape screen composition early** with actual available viewport heights, safe areas/notch, browser chrome and readable touch targets: e.g. 568×320/740×360 short landscape, desktop, and portrait gate. Validate real-phone/browser access and branch-addressed hosted Yandex DRAFT upload workflow before relying on it for release.
+1. On a dedicated implementation branch, explicitly approve **Phaser migration only**, not landscape, in `AGENTS.md`/`docs/PROJECT_DECISIONS.md`; preserve current runtime, save, ads and release safeguards. Keep production entry untouched until acceptance.
+2. Capture anonymized V3 fixtures (empty, full 8, rewarded 10, painted/decorated, all shape/material IDs, Ideas, mute, V2→V3), before/after image/gesture/audio/UV baselines and current Pages/Yandex release output. Preserve current `squishy.save.v3`, IDs, timestamps, object order and reward IDs; do not use or clear real player data.
+3. Define matched screenshot/input viewports: portrait mobile (including a short phone), desktop and the game's **current** landscape behavior. Include real phone touch, paint outside→inside, finish passthrough, overlays, save/reload, ad and activity traces. Measure frame times, startup and bundle size on comparable builds without inventing success numbers.
+4. Establish a branch-addressed Yandex DRAFT test route and identify the exact archive/commit used. No need for new landscape layout or rotation gate fixture.
 
-**Gate M0:** fixtures/traces and landscape wireframe or functional proof are reproducible; scoped docs exception exists; candidate can be reviewed without endangering `main`. If target device/WebGL2 or hosted DRAFT access is unavailable, document the blocker rather than announcing migration success.
+**Gate M0:** reproducible baseline tests/fixtures and scoped instructions exist; the old default game remains untouched and functional.
 
-### M1 — Extract reusable physics while the old game still works
+### M1 — Extract the single authoritative simulation with the old renderer still running
 
-1. Extract the **single authoritative** `SquishSimulation`: mesh generation/state; current constants, press/grab/release physics; begin/move/end/cancel; shape hit-test; deformed UV ↔ playfield projection; gesture/audio metrics; delta clamp. Inject elapsed time and normalized coordinates. It imports neither Phaser, browser DOM, GL nor audio.
-2. Wire the existing `SquishSurface` to this same module **before** introducing it into the production Phaser version. WebAudio becomes a subscriber to metrics/interaction events, not physics-owned global state. Keep original shader source and shape data untouched.
-3. Compare deterministic input traces and rendering across several shapes and drag/hold/release timings. Test very low FPS, tab resume, canceled pointer and repeated mount/unmount; old release QA stays green. The spike's copied physics remains reference-only and is deleted on cutover.
+1. Extract mesh state, all current physics constants and integration, begin/move/end/cancel, shape hit-test, deformed-UV projection and squeeze metrics into a `SquishSimulation` with injected time/delta and normalized coordinates; no dependency on Phaser, DOM, WebGL or WebAudio.
+2. Make existing `SquishSurface` use that module **first**. Keep GLSL, shape field, shader uniforms and current feel. Audio receives interaction metrics/callbacks instead of being owned by physics. Maintain the existing canvas and existing UI while checking parity.
+3. Compare deterministic hold/drag/release traces, multiple shapes, stationary press, low FPS/resume, pointer cancel, render stills, hit/UV positioning and audio. Do not keep two active spring implementations; the copied spike algorithm is temporary reference code only.
 
-**Gate M1:** no physical constants duplicated in active old/new code; raw game still behaves as before. A green typecheck without interaction parity is insufficient.
+**Gate M1:** original renderer and complete release/browser QA remain green with trace/visual parity. Revert extraction if it destabilizes the original game.
 
-### M2 — Kit-compliant landscape Phaser candidate (do not swap the default game yet)
+### M2 — Add an isolated, current-layout Phaser candidate
 
-1. Generate the pinned bootstrap in an **empty temporary folder**; inventory required files and make an adoption matrix: `adopt`, `adapt`, `existing equivalent`, `not applicable` with validation for every deviation. Reuse Squishy's one existing platform runtime/Metrica/V3/ad service; integrate preload/failure view, startup timeline, AVIF/WebP runtime-image selection, hosted iframe diagnostics, Yandex real/mock split, production/debug builds and upload-root audit. No second SDK initializer or invented loader progress.
-2. Add a separate Phaser candidate entry and build/preview route. Require WebGL2 for `Extern` and display an intentional unsupported-device screen instead of silently using Phaser Canvas fallback. Do not carry the spike's `context as CanvasRenderingContext2D` cast into production unexamined: prefer a supported GL setup; if an isolated adapter is unavoidable, pin Phaser and test it across browsers with a documented rollback.
-3. Apply kit `BrowserViewportWatcher`/orientation blocker **for landscape**. Use a documented mapping `client/touch → Phaser input → playfield normalized coordinates → simulation UV`, not separate DOM and Phaser scaling guesses; handle DPR/backing-store size, viewport visual changes, camera position, safe-area insets and rotate cycles. Keep the landscape geometry flexible; the kit's 2:1 preset is an option, **not an automatic product decision**.
-4. Show actual Library/control UI before emitting `GAME_PRESENTABLE_EVENT`; after real paint settling call Yandex `LoadingAPI.ready()` **once**. Define GameplayAPI desired-state for menus vs active gameplay explicitly and use activity blockers. Guard ready, image probe, storage and GL callbacks against disposal. Use idempotent `pagehide`/`pageshow` handling including persisted bfcache pages (no one-shot pagehide listener). Choose whether DOM Library/HUD remains the deliberate final UI presenter before expanding stage implementation.
+1. Generate temporary pinned bootstrap and build an adoption matrix (`adopt` / `adapt` / `already present` / `not applicable`) for every required mechanism. Keep one existing Yandex runtime, settings and V3 repository. Adopt preload/failure presentation only for real resources, semantic ready, startup diagnostics, runtime image selection and existing audit/build protections.
+2. Create a separate candidate entry and script; do not replace production `index.html` or Pages/Yandex defaults. Explicitly require WebGL2 and render a clear unsupported-device message; avoid silent Phaser Canvas fallback. Review the spike's `context as CanvasRenderingContext2D` cast and isolate/test any necessary adapter against pinned Phaser 4.2.1.
+3. **Keep existing portrait-first viewport and DOM/CSS geometry.** Use kit viewport observation only where it improves resize/visualViewport correctness; disable the bootstrap's portrait gate, landscape-only layout sizing and orientation activity blocker. Phaser canvas fills precisely the existing squishy stage, not the entire document. Document DPR, CSS-to-backing-store and Phaser coordinate mapping; preserve the current layout on phone and desktop.
+4. Signal game presentable only after actual Library/control UI is usable and painted; call Yandex `LoadingAPI.ready()` exactly once; specify GameplayAPI desired state for menu versus gameplay. Guard async completions and `pagehide`/`pageshow` (including bfcache) against stale ownership.
 
-**Gate M2:** functional landscape prototype on a **real** phone, portrait gate/recovery, browser touch-emulation, correct safe-area/short-height layout, one platform runtime, no premature ready or double sound, no regressions in existing release builds. `main` default entry remains old game.
+**Gate M2:** candidate displays the **same existing layout** in mobile portrait/desktop, accepts real touch and survives resize/current landscape without a new rotation gate; no duplicate runtime, premature ready or regression in normal release builds.
 
-### M3 — Production Phaser Extern (all six shapes/materials and textures)
+### M3 — Complete original GLSL renderer on Phaser `Extern`
 
-1. Replace spike physics copy with `SquishSimulation`. Implement all original `SquishSurface` feature flags/uniform values: six shapes, six materials, filling style/amount, mold/fill progress, strain/sheens/rim, appearance enabled/disabled and debug wireframe. Reuse *original GLSL and canonical shape field*. Preserve geometry, hit testing and UV under Phaser/landscape resize.
-2. Replay existing AppearanceDocumentV1/DecorDocumentV1 onto the offscreen 2D texture and upload to Extern. Verify `UNPACK_FLIP_Y_WEBGL`, alignment, alpha/premultiplication, texture units, active bindings, viewport/scissor/depth/stencil/framebuffer state, and cleanup. Prevent a deferred `requestAnimationFrame`/upload from touching destroyed GL; handle context loss/restore and scene replacement.
-3. Audit exactly what Phaser 4.2.1 `Extern` `YieldContext/RebindContext` restores. The spike explicitly draws to the **base framebuffer**; this does not prove masks, render textures, effects or stacked cameras. Test Phaser text/sprites before **and after** Extern, overlapping foreground/back items, resize and repeated scene switches. Support only compositing features the real game needs; if they fail, stop/limit scope rather than layering renderer hacks.
+1. Replace the spike's copied physics with `SquishSimulation`; implement all six shape fields and six materials plus existing mold/fill/filling/wireframe/appearance uniforms. Reuse original GLSL and canonical shape boundary/UV rather than drawing an approximation. Keep the same on-screen dimensions and shader scaling as the old canvas.
+2. Preserve `AppearanceDocumentV1`/`DecorDocumentV1` offscreen replay and texture uploads. Check `UNPACK_FLIP_Y_WEBGL`, pixel alignment, alpha/premultiplication, bindings, context-loss restore, destruction and deferred upload cancellation.
+3. Test GL-state yield/rebind with any Phaser text/sprites both before and after the `Extern`, transparent overlays, stage transitions and resizing. The spike binds the default framebuffer; it does **not** prove effects/masks/multi-camera rendering. Support only features Squishy actually uses; no speculative engine abstractions or GL hacks.
 
-**Gate M3:** golden-image/UV/input parity on representative all-shape/all-material/paint/decor fixtures; no GL errors, blank Canvas fallback, FPS cliff or context-resource leak. Exactly one *visible WebGL* renderer; offscreen Canvas 2D is permitted.
+**Gate M3:** all shape/material/appearance reference images and UV/hit tests match within agreed documented tolerances; no blank WebGL fallback, GL errors or leaked GPU resources; one visible WebGL2 renderer and Phaser frame loop.
 
-### M4 — Full studio gestures, attached decorations and landscape screens
+### M4 — Preserve all existing UX and unify pointer/frame ownership
 
-1. Move stage transitions to typed commands/events. Phaser owns playfield pointers/capture with stage policies; DOM controls (if retained) own only button UI. Preserve source behavior: **Paint may start with pointerdown outside the silhouette and begins drawing upon entry**, never paints beyond the shape; Squeeze/Mix grab requires a valid hit to begin. Cover pointer identity, outside→inside crossing, exiting/reentering, multiple touch pointers, cancel/upoutside/blur, overlaid buttons and touch-action conflicts. Finish-only pointer passthrough must not break Paint/Decor.
-2. Keep brush sizes/colors, eraser/undo/clear, max stroke/bytes; mix-in placement/spacing/limits; *real travel* Mix completion; sticker/face placements; all six shapes/materials. Tie rigid pearls and accessory graphic anchors to **deformed** UV; replace their visible 2D RAF canvases with Phaser render objects, preserving front/back depth. Any remaining DOM overlay requires named ownership, acceptance tests and a removal decision.
-3. Reflow every screen: Library, optional Ideas, New/Shape/Paint/Mix-ins/Mix/Decor/Finish/Squeeze, replace/delete/reward confirmation and sound. RU/EN strings and controls must be readable, tappable, not clipped behind safe areas or overflowing at the shortest supported landscape height. UI pack and styling overhaul stay independent.
+1. Introduce typed stage commands/events; keep DOM buttons in DOM, but route the playfield's gestures through Phaser with one stage-aware pointer owner. **Paint can start outside the silhouette and begins drawing upon entry**; never draw outside it. Squeeze begins only on a valid hit. Preserve paint capture, eraser/undo/clear, mix-in placement/spacing, distance-based Mix, sticker positioning and Finish-only pointer passthrough. Cover pointer IDs, multi-touch contention, cancel/upoutside/blur, `touch-action`, external blockers and overlay occlusion.
+2. Keep the current accessory and rigid-pearl visual layers where they are, update their placement from Phaser's frame rather than separate visible RAF loops, and preserve deformed-UV anchors and layer ordering. Their 2D canvases must not become an alternative touch system. If this bridge fails visual parity, migrate only the failing layer to Phaser objects in a separate bounded change.
+3. Preserve current Library, Ideas, New/Shape/Paint/Mix-ins/Mix/Decor/Finish/Squeeze, replace/delete/reward dialogs, RU/EN copy, CSS styling and responsive behavior. Limit CSS edits to necessary Phaser canvas positioning/focus/input compatibility; take before/after screenshots at identical viewports.
 
-**Gate M4:** completed authored toy including paint/decor saves/reopens with identical visual data, actual-phone tactile acceptance, landscape rotate cycles, both languages, no duplicate/stuck gestures, no second visible RAF render loop.
+**Gate M4:** full painted/decorated creation→save→reopen→squeeze and all library operations pass with matching visuals and touch feel on a real phone, both locales and original responsive layouts; no duplicated/stuck gestures or independent visible render loop.
 
-### M5 — Preserve exact platform and durable behavior
+### M5 — Platform, persistence, advertising and lifecycle parity
 
-1. Keep existing kit-based `createSquishyPlatformRuntime` and single `GameplayActivityCoordinator`. On SDK pause, ads, visibility/orientation and `pagehide`, cancel any pointer and coherently mute/pause existing `SquishyAudio`; on resume honor user mute and desired play state without spawning duplicate nodes. A ready Library frame and GameplayAPI active game are **not** automatically the same state.
-2. **Do not rename/rewrite the V3 save schema/key/IDs.** Test decode/encode and live-compatible old-build read from the candidate's produced V3, seeded old saves, V2 migration, full-shelf replacement, deletion, save failure/retry, failed write, local/cloud storage and reward interruption/duplicate callback. Current V3 load can fall back to defaults on corrupt data: do not overwrite the unreadable original as an incidental migration/recovery strategy; report/retain it for controlled recovery. Rewarded close without grant changes nothing; granted 8→10 expansion remains exactly once.
-3. Replace DOM `MutationObserver` in `releaseSession.ts` with typed stage/save events **only after** capturing the old event trace. Preserve existing interstitial natural-break/grace/interval/action counts and actual ad callbacks. No interstitial while painting, mixing, decorating or squeezing; failures/no-fill must unblock. Check language and Metrica without duplicating SDK setup.
+1. Preserve `createSquishyPlatformRuntime` and the single kit `GameplayActivityCoordinator`. Yandex pause/resume, visibility, ads, audio mute and user mute must correctly cancel input and not double-resume/schedule audio. Menu rendered versus gameplay active must have intentional separate semantics.
+2. Keep SaveState V3 key/schema, old decoder compatibility and grant IDs unchanged. Test seeded old saves, new saves read by the **old build**, V2 migration, 8/10 capacity, full-shelf replace/delete, write failures, reward retries/duplicate callbacks and local/cloud paths. The V3 loader may return defaults on corrupt reads: preserve original unreadable data rather than overwriting it in an incidental migration.
+3. Capture old analytics/interstitial event traces before replacing DOM-mutation-derived signals with typed successful stage/save events. Keep the exact natural break and ad cadence; `finish → squeeze` counts only after a durable successful save, never during painting or mixing. Test rewarded close-without-grant and ad no-fill/error unblock.
 
-**Gate M5:** old/new behavioral parity matrix for saves, analytics, ads, gameplay desired, mute/visibility/reorientation in local stub **and** real hosted Yandex DRAFT. In particular, `finish → squeeze` must count only a successful durable save, not a UI transition alone.
+**Gate M5:** old/new behavior parity for save/ads/analytics, same product language and audio, current orientation, both mock/stub and hosted Yandex DRAFT on the exact candidate.
 
-### M6 — Candidate acceptance, safe cutover and rollback
+### M6 — Release candidate, device/DRAFT acceptance and reversible cutover
 
-1. Build the **branch/commit-addressed candidate ZIP** with real Yandex runtime and `index.html` at ZIP root; upload to hosted **Yandex DRAFT before merging the default Phaser entry**, because merging `main` may deploy Pages automatically. Verify exact hash/commit, `LoadingAPI.ready()`, actual GameplayAPI pause/resume, ads/reward callbacks, storage, RU/EN, rotation, cold start and repeated session loops. Mock SDK tests are only a prerequisite.
-2. Run existing `npm run release:check` and `npm run qa:browser` plus Phaser candidate tests: touch-emulated landscape sizes, real device browser/WebView, all stages, overlays, UV, audio block/resume, context loss, scene/resource/RAF/listener leak cycles, V3 fixtures, ad event parity and before/after p95/latency/startup/memory. Keep the **existing 5 MiB uncompressed Yandex cap** unless a separate evidence-based decision changes it. Spike's ~1.4 MB minified Phaser JS chunk is only a warning, not a full-build measurement.
-3. Independently review the final implementation diff and produced artifacts, update `AGENTS.md`, `docs/PROJECT_DECISIONS.md`, README and active architecture. Remove obsolete raw renderer and spike entry only after successful candidate; ensure debug/probe code does not leak into the Yandex upload. Preserve a known-good archive and prove the **old V3 reader** can still load candidate saves for rollback. Switch default entry, merge with green checks, verify actual post-merge Pages deployment and Yandex upload separately.
+1. Build a branch/commit-addressed candidate ZIP with real Yandex runtime and `index.html` at ZIP root; test **hosted Yandex DRAFT before merging the default entry** because `main` can deploy Pages. Verify ready once, GameplayAPI lifecycle, pause/resume, ads, storage, translations, presentable first frame and ordinary repeat sessions.
+2. Run `npm run release:check`, `npm run qa:browser`, candidate Phaser/browser/touch QA and actual-device comparisons at **the same portrait, desktop and existing responsive landscape viewports**. Cover all stages, UV/decor/overlays, audio, context loss, scene/resource leaks, bfcache, V3 fixtures and ad traces. Check full uncompressed Yandex upload size against existing Squishy-specific **5 MiB cap** (Phaser adds bundle weight); do not relax cap by default.
+3. Review final diff and actual ZIP independently. Update active `AGENTS.md`, `docs/PROJECT_DECISIONS.md`, README and release docs, remove raw renderer/spike only after candidate passes, keep known-good old archive and prove rollback reads current V3 data. Switch default entry, merge only after green checks, verify Pages post-merge and Yandex deployment separately.
 
-**Gate M6:** documented full functional/visual/tactile parity and landscape acceptance, real DRAFT evidence for the exact release candidate, no unresolved critical regressions, clear rollback instructions. Do not equate green CI or a merged PR with a shipped Yandex game.
+**Gate M6:** no critical functional/visual/tactile regressions on same-layout devices, real DRAFT acceptance for exact artifact, and validated rollback. Do not claim shipping from CI alone.
 
-## E. Suggested PR topology and explicit stop rules
+## 5. PR topology, stopping conditions and deferred landscape
 
-1. Contract exception + baseline fixtures + pure simulation in old renderer.
-2. Landscape bootstrap contract mapping + independent candidate entry and actual-phone layout proof.
-3. Full Extern and appearance/GL compositing parity.
-4. Unified gestures, attached/rigid objects, all stages and landscape DOM/Phaser UI contract.
-5. Platform/ads/save typed events, candidate QA, hosted DRAFT and final cutover.
+1. Scoped documentation exception + baseline fixtures + simulation extracted in old renderer.
+2. Temporary bootstrap comparison + separate **portrait-first** Phaser entry with old DOM/CSS and real-phone check.
+3. Complete GLSL/appearance `Extern` and GL-compositing parity.
+4. Playfield input + all studio/library stages + overlays without visual redesign.
+5. Platform/save/ad verification + branch DRAFT + reversible cutover.
 
-Keep `main` playable between PRs, and keep the spike PR #31 as an isolated **draft reference**, not a production-ready cherry-pick bundle. Before M2/M3, re-evaluate whether shared-kit upgrade drift warrants a separately pinned revision; do not float dependency to `main` implicitly.
+Stop or change course if required GL composition needs unsafe hacks, real touch feel deteriorates, target devices lack WebGL2, release size/performance becomes unacceptable, hosted DRAFT access is blocked, V3 backward compatibility fails or rewards cannot be proven once-only. The working raw game is the fallback. PR #31 stays a draft feasibility reference; never merge it as production just because its three tests passed.
 
-**Stop or change course if:** `Extern` cannot support *required* blending/layering without risky GL hacks; real-device input/feel is noticeably worse; WebGL2 coverage of the target Yandex audience is insufficient; combined build or decoded texture cost becomes unacceptable; real DRAFT access is blocked; V3 backward compatibility or reward once-only semantics cannot be demonstrated. A functioning raw-WebGL baseline remains the fallback, with engine-neutral kit adapters if necessary.
+**Time:** earlier **14–25 person-day envelope included landscape rework and must not be reused as a new commitment**. The engine-only migration removes layout redesign, but full appearance/decor, input, GL and hosted testing remain substantial. Re-estimate after M2 and one complete saved/decorated toy in M3–M4; do not infer a completion date from the small spike.
 
-## F. Planning envelope, unresolved product decisions
+**Post-migration landscape project (separate):** decide target screen aspect and shortest height, portrait rotation gate policy, kit viewport/orientation policy, landscape Library/studio/dialog layout, safe areas and real touch UX; implement/review/release separately with its own acceptance and regression tests. No landscape-specific code or UI restructuring is a prerequisite for engine migration.
 
-A loose **14–25 engineering person-day scope envelope**, **not** a completion/date promise; landscape redesign beyond minimal reflow, full Phaser-drawn UI and inaccessible hosted testing can expand it. Re-estimate after M2 phone landscape proof and M3 one **fully painted+decorated saved toy**, not after a simple single-shape spike. The earlier 5–10-day informal figure was too narrow for this full scope.
+## 6. Sources
 
-Decide explicitly: smallest supported landscape height and safe-area plan; DOM presenter vs fully Phaser UI; WebGL2 unsupported-device behavior; performance tolerances from baseline; actual target devices and hosted DRAFT process. These are product/acceptance choices, **not** permission to change the save, ads or physics gratuitously.
-
-## G. Provenance
-
-Current files: [`AGENTS.md`](../AGENTS.md), [`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md), [`Sandbox pivot`](SANDBOX_PIVOT_01_MASTER_PLAN.md), [`SquishSurface`](../src/squish/SquishSurface.ts), [`SandboxApp`](../src/sandbox/SandboxApp.ts), [`V3`](../src/platform/saveV3.ts), [`releaseSession`](../src/platform/releaseSession.ts), [`release QA`](../tests/release/release.spec.ts).  
-Spike: [PR #31](https://github.com/DanilaH/squishy-squishes/pull/31), [spike notes](https://github.com/DanilaH/squishy-squishes/blob/experiment/phaser4-squish-extern/docs/PHASER_MIGRATION_SPIKE.md), [actual 390×844 test](https://github.com/DanilaH/squishy-squishes/blob/experiment/phaser4-squish-extern/tests/phaser/phaser-spike.spec.ts).  
-Kit: [API](https://github.com/DanilaH/mini-games-kit/blob/797b5689767e9dc1059514e0446479e054bf1352/docs/API.md), [bootstrap policy](https://github.com/DanilaH/mini-games-kit/blob/797b5689767e9dc1059514e0446479e054bf1352/docs/BOOTSTRAP.md), [bootstrap entry](https://github.com/DanilaH/mini-games-kit/blob/797b5689767e9dc1059514e0446479e054bf1352/bootstrap/yandex-phaser/src/main.ts), [viewport](https://github.com/DanilaH/mini-games-kit/blob/797b5689767e9dc1059514e0446479e054bf1352/bootstrap/yandex-phaser/src/app/viewport.ts), [hosted DRAFT playbook](https://github.com/DanilaH/mini-games-kit/blob/797b5689767e9dc1059514e0446479e054bf1352/docs/yandex/DRAFT_RELEASE_PLAYBOOK.md).
+Current game: [`AGENTS.md`](../AGENTS.md), [`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md), [`Sandbox pivot`](SANDBOX_PIVOT_01_MASTER_PLAN.md), [`SquishSurface`](../src/squish/SquishSurface.ts), [`SandboxApp`](../src/sandbox/SandboxApp.ts), [`V3`](../src/platform/saveV3.ts), [`releaseSession`](../src/platform/releaseSession.ts), [`release QA`](../tests/release/release.spec.ts).  
+Spike: [PR #31](https://github.com/DanilaH/squishy-squishes/pull/31), [spike limitations](https://github.com/DanilaH/squishy-squishes/blob/experiment/phaser4-squish-extern/docs/PHASER_MIGRATION_SPIKE.md), [actual portrait mouse test](https://github.com/DanilaH/squishy-squishes/blob/experiment/phaser4-squish-extern/tests/phaser/phaser-spike.spec.ts).  
+Kit: [API](https://github.com/DanilaH/mini-games-kit/blob/797b5689767e9dc1059514e0446479e054bf1352/docs/API.md), [bootstrap policy](https://github.com/DanilaH/mini-games-kit/blob/797b5689767e9dc1059514e0446479e054bf1352/docs/BOOTSTRAP.md), [reference entry](https://github.com/DanilaH/mini-games-kit/blob/797b5689767e9dc1059514e0446479e054bf1352/bootstrap/yandex-phaser/src/main.ts), [viewport](https://github.com/DanilaH/mini-games-kit/blob/797b5689767e9dc1059514e0446479e054bf1352/bootstrap/yandex-phaser/src/app/viewport.ts), [DRAFT playbook](https://github.com/DanilaH/mini-games-kit/blob/797b5689767e9dc1059514e0446479e054bf1352/docs/yandex/DRAFT_RELEASE_PLAYBOOK.md).
