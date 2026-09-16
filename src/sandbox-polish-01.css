@@ -11,10 +11,10 @@
   height: min(76vw, 390px);
 }
 
-/* Non-interactive stages can overlap the control region geometrically on short/compact
-   layouts. Once SquishSurface marks the canvas disabled it must not steal clicks from
-   material/finish controls underneath its transparent box. */
-.sandbox-canvas.is-disabled {
+/* Only Finish needs pointer passthrough where the inactive preview overlaps material
+   controls. Paint, Mix-ins and Decor deliberately handle pointer input on a canvas
+   which SquishSurface marks is-disabled (it only disables squeeze physics). */
+.sandbox-shell[data-stage="finish"] .sandbox-canvas.is-disabled {
   pointer-events: none;
 }
 
