@@ -81,14 +81,26 @@ export class PhaserStudioGestureBridge {
 
   public snapshot(): ReturnType<StageGestureRouter['snapshot']> { return this.router.snapshot(); }
 
+  /**
+   * Phaser's cached pointer.x/y can use the initial game dimensions while the
+   * original studio changes the canvas CSS size per stage (e.g. 370x556 backing
+   * canvas displayed as 296x296 in portrait Decor). Recalculate from the native
+   * client event and current bounding rect instead of treating those as equal.
+   */
   private readonly point = (pointer: Phaser.Input.Pointer): StagePointer => {
     const rect = this.canvas.getBoundingClientRect();
+    const native = pointer.event;
+    const touch = native instanceof TouchEvent ? native.changedTouches.item(0) : null;
+    const clientX = native instanceof MouseEvent ? native.clientX
+      : touch?.clientX ?? rect.left + pointer.x * rect.width / Math.max(1, this.scene.scale.width);
+    const clientY = native instanceof MouseEvent ? native.clientY
+      : touch?.clientY ?? rect.top + pointer.y * rect.height / Math.max(1, this.scene.scale.height);
     return {
       id: pointer.id,
-      x: pointer.x,
-      y: pointer.y,
-      clientX: rect.left + pointer.x * rect.width / Math.max(1, this.scene.scale.width),
-      clientY: rect.top + pointer.y * rect.height / Math.max(1, this.scene.scale.height),
+      x: (clientX - rect.left) * this.scene.scale.width / Math.max(1, rect.width),
+      y: (clientY - rect.top) * this.scene.scale.height / Math.max(1, rect.height),
+      clientX,
+      clientY,
     };
   };
 

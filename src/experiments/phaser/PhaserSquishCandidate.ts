@@ -11,7 +11,7 @@ import {
 } from '../../sandbox/appearance';
 import { renderSurfaceDecor, type DecorDocumentV1 } from '../../sandbox/decor';
 import type { SquishFillingStyle, SquishMaterialStyle } from '../../squish/SquishSurface';
-import { SquishSimulation } from '../../squish/SquishSimulation';
+import { SquishSimulation, type SquishSimulationSample } from '../../squish/SquishSimulation';
 import { fragmentShaderSource, vertexShaderSource } from '../../squish/shaders';
 
 interface GpuResources {
@@ -401,6 +401,9 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       appearanceRevision: this.appearanceRevision,
     };
   }
+
+  /** The real studio uses the same public metrics sample as the raw renderer. */
+  public metricsSample(): SquishSimulationSample { return this.simulation.snapshot(); }
 
   public forgetLostContext(): void {
     this.gpu = null;
