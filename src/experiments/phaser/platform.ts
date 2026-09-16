@@ -28,13 +28,17 @@ let sdkControls: StubYandexControls | null = null;
 let runtime: SquishyPlatformRuntime | null = null;
 let app: SquishyAppHandle | null = null;
 let disposed = false;
+let failSaveWrites = false;
 const listeners = new AbortController();
 const events: string[] = [];
 let mockReady = 0;
 
 const prefixStorage = (upstream: StorageAdapter): StorageAdapter => ({
   getItem: (key) => upstream.getItem(PREFIX + key),
-  setItem: (key, value) => upstream.setItem(PREFIX + key, value),
+  setItem: (key, value) => {
+    if (failSaveWrites && key === SAVE_V3_STORAGE_KEY) return Promise.reject(new Error('Injected candidate-only V3 storage failure'));
+    return upstream.setItem(PREFIX + key, value);
+  },
   removeItem: (key) => upstream.removeItem(PREFIX + key),
 });
 
@@ -88,6 +92,7 @@ declare global {
       getSdkCounters(): StubYandexControls['counters'] | null;
       getReadyCalls(): number;
       setRewardMode(mode: StubRewardMode): void;
+      setSaveWriteFailure(enabled: boolean): void;
       pause(): void;
       resume(): void;
       finishPendingReward(grant: boolean): void;
@@ -116,6 +121,7 @@ void bootstrapSquishyApp(root, {
     getSdkCounters: () => sdkControls ? { ...sdkControls.counters } : null,
     getReadyCalls: () => mockReady,
     setRewardMode: (mode) => { if (!sdkControls) throw new Error('Stub SDK required'); sdkControls.setRewardMode(mode); },
+    setSaveWriteFailure: (enabled) => { failSaveWrites = enabled; },
     pause: () => { if (!sdkControls) throw new Error('Stub SDK required'); sdkControls.pause(); },
     resume: () => { if (!sdkControls) throw new Error('Stub SDK required'); sdkControls.resume(); },
     finishPendingReward: (grant) => { if (!sdkControls) throw new Error('Stub SDK required'); sdkControls.finishPendingReward(grant); },
