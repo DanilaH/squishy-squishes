@@ -90,7 +90,10 @@ export class PhaserStudioGestureBridge {
   private readonly point = (pointer: Phaser.Input.Pointer): StagePointer => {
     const rect = this.canvas.getBoundingClientRect();
     const native = pointer.event;
-    const touch = native instanceof TouchEvent ? native.changedTouches.item(0) : null;
+    // TouchEvent is absent on some desktop browsers (notably Firefox without a
+    // touch device). An unguarded instanceof throws and drops every mouse gesture.
+    const touch = typeof TouchEvent !== 'undefined' && native instanceof TouchEvent
+      ? native.changedTouches.item(0) : null;
     const clientX = native instanceof MouseEvent ? native.clientX
       : touch?.clientX ?? rect.left + pointer.x * rect.width / Math.max(1, this.scene.scale.width);
     const clientY = native instanceof MouseEvent ? native.clientY
