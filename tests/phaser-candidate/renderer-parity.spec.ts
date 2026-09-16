@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import sharp from 'sharp';
 
-type Fixture = 'base' | 'paint' | 'decor' | 'foam' | 'pearl' | 'holo' | 'heart';
+type Fixture = 'base' | 'paint' | 'decor' | 'foam' | 'pearl' | 'holo' | 'heart' | 'peach' | 'mushroom' | 'paw';
 
 const settle = async (page: Page): Promise<void> => {
   await page.evaluate(() => new Promise<void>((resolve) => {
@@ -56,13 +56,13 @@ test('M3 parity: both real WebGL renderers receive identical data and render vis
   let baseOld: Buffer | null = null;
   let baseNew: Buffer | null = null;
 
-  for (const kind of ['base', 'paint', 'decor', 'foam', 'pearl', 'holo', 'heart'] as const satisfies readonly Fixture[]) {
+  for (const kind of ['base', 'paint', 'decor', 'foam', 'pearl', 'holo', 'heart', 'peach', 'mushroom', 'paw'] as const satisfies readonly Fixture[]) {
     await page.evaluate((name) => window.__squishyParity!.fixture(name), kind);
     await expect(page.locator('[data-parity]')).toHaveAttribute('data-parity-fixture', kind);
     await settle(page);
     // Capture ONE browser-composited frame: simultaneous element screenshots
     // previously returned identically cleared WebGL buffers (false zero error).
-    const frame = await page.screenshot(kind === 'decor' || kind === 'heart'
+    const frame = await page.screenshot(kind === 'decor' || kind === 'heart' || kind === 'paw'
       ? { path: `phaser-candidate-evidence/parity-${kind}.png` }
       : {});
     const crop = (box: NonNullable<typeof oldBox>): Promise<Buffer> => sharp(frame).extract({
@@ -74,7 +74,7 @@ test('M3 parity: both real WebGL renderers receive identical data and render vis
     if (kind === 'base') {
       baseOld = oldShot;
       baseNew = newShot;
-    } else if (kind === 'paint' || kind === 'decor' || kind === 'heart') {
+    } else if (kind === 'paint' || kind === 'decor' || kind === 'heart' || kind === 'peach' || kind === 'mushroom' || kind === 'paw') {
       if (!baseOld || !baseNew) throw new Error('Base comparison frame is missing');
       expect((await measure(baseOld, oldShot)).meanRgbError, `${kind}: original renderer must change`).toBeGreaterThan(0.2);
       expect((await measure(baseNew, newShot)).meanRgbError, `${kind}: Phaser renderer must change`).toBeGreaterThan(0.2);
@@ -83,7 +83,7 @@ test('M3 parity: both real WebGL renderers receive identical data and render vis
     console.log(`WebGL renderer parity ${kind}: mean RGB error=${result.meanRgbError.toFixed(3)}, large-pixel fraction=${result.largePixelFraction.toFixed(4)}`);
     expect(result.meanRgbError, `${kind}: wrong shape, UV, material or vertical orientation`).toBeLessThan(18);
     expect(result.largePixelFraction, `${kind}: large incorrect area`).toBeLessThan(0.16);
-    if (kind === 'decor' || kind === 'heart') {
+    if (kind === 'decor' || kind === 'heart' || kind === 'paw') {
       await info.attach(`original-webgl-${kind}`, { body: oldShot, contentType: 'image/png' });
       await info.attach(`phaser-extern-${kind}`, { body: newShot, contentType: 'image/png' });
     }
