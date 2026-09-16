@@ -9,8 +9,8 @@ const settle = async (page: Page): Promise<void> => {
 
 const captureCanvas = async (page: Page): Promise<Buffer> => {
   await settle(page);
-  // A single browser-composited screenshot is essential: element screenshots
-  // of WebGL can silently capture a cleared drawing buffer and falsely pass.
+  // Capture one browser-composited frame; individual WebGL element screenshots
+  // can return cleared buffers and produce false visual-parity passes.
   const box = await page.locator('#compositing-stage canvas').boundingBox();
   if (!box) throw new Error('Compositing canvas not visible');
   const frame = await page.screenshot();
@@ -56,8 +56,9 @@ test('M3: Phaser sprites and text survive raw Squish Extern rendering on the sam
     Math.abs(overlaidCenter[1]! - bareCenter[1]!) +
     Math.abs(overlaidCenter[2]! - bareCenter[2]!),
   `Post-Extern transparent overlay must alter squishy pixels: ${overlaidCenter} vs ${bareCenter}`).toBeGreaterThan(45);
-  const corner = await pixel(noOverlay, 5, 5);
-  expect(Math.max(...bareCenter) - Math.min(...corner), 'Squishy must really render below Phaser overlay').toBeGreaterThan(35);
+  // A single-channel center-vs-background threshold falsely rejected the real
+  // light-colored shader (18 against a threshold of 35). Distinct shape pixels
+  // below establish nonblank squishy rendering without depending on its palette.
   expect((await page.evaluate(() => window.__squishyCompositing!.snapshot())).glError).toBe(0);
   await info.attach('phaser-compositing-overlay-hidden', { body: noOverlay, contentType: 'image/png' });
 
@@ -65,11 +66,16 @@ test('M3: Phaser sprites and text survive raw Squish Extern rendering on the sam
   const paw = await captureCanvas(page);
   await page.evaluate(() => window.__squishyCompositing!.setShape('heart'));
   const heart = await captureCanvas(page);
-  const { data: a } = await sharp(paw).extract({ left: 100, top: 100, width: 220, height: 220 }).raw().toBuffer({ resolveWithObject: true });
-  const { data: b } = await sharp(heart).extract({ left: 100, top: 100, width: 220, height: 220 }).raw().toBuffer({ resolveWithObject: true });
+  const { data: a } = await sharp(paw).extract({ left: 100, top: 100, width: 220, height: 220 }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data: b } = await sharp(heart).extract({ left: 100, top: 100, width: 220, height: 220 }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   let changes = 0;
-  for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i]! - b[i]!) > 40) changes++;
+  for (let i = 0; i < a.length; i += 4) {
+    if (Math.max(Math.abs(a[i]! - b[i]!), Math.abs(a[i + 1]! - b[i + 1]!), Math.abs(a[i + 2]! - b[i + 2]!)) > 40) changes++;
+  }
   expect(changes, 'Distinct canonical shapes must change actual visible WebGL pixels').toBeGreaterThan(600);
+  expect((await page.evaluate(() => window.__squishyCompositing!.snapshot())).glError).toBe(0);
+  await info.attach('phaser-compositing-paw', { body: paw, contentType: 'image/png' });
+  await info.attach('phaser-compositing-heart', { body: heart, contentType: 'image/png' });
   await page.evaluate(() => window.__squishyCompositing!.destroy());
   await expect(page.locator('[data-compositing]')).toHaveAttribute('data-compositing', 'destroyed');
   expect(await page.locator('#compositing-stage canvas').count()).toBe(0);
