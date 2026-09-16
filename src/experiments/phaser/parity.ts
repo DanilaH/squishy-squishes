@@ -8,7 +8,7 @@ import { SquishSurface, type SquishFillingStyle, type SquishMaterialStyle } from
 import { PhaserSquishCandidate } from './PhaserSquishCandidate';
 import './parity.css';
 
-type Fixture = 'base' | 'paint' | 'decor' | 'foam' | 'pearl' | 'holo' | 'heart';
+type Fixture = 'base' | 'paint' | 'decor' | 'foam' | 'pearl' | 'holo' | 'heart' | 'peach' | 'mushroom' | 'paw';
 
 declare global {
   interface Window {
@@ -91,7 +91,7 @@ const destroy = (): void => {
 
 const fixture = (kind: Fixture): void => {
   if (!squish || destroyed) throw new Error('Parity renderer is not ready');
-  const shapeId: ShapeId = kind === 'heart' ? 'heart' : 'soft-square';
+  const shapeId: ShapeId = kind === 'heart' || kind === 'peach' || kind === 'mushroom' || kind === 'paw' ? kind : 'soft-square';
   const materialId: MaterialId = kind === 'holo' ? 'holo' : 'soft';
   const fillingStyle: SquishFillingStyle = kind === 'foam' || kind === 'pearl' ? kind : 'none';
   const amount = fillingStyle === 'none' ? 0 : 0.85;
