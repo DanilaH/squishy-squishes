@@ -17,13 +17,16 @@
     "asset:smoke": "node --test tests/tooling/image-pipeline.test.mjs",
     "release:check": "npm run typecheck && npm run asset:smoke && npm run build && npm run build:yandex && npm run verify:yandex",
     "qa:browser": "playwright test --config=playwright.release.config.ts",
-    "qa:release": "npm run release:check && npm run qa:browser"
+    "qa:release": "npm run release:check && npm run qa:browser",
+    "spike:build": "tsc --noEmit && vite build --mode phaser-spike",
+    "spike:qa": "npm run spike:build && playwright test --config=playwright.phaser-spike.config.ts"
   },
   "dependencies": {
     "@danilah/mini-games-kit": "git+https://github.com/DanilaH/mini-games-kit.git#797b5689767e9dc1059514e0446479e054bf1352"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
+    "phaser": "4.2.1",
     "sharp": "0.35.4",
     "typescript": "7.0.2",
     "vite": "8.2.2"
