@@ -23,13 +23,15 @@ const prefixStorage = (storage: StorageAdapter): StorageAdapter => ({
   removeItem: (key) => storage.removeItem(DRAFT_PREFIX + key),
 });
 
+let draftRuntime: SquishyPlatformRuntime | null = null;
 const createDraftRuntime = async (): Promise<SquishyPlatformRuntime> => {
   const runtime = await createSquishyPlatformRuntime();
   if (runtime.kind !== 'yandex') {
     runtime.destroy();
     throw new Error('Phaser Yandex DRAFT requires the real Yandex platform runtime.');
   }
-  return { ...runtime, storage: prefixStorage(runtime.storage) };
+  draftRuntime = { ...runtime, storage: prefixStorage(runtime.storage) };
+  return draftRuntime;
 };
 
 const root = document.querySelector<HTMLDivElement>('#app');
@@ -49,12 +51,16 @@ void bootstrapSquishyApp(root, {
     if (disposed) return;
     disposed = true;
     listeners.abort();
+    draftRuntime = null;
     void handle.dispose();
   };
-  // A pagehide ending in bfcache is reversible; don't destroy the only Phaser.Game.
+  // A bfcache pagehide suspends the existing Phaser.Game; only a final hide destroys it.
   window.addEventListener('pagehide', (event) => {
-    if (event.persisted) return;
-    dispose();
+    draftRuntime?.activity.setBlocked('pagehide', true);
+    if (!event.persisted) dispose();
+  }, { signal: listeners.signal });
+  window.addEventListener('pageshow', () => {
+    draftRuntime?.activity.setBlocked('pagehide', false);
   }, { signal: listeners.signal });
 }).catch((error: unknown) => {
   console.error('[squishy:phaser-yandex-draft]', error);
