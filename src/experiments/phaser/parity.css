@@ -1,0 +1,9 @@
+html, body, #app { margin: 0; min-height: 100%; background: #f8f4ff; color: #312c3e; font-family: system-ui, sans-serif; }
+.parity-shell { padding: 16px; max-width: 950px; margin: 0 auto; }
+.parity-shell h1 { font-size: 18px; margin: 0 0 8px; }
+.parity-shell h2 { font-size: 13px; margin: 0 0 8px; }
+.parity-shell p { font-size: 12px; }
+.parity-grid { display: grid; grid-template-columns: 420px 420px; gap: 18px; align-items: start; }
+.parity-grid section { min-width: 0; }
+#parity-old, #parity-new, #parity-new canvas { width: 420px !important; height: 420px !important; display: block; }
+#parity-old, #parity-new canvas { background: transparent; touch-action: none; }
