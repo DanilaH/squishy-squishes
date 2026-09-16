@@ -37,6 +37,19 @@ const createPagesRuntime = async (): Promise<SquishyPlatformRuntime> => {
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root.');
 
+/** Phaser's renderer needs WebGL2; do not leave an unusable maker mounted if it is absent. */
+const canStartPhaser = (): boolean => {
+  const probe = document.createElement('canvas');
+  try {
+    const gl = probe.getContext('webgl2');
+    if (!gl) return false;
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 void bootstrapSquishyApp(root, {
   createRuntime: createPagesRuntime,
   makerRendererOptions: {
@@ -46,6 +59,38 @@ void bootstrapSquishyApp(root, {
   },
 }).then((handle) => {
   const listeners = new AbortController();
+  // Capture before the Library's delegated bubble click, but only on maker entry.
+  // A diagnostic overlay keeps the Library and all existing saves intact.
+  root.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (target.closest('[data-phaser-unsupported-close]')) {
+      root.querySelector('[data-phaser-unsupported]')?.remove();
+      return;
+    }
+    if (!target.closest('button[data-library-new], button[data-library-play-id], button[data-idea-id]')) return;
+    if (!root.querySelector('[data-sandbox-library], [data-sandbox-ideas]') || canStartPhaser()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    console.warn('[squishy:phaser-pages-preview] WebGL2 is unavailable; studio was not opened.');
+    root.querySelector('[data-phaser-unsupported]')?.remove();
+    const ru = normalizeLanguage(navigator.language) === 'ru';
+    const overlay = document.createElement('section');
+    overlay.className = 'sandbox-library-modal';
+    overlay.dataset.phaserUnsupported = '';
+    overlay.setAttribute('role', 'alertdialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'phaser-unsupported-title');
+    overlay.innerHTML = `<div class="sandbox-library-modal__sheet sandbox-library-modal__sheet--compact">
+      <h2 id="phaser-unsupported-title">${ru ? 'НУЖЕН WEBGL2' : 'WEBGL2 REQUIRED'}</h2>
+      <p>${ru
+        ? 'Этот браузер или устройство не поддерживает WebGL2 либо он отключён. Включи аппаратное ускорение или попробуй другой браузер.'
+        : 'WebGL2 is unavailable or disabled in this browser or device. Enable hardware acceleration or try another browser.'}</p>
+      <button class="sandbox-library-modal__cancel" type="button" data-phaser-unsupported-close>${ru ? 'НАЗАД К ПОЛКЕ' : 'BACK TO LIBRARY'}</button>
+    </div>`;
+    root.append(overlay);
+    overlay.querySelector<HTMLButtonElement>('[data-phaser-unsupported-close]')?.focus();
+  }, { capture: true, signal: listeners.signal });
   let disposed = false;
   const dispose = (): void => {
     if (disposed) return;
