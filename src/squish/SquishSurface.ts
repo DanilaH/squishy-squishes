@@ -1,24 +1,8 @@
-import { getBackingStoreSize, getRenderPixelRatio, sampleContinuousInteraction } from '@danilah/mini-games-kit/core';
+import { getBackingStoreSize, getRenderPixelRatio } from '@danilah/mini-games-kit/core';
 import type { SquishyAudio } from '../game/SquishyAudio';
-import {
-  createShapeField,
-  getShape,
-  isPointInsideShape,
-  type ShapeDefinition,
-  type ShapeId,
-} from '../game/shapes';
+import { createShapeField, getShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
+import { SquishSimulation, type SquishSimulationSample } from './SquishSimulation';
 import { fragmentShaderSource, vertexShaderSource } from './shaders';
-
-interface VertexState {
-  restX: number;
-  restY: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  u: number;
-  v: number;
-}
 
 export type SquishRgb = readonly [number, number, number];
 export type SquishFillingStyle = 'none' | 'foam' | 'pearl';
@@ -51,38 +35,12 @@ export interface SquishMetrics {
 }
 
 type MetricsListener = (metrics: SquishMetrics) => void;
-
-const GRID_CELLS = 16;
 const SHAPE_FIELD_SIZE = 128;
-const GRAB_RADIUS = 0.92;
-const PRESS_RADIUS = 0.58;
-const MAX_POINTER_DISPLACEMENT = 0.72;
-const MAX_VERTEX_DISPLACEMENT = 0.72;
-const GRAB_STIFFNESS_NEAR = 245;
-const GRAB_STIFFNESS_FAR = 92;
-const REST_STIFFNESS = 44;
-const DAMPING = 10.5;
-const VISUAL_COMPRESSION_RELEASE_RATE = DAMPING * 0.5;
-const BULGE_STRENGTH = 0.085;
-const PRESS_DENT_STRENGTH = 0.14;
-const PRESS_RING_BULGE = 0.045;
-const PRESS_COMPRESSION_WEIGHT = 0.22;
-const PRESS_ATTACK = 12;
-const PRESS_RELEASE = 18;
-const RELEASE_DRAG_KICK = 1.05;
-const RELEASE_PRESS_KICK = 0.24;
-
-const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
-const clamp01 = (value: number): number => clamp(value, 0, 1);
-const smoothstep01 = (value: number): number => {
-  const t = clamp01(value);
-  return t * t * (3 - 2 * t);
-};
+const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
 const compileShader = (gl: WebGL2RenderingContext, type: number, source: string): WebGLShader => {
   const shader = gl.createShader(type);
   if (!shader) throw new Error('Unable to allocate WebGL shader.');
-
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -90,7 +48,6 @@ const compileShader = (gl: WebGL2RenderingContext, type: number, source: string)
     gl.deleteShader(shader);
     throw new Error(log);
   }
-
   return shader;
 };
 
@@ -99,30 +56,17 @@ const createProgram = (gl: WebGL2RenderingContext): WebGLProgram => {
   const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
   const program = gl.createProgram();
   if (!program) throw new Error('Unable to allocate WebGL program.');
-
   gl.attachShader(program, vertexShader);
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
   gl.deleteShader(vertexShader);
   gl.deleteShader(fragmentShader);
-
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     const log = gl.getProgramInfoLog(program) ?? 'Unknown shader link error.';
     gl.deleteProgram(program);
     throw new Error(log);
   }
-
   return program;
-};
-
-const requireUniform = (
-  gl: WebGL2RenderingContext,
-  program: WebGLProgram,
-  name: string,
-): WebGLUniformLocation => {
-  const location = gl.getUniformLocation(program, name);
-  if (location === null) throw new Error(`Missing WebGL uniform: ${name}`);
-  return location;
 };
 
 const DEFAULT_MATERIAL: SquishMaterialStyle = {
@@ -139,6 +83,16 @@ const DEFAULT_MATERIAL: SquishMaterialStyle = {
   cloudiness: 0.05,
 };
 
+const UNIFORM_NAMES = [
+  'uScale', 'uShapeField', 'uAppearanceTexture', 'uAppearanceEnabled', 'uPointerUv',
+  'uCompression', 'uPressDepth', 'uStrainDirection', 'uColorLow', 'uColorHigh',
+  'uSheenColor', 'uRimColor', 'uFillingAmount', 'uFillingStyle', 'uFillProgress',
+  'uMoldProgress', 'uMaterialSeed', 'uTranslucency', 'uIridescence', 'uRoughness',
+  'uMetallic', 'uPearlescence', 'uCloudiness', 'uWireframePass',
+] as const;
+type UniformName = typeof UNIFORM_NAMES[number];
+
+/** Raw-WebGL adapter retained until Phaser acceptance; springs are owned by SquishSimulation. */
 export class SquishSurface {
   private readonly gl: WebGL2RenderingContext;
   private readonly program: WebGLProgram;
@@ -148,55 +102,14 @@ export class SquishSurface {
   private readonly lineIndexBuffer: WebGLBuffer;
   private readonly shapeTexture: WebGLTexture;
   private readonly appearanceTexture: WebGLTexture;
-  private readonly shapeFieldUniform: WebGLUniformLocation;
-  private readonly appearanceTextureUniform: WebGLUniformLocation;
-  private readonly appearanceEnabledUniform: WebGLUniformLocation;
+  private readonly uniforms: ReadonlyMap<UniformName, WebGLUniformLocation>;
   private readonly shapeFieldCache = new Map<ShapeId, Uint8Array>();
-  private readonly vertices: VertexState[] = [];
-  private readonly triangleIndices: Uint16Array;
-  private readonly lineIndices: Uint16Array;
+  private readonly simulation = new SquishSimulation(getShape('soft-square'), performance.now());
   private readonly packedVertices: Float32Array;
-  private readonly scaleUniform: WebGLUniformLocation;
-  private readonly pointerUvUniform: WebGLUniformLocation;
-  private readonly compressionUniform: WebGLUniformLocation;
-  private readonly pressDepthUniform: WebGLUniformLocation;
-  private readonly strainDirectionUniform: WebGLUniformLocation;
-  private readonly colorLowUniform: WebGLUniformLocation;
-  private readonly colorHighUniform: WebGLUniformLocation;
-  private readonly sheenColorUniform: WebGLUniformLocation;
-  private readonly rimColorUniform: WebGLUniformLocation;
-  private readonly fillingAmountUniform: WebGLUniformLocation;
-  private readonly fillingStyleUniform: WebGLUniformLocation;
-  private readonly fillProgressUniform: WebGLUniformLocation;
-  private readonly moldProgressUniform: WebGLUniformLocation;
-  private readonly materialSeedUniform: WebGLUniformLocation;
-  private readonly translucencyUniform: WebGLUniformLocation;
-  private readonly iridescenceUniform: WebGLUniformLocation;
-  private readonly roughnessUniform: WebGLUniformLocation;
-  private readonly metallicUniform: WebGLUniformLocation;
-  private readonly pearlescenceUniform: WebGLUniformLocation;
-  private readonly cloudinessUniform: WebGLUniformLocation;
-  private readonly wireframePassUniform: WebGLUniformLocation;
-
+  private sample: SquishSimulationSample = this.simulation.snapshot();
   private scaleX = 0.5;
   private scaleY = 0.5;
-  private pointerId: number | null = null;
-  private grabStartX = 0;
-  private grabStartY = 0;
-  private pointerX = 0;
-  private pointerY = 0;
-  private sheenX = 0;
-  private sheenY = 0;
-  private gestureX = 0;
-  private gestureY = 0;
-  private pressDepth = 0;
-  private compression = 0;
-  private previousCompression = 0;
-  private previousSampleAt = performance.now();
-  private normalizedVelocity = 0;
-  private maxDisplacement = 0;
-  private maxGestureCompression = 0;
-  private squeezes = 0;
+  private capturedPointerId: number | null = null;
   private wireframe = false;
   private muted = false;
   private interactive = true;
@@ -227,32 +140,14 @@ export class SquishSurface {
     });
     if (!gl) throw new Error('WebGL2 is required for the Squishy surface.');
     this.gl = gl;
-
     this.program = createProgram(gl);
-    this.scaleUniform = requireUniform(gl, this.program, 'uScale');
-    this.shapeFieldUniform = requireUniform(gl, this.program, 'uShapeField');
-    this.appearanceTextureUniform = requireUniform(gl, this.program, 'uAppearanceTexture');
-    this.appearanceEnabledUniform = requireUniform(gl, this.program, 'uAppearanceEnabled');
-    this.pointerUvUniform = requireUniform(gl, this.program, 'uPointerUv');
-    this.compressionUniform = requireUniform(gl, this.program, 'uCompression');
-    this.pressDepthUniform = requireUniform(gl, this.program, 'uPressDepth');
-    this.strainDirectionUniform = requireUniform(gl, this.program, 'uStrainDirection');
-    this.colorLowUniform = requireUniform(gl, this.program, 'uColorLow');
-    this.colorHighUniform = requireUniform(gl, this.program, 'uColorHigh');
-    this.sheenColorUniform = requireUniform(gl, this.program, 'uSheenColor');
-    this.rimColorUniform = requireUniform(gl, this.program, 'uRimColor');
-    this.fillingAmountUniform = requireUniform(gl, this.program, 'uFillingAmount');
-    this.fillingStyleUniform = requireUniform(gl, this.program, 'uFillingStyle');
-    this.fillProgressUniform = requireUniform(gl, this.program, 'uFillProgress');
-    this.moldProgressUniform = requireUniform(gl, this.program, 'uMoldProgress');
-    this.materialSeedUniform = requireUniform(gl, this.program, 'uMaterialSeed');
-    this.translucencyUniform = requireUniform(gl, this.program, 'uTranslucency');
-    this.iridescenceUniform = requireUniform(gl, this.program, 'uIridescence');
-    this.roughnessUniform = requireUniform(gl, this.program, 'uRoughness');
-    this.metallicUniform = requireUniform(gl, this.program, 'uMetallic');
-    this.pearlescenceUniform = requireUniform(gl, this.program, 'uPearlescence');
-    this.cloudinessUniform = requireUniform(gl, this.program, 'uCloudiness');
-    this.wireframePassUniform = requireUniform(gl, this.program, 'uWireframePass');
+    const uniforms = new Map<UniformName, WebGLUniformLocation>();
+    for (const name of UNIFORM_NAMES) {
+      const location = gl.getUniformLocation(this.program, name);
+      if (location === null) throw new Error(`Missing WebGL uniform: ${name}`);
+      uniforms.set(name, location);
+    }
+    this.uniforms = uniforms;
 
     const vao = gl.createVertexArray();
     const vertexBuffer = gl.createBuffer();
@@ -285,27 +180,11 @@ export class SquishSurface {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.RGBA,
-      1,
-      1,
-      0,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      new Uint8Array([0, 0, 0, 0]),
-    );
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.activeTexture(gl.TEXTURE0);
 
-    const triangleIndices: number[] = [];
-    const lineIndices: number[] = [];
-    this.buildMesh(triangleIndices, lineIndices);
-    this.triangleIndices = new Uint16Array(triangleIndices);
-    this.lineIndices = new Uint16Array(lineIndices);
-    this.packedVertices = new Float32Array(this.vertices.length * 4);
-
+    this.packedVertices = new Float32Array(this.simulation.vertices.length * 4);
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.packedVertices.byteLength, gl.DYNAMIC_DRAW);
@@ -313,11 +192,10 @@ export class SquishSurface {
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 16, 0);
     gl.enableVertexAttribArray(1);
     gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 16, 8);
-
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.lineIndexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.lineIndices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.simulation.lineIndices, gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.triangleIndexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.triangleIndices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.simulation.triangleIndices, gl.STATIC_DRAW);
     gl.bindVertexArray(null);
 
     canvas.addEventListener('pointerdown', this.handlePointerDown);
@@ -325,14 +203,11 @@ export class SquishSurface {
     canvas.addEventListener('pointerup', this.handlePointerEnd);
     canvas.addEventListener('pointercancel', this.handlePointerEnd);
     window.addEventListener('resize', this.resize);
-
     this.resize();
     this.animationFrame = requestAnimationFrame(this.tick);
   }
 
-  public setWireframe(enabled: boolean): void {
-    this.wireframe = enabled;
-  }
+  public setWireframe(enabled: boolean): void { this.wireframe = enabled; }
 
   public setMuted(muted: boolean): void {
     this.muted = muted;
@@ -349,53 +224,34 @@ export class SquishSurface {
   public resetTiming(): void {
     const now = performance.now();
     this.lastFrameAt = now;
-    this.previousSampleAt = now;
+    this.simulation.resetTiming(now);
   }
 
-  public setMaterial(material: SquishMaterialStyle): void {
-    this.material = material;
-  }
+  public setMaterial(material: SquishMaterialStyle): void { this.material = material; }
 
   public setShape(shape: ShapeDefinition): void {
     if (shape.id === this.shape.id) return;
     this.cancelInteraction();
     this.shape = shape;
+    this.simulation.setShape(shape);
     this.uploadShapeField(shape);
   }
 
-  public setFillingAmount(amount: number): void {
-    this.fillingAmount = clamp01(amount);
-  }
+  public setFillingAmount(amount: number): void { this.fillingAmount = clamp01(amount); }
 
   public setFillingStyle(style: SquishFillingStyle): void {
     this.fillingStyle = style === 'pearl' ? 2 : style === 'foam' ? 1 : 0;
   }
 
-  public setFillProgress(progress: number): void {
-    this.fillProgress = clamp01(progress);
-  }
-
-  public setMoldProgress(progress: number): void {
-    this.moldProgress = clamp01(progress);
-  }
+  public setFillProgress(progress: number): void { this.fillProgress = clamp01(progress); }
+  public setMoldProgress(progress: number): void { this.moldProgress = clamp01(progress); }
 
   public setAppearanceTexture(source: TexImageSource | null): void {
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.appearanceTexture);
-
     if (source === null) {
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.RGBA,
-        1,
-        1,
-        0,
-        gl.RGBA,
-        gl.UNSIGNED_BYTE,
-        new Uint8Array([0, 0, 0, 0]),
-      );
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
       this.appearanceEnabled = false;
     } else {
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
@@ -403,66 +259,35 @@ export class SquishSurface {
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
       this.appearanceEnabled = true;
     }
-
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.activeTexture(gl.TEXTURE0);
   }
 
   public clientPointToUv(clientX: number, clientY: number): { u: number; v: number } | null {
     const local = this.clientPointToLocal(clientX, clientY);
-    if (!this.isInsideObject(local.x, local.y)) return null;
-    return {
-      u: clamp01(local.x * 0.5 + 0.5),
-      v: clamp01(local.y * 0.5 + 0.5),
-    };
+    return this.simulation.pointToUv(local.x, local.y);
   }
 
   public projectUvToCanvas(u: number, v: number): { x: number; y: number } {
-    const gridU = clamp01(u) * GRID_CELLS;
-    const gridV = clamp01(v) * GRID_CELLS;
-    const x0 = Math.min(GRID_CELLS - 1, Math.floor(gridU));
-    const y0 = Math.min(GRID_CELLS - 1, Math.floor(gridV));
-    const x1 = Math.min(GRID_CELLS, x0 + 1);
-    const y1 = Math.min(GRID_CELLS, y0 + 1);
-    const tx = gridU - x0;
-    const ty = gridV - y0;
-    const row = GRID_CELLS + 1;
-    const a = this.vertices[y0 * row + x0]!;
-    const b = this.vertices[y0 * row + x1]!;
-    const c = this.vertices[y1 * row + x0]!;
-    const d = this.vertices[y1 * row + x1]!;
-    const topX = a.x + (b.x - a.x) * tx;
-    const topY = a.y + (b.y - a.y) * tx;
-    const bottomX = c.x + (d.x - c.x) * tx;
-    const bottomY = c.y + (d.y - c.y) * tx;
-    const localX = topX + (bottomX - topX) * ty;
-    const localY = topY + (bottomY - topY) * ty;
+    const local = this.simulation.projectUvToLocal(u, v);
     const rect = this.canvas.getBoundingClientRect();
-    const ndcX = localX * this.scaleX;
-    const ndcY = localY * this.scaleY;
-    return {
-      x: (ndcX * 0.5 + 0.5) * rect.width,
-      y: (0.5 - ndcY * 0.5) * rect.height,
-    };
+    const ndcX = local.x * this.scaleX;
+    const ndcY = local.y * this.scaleY;
+    return { x: (ndcX * 0.5 + 0.5) * rect.width, y: (0.5 - ndcY * 0.5) * rect.height };
   }
 
-  public primeAudio(): Promise<void> {
-    return this.audio.prime();
-  }
+  public primeAudio(): Promise<void> { return this.audio.prime(); }
 
   public dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-
     cancelAnimationFrame(this.animationFrame);
     this.cancelInteraction();
-
     this.canvas.removeEventListener('pointerdown', this.handlePointerDown);
     this.canvas.removeEventListener('pointermove', this.handlePointerMove);
     this.canvas.removeEventListener('pointerup', this.handlePointerEnd);
     this.canvas.removeEventListener('pointercancel', this.handlePointerEnd);
     window.removeEventListener('resize', this.resize);
-
     this.gl.deleteBuffer(this.vertexBuffer);
     this.gl.deleteBuffer(this.triangleIndexBuffer);
     this.gl.deleteBuffer(this.lineIndexBuffer);
@@ -472,53 +297,14 @@ export class SquishSurface {
     this.gl.deleteProgram(this.program);
   }
 
-  private buildMesh(triangleIndices: number[], lineIndices: number[]): void {
-    const row = GRID_CELLS + 1;
-
-    for (let y = 0; y <= GRID_CELLS; y += 1) {
-      for (let x = 0; x <= GRID_CELLS; x += 1) {
-        const u = x / GRID_CELLS;
-        const v = y / GRID_CELLS;
-        const restX = u * 2 - 1;
-        const restY = v * 2 - 1;
-        this.vertices.push({ restX, restY, x: restX, y: restY, vx: 0, vy: 0, u, v });
-      }
-    }
-
-    for (let y = 0; y < GRID_CELLS; y += 1) {
-      for (let x = 0; x < GRID_CELLS; x += 1) {
-        const a = y * row + x;
-        const b = a + 1;
-        const c = a + row;
-        const d = c + 1;
-        triangleIndices.push(a, c, b, b, c, d);
-      }
-    }
-
-    for (let y = 0; y <= GRID_CELLS; y += 1) {
-      for (let x = 0; x < GRID_CELLS; x += 1) {
-        const a = y * row + x;
-        lineIndices.push(a, a + 1);
-      }
-    }
-    for (let x = 0; x <= GRID_CELLS; x += 1) {
-      for (let y = 0; y < GRID_CELLS; y += 1) {
-        const a = y * row + x;
-        lineIndices.push(a, a + row);
-      }
-    }
-  }
-
   private readonly resize = (): void => {
     const rect = this.canvas.getBoundingClientRect();
     const pixelRatio = getRenderPixelRatio(2);
     const { width, height } = getBackingStoreSize(rect.width, rect.height, pixelRatio);
-
     if (this.canvas.width !== width || this.canvas.height !== height) {
       this.canvas.width = width;
       this.canvas.height = height;
     }
-
     const radiusPx = Math.min(rect.width, rect.height) * 0.34;
     this.scaleX = (radiusPx * 2) / Math.max(1, rect.width);
     this.scaleY = (radiusPx * 2) / Math.max(1, rect.height);
@@ -526,106 +312,42 @@ export class SquishSurface {
   };
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
-    if (!this.interactive || this.pointerId !== null) return;
-    const local = this.pointerToLocal(event);
-    if (!this.isInsideObject(local.x, local.y)) return;
-
-    this.pointerId = event.pointerId;
-    this.grabStartX = local.x;
-    this.grabStartY = local.y;
-    this.pointerX = local.x;
-    this.pointerY = local.y;
-    this.maxGestureCompression = 0;
-    this.sheenX += (local.x - this.sheenX) * 0.55;
-    this.sheenY += (local.y - this.sheenY) * 0.55;
+    if (!this.interactive || this.capturedPointerId !== null) return;
+    const local = this.clientPointToLocal(event.clientX, event.clientY);
+    if (!this.simulation.begin(event.pointerId, local.x, local.y)) return;
+    this.capturedPointerId = event.pointerId;
     this.canvas.classList.add('is-active');
-
-    try {
-      this.canvas.setPointerCapture(event.pointerId);
-    } catch {
-      // Pointer capture may already be unavailable during teardown.
-    }
-
+    try { this.canvas.setPointerCapture(event.pointerId); } catch { /* unavailable */ }
     void this.audio.prime();
   };
 
   private readonly handlePointerMove = (event: PointerEvent): void => {
-    if (event.pointerId !== this.pointerId) return;
-    const local = this.pointerToLocal(event);
-    this.pointerX = local.x;
-    this.pointerY = local.y;
+    if (event.pointerId !== this.capturedPointerId) return;
+    const local = this.clientPointToLocal(event.clientX, event.clientY);
+    this.simulation.move(event.pointerId, local.x, local.y);
   };
 
   private readonly handlePointerEnd = (event: PointerEvent): void => {
-    if (event.pointerId !== this.pointerId) return;
-
-    const releaseEnergy = clamp01(Math.max(this.maxGestureCompression, this.pressDepth * PRESS_COMPRESSION_WEIGHT));
-    if (releaseEnergy >= 0.08) {
-      this.squeezes += 1;
-      this.applyReleaseImpulse();
-    }
-    this.cancelInteraction(releaseEnergy);
+    if (event.pointerId !== this.capturedPointerId) return;
+    const energy = this.simulation.end(event.pointerId);
+    this.cancelInteraction(energy ?? 0);
   };
 
   private cancelInteraction(releaseEnergy = 0): void {
-    if (this.pointerId !== null) {
-      try {
-        this.canvas.releasePointerCapture(this.pointerId);
-      } catch {
-        // Pointer capture may already have been released by the browser.
-      }
+    if (this.capturedPointerId !== null) {
+      try { this.canvas.releasePointerCapture(this.capturedPointerId); } catch { /* unavailable */ }
     }
-    this.pointerId = null;
+    this.capturedPointerId = null;
+    this.simulation.cancel();
     this.canvas.classList.remove('is-active');
     this.audio.releaseTactile(releaseEnergy);
-  }
-
-  private applyReleaseImpulse(): void {
-    let displacementX = this.pointerX - this.grabStartX;
-    let displacementY = this.pointerY - this.grabStartY;
-    const magnitude = Math.hypot(displacementX, displacementY);
-    if (magnitude > MAX_POINTER_DISPLACEMENT) {
-      const scale = MAX_POINTER_DISPLACEMENT / magnitude;
-      displacementX *= scale;
-      displacementY *= scale;
-    }
-
-    for (const vertex of this.vertices) {
-      const localX = vertex.restX - this.grabStartX;
-      const localY = vertex.restY - this.grabStartY;
-      const distance = Math.hypot(localX, localY);
-      const dragInfluence = smoothstep01(1 - distance / GRAB_RADIUS) ** 2;
-      const pressInfluence = smoothstep01(1 - distance / PRESS_RADIUS) ** 2;
-
-      vertex.vx -= displacementX * dragInfluence * RELEASE_DRAG_KICK;
-      vertex.vy -= displacementY * dragInfluence * RELEASE_DRAG_KICK;
-
-      if (distance > 0.0001) {
-        const radialX = localX / distance;
-        const radialY = localY / distance;
-        const pressKick = this.pressDepth * pressInfluence * RELEASE_PRESS_KICK;
-        vertex.vx += radialX * pressKick;
-        vertex.vy += radialY * pressKick;
-      }
-    }
-  }
-
-  private pointerToLocal(event: PointerEvent): { x: number; y: number } {
-    return this.clientPointToLocal(event.clientX, event.clientY);
   }
 
   private clientPointToLocal(clientX: number, clientY: number): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
     const ndcX = ((clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
     const ndcY = 1 - ((clientY - rect.top) / Math.max(1, rect.height)) * 2;
-    return {
-      x: ndcX / Math.max(0.0001, this.scaleX),
-      y: ndcY / Math.max(0.0001, this.scaleY),
-    };
-  }
-
-  private isInsideObject(x: number, y: number): boolean {
-    return isPointInsideShape(this.shape, x, y);
+    return { x: ndcX / Math.max(0.0001, this.scaleX), y: ndcY / Math.max(0.0001, this.scaleY) };
   }
 
   private uploadShapeField(shape: ShapeDefinition): void {
@@ -634,247 +356,82 @@ export class SquishSurface {
       field = createShapeField(shape, SHAPE_FIELD_SIZE);
       this.shapeFieldCache.set(shape.id, field);
     }
-
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.shapeTexture);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.R8,
-      SHAPE_FIELD_SIZE,
-      SHAPE_FIELD_SIZE,
-      0,
-      gl.RED,
-      gl.UNSIGNED_BYTE,
-      field,
-    );
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, SHAPE_FIELD_SIZE, SHAPE_FIELD_SIZE, 0, gl.RED, gl.UNSIGNED_BYTE, field);
   }
 
   private readonly tick = (now: number): void => {
     if (this.disposed) return;
-
     const rawDt = Math.max(0.001, (now - this.lastFrameAt) / 1000);
-    const dt = Math.min(rawDt, 1 / 30);
     this.lastFrameAt = now;
     this.recordFrameTime(rawDt * 1000);
-
-    this.updatePhysics(dt, now);
+    this.sample = this.simulation.advance(rawDt * 1000, now);
+    if (this.sample.active && this.sample.tactileActive && !this.muted) {
+      this.audio.updateTactile(this.sample.tactileProgress, this.sample.normalizedVelocity);
+    }
     this.render();
     this.publishMetrics(now);
-
     this.animationFrame = requestAnimationFrame(this.tick);
   };
 
-  private updatePhysics(dt: number, now: number): void {
-    const active = this.pointerId !== null;
-    let displacementX = 0;
-    let displacementY = 0;
-
-    if (active) {
-      displacementX = this.pointerX - this.grabStartX;
-      displacementY = this.pointerY - this.grabStartY;
-      const magnitude = Math.hypot(displacementX, displacementY);
-      if (magnitude > MAX_POINTER_DISPLACEMENT) {
-        const scale = MAX_POINTER_DISPLACEMENT / magnitude;
-        displacementX *= scale;
-        displacementY *= scale;
-      }
-    }
-
-    const pressTarget = active ? 1 : 0;
-    const pressRate = active ? PRESS_ATTACK : PRESS_RELEASE;
-    const pressBlend = 1 - Math.exp(-pressRate * dt);
-    this.pressDepth += (pressTarget - this.pressDepth) * pressBlend;
-
-    const dragMagnitude = Math.hypot(displacementX, displacementY);
-    const dragCompression = active ? clamp01(dragMagnitude / MAX_POINTER_DISPLACEMENT) : 0;
-    const compressionTarget = active
-      ? clamp01(Math.max(dragCompression, this.pressDepth * PRESS_COMPRESSION_WEIGHT))
-      : 0;
-    if (active) {
-      this.compression = compressionTarget;
-    } else {
-      const compressionBlend = 1 - Math.exp(-VISUAL_COMPRESSION_RELEASE_RATE * dt);
-      this.compression += (compressionTarget - this.compression) * compressionBlend;
-      if (this.compression < 0.0005) this.compression = 0;
-    }
-    this.maxGestureCompression = Math.max(this.maxGestureCompression, this.compression);
-
-    const directionTargetX = active && dragMagnitude > 0.02 ? displacementX / dragMagnitude : 0;
-    const directionTargetY = active && dragMagnitude > 0.02 ? displacementY / dragMagnitude : 0;
-    const directionBlend = 1 - Math.exp(-(active ? 11 : 5) * dt);
-    this.gestureX += (directionTargetX - this.gestureX) * directionBlend;
-    this.gestureY += (directionTargetY - this.gestureY) * directionBlend;
-
-    const sheenTargetX = active ? this.pointerX : 0;
-    const sheenTargetY = active ? this.pointerY : 0;
-    const sheenBlend = 1 - Math.exp(-(active ? 9 : 3) * dt);
-    this.sheenX += (sheenTargetX - this.sheenX) * sheenBlend;
-    this.sheenY += (sheenTargetY - this.sheenY) * sheenBlend;
-
-    const sample = sampleContinuousInteraction(
-      this.compression,
-      this.previousCompression,
-      now,
-      this.previousSampleAt,
-      {
-        velocityForMax: 4,
-        minActiveProgress: 0.005,
-        minActiveProgressDelta: 0.0005,
-      },
-    );
-    this.previousCompression = this.compression;
-    this.previousSampleAt = now;
-    this.normalizedVelocity = sample.normalizedVelocity;
-
-    if (active && sample.active && !this.muted) {
-      this.audio.updateTactile(sample.progress, sample.normalizedVelocity);
-    }
-
-    const gestureMagnitude = Math.max(0.0001, dragMagnitude);
-    const gestureDirX = displacementX / gestureMagnitude;
-    const gestureDirY = displacementY / gestureMagnitude;
-    let frameMaxDisplacement = 0;
-
-    for (const vertex of this.vertices) {
-      let targetX = vertex.restX;
-      let targetY = vertex.restY;
-      let responseInfluence = 0;
-
-      if (active) {
-        const localX = vertex.restX - this.grabStartX;
-        const localY = vertex.restY - this.grabStartY;
-        const grabDistance = Math.hypot(localX, localY);
-        const influence = smoothstep01(1 - grabDistance / GRAB_RADIUS);
-        const weightedInfluence = influence * influence;
-        const pressInfluence = smoothstep01(1 - grabDistance / PRESS_RADIUS) ** 2;
-        responseInfluence = Math.max(weightedInfluence, pressInfluence * 0.9);
-
-        targetX += displacementX * weightedInfluence;
-        targetY += displacementY * weightedInfluence;
-
-        targetX += -localX * pressInfluence * this.pressDepth * PRESS_DENT_STRENGTH;
-        targetY += -localY * pressInfluence * this.pressDepth * PRESS_DENT_STRENGTH;
-
-        if (grabDistance > 0.0001) {
-          const localRadialX = localX / grabDistance;
-          const localRadialY = localY / grabDistance;
-          const ringCenter = PRESS_RADIUS * 0.72;
-          const ringWidth = PRESS_RADIUS * 0.38;
-          const ring = smoothstep01(1 - Math.abs(grabDistance - ringCenter) / ringWidth);
-          const ringBulge = ring * this.pressDepth * PRESS_RING_BULGE * (1 - pressInfluence * 0.65);
-          targetX += localRadialX * ringBulge;
-          targetY += localRadialY * ringBulge;
-        }
-
-        const radialLength = Math.max(0.0001, Math.hypot(vertex.restX, vertex.restY));
-        const radialX = vertex.restX / radialLength;
-        const radialY = vertex.restY / radialLength;
-        const directionAlignment = Math.abs(radialX * gestureDirX + radialY * gestureDirY);
-        const sideWeight = 1 - directionAlignment;
-        const bulge = dragCompression * BULGE_STRENGTH * sideWeight * (1 - weightedInfluence * 0.75);
-        targetX += radialX * bulge;
-        targetY += radialY * bulge;
-      }
-
-      const targetStiffness = active
-        ? GRAB_STIFFNESS_FAR + (GRAB_STIFFNESS_NEAR - GRAB_STIFFNESS_FAR) * responseInfluence
-        : 0;
-      const localDamping = Math.exp(-(DAMPING * (0.88 + responseInfluence * 0.12)) * dt);
-      const ax = (targetX - vertex.x) * targetStiffness + (vertex.restX - vertex.x) * REST_STIFFNESS;
-      const ay = (targetY - vertex.y) * targetStiffness + (vertex.restY - vertex.y) * REST_STIFFNESS;
-
-      vertex.vx = (vertex.vx + ax * dt) * localDamping;
-      vertex.vy = (vertex.vy + ay * dt) * localDamping;
-      vertex.x += vertex.vx * dt;
-      vertex.y += vertex.vy * dt;
-
-      const offsetX = vertex.x - vertex.restX;
-      const offsetY = vertex.y - vertex.restY;
-      const offset = Math.hypot(offsetX, offsetY);
-      if (offset > MAX_VERTEX_DISPLACEMENT) {
-        const scale = MAX_VERTEX_DISPLACEMENT / offset;
-        vertex.x = vertex.restX + offsetX * scale;
-        vertex.y = vertex.restY + offsetY * scale;
-        vertex.vx *= 0.55;
-        vertex.vy *= 0.55;
-      }
-
-      frameMaxDisplacement = Math.max(
-        frameMaxDisplacement,
-        Math.hypot(vertex.x - vertex.restX, vertex.y - vertex.restY),
-      );
-    }
-
-    this.maxDisplacement = frameMaxDisplacement;
-  }
-
   private render(): void {
     const gl = this.gl;
-
-    for (let index = 0; index < this.vertices.length; index += 1) {
-      const vertex = this.vertices[index]!;
+    for (let index = 0; index < this.simulation.vertices.length; index += 1) {
+      const vertex = this.simulation.vertices[index]!;
       const offset = index * 4;
       this.packedVertices[offset] = vertex.x;
       this.packedVertices[offset + 1] = vertex.y;
       this.packedVertices[offset + 2] = vertex.u;
       this.packedVertices[offset + 3] = vertex.v;
     }
-
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.packedVertices);
-
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.useProgram(this.program);
+    const u = (name: UniformName): WebGLUniformLocation => this.uniforms.get(name)!;
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.shapeTexture);
-    gl.uniform1i(this.shapeFieldUniform, 0);
+    gl.uniform1i(u('uShapeField'), 0);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.appearanceTexture);
-    gl.uniform1i(this.appearanceTextureUniform, 1);
-    gl.uniform1i(this.appearanceEnabledUniform, this.appearanceEnabled ? 1 : 0);
+    gl.uniform1i(u('uAppearanceTexture'), 1);
+    gl.uniform1i(u('uAppearanceEnabled'), this.appearanceEnabled ? 1 : 0);
     gl.activeTexture(gl.TEXTURE0);
-    gl.uniform2f(this.scaleUniform, this.scaleX, this.scaleY);
-    gl.uniform2f(
-      this.pointerUvUniform,
-      clamp01(this.sheenX * 0.5 + 0.5),
-      clamp01(this.sheenY * 0.5 + 0.5),
-    );
-    gl.uniform1f(this.compressionUniform, this.compression);
-    gl.uniform1f(this.pressDepthUniform, this.pressDepth);
-    gl.uniform2f(this.strainDirectionUniform, this.gestureX, this.gestureY);
-    gl.uniform3f(this.colorLowUniform, ...this.material.low);
-    gl.uniform3f(this.colorHighUniform, ...this.material.high);
-    gl.uniform3f(this.sheenColorUniform, ...this.material.sheen);
-    gl.uniform3f(this.rimColorUniform, ...this.material.rim);
-    gl.uniform1f(this.fillingAmountUniform, this.fillingAmount);
-    gl.uniform1f(this.fillingStyleUniform, this.fillingStyle);
-    gl.uniform1f(this.fillProgressUniform, this.fillProgress);
-    gl.uniform1f(this.moldProgressUniform, this.moldProgress);
-    gl.uniform1f(this.materialSeedUniform, this.material.seed);
-    gl.uniform1f(this.translucencyUniform, clamp01(this.material.translucency));
-    gl.uniform1f(this.iridescenceUniform, clamp01(this.material.iridescence));
-    gl.uniform1f(this.roughnessUniform, clamp01(this.material.roughness));
-    gl.uniform1f(this.metallicUniform, clamp01(this.material.metallic));
-    gl.uniform1f(this.pearlescenceUniform, clamp01(this.material.pearlescence));
-    gl.uniform1f(this.cloudinessUniform, clamp01(this.material.cloudiness));
-
+    gl.uniform2f(u('uScale'), this.scaleX, this.scaleY);
+    gl.uniform2f(u('uPointerUv'), clamp01(this.sample.sheenX * 0.5 + 0.5), clamp01(this.sample.sheenY * 0.5 + 0.5));
+    gl.uniform1f(u('uCompression'), this.sample.compression);
+    gl.uniform1f(u('uPressDepth'), this.sample.pressDepth);
+    gl.uniform2f(u('uStrainDirection'), this.sample.gestureX, this.sample.gestureY);
+    gl.uniform3f(u('uColorLow'), ...this.material.low);
+    gl.uniform3f(u('uColorHigh'), ...this.material.high);
+    gl.uniform3f(u('uSheenColor'), ...this.material.sheen);
+    gl.uniform3f(u('uRimColor'), ...this.material.rim);
+    gl.uniform1f(u('uFillingAmount'), this.fillingAmount);
+    gl.uniform1f(u('uFillingStyle'), this.fillingStyle);
+    gl.uniform1f(u('uFillProgress'), this.fillProgress);
+    gl.uniform1f(u('uMoldProgress'), this.moldProgress);
+    gl.uniform1f(u('uMaterialSeed'), this.material.seed);
+    gl.uniform1f(u('uTranslucency'), clamp01(this.material.translucency));
+    gl.uniform1f(u('uIridescence'), clamp01(this.material.iridescence));
+    gl.uniform1f(u('uRoughness'), clamp01(this.material.roughness));
+    gl.uniform1f(u('uMetallic'), clamp01(this.material.metallic));
+    gl.uniform1f(u('uPearlescence'), clamp01(this.material.pearlescence));
+    gl.uniform1f(u('uCloudiness'), clamp01(this.material.cloudiness));
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.triangleIndexBuffer);
-    gl.uniform1i(this.wireframePassUniform, 0);
-    gl.drawElements(gl.TRIANGLES, this.triangleIndices.length, gl.UNSIGNED_SHORT, 0);
-
+    gl.uniform1i(u('uWireframePass'), 0);
+    gl.drawElements(gl.TRIANGLES, this.simulation.triangleIndices.length, gl.UNSIGNED_SHORT, 0);
     if (this.wireframe) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.lineIndexBuffer);
-      gl.uniform1i(this.wireframePassUniform, 1);
-      gl.drawElements(gl.LINES, this.lineIndices.length, gl.UNSIGNED_SHORT, 0);
+      gl.uniform1i(u('uWireframePass'), 1);
+      gl.drawElements(gl.LINES, this.simulation.lineIndices.length, gl.UNSIGNED_SHORT, 0);
     }
-
     gl.bindVertexArray(null);
   }
 
@@ -886,7 +443,6 @@ export class SquishSurface {
   private publishMetrics(now: number): void {
     if (now - this.lastMetricsAt < 50) return;
     this.lastMetricsAt = now;
-
     const sorted = [...this.frameTimes].sort((a, b) => a - b);
     const p95Index = sorted.length === 0 ? 0 : Math.floor((sorted.length - 1) * 0.95);
     const p95FrameMs = sorted[p95Index] ?? 0;
@@ -898,18 +454,17 @@ export class SquishSurface {
       recentCount += 1;
     }
     const averageFrameMs = recentCount === 0 ? 0 : recentTotal / recentCount;
-
     this.onMetrics({
       fps: averageFrameMs > 0 ? 1000 / averageFrameMs : 0,
       p95FrameMs,
-      compression: this.compression,
-      pressDepth: this.pressDepth,
-      normalizedVelocity: this.normalizedVelocity,
-      maxDisplacement: this.maxDisplacement,
-      gestureX: this.gestureX,
-      gestureY: this.gestureY,
-      active: this.pointerId !== null,
-      squeezes: this.squeezes,
+      compression: this.sample.compression,
+      pressDepth: this.sample.pressDepth,
+      normalizedVelocity: this.sample.normalizedVelocity,
+      maxDisplacement: this.sample.maxDisplacement,
+      gestureX: this.sample.gestureX,
+      gestureY: this.sample.gestureY,
+      active: this.sample.active,
+      squeezes: this.sample.squeezes,
     });
   }
 }
