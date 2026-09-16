@@ -7,6 +7,7 @@ import {
   getMixInId,
   replayAppearanceDocument,
   type AppearanceDocumentV1,
+  type AppearancePoint,
 } from '../../sandbox/appearance';
 import { renderSurfaceDecor, type DecorDocumentV1 } from '../../sandbox/decor';
 import type { SquishFillingStyle, SquishMaterialStyle } from '../../squish/SquishSurface';
@@ -65,7 +66,7 @@ const getStyle = (paletteId: PaletteId, materialId: MaterialId): SquishMaterialS
   };
 };
 
-/** Isolated Phaser renderer; production stage, save and input integration are separate gates. */
+/** Phaser owns the WebGL2 context and frame clock. The old and new renderers share SquishSimulation. */
 export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private readonly simulation = new SquishSimulation(getShape('soft-square'), performance.now());
   private readonly packed = new Float32Array(this.simulation.vertices.length * 4);
@@ -81,6 +82,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private shapeId: ShapeId = 'soft-square';
   private paletteId: PaletteId = 'milk';
   private materialId: MaterialId = 'soft';
+  private materialStyle: SquishMaterialStyle | null = null;
   private fillingAmount = 0;
   private fillingStyle = 0;
   private fillProgress = 1;
@@ -106,12 +108,13 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.shapeId = id;
     this.simulation.setShape(getShape(id));
     if (this.gpu) this.uploadShapeField(this.gpu);
-    // Face positions depend on the canonical shape, not on a static texture.
     if (this.decorDocument) this.bakeAppearance();
   }
 
-  public setPalette(id: PaletteId): void { this.paletteId = id; }
-  public setMaterial(id: MaterialId): void { this.materialId = id; }
+  public setPalette(id: PaletteId): void { this.paletteId = id; this.materialStyle = null; }
+  public setMaterial(id: MaterialId): void { this.materialId = id; this.materialStyle = null; }
+  /** The actual SandboxApp passes the complete original material style, not a guessed preset. */
+  public setMaterialStyle(style: SquishMaterialStyle): void { this.materialStyle = style; }
   public setFillingAmount(amount: number): void { this.fillingAmount = clamp01(amount); }
   public setFillingStyle(style: SquishFillingStyle): void {
     this.fillingStyle = style === 'pearl' ? 2 : style === 'foam' ? 1 : 0;
@@ -119,6 +122,27 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public setFillProgress(progress: number): void { this.fillProgress = clamp01(progress); }
   public setMoldProgress(progress: number): void { this.moldProgress = clamp01(progress); }
   public setWireframe(enabled: boolean): void { this.wireframe = enabled; }
+  public resetTiming(): void { this.simulation.resetTiming(performance.now()); }
+
+  /** One canonical UV transform for the Extern and the studio input bridge. */
+  private localPoint(x: number, y: number): { x: number; y: number } {
+    const { width, height } = this.scene.scale;
+    const radius = Math.max(1, Math.min(width, height) * 0.34);
+    return { x: (x - width / 2) / radius, y: (height / 2 - y) / radius };
+  }
+
+  public pointToUv(x: number, y: number): AppearancePoint | null {
+    if (this.disposed) return null;
+    const point = this.localPoint(x, y);
+    return this.simulation.pointToUv(point.x, point.y);
+  }
+
+  public projectUvToCanvas(u: number, v: number): { x: number; y: number } {
+    const { width, height } = this.scene.scale;
+    const radius = Math.max(1, Math.min(width, height) * 0.34);
+    const point = this.simulation.projectUvToLocal(u, v);
+    return { x: width / 2 + point.x * radius, y: height / 2 - point.y * radius };
+  }
 
   /** Same replay pipeline as SandboxApp; no new appearance or decor format. */
   public setAppearanceDocuments(appearance: AppearanceDocumentV1 | null, decor: DecorDocumentV1 | null): void {
@@ -128,9 +152,20 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.bakeAppearance();
   }
 
+  /** Accepts SandboxApp's already-baked offscreen canvas, avoiding a second document/replay path. */
+  public setAppearanceCanvas(source: HTMLCanvasElement | null): void {
+    if (this.disposed) return;
+    this.appearanceDocument = null;
+    this.decorDocument = null;
+    this.appearanceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
+    this.appearanceEnabled = source !== null;
+    if (source) this.appearanceContext.drawImage(source, 0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
+    this.appearanceRevision += 1;
+  }
+
   private bakeAppearance(): void {
     replayAppearanceDocument(this.appearanceContext, this.appearanceDocument ?? createEmptyAppearanceDocument(), {
-      excludeMixIns: ['pearls'], // Rigid pearl sprites are deliberately a separate visible layer in the original game.
+      excludeMixIns: ['pearls'],
     });
     if (this.decorDocument) renderSurfaceDecor(this.appearanceContext, this.decorDocument, getShape(this.shapeId));
     const appearance = this.appearanceDocument;
@@ -140,13 +175,6 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       decor?.eyes || decor?.mouth || decor?.blush || decor?.stickers.length,
     );
     this.appearanceRevision += 1;
-  }
-
-  /** Phaser coordinates are pixels within the candidate's original-size canvas. */
-  private localPoint(x: number, y: number): { x: number; y: number } {
-    const { width, height } = this.scene.scale;
-    const radius = Math.max(1, Math.min(width, height) * 0.34);
-    return { x: (x - width / 2) / radius, y: (height / 2 - y) / radius };
   }
 
   public begin(pointer: Phaser.Input.Pointer): boolean {
@@ -190,8 +218,6 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.bindTexture(gl.TEXTURE_2D, gpu.shapeField);
     const previousAlignment = gl.getParameter(gl.UNPACK_ALIGNMENT) as number;
     const previousFlip = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL) as boolean;
-    // Phaser may have flipped a DOM texture earlier. These canonical R8 bytes are
-    // bottom-row-first; inheriting Phaser's flip turns the heart/paw upside down.
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
     try {
@@ -214,9 +240,12 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       const previousPremultiply = gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL) as boolean;
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.appearanceCanvas);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, previousFlip ? 1 : 0);
-      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, previousPremultiply ? 1 : 0);
+      try {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.appearanceCanvas);
+      } finally {
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, previousFlip ? 1 : 0);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, previousPremultiply ? 1 : 0);
+      }
     }
     gl.activeTexture(gl.TEXTURE0);
     this.uploadedAppearanceRevision = this.appearanceRevision;
@@ -292,7 +321,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.gpu ??= this.createGpu();
     const gpu = this.gpu;
     this.uploadAppearance(gpu);
-    const material = getStyle(this.paletteId, this.materialId);
+    const material = this.materialStyle ?? getStyle(this.paletteId, this.materialId);
     const sample = this.simulation.snapshot();
     for (let index = 0; index < this.simulation.vertices.length; index += 1) {
       const vertex = this.simulation.vertices[index]!;
@@ -302,7 +331,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       this.packed[offset + 2] = vertex.u;
       this.packed[offset + 3] = vertex.v;
     }
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null); // Only the base framebuffer is supported in this isolated candidate.
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.STENCIL_TEST);
