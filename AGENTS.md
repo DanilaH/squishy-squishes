@@ -8,9 +8,17 @@ Player path: `Library → New Squishy → Shape → Paint → Mix-ins → Mix �
 
 Read `docs/SANDBOX_PIVOT_01_MASTER_PLAN.md`, `docs/SANDBOX_PIVOT_01_ASSET_PLAN.md`, `docs/SANDBOX_PIVOT_S3_DECOR.md`, `docs/IMPLEMENTATION_ROADMAP.md` (its S5/S6 status labels are historical), `docs/PROJECT_DECISIONS.md`, and `docs/RUNTIME_ASSETS.md`. Historical recipe/XP documents are evidence only; do not treat their instructions as active.
 
+## Scoped Phaser migration authorization (implementation branches only)
+
+The user approved migration of the **existing** game to Phaser 4 first, **without** changing its current portrait-first responsive layout, graphics or gameplay. Landscape redesign and a portrait rotation gate are a separate future project. The reviewed migration roadmap is `docs/PHASER_LANDSCAPE_MIGRATION_PLAN.md` on the documentation branch / PR #32 (the filename is historical). This section overrides only the old blanket Phaser prohibition **for dedicated migration branches**; it does not make the experimental PR #31 production-ready or authorize a default-entrypoint switch.
+
+Required order: freeze regression fixtures and visual/interaction baselines; extract the single physics implementation while the old renderer still runs; build a separate Phaser candidate; port original GLSL/shape fields/appearance, gestures and full sandbox; validate saves, audio, analytics, ads and Yandex DRAFT; then cut over reversibly. Phaser owns the visible WebGL2 render context, scene frame loop and playfield input. Existing DOM Library/controls, portrait-first CSS, offscreen appearance baking and existing visible 2D decor layers may remain with explicit ownership; visible overlay updates must ultimately follow the Phaser frame, not an independent RAF. Preserve transparent compositing and drop shadows.
+
+Do not copy the bootstrap's landscape-only viewport preset or portrait gate. Generate its reference into an empty temporary directory, compare and adopt kit contracts selectively, reuse **one** existing Yandex platform runtime and V3 repository. Do not merge #31 wholesale, add a second game renderer, duplicate physics, change save/ad semantics or treat browser emulation as proof of real-device touch. Prior to a production switch, verify the exact candidate on a real phone and hosted Yandex DRAFT; retain a rollback build that reads unchanged V3 data.
+
 ## Non-negotiable runtime boundaries
 
-- Strict TypeScript, Vite, DOM/CSS interface and one raw WebGL2 `SquishSurface` with one parameterized shader and generic deformation. **Do not introduce Phaser**, React, another renderer or per-shape physics to adopt the kit's Phaser template.
+- Strict TypeScript, Vite, one deformable WebGL2 renderer, a single parameterized shader and generic deformation; do not introduce React, per-shape physics or a second on-screen WebGL game. On `main` before cutover, keep the existing raw `SquishSurface` and its entrypoint unchanged apart from independently gated refactors. Phaser integration is permitted only under the scoped migration workflow above.
 - `src/game/shapes.ts` owns the canonical boundary used by hit testing, field, UV rendering and previews. Content remains free to create; optional Ideas never gate it.
 - SaveState V3 and existing IDs/migration are durable. Library has 8 free slots and one optional rewarded expansion to 10. Do not alter save, reward or ad cadence for an infrastructure/asset task.
 - `PlatformRuntime.activity` remains the sole source of aggregated blockers. New audio/input/loading code must respect it.
@@ -20,7 +28,7 @@ Read `docs/SANDBOX_PIVOT_01_MASTER_PLAN.md`, `docs/SANDBOX_PIVOT_01_ASSET_PLAN.m
 
 Dependency: `@danilah/mini-games-kit` pinned to exact reviewed revision `797b5689767e9dc1059514e0446479e054bf1352`; do not track `main`. Start a kit review at `mini-games-kit/docs/API.md` and `docs/BOOTSTRAP.md` before adopting more exports.
 
-`bootstrap/yandex-phaser` is mandatory **for new Phaser games**, not a migration instruction for this existing WebGL game. Keep existing platform, storage, activity, QA and deploy wiring. Adapt compatible infrastructure only and document intentional deviations in `docs/PROJECT_DECISIONS.md`.
+`bootstrap/yandex-phaser` is mandatory **for new Phaser games** and the reference contract for this approved migration; it must not overwrite this nonempty repository. Keep existing platform, storage, activity, QA and deploy wiring until replacements pass behavioral equivalence. Document intentional deviations in `docs/PROJECT_DECISIONS.md`.
 
 Use `npm run asset:prepare -- <source> <public/assets/name.webp> [options]` for *new authored transparent art* (not procedural squishy surfaces). Retain masters and source/licensing metadata; record AVIF availability explicitly. Read `docs/RUNTIME_ASSETS.md` before adding any art. The browser-safe image-format helper in `src/app/runtimeAssets.ts` is an opt-in asset-loading seam, **not** permission to fetch session-required UI art after Game Ready.
 
