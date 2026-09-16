@@ -1,3 +1,4 @@
+import { mkdir, writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 import sharp from 'sharp';
 
@@ -25,7 +26,22 @@ const pixel = async (png: Buffer, x: number, y: number): Promise<readonly number
   return [data[0]!, data[1]!, data[2]!];
 };
 
-test('M3: Phaser sprites and text survive raw Squish Extern rendering on the same WebGL2 canvas', async ({ page }, info) => {
+const whiteTextPixels = async (png: Buffer, left: number): Promise<number> => {
+  const { data } = await sharp(png).extract({ left, top: 376, width: 96, height: 28 })
+    .removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  let white = 0;
+  for (let i = 0; i < data.length; i += 3) {
+    if (data[i]! > 245 && data[i + 1]! > 245 && data[i + 2]! > 245) white++;
+  }
+  return white;
+};
+
+const saveEvidence = async (name: string, png: Buffer): Promise<void> => {
+  await mkdir('phaser-candidate-evidence', { recursive: true });
+  await writeFile(`phaser-candidate-evidence/${name}.png`, png);
+};
+
+test('M3: Phaser sprites, canvas text and transparent overlay survive Squish Extern', async ({ page }, info) => {
   await page.setViewportSize({ width: 900, height: 660 });
   await page.goto('/phaser-compositing.html');
   await expect(page.locator('[data-compositing]')).toHaveAttribute('data-compositing', 'ready');
@@ -46,7 +62,10 @@ test('M3: Phaser sprites and text survive raw Squish Extern rendering on the sam
   expect(after[1], `After Extern sprite: ${after}`).toBeGreaterThan(150);
   expect(after[0], `After Extern sprite: ${after}`).toBeLessThan(90);
   expect(after[2], `After Extern sprite: ${after}`).toBeLessThan(90);
-  await expect(page.getByText('BEFORE', { exact: true })).toHaveCount(0); // Phaser canvas text, not DOM text.
+  await expect(page.getByText('BEFORE', { exact: true })).toHaveCount(0); // Canvas glyphs, not DOM.
+  expect(await whiteTextPixels(visible, 18), 'Phaser text before Extern must be visibly rendered').toBeGreaterThan(30);
+  expect(await whiteTextPixels(visible, 300), 'Phaser text after Extern must be visibly rendered').toBeGreaterThan(30);
+  await saveEvidence('compositing-overlay-visible', visible);
   await info.attach('phaser-compositing-overlay-visible', { body: visible, contentType: 'image/png' });
 
   await page.evaluate(() => window.__squishyCompositing!.setOverlayVisible(false));
@@ -57,10 +76,9 @@ test('M3: Phaser sprites and text survive raw Squish Extern rendering on the sam
     Math.abs(overlaidCenter[2]! - bareCenter[2]!),
   `Post-Extern transparent overlay must alter squishy pixels: ${overlaidCenter} vs ${bareCenter}`).toBeGreaterThan(45);
   // A single-channel center-vs-background threshold falsely rejected the real
-  // light-colored shader (18 against a threshold of 35). Distinct shape pixels
-  // below establish nonblank squishy rendering without depending on its palette.
+  // light-colored shader; shape-change pixels below prove nonblank rendering.
   expect((await page.evaluate(() => window.__squishyCompositing!.snapshot())).glError).toBe(0);
-  await info.attach('phaser-compositing-overlay-hidden', { body: noOverlay, contentType: 'image/png' });
+  await saveEvidence('compositing-overlay-hidden', noOverlay);
 
   await page.evaluate(() => window.__squishyCompositing!.setShape('paw'));
   const paw = await captureCanvas(page);
@@ -74,6 +92,8 @@ test('M3: Phaser sprites and text survive raw Squish Extern rendering on the sam
   }
   expect(changes, 'Distinct canonical shapes must change actual visible WebGL pixels').toBeGreaterThan(600);
   expect((await page.evaluate(() => window.__squishyCompositing!.snapshot())).glError).toBe(0);
+  await saveEvidence('compositing-paw', paw);
+  await saveEvidence('compositing-heart', heart);
   await info.attach('phaser-compositing-paw', { body: paw, contentType: 'image/png' });
   await info.attach('phaser-compositing-heart', { body: heart, contentType: 'image/png' });
   await page.evaluate(() => window.__squishyCompositing!.destroy());
