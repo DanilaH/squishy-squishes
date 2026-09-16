@@ -53,20 +53,32 @@ test('M3 parity: both real WebGL renderers receive identical data and render vis
   expect(newBox.width).toBe(420);
   expect(oldBox.height).toBe(420);
   expect(newBox.height).toBe(420);
+  let baseOld: Buffer | null = null;
+  let baseNew: Buffer | null = null;
 
   for (const kind of ['base', 'paint', 'decor', 'foam', 'pearl', 'holo', 'heart'] as const satisfies readonly Fixture[]) {
     await page.evaluate((name) => window.__squishyParity!.fixture(name), kind);
     await expect(page.locator('[data-parity]')).toHaveAttribute('data-parity-fixture', kind);
     await settle(page);
-    // Capture ONE browser-composited frame. Concurrent element screenshots can
-    // produce two separately cleared WebGL buffers and a false 0.000 error.
-    const frame = await page.screenshot();
+    // Capture ONE browser-composited frame: simultaneous element screenshots
+    // previously returned identically cleared WebGL buffers (false zero error).
+    const frame = await page.screenshot(kind === 'decor' || kind === 'heart'
+      ? { path: `phaser-candidate-evidence/parity-${kind}.png` }
+      : {});
     const crop = (box: NonNullable<typeof oldBox>): Promise<Buffer> => sharp(frame).extract({
       left: Math.round(box.x), top: Math.round(box.y), width: 420, height: 420,
     }).png().toBuffer();
     const [oldShot, newShot] = await Promise.all([crop(oldBox), crop(newBox)]);
     await ensureNonblank(oldShot, `${kind} original WebGL`);
     await ensureNonblank(newShot, `${kind} Phaser Extern`);
+    if (kind === 'base') {
+      baseOld = oldShot;
+      baseNew = newShot;
+    } else if (kind === 'paint' || kind === 'decor' || kind === 'heart') {
+      if (!baseOld || !baseNew) throw new Error('Base comparison frame is missing');
+      expect((await measure(baseOld, oldShot)).meanRgbError, `${kind}: original renderer must change`).toBeGreaterThan(0.2);
+      expect((await measure(baseNew, newShot)).meanRgbError, `${kind}: Phaser renderer must change`).toBeGreaterThan(0.2);
+    }
     const result = await measure(oldShot, newShot);
     console.log(`WebGL renderer parity ${kind}: mean RGB error=${result.meanRgbError.toFixed(3)}, large-pixel fraction=${result.largePixelFraction.toFixed(4)}`);
     expect(result.meanRgbError, `${kind}: wrong shape, UV, material or vertical orientation`).toBeLessThan(18);
