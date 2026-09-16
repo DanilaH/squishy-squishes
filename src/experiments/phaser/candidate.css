@@ -1,0 +1,42 @@
+/* Technical preview only: preserve the old portrait-first shell and glow geometry. */
+.phaser-candidate-playfield {
+  position: relative;
+  z-index: 2;
+  width: min(82vw, 430px);
+  height: min(82vw, 430px);
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  filter: drop-shadow(0 18px 24px rgba(77, 55, 96, .16));
+  touch-action: none;
+}
+.phaser-candidate-playfield canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.phaser-candidate-shell .sandbox-copy { pointer-events: none; }
+.phaser-candidate-shell .sandbox-controls {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+.phaser-candidate-shell .sandbox-panel { align-items: center; }
+.phaser-candidate-shell .sandbox-material-grid { grid-column: 1 / -1; }
+.phaser-candidate-shell .sandbox-panel--center { width: 100%; max-width: none; }
+.phaser-candidate-shell [data-candidate-shape][aria-pressed="true"],
+.phaser-candidate-shell [data-candidate-material][aria-pressed="true"] {
+  border-color: rgba(164, 94, 229, .65);
+  box-shadow: 0 0 0 3px rgba(164, 94, 229, .15);
+}
+.phaser-candidate-shell [data-candidate-material] { min-height: 38px; }
+.phaser-candidate-shell .sandbox-status { font-size: 10px; }
+@media (max-height: 740px) and (orientation: portrait) {
+  .phaser-candidate-playfield { width: min(68vw, 330px); height: min(68vw, 330px); }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .phaser-candidate-playfield { width: min(64vh, 280px); height: min(64vh, 280px); min-width: 220px; min-height: 220px; }
+  .phaser-candidate-shell .sandbox-controls { gap: 3px; }
+  .phaser-candidate-shell [data-candidate-material] { min-height: 34px; }
+}
