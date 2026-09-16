@@ -1,0 +1,1 @@
+The Phaser Yandex DRAFT archive is produced only by the `Phaser Yandex DRAFT` CI workflow. It is deliberately isolated from `dist-yandex` and live save keys. Use the archive uploaded by the CI run for the exact PR head and record its SHA256 when testing it on Yandex DRAFT. This package is not an approved production replacement: see `docs/PHASER_M6_DRAFT_HANDOFF.md`.
