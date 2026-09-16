@@ -109,13 +109,7 @@ const fixture = (kind: Fixture): void => {
   } : { v: 1, eyes: null, mouth: null, blush: false, stickers: [], accessory: null };
 
   old.setShape(getShape(shapeId));
-  // Diagnostic only: Phaser may retain a WebGL pixel-store flip from its own texture uploads.
-  // The original raw renderer uploads the shape-field bytes with the default flip disabled.
-  const previousFlip = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL) as boolean;
-  shell.dataset.unpackFlipBeforeShape = String(previousFlip);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
   squish.setShape(shapeId);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, previousFlip ? 1 : 0);
   old.setMaterial(styleFor(materialId));
   squish.setMaterial(materialId);
   squish.setPalette('milk');
