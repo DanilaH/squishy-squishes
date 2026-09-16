@@ -62,7 +62,7 @@ export class PhaserSquishSurface {
     const owner = this;
     class StudioScene extends Phaser.Scene {
       constructor() { super({ key: 'SquishyRealStudioScene' }); }
-      override create(): void {
+      create(): void {
         if (owner.disposed) return;
         owner.scene = this;
         const squish = new PhaserSquishCandidate(this, gl!);
@@ -101,7 +101,7 @@ export class PhaserSquishSurface {
       }
     }
     this.game = new Phaser.Game({
-      type: Phaser.WEBGL, parent: canvas.parentElement ?? undefined, canvas,
+      type: Phaser.WEBGL, parent: canvas.parentElement, canvas,
       context: gl as unknown as CanvasRenderingContext2D,
       width: Math.max(1, canvas.clientWidth), height: Math.max(1, canvas.clientHeight),
       transparent: true, scale: { mode: Phaser.Scale.RESIZE },
