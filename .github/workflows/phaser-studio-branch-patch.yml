@@ -1,0 +1,36 @@
+name: Temporary Phaser Studio Branch Patch
+
+on:
+  push:
+    branches:
+      - migration/phaser-real-studio
+
+permissions:
+  contents: write
+
+jobs:
+  branch-patch:
+    if: github.ref == 'refs/heads/migration/phaser-real-studio'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Apply exact-guarded source integration
+        run: node scripts/migration/patch-real-studio.mjs
+      - name: Commit changes to migration branch only
+        shell: bash
+        run: |
+          if git diff --quiet -- src/sandbox/SandboxApp.ts src/experiments/phaser/PhaserSquishCandidate.ts; then
+            echo 'Already integrated: no commit needed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/sandbox/SandboxApp.ts src/experiments/phaser/PhaserSquishCandidate.ts
+          git commit -m 'Connect original SandboxApp to opt-in Phaser renderer'
+          git push origin HEAD:migration/phaser-real-studio
