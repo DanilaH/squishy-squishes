@@ -98,6 +98,9 @@ const RU_MATERIALS: Readonly<Record<MaterialId, string>> = {
   soft: 'Мягкий',
   jelly: 'Желе',
   holo: 'Голографик',
+  marshmallow: 'Маршмеллоу',
+  pearl: 'Перламутр',
+  chrome: 'Хром',
 };
 
 const EN_MIXINS: Readonly<Record<MixInId, string>> = {
