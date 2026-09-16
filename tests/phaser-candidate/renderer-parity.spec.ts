@@ -31,6 +31,14 @@ const measure = async (first: Buffer, second: Buffer): Promise<{ meanRgbError: n
   return { meanRgbError: sum / (pixels * 3), largePixelFraction: large / pixels };
 };
 
+const ensureNonblank = async (png: Buffer, name: string): Promise<void> => {
+  const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const corner = 4 * (10 * info.width + 10);
+  const center = 4 * (210 * info.width + 210);
+  const contrast = Math.max(...[0, 1, 2].map((ch) => Math.abs(data[corner + ch]! - data[center + ch]!)));
+  expect(contrast, `${name} must contain an actually rendered squishy, not just a cleared canvas`).toBeGreaterThan(40);
+};
+
 test('M3 parity: both real WebGL renderers receive identical data and render visually comparable frames', async ({ page }, info) => {
   await page.setViewportSize({ width: 950, height: 620 });
   await page.goto('/phaser-parity.html');
@@ -38,28 +46,34 @@ test('M3 parity: both real WebGL renderers receive identical data and render vis
   await expect(page.locator('#parity-old')).toBeVisible();
   await expect(page.locator('#parity-new canvas')).toBeVisible();
   expect(await page.locator('canvas').count()).toBe(2);
-  const oldAttributes = await page.locator('#parity-old').evaluate((node) => (node as HTMLCanvasElement).getContext('webgl2')?.getContextAttributes()?.alpha);
-  const newAttributes = await page.locator('#parity-new canvas').evaluate((node) => (node as HTMLCanvasElement).getContext('webgl2')?.getContextAttributes()?.alpha);
-  expect(oldAttributes).toBe(true);
-  expect(newAttributes).toBe(true);
+  const oldBox = await page.locator('#parity-old').boundingBox();
+  const newBox = await page.locator('#parity-new canvas').boundingBox();
+  if (!oldBox || !newBox) throw new Error('Missing matching renderer viewports');
+  expect(oldBox.width).toBe(420);
+  expect(newBox.width).toBe(420);
+  expect(oldBox.height).toBe(420);
+  expect(newBox.height).toBe(420);
 
   for (const kind of ['base', 'paint', 'decor', 'foam', 'pearl', 'holo', 'heart'] as const satisfies readonly Fixture[]) {
     await page.evaluate((name) => window.__squishyParity!.fixture(name), kind);
     await expect(page.locator('[data-parity]')).toHaveAttribute('data-parity-fixture', kind);
     await settle(page);
-    const [oldShot, newShot] = await Promise.all([
-      page.locator('#parity-old').screenshot(),
-      page.locator('#parity-new canvas').screenshot(),
-    ]);
+    // Capture ONE browser-composited frame. Concurrent element screenshots can
+    // produce two separately cleared WebGL buffers and a false 0.000 error.
+    const frame = await page.screenshot();
+    const crop = (box: NonNullable<typeof oldBox>): Promise<Buffer> => sharp(frame).extract({
+      left: Math.round(box.x), top: Math.round(box.y), width: 420, height: 420,
+    }).png().toBuffer();
+    const [oldShot, newShot] = await Promise.all([crop(oldBox), crop(newBox)]);
+    await ensureNonblank(oldShot, `${kind} original WebGL`);
+    await ensureNonblank(newShot, `${kind} Phaser Extern`);
     const result = await measure(oldShot, newShot);
     console.log(`WebGL renderer parity ${kind}: mean RGB error=${result.meanRgbError.toFixed(3)}, large-pixel fraction=${result.largePixelFraction.toFixed(4)}`);
-    // Broad *regression* budget; review the actual reported metrics and screenshots
-    // before claiming pixel-exact parity or setting a production-level tolerance.
     expect(result.meanRgbError, `${kind}: wrong shape, UV, material or vertical orientation`).toBeLessThan(18);
     expect(result.largePixelFraction, `${kind}: large incorrect area`).toBeLessThan(0.16);
-    if (kind === 'decor') {
-      await info.attach('original-webgl-decor', { body: oldShot, contentType: 'image/png' });
-      await info.attach('phaser-extern-decor', { body: newShot, contentType: 'image/png' });
+    if (kind === 'decor' || kind === 'heart') {
+      await info.attach(`original-webgl-${kind}`, { body: oldShot, contentType: 'image/png' });
+      await info.attach(`phaser-extern-${kind}`, { body: newShot, contentType: 'image/png' });
     }
   }
   await page.evaluate(() => window.__squishyParity!.destroy());
