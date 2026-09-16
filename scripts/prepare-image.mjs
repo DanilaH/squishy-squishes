@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { access, mkdir, readFile, rm, stat } from 'node:fs/promises';
+import { access, mkdir, rm, stat } from 'node:fs/promises';
 import { dirname, extname, resolve } from 'node:path';
 import {
   buildAvifCompanions,
@@ -59,7 +59,9 @@ if (input === output || extname(output).toLowerCase() !== '.webp') {
 const avifOutput = output.replace(/\.webp$/i, '.avif');
 await access(input);
 if (!options.force) {
-  for (const candidate of options.webpOnly ? [output] : [output, avifOutput]) {
+  // Check both formats even in WebP-only mode: a previous AVIF must never be
+  // silently left behind with different pixels or dimensions.
+  for (const candidate of [output, avifOutput]) {
     try {
       await access(candidate);
       throw new Error(`Output already exists: ${candidate}. Pass --force only after reviewing the source.`);
@@ -78,7 +80,9 @@ const prepared = await prepareImageAssetFile(input, output, {
 }, { minTransparentPadding: Math.max(4, Math.floor(options.padding / 2)) });
 
 let avifBytes = null;
-if (!options.webpOnly) {
+if (options.webpOnly) {
+  if (options.force) await rm(avifOutput, { force: true });
+} else {
   // We currently encode the AVIF companion from canonical WebP. Retain the original
   // source so both formats can be regenerated from a lossless master when needed.
   const pair = [{ id: output, input: output, output: avifOutput, category: 'authored-art' }];
