@@ -446,6 +446,10 @@ export class VerticalSliceApp {
       seed: palette.seed,
       translucency: material.translucency,
       iridescence: material.iridescence,
+      roughness: material.roughness,
+      metallic: material.metallic,
+      pearlescence: material.pearlescence,
+      cloudiness: material.cloudiness,
     });
     this.renderer.setFillingStyle(filling.renderStyle);
 

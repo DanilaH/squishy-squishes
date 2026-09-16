@@ -170,12 +170,18 @@ const RU_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {
   soft: 'Мягкий',
   jelly: 'Желе',
   holo: 'Голографик',
+  marshmallow: 'Маршмеллоу',
+  pearl: 'Перламутр',
+  chrome: 'Хром',
 };
 
 const EN_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {
   soft: 'Soft',
   jelly: 'Jelly',
   holo: 'Holo',
+  marshmallow: 'Marshmallow',
+  pearl: 'Pearl',
+  chrome: 'Chrome',
 };
 
 interface PendingReplacement {

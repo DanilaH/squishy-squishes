@@ -11,6 +11,13 @@
   height: min(76vw, 390px);
 }
 
+/* Only Finish needs pointer passthrough where the inactive preview overlaps material
+   controls. Paint, Mix-ins and Decor deliberately handle pointer input on a canvas
+   which SquishSurface marks is-disabled (it only disables squeeze physics). */
+.sandbox-shell[data-stage="finish"] .sandbox-canvas.is-disabled {
+  pointer-events: none;
+}
+
 /* Give Jelly a saturated gel cue in the selector too; the old pale orb reinforced the
    same washed-out impression that the shader had. */
 .sandbox-material__orb--jelly {
@@ -84,3 +91,26 @@
   pointer-events: none;
 }
 .sandbox-rigid-mixin-layer[hidden] { display: none; }
+
+
+/* Material identity pack: distinct selector cues matching the single parametric shader. */
+.sandbox-material__orb--marshmallow {
+  background: radial-gradient(circle at 34% 30%, #fffdf8 0 18%, #f6eadf 48%, #e4d4c7 100%);
+  border: 1px solid rgba(133, 104, 93, .10);
+  box-shadow: inset -5px -6px 11px rgba(121, 91, 81, .08), inset 5px 5px 9px rgba(255,255,255,.64);
+}
+.sandbox-material__orb--pearl {
+  background: linear-gradient(135deg, #ead8f3 0%, #fff8e9 36%, #d9f2ed 65%, #f6dce8 100%);
+  border: 1px solid rgba(147, 120, 159, .13);
+  box-shadow: inset -7px -7px 12px rgba(111, 93, 132, .12), inset 6px 6px 10px rgba(255,255,255,.78);
+}
+.sandbox-material__orb--chrome {
+  background: linear-gradient(145deg, #fbfdff 0 14%, #676e78 30%, #f9fbfd 47%, #454b54 66%, #e7edf3 86%, #7f8790 100%);
+  border: 1px solid rgba(54, 60, 68, .18);
+  box-shadow: inset -3px -4px 8px rgba(17, 21, 26, .28), inset 4px 4px 8px rgba(255,255,255,.72), 0 2px 7px rgba(56, 65, 76, .15);
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .sandbox-material-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .sandbox-material { gap: 4px; font-size: 10px !important; }
+  .sandbox-material__orb { width: 24px; height: 24px; }
+}

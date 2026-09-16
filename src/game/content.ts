@@ -1,7 +1,7 @@
 import { SELECTOR_SHAPES, getShape, type ShapeId } from './shapes';
 
 export type PaletteId = 'grape' | 'strawberry' | 'lime' | 'aqua' | 'prism' | 'milk' | 'peach';
-export type MaterialId = 'soft' | 'jelly' | 'holo';
+export type MaterialId = 'soft' | 'jelly' | 'holo' | 'marshmallow' | 'pearl' | 'chrome';
 export type FillingId = 'smooth' | 'beads' | 'pearls';
 export type FillingRenderStyle = 'none' | 'foam' | 'pearl';
 
@@ -24,6 +24,10 @@ export interface MaterialSpec {
   readonly label: string;
   readonly translucency: number;
   readonly iridescence: number;
+  readonly roughness: number;
+  readonly metallic: number;
+  readonly pearlescence: number;
+  readonly cloudiness: number;
 }
 
 export interface FillingSpec {
@@ -128,9 +132,12 @@ export const PALETTES: readonly PaletteSpec[] = [
 ] as const;
 
 export const MATERIALS: readonly MaterialSpec[] = [
-  { id: 'soft', label: 'Soft', translucency: 0, iridescence: 0 },
-  { id: 'jelly', label: 'Jelly', translucency: 0.72, iridescence: 0.05 },
-  { id: 'holo', label: 'Holographic', translucency: 0.16, iridescence: 0.92 },
+  { id: 'soft', label: 'Soft', translucency: 0, iridescence: 0, roughness: 0.42, metallic: 0, pearlescence: 0, cloudiness: 0.05 },
+  { id: 'jelly', label: 'Jelly', translucency: 0.72, iridescence: 0.05, roughness: 0.16, metallic: 0, pearlescence: 0.04, cloudiness: 0.02 },
+  { id: 'holo', label: 'Holographic', translucency: 0.16, iridescence: 0.92, roughness: 0.20, metallic: 0.08, pearlescence: 0.18, cloudiness: 0 },
+  { id: 'marshmallow', label: 'Marshmallow', translucency: 0.03, iridescence: 0, roughness: 0.92, metallic: 0, pearlescence: 0.03, cloudiness: 0.62 },
+  { id: 'pearl', label: 'Pearl', translucency: 0.08, iridescence: 0.20, roughness: 0.30, metallic: 0.08, pearlescence: 1.0, cloudiness: 0.08 },
+  { id: 'chrome', label: 'Chrome', translucency: 0, iridescence: 0.05, roughness: 0.06, metallic: 0.96, pearlescence: 0.08, cloudiness: 0 },
 ] as const;
 
 export const FILLINGS: readonly FillingSpec[] = [
