@@ -1,0 +1,158 @@
+name: Apply Materials and Paint Patch
+
+on:
+  push:
+    branches:
+      - sandbox-polish-materials-02
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'Add tactile material identities and paint-entry drawing'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Apply focused patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, found {count}')
+              file.write_text(text.replace(old, new, 1))
+
+          # Material model: keep one shader and expose orthogonal identity parameters.
+          replace_once(
+              'src/game/content.ts',
+              "export type MaterialId = 'soft' | 'jelly' | 'holo';",
+              "export type MaterialId = 'soft' | 'jelly' | 'holo' | 'marshmallow' | 'pearl' | 'chrome';",
+          )
+          replace_once(
+              'src/game/content.ts',
+              '''export interface MaterialSpec {\n  readonly id: MaterialId;\n  readonly label: string;\n  readonly translucency: number;\n  readonly iridescence: number;\n}''',
+              '''export interface MaterialSpec {\n  readonly id: MaterialId;\n  readonly label: string;\n  readonly translucency: number;\n  readonly iridescence: number;\n  readonly roughness: number;\n  readonly metallic: number;\n  readonly pearlescence: number;\n  readonly cloudiness: number;\n}''',
+          )
+          replace_once(
+              'src/game/content.ts',
+              '''export const MATERIALS: readonly MaterialSpec[] = [\n  { id: 'soft', label: 'Soft', translucency: 0, iridescence: 0 },\n  { id: 'jelly', label: 'Jelly', translucency: 0.72, iridescence: 0.05 },\n  { id: 'holo', label: 'Holographic', translucency: 0.16, iridescence: 0.92 },\n] as const;''',
+              '''export const MATERIALS: readonly MaterialSpec[] = [\n  { id: 'soft', label: 'Soft', translucency: 0, iridescence: 0, roughness: 0.42, metallic: 0, pearlescence: 0, cloudiness: 0.05 },\n  { id: 'jelly', label: 'Jelly', translucency: 0.72, iridescence: 0.05, roughness: 0.16, metallic: 0, pearlescence: 0.04, cloudiness: 0.02 },\n  { id: 'holo', label: 'Holographic', translucency: 0.16, iridescence: 0.92, roughness: 0.20, metallic: 0.08, pearlescence: 0.18, cloudiness: 0 },\n  { id: 'marshmallow', label: 'Marshmallow', translucency: 0.03, iridescence: 0, roughness: 0.92, metallic: 0, pearlescence: 0.03, cloudiness: 0.62 },\n  { id: 'pearl', label: 'Pearl', translucency: 0.10, iridescence: 0.10, roughness: 0.34, metallic: 0.10, pearlescence: 0.90, cloudiness: 0.10 },\n  { id: 'chrome', label: 'Chrome', translucency: 0, iridescence: 0.05, roughness: 0.06, metallic: 0.96, pearlescence: 0.08, cloudiness: 0 },\n] as const;''',
+          )
+
+          # Sandbox copy, selector labels, material transfer, and paint entry behavior.
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''  readonly soft: string;\n  readonly jelly: string;\n  readonly holo: string;''',
+              '''  readonly soft: string;\n  readonly jelly: string;\n  readonly holo: string;\n  readonly marshmallow: string;\n  readonly pearl: string;\n  readonly chrome: string;''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''    soft: 'Soft',\n    jelly: 'Jelly',\n    holo: 'Holo',''',
+              '''    soft: 'Soft',\n    jelly: 'Jelly',\n    holo: 'Holo',\n    marshmallow: 'Marshmallow',\n    pearl: 'Pearl',\n    chrome: 'Chrome',''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''    soft: 'Мягкий',\n    jelly: 'Желе',\n    holo: 'Голографик',''',
+              '''    soft: 'Мягкий',\n    jelly: 'Желе',\n    holo: 'Голографик',\n    marshmallow: 'Маршмеллоу',\n    pearl: 'Перламутр',\n    chrome: 'Хром',''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''        <span class="sandbox-material__orb sandbox-material__orb--${material.id}"></span>\n        <span>${material.id === 'soft' ? this.copy.soft : material.id === 'jelly' ? this.copy.jelly : this.copy.holo}</span>''',
+              '''        <span class="sandbox-material__orb sandbox-material__orb--${material.id}"></span>\n        <span>${this.copy[material.id]}</span>''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''      seed: palette.seed,\n      translucency: material.translucency,\n      iridescence: material.iridescence,''',
+              '''      seed: palette.seed,\n      translucency: material.translucency,\n      iridescence: material.iridescence,\n      roughness: material.roughness,\n      metallic: material.metallic,\n      pearlescence: material.pearlescence,\n      cloudiness: material.cloudiness,''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''    if (this.stage === 'paint') {\n      if (this.authoredPointerId !== null) return;\n      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);\n      if (!point) return;\n      this.authoredPointerId = event.pointerId;\n      this.authoredPoints = [point];\n      this.authoredStrokeMode = this.paintTool === 'erase' ? 1 : 0;\n      this.authoredStrokeColor = this.paintColor;\n      drawAppearanceStamp(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, point);\n      this.scheduleTextureUpload();\n      try { this.canvas.setPointerCapture(event.pointerId); } catch { /* unavailable */ }\n      event.preventDefault();\n      return;\n    }''',
+              '''    if (this.stage === 'paint') {\n      if (this.authoredPointerId !== null) return;\n      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);\n      this.authoredPointerId = event.pointerId;\n      this.authoredPoints = [];\n      this.authoredStrokeMode = this.paintTool === 'erase' ? 1 : 0;\n      this.authoredStrokeColor = this.paintColor;\n      if (point) {\n        this.authoredPoints = [point];\n        drawAppearanceStamp(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, point);\n        this.scheduleTextureUpload();\n      }\n      try { this.canvas.setPointerCapture(event.pointerId); } catch { /* unavailable */ }\n      event.preventDefault();\n      return;\n    }''',
+          )
+          replace_once(
+              'src/sandbox/SandboxApp.ts',
+              '''    if (this.stage === 'paint' && event.pointerId === this.authoredPointerId) {\n      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);\n      if (!point) return;\n      const previous = this.authoredPoints[this.authoredPoints.length - 1];\n      if (!previous || Math.hypot(point.u - previous.u, point.v - previous.v) < 0.004) return;\n      drawAppearanceSegment(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, previous, point);\n      this.authoredPoints.push(point);\n      this.scheduleTextureUpload();\n      event.preventDefault();\n      return;\n    }''',
+              '''    if (this.stage === 'paint' && event.pointerId === this.authoredPointerId) {\n      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);\n      if (!point) {\n        if (this.authoredPoints.length > 0) {\n          this.finishPaintStroke();\n          this.authoredPoints = [];\n        }\n        return;\n      }\n      const previous = this.authoredPoints[this.authoredPoints.length - 1];\n      if (!previous) {\n        this.authoredPoints = [point];\n        drawAppearanceStamp(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, point);\n        this.scheduleTextureUpload();\n        event.preventDefault();\n        return;\n      }\n      if (Math.hypot(point.u - previous.u, point.v - previous.v) < 0.004) return;\n      drawAppearanceSegment(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, previous, point);\n      this.authoredPoints.push(point);\n      this.scheduleTextureUpload();\n      event.preventDefault();\n      return;\n    }''',
+          )
+
+          # Renderer style and uniforms.
+          replace_once(
+              'src/squish/SquishSurface.ts',
+              '''  seed: number;\n  translucency: number;\n  iridescence: number;\n}''',
+              '''  seed: number;\n  translucency: number;\n  iridescence: number;\n  roughness: number;\n  metallic: number;\n  pearlescence: number;\n  cloudiness: number;\n}''',
+          )
+          replace_once(
+              'src/squish/SquishSurface.ts',
+              '''  seed: 0.17,\n  translucency: 0,\n  iridescence: 0,\n};''',
+              '''  seed: 0.17,\n  translucency: 0,\n  iridescence: 0,\n  roughness: 0.42,\n  metallic: 0,\n  pearlescence: 0,\n  cloudiness: 0.05,\n};''',
+          )
+          replace_once(
+              'src/squish/SquishSurface.ts',
+              '''  private readonly translucencyUniform: WebGLUniformLocation;\n  private readonly iridescenceUniform: WebGLUniformLocation;\n  private readonly wireframePassUniform: WebGLUniformLocation;''',
+              '''  private readonly translucencyUniform: WebGLUniformLocation;\n  private readonly iridescenceUniform: WebGLUniformLocation;\n  private readonly roughnessUniform: WebGLUniformLocation;\n  private readonly metallicUniform: WebGLUniformLocation;\n  private readonly pearlescenceUniform: WebGLUniformLocation;\n  private readonly cloudinessUniform: WebGLUniformLocation;\n  private readonly wireframePassUniform: WebGLUniformLocation;''',
+          )
+          replace_once(
+              'src/squish/SquishSurface.ts',
+              '''    this.translucencyUniform = requireUniform(gl, this.program, 'uTranslucency');\n    this.iridescenceUniform = requireUniform(gl, this.program, 'uIridescence');\n    this.wireframePassUniform = requireUniform(gl, this.program, 'uWireframePass');''',
+              '''    this.translucencyUniform = requireUniform(gl, this.program, 'uTranslucency');\n    this.iridescenceUniform = requireUniform(gl, this.program, 'uIridescence');\n    this.roughnessUniform = requireUniform(gl, this.program, 'uRoughness');\n    this.metallicUniform = requireUniform(gl, this.program, 'uMetallic');\n    this.pearlescenceUniform = requireUniform(gl, this.program, 'uPearlescence');\n    this.cloudinessUniform = requireUniform(gl, this.program, 'uCloudiness');\n    this.wireframePassUniform = requireUniform(gl, this.program, 'uWireframePass');''',
+          )
+          replace_once(
+              'src/squish/SquishSurface.ts',
+              '''    gl.uniform1f(this.translucencyUniform, clamp01(this.material.translucency));\n    gl.uniform1f(this.iridescenceUniform, clamp01(this.material.iridescence));\n\n    gl.bindVertexArray(this.vao);''',
+              '''    gl.uniform1f(this.translucencyUniform, clamp01(this.material.translucency));\n    gl.uniform1f(this.iridescenceUniform, clamp01(this.material.iridescence));\n    gl.uniform1f(this.roughnessUniform, clamp01(this.material.roughness));\n    gl.uniform1f(this.metallicUniform, clamp01(this.material.metallic));\n    gl.uniform1f(this.pearlescenceUniform, clamp01(this.material.pearlescence));\n    gl.uniform1f(this.cloudinessUniform, clamp01(this.material.cloudiness));\n\n    gl.bindVertexArray(this.vao);''',
+          )
+
+          # Shader identities remain parametric: no material-id branches and no second renderer.
+          replace_once(
+              'src/squish/shaders.ts',
+              '''uniform float uTranslucency;\nuniform float uIridescence;\nuniform bool uWireframePass;''',
+              '''uniform float uTranslucency;\nuniform float uIridescence;\nuniform float uRoughness;\nuniform float uMetallic;\nuniform float uPearlescence;\nuniform float uCloudiness;\nuniform bool uWireframePass;''',
+          )
+          replace_once(
+              'src/squish/shaders.ts',
+              '''  float iridescence = clamp(uIridescence, 0.0, 1.0);\n  float spectralPhase = vUv.x * 0.72 + vUv.y * 0.48 + uMaterialSeed * 0.61 + uCompression * 0.18;\n  vec3 spectral = spectralColor(spectralPhase);\n  float spectralBand = 0.5 + 0.5 * sin((vUv.x * 1.35 - vUv.y * 0.82 + uMaterialSeed) * 6.2831853);\n  float spectralWeight = iridescence * (0.12 + spectralBand * 0.24 + edge * 0.12);\n  base = mix(base, spectral, spectralWeight);''',
+              '''  float roughness = clamp(uRoughness, 0.0, 1.0);\n  float cloudiness = clamp(uCloudiness, 0.0, 1.0);\n  float cloudA = 0.5 + 0.5 * sin((vUv.x * 2.2 + vUv.y * 1.45 + uMaterialSeed * 1.7) * 6.2831853);\n  float cloudB = 0.5 + 0.5 * sin((vUv.x * 4.7 - vUv.y * 3.1 + uMaterialSeed * 2.9) * 6.2831853);\n  float cloudField = cloudA * 0.62 + cloudB * 0.38;\n  vec3 cloudyBase = mix(base, uSheenColor, 0.10 + cloudField * 0.12);\n  base = mix(base, cloudyBase, cloudiness * (0.66 + edge * 0.10));\n\n  float iridescence = clamp(uIridescence, 0.0, 1.0);\n  float spectralPhase = vUv.x * 0.72 + vUv.y * 0.48 + uMaterialSeed * 0.61 + uCompression * 0.18;\n  vec3 spectral = spectralColor(spectralPhase);\n  float spectralBand = 0.5 + 0.5 * sin((vUv.x * 1.35 - vUv.y * 0.82 + uMaterialSeed) * 6.2831853);\n  float spectralWeight = iridescence * (0.12 + spectralBand * 0.24 + edge * 0.12);\n  base = mix(base, spectral, spectralWeight);\n\n  float pearlescence = clamp(uPearlescence, 0.0, 1.0);\n  float pearlBand = 0.5 + 0.5 * sin((vUv.x * 0.78 + vUv.y * 0.55 + uMaterialSeed * 0.71 + uCompression * 0.06) * 6.2831853);\n  vec3 pearlSpectrum = mix(vec3(1.0), spectralColor(spectralPhase * 0.42 + 0.17), 0.30);\n  vec3 pearlSurface = base * (0.88 + pearlBand * 0.05) + pearlSpectrum * (0.08 + pearlBand * 0.08);\n  base = mix(base, pearlSurface, pearlescence * (0.58 + edge * 0.16));\n\n  float metallic = clamp(uMetallic, 0.0, 1.0);\n  float metalBand = 0.5 + 0.5 * sin((vUv.y * 1.18 + vUv.x * 0.34 + uMaterialSeed * 0.53 + uCompression * 0.12) * 6.2831853);\n  float metalSharp = pow(metalBand, mix(9.0, 2.2, roughness));\n  vec3 metalDark = base * 0.30;\n  vec3 metalLight = mix(uSheenColor, vec3(1.0), 0.48);\n  vec3 metalSurface = mix(metalDark, metalLight, 0.10 + metalSharp * 0.90);\n  base = mix(base, metalSurface, metallic * 0.88);''',
+          )
+          replace_once(
+              'src/squish/shaders.ts',
+              '''  float sheenMetric = mix(isotropicMetric, strainedMetric, directionAmount * 0.78);\n  float sheen = exp(-sheenMetric);\n  sheen *= 0.09 + uCompression * 0.17 + uPressDepth * 0.035;\n  base += uSheenColor * sheen;''',
+              '''  float sheenMetric = mix(isotropicMetric, strainedMetric, directionAmount * 0.78);\n  sheenMetric *= mix(1.45, 0.58, roughness);\n  float sheen = exp(-sheenMetric);\n  sheen *= (0.09 + uCompression * 0.17 + uPressDepth * 0.035) * mix(1.14, 0.42, roughness);\n  sheen *= 1.0 + metallic * 0.85 + pearlescence * 0.20;\n  base += uSheenColor * sheen;''',
+          )
+
+          # Saved library thumbnails should preserve the chosen material identity too.
+          replace_once(
+              'src/sandbox/libraryThumbnail.ts',
+              '''  if (materialId === 'jelly') return 'rgba(139, 229, 222, 0.76)';\n  return '#f2dcae';''',
+              '''  if (materialId === 'jelly') return 'rgba(139, 229, 222, 0.76)';\n  if (materialId === 'marshmallow') return '#f8eee5';\n  if (materialId === 'pearl') {\n    const gradient = context.createLinearGradient(0, height, width, 0);\n    gradient.addColorStop(0, '#e9d7f4');\n    gradient.addColorStop(0.45, '#fff6e8');\n    gradient.addColorStop(0.72, '#d8f2ee');\n    gradient.addColorStop(1, '#f5d9e8');\n    return gradient;\n  }\n  if (materialId === 'chrome') {\n    const gradient = context.createLinearGradient(0, 0, width, height);\n    gradient.addColorStop(0, '#f8fbff');\n    gradient.addColorStop(0.22, '#6d7480');\n    gradient.addColorStop(0.46, '#fdfefe');\n    gradient.addColorStop(0.67, '#474e58');\n    gradient.addColorStop(1, '#dce3eb');\n    return gradient;\n  }\n  return '#f2dcae';''',
+          )
+
+          css = Path('src/sandbox-polish-01.css')
+          css.write_text(css.read_text() + '''\n\n/* Material identity pack: distinct selector cues matching the single parametric shader. */\n.sandbox-material__orb--marshmallow {\n  background: radial-gradient(circle at 34% 30%, #fffdf8 0 18%, #f6eadf 48%, #e4d4c7 100%);\n  border: 1px solid rgba(133, 104, 93, .10);\n  box-shadow: inset -5px -6px 11px rgba(121, 91, 81, .08), inset 5px 5px 9px rgba(255,255,255,.64);\n}\n.sandbox-material__orb--pearl {\n  background: linear-gradient(135deg, #ead8f3 0%, #fff8e9 36%, #d9f2ed 65%, #f6dce8 100%);\n  border: 1px solid rgba(147, 120, 159, .13);\n  box-shadow: inset -7px -7px 12px rgba(111, 93, 132, .12), inset 6px 6px 10px rgba(255,255,255,.78);\n}\n.sandbox-material__orb--chrome {\n  background: linear-gradient(145deg, #fbfdff 0 14%, #676e78 30%, #f9fbfd 47%, #454b54 66%, #e7edf3 86%, #7f8790 100%);\n  border: 1px solid rgba(54, 60, 68, .18);\n  box-shadow: inset -3px -4px 8px rgba(17, 21, 26, .28), inset 4px 4px 8px rgba(255,255,255,.72), 0 2px 7px rgba(56, 65, 76, .15);\n}\n@media (max-height: 520px) and (orientation: landscape) {\n  .sandbox-material-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }\n  .sandbox-material { gap: 4px; font-size: 10px !important; }\n  .sandbox-material__orb { width: 24px; height: 24px; }\n}\n''')
+
+          # Permanent browser QA for both requested behaviors.
+          Path('tests/release/materials-paint.spec.ts').write_text('''import { expect, test, type Page } from '@playwright/test';\n\nconst PAGES_URL = '/squishy-squishes/';\n\nconst freshMaker = async (page: Page): Promise<ReturnType<Page['locator']>> => {\n  await page.goto(PAGES_URL);\n  await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });\n  await page.reload();\n  await page.locator('[data-library-new]').first().click();\n  const shell = page.locator('[data-sandbox-app]');\n  await expect(shell).toHaveAttribute('data-stage', 'shape');\n  await page.locator('.sandbox-shape[data-shape="soft-square"]').click();\n  await page.locator('[data-action="shape-continue"]').click();\n  await expect(shell).toHaveAttribute('data-stage', 'paint');\n  return shell;\n};\n\nconst canvasBox = async (page: Page) => {\n  const box = await page.locator('[data-sandbox-canvas]').boundingBox();\n  if (!box) throw new Error('Missing sandbox canvas');\n  return box;\n};\n\nconst completeMix = async (page: Page): Promise<void> => {\n  const box = await canvasBox(page);\n  const cx = box.x + box.width * 0.5;\n  const cy = box.y + box.height * 0.5;\n  const points = [[cx + 70, cy], [cx, cy - 62], [cx - 70, cy], [cx, cy + 62]] as const;\n  await page.mouse.move(cx, cy);\n  await page.mouse.down();\n  for (let index = 0; index < 38; index += 1) {\n    const [x, y] = points[index % points.length]!;\n    await page.mouse.move(x, y, { steps: 2 });\n  }\n  await page.mouse.up();\n  await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-mix-progress'))).toBeGreaterThanOrEqual(1);\n};\n\ntest('paint pointer can arm outside the squishy and begin drawing when it enters the surface', async ({ page }) => {\n  await page.setViewportSize({ width: 1180, height: 760 });\n  const shell = await freshMaker(page);\n  const box = await canvasBox(page);\n  const outsideX = box.x + box.width * 0.07;\n  const centerX = box.x + box.width * 0.5;\n  const centerY = box.y + box.height * 0.5;\n\n  await page.mouse.move(outsideX, centerY);\n  await page.mouse.down();\n  await page.mouse.move(centerX - 30, centerY, { steps: 8 });\n  await page.mouse.move(centerX + 28, centerY + 12, { steps: 5 });\n  await page.mouse.up();\n\n  await expect(shell).toHaveAttribute('data-paint-strokes', '1');\n});\n\ntest('finish exposes six material identities and a new material persists through Save V3', async ({ page }) => {\n  await page.setViewportSize({ width: 1180, height: 760 });\n  const shell = await freshMaker(page);\n  await page.locator('[data-action="paint-continue"]').click();\n  await page.locator('[data-action="mixin-continue"]').click();\n  await expect(shell).toHaveAttribute('data-stage', 'mix');\n  await completeMix(page);\n  await page.locator('[data-action="mix-continue"]').click();\n  await page.locator('[data-action="decor-continue"]').click();\n  await expect(shell).toHaveAttribute('data-stage', 'finish');\n\n  const ids = ['soft', 'jelly', 'holo', 'marshmallow', 'pearl', 'chrome'] as const;\n  await expect(page.locator('.sandbox-material')).toHaveCount(ids.length);\n  for (const id of ids) {\n    await page.locator(`.sandbox-material[data-material="${id}"]`).click();\n    await expect(shell).toHaveAttribute('data-material', id);\n  }\n\n  await page.locator('.sandbox-material[data-material="chrome"]').click();\n  await page.locator('[data-action="save"]').click();\n  await expect(shell).toHaveAttribute('data-stage', 'squeeze');\n  const savedMaterial = await page.evaluate(() => {\n    const value = JSON.parse(localStorage.getItem('squishy.save.v3') ?? '{}') as { library?: Array<{ materialId?: string }> };\n    return value.library?.[0]?.materialId ?? null;\n  });\n  expect(savedMaterial).toBe('chrome');\n});\n''')
+          PY
+      - name: Validate build
+        run: |
+          npm install
+          npm run build
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/game/content.ts src/sandbox/SandboxApp.ts src/squish/SquishSurface.ts src/squish/shaders.ts src/sandbox/libraryThumbnail.ts src/sandbox-polish-01.css tests/release/materials-paint.spec.ts
+          git commit -m "Add tactile material identities and paint-entry drawing"
+          git push origin HEAD:sandbox-polish-materials-02
