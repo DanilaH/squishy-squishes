@@ -79,7 +79,8 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     expect(saved).toMatchObject({ version: 3, library: [{ shapeId: 'heart', materialId: 'holo' }] });
     expect(saved.library[0].appearance.strokes).toHaveLength(1);
     expect(saved.library[0].appearance.mixins).toHaveLength(1);
-    expect(saved.library[0].decor.stickers).toHaveLength(1);
+    // V3 serializes decor as a compact document: `s` stores sticker tuples.
+    expect(saved.library[0].decor.s).toHaveLength(1);
 
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
