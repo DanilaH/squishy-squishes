@@ -1,12 +1,15 @@
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
-export default defineConfig(({ mode }) => ({
-  base: mode === 'yandex' ? './' : '/squishy-squishes/',
-  build: {
-    outDir: mode === 'yandex' ? 'dist-yandex' : 'dist',
-    sourcemap: false,
-  },
-  server: {
-    host: true,
-  },
-}));
+export default defineConfig(({ mode }) => {
+  const spike = mode === 'phaser-spike';
+  return {
+    base: mode === 'yandex' || spike ? './' : '/squishy-squishes/',
+    build: {
+      outDir: spike ? 'dist-phaser-spike' : mode === 'yandex' ? 'dist-yandex' : 'dist',
+      sourcemap: false,
+      ...(spike ? { rollupOptions: { input: resolve(import.meta.dirname, 'phaser-spike.html') } } : {}),
+    },
+    server: { host: true },
+  };
+});
