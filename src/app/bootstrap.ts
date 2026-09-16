@@ -1,3 +1,4 @@
+import type { StorageAdapter } from '@danilah/mini-games-kit/platform';
 import { installReleaseSession } from '../platform/releaseSession';
 import { createSquishyPlatformRuntime } from '../platform/runtime';
 import {
@@ -17,7 +18,7 @@ import {
   grantS5ShelfExpansion,
   hasS5ShelfExpansion,
 } from '../platform/saveV3Rewards';
-import { SandboxLibraryApp } from '../sandbox/SandboxLibraryApp';
+import { SandboxLibraryApp, type SandboxLibraryAppOptions } from '../sandbox/SandboxLibraryApp';
 import { getSquishyIdea, matchSquishyIdea } from '../sandbox/ideas';
 import type { SandboxLanguage } from '../sandbox/SandboxApp';
 import { getStartupSnapshot, markStartup } from './startup';
@@ -26,12 +27,28 @@ export interface SquishyAppHandle {
   dispose(): Promise<void>;
 }
 
+/** The normal entry supplies no options. Candidate-only ports are injected at their own entry. */
+export interface SquishyBootstrapOptions {
+  readonly makerRendererOptions?: SandboxLibraryAppOptions['makerRendererOptions'];
+  /** Namespace every V2/V3/settings read and write in the real platform storage. */
+  readonly storageNamespace?: string;
+}
+
 const reportError = (scope: string, error: unknown): void => {
   console.error(`[squishy:${scope}]`, error);
 };
 
-export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<SquishyAppHandle> => {
+export const bootstrapSquishyApp = async (
+  root: HTMLDivElement,
+  options: SquishyBootstrapOptions = {},
+): Promise<SquishyAppHandle> => {
   const runtime = await createSquishyPlatformRuntime();
+  const namespace = options.storageNamespace;
+  const storage: StorageAdapter = namespace === undefined ? runtime.storage : {
+    getItem: (key) => runtime.storage.getItem(namespace + key),
+    setItem: (key, value) => runtime.storage.setItem(namespace + key, value),
+    removeItem: (key) => runtime.storage.removeItem(namespace + key),
+  };
   markStartup('platformReady');
   document.body.dataset.releasePlatform = runtime.kind;
   document.body.dataset.releaseBuild = import.meta.env.PROD ? 'production' : 'development';
@@ -41,7 +58,7 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     && new URLSearchParams(window.location.search).get('appearanceProbe') === '1'
   ) {
     const { installAppearanceProbe } = await import('../debug/installAppearanceProbe');
-    const removeAppearanceProbe = await installAppearanceProbe(root, runtime.storage);
+    const removeAppearanceProbe = await installAppearanceProbe(root, storage);
     markStartup('saveReady');
     markStartup('shellRendered');
     runtime.activity.setGameplayDesired(true);
@@ -59,11 +76,11 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     };
   }
 
-  const saveRepository = createSaveV3Repository(runtime.storage);
-  const settingsRepository = createSettingsRepository(runtime.storage);
+  const saveRepository = createSaveV3Repository(storage);
+  const settingsRepository = createSettingsRepository(storage);
 
   let saveState = await loadSaveV3WithMigration(
-    runtime.storage,
+    storage,
     saveRepository,
     (error) => reportError('save-v3-load', error),
   );
@@ -91,6 +108,7 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
 
   const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
   const app = new SandboxLibraryApp(root, {
+    ...(options.makerRendererOptions ? { makerRendererOptions: options.makerRendererOptions } : {}),
     language,
     muted: settingsState.muted,
     initialLibrary: saveState.library,
