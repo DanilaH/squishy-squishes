@@ -1,12 +1,14 @@
 import { defineConfig } from 'vite';
 
-export default defineConfig(({ mode }) => ({
-  base: mode === 'yandex' ? './' : '/squishy-squishes/',
-  build: {
-    outDir: mode === 'yandex' ? 'dist-yandex' : 'dist',
-    sourcemap: false,
-  },
-  server: {
-    host: true,
-  },
-}));
+export default defineConfig(({ mode }) => {
+  const candidate = mode === 'phaser-candidate';
+  return {
+    base: mode === 'yandex' || candidate ? './' : '/squishy-squishes/',
+    build: {
+      outDir: candidate ? 'dist-phaser-candidate' : mode === 'yandex' ? 'dist-yandex' : 'dist',
+      sourcemap: false,
+      ...(candidate ? { rollupOptions: { input: 'phaser-candidate.html' } } : {}),
+    },
+    server: { host: true },
+  };
+});
