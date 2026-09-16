@@ -45,6 +45,24 @@ const materialBase = (
     return gradient;
   }
   if (materialId === 'jelly') return 'rgba(139, 229, 222, 0.76)';
+  if (materialId === 'marshmallow') return '#f8eee5';
+  if (materialId === 'pearl') {
+    const gradient = context.createLinearGradient(0, height, width, 0);
+    gradient.addColorStop(0, '#e9d7f4');
+    gradient.addColorStop(0.45, '#fff6e8');
+    gradient.addColorStop(0.72, '#d8f2ee');
+    gradient.addColorStop(1, '#f5d9e8');
+    return gradient;
+  }
+  if (materialId === 'chrome') {
+    const gradient = context.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, '#f8fbff');
+    gradient.addColorStop(0.22, '#6d7480');
+    gradient.addColorStop(0.46, '#fdfefe');
+    gradient.addColorStop(0.67, '#474e58');
+    gradient.addColorStop(1, '#dce3eb');
+    return gradient;
+  }
   return '#f2dcae';
 };
 

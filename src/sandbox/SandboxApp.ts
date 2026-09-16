@@ -90,6 +90,9 @@ interface SandboxCopy {
   readonly soft: string;
   readonly jelly: string;
   readonly holo: string;
+  readonly marshmallow: string;
+  readonly pearl: string;
+  readonly chrome: string;
   readonly face: string;
   readonly stickers: string;
   readonly head: string;
@@ -137,6 +140,9 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     soft: 'Soft',
     jelly: 'Jelly',
     holo: 'Holo',
+    marshmallow: 'Marshmallow',
+    pearl: 'Pearl',
+    chrome: 'Chrome',
     face: 'Face',
     stickers: 'Stickers',
     head: 'Head',
@@ -182,6 +188,9 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     soft: 'Мягкий',
     jelly: 'Желе',
     holo: 'Голографик',
+    marshmallow: 'Маршмеллоу',
+    pearl: 'Перламутр',
+    chrome: 'Хром',
     face: 'Мордочка',
     stickers: 'Наклейки',
     head: 'Макушка',
@@ -417,7 +426,7 @@ export class SandboxApp {
     const materials = MATERIALS.map((material) => `
       <button class="sandbox-material" type="button" data-material="${material.id}" aria-pressed="${material.id === 'soft'}">
         <span class="sandbox-material__orb sandbox-material__orb--${material.id}"></span>
-        <span>${material.id === 'soft' ? this.copy.soft : material.id === 'jelly' ? this.copy.jelly : this.copy.holo}</span>
+        <span>${this.copy[material.id]}</span>
       </button>
     `).join('');
     const eyeGlyph = (id: EyeStyleId): string => id === 'dot' ? '••' : id === 'happy' ? '⌒⌒' : '﹏﹏';
@@ -673,13 +682,15 @@ export class SandboxApp {
     if (this.stage === 'paint') {
       if (this.authoredPointerId !== null) return;
       const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
-      if (!point) return;
       this.authoredPointerId = event.pointerId;
-      this.authoredPoints = [point];
+      this.authoredPoints = [];
       this.authoredStrokeMode = this.paintTool === 'erase' ? 1 : 0;
       this.authoredStrokeColor = this.paintColor;
-      drawAppearanceStamp(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, point);
-      this.scheduleTextureUpload();
+      if (point) {
+        this.authoredPoints = [point];
+        drawAppearanceStamp(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, point);
+        this.scheduleTextureUpload();
+      }
       try { this.canvas.setPointerCapture(event.pointerId); } catch { /* unavailable */ }
       event.preventDefault();
       return;
@@ -720,9 +731,22 @@ export class SandboxApp {
     if (this.activityBlocked) return;
     if (this.stage === 'paint' && event.pointerId === this.authoredPointerId) {
       const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
-      if (!point) return;
+      if (!point) {
+        if (this.authoredPoints.length > 0) {
+          this.finishPaintStroke();
+          this.authoredPoints = [];
+        }
+        return;
+      }
       const previous = this.authoredPoints[this.authoredPoints.length - 1];
-      if (!previous || Math.hypot(point.u - previous.u, point.v - previous.v) < 0.004) return;
+      if (!previous) {
+        this.authoredPoints = [point];
+        drawAppearanceStamp(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, point);
+        this.scheduleTextureUpload();
+        event.preventDefault();
+        return;
+      }
+      if (Math.hypot(point.u - previous.u, point.v - previous.v) < 0.004) return;
       drawAppearanceSegment(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, previous, point);
       this.authoredPoints.push(point);
       this.scheduleTextureUpload();
@@ -1087,6 +1111,10 @@ export class SandboxApp {
       seed: palette.seed,
       translucency: material.translucency,
       iridescence: material.iridescence,
+      roughness: material.roughness,
+      metallic: material.metallic,
+      pearlescence: material.pearlescence,
+      cloudiness: material.cloudiness,
     };
     this.renderer.setMaterial(style);
     this.shell.dataset.material = materialId;

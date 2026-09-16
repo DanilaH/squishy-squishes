@@ -58,6 +58,10 @@ uniform float uMoldProgress;
 uniform float uMaterialSeed;
 uniform float uTranslucency;
 uniform float uIridescence;
+uniform float uRoughness;
+uniform float uMetallic;
+uniform float uPearlescence;
+uniform float uCloudiness;
 uniform bool uWireframePass;
 
 out vec4 outColor;
@@ -147,12 +151,34 @@ void main() {
   base += uSheenColor * gelCaustic * 0.045;
   base += uRimColor * edge * translucency * 0.22;
 
+  float roughness = clamp(uRoughness, 0.0, 1.0);
+  float cloudiness = clamp(uCloudiness, 0.0, 1.0);
+  float cloudA = 0.5 + 0.5 * sin((vUv.x * 2.2 + vUv.y * 1.45 + uMaterialSeed * 1.7) * 6.2831853);
+  float cloudB = 0.5 + 0.5 * sin((vUv.x * 4.7 - vUv.y * 3.1 + uMaterialSeed * 2.9) * 6.2831853);
+  float cloudField = cloudA * 0.62 + cloudB * 0.38;
+  vec3 cloudyBase = mix(base, uSheenColor, 0.10 + cloudField * 0.12);
+  base = mix(base, cloudyBase, cloudiness * (0.66 + edge * 0.10));
+
   float iridescence = clamp(uIridescence, 0.0, 1.0);
   float spectralPhase = vUv.x * 0.72 + vUv.y * 0.48 + uMaterialSeed * 0.61 + uCompression * 0.18;
   vec3 spectral = spectralColor(spectralPhase);
   float spectralBand = 0.5 + 0.5 * sin((vUv.x * 1.35 - vUv.y * 0.82 + uMaterialSeed) * 6.2831853);
   float spectralWeight = iridescence * (0.12 + spectralBand * 0.24 + edge * 0.12);
   base = mix(base, spectral, spectralWeight);
+
+  float pearlescence = clamp(uPearlescence, 0.0, 1.0);
+  float pearlBand = 0.5 + 0.5 * sin((vUv.x * 0.78 + vUv.y * 0.55 + uMaterialSeed * 0.71 + uCompression * 0.06) * 6.2831853);
+  vec3 pearlSpectrum = mix(vec3(1.0), spectralColor(spectralPhase * 0.42 + 0.17), 0.30);
+  vec3 pearlSurface = base * (0.88 + pearlBand * 0.05) + pearlSpectrum * (0.08 + pearlBand * 0.08);
+  base = mix(base, pearlSurface, pearlescence * (0.58 + edge * 0.16));
+
+  float metallic = clamp(uMetallic, 0.0, 1.0);
+  float metalBand = 0.5 + 0.5 * sin((vUv.y * 1.18 + vUv.x * 0.34 + uMaterialSeed * 0.53 + uCompression * 0.12) * 6.2831853);
+  float metalSharp = pow(metalBand, mix(9.0, 2.2, roughness));
+  vec3 metalDark = base * 0.30;
+  vec3 metalLight = mix(uSheenColor, vec3(1.0), 0.48);
+  vec3 metalSurface = mix(metalDark, metalLight, 0.10 + metalSharp * 0.90);
+  base = mix(base, metalSurface, metallic * 0.88);
 
   float fillAmount = clamp(uFillingAmount, 0.0, 1.0);
   float bead = beadField(vUv, uMaterialSeed, fillAmount, uFillingStyle);
@@ -175,8 +201,10 @@ void main() {
   float isotropicMetric = dot(sheenDelta, sheenDelta) * 18.0;
   float strainedMetric = along * along * 11.0 + across * across * 24.0;
   float sheenMetric = mix(isotropicMetric, strainedMetric, directionAmount * 0.78);
+  sheenMetric *= mix(1.45, 0.58, roughness);
   float sheen = exp(-sheenMetric);
-  sheen *= 0.09 + uCompression * 0.17 + uPressDepth * 0.035;
+  sheen *= (0.09 + uCompression * 0.17 + uPressDepth * 0.035) * mix(1.14, 0.42, roughness);
+  sheen *= 1.0 + metallic * 0.85 + pearlescence * 0.20;
   base += uSheenColor * sheen;
 
   float pressDistance = distance(vUv, uPointerUv);

@@ -31,6 +31,10 @@ export interface SquishMaterialStyle {
   seed: number;
   translucency: number;
   iridescence: number;
+  roughness: number;
+  metallic: number;
+  pearlescence: number;
+  cloudiness: number;
 }
 
 export interface SquishMetrics {
@@ -129,6 +133,10 @@ const DEFAULT_MATERIAL: SquishMaterialStyle = {
   seed: 0.17,
   translucency: 0,
   iridescence: 0,
+  roughness: 0.42,
+  metallic: 0,
+  pearlescence: 0,
+  cloudiness: 0.05,
 };
 
 export class SquishSurface {
@@ -164,6 +172,10 @@ export class SquishSurface {
   private readonly materialSeedUniform: WebGLUniformLocation;
   private readonly translucencyUniform: WebGLUniformLocation;
   private readonly iridescenceUniform: WebGLUniformLocation;
+  private readonly roughnessUniform: WebGLUniformLocation;
+  private readonly metallicUniform: WebGLUniformLocation;
+  private readonly pearlescenceUniform: WebGLUniformLocation;
+  private readonly cloudinessUniform: WebGLUniformLocation;
   private readonly wireframePassUniform: WebGLUniformLocation;
 
   private scaleX = 0.5;
@@ -236,6 +248,10 @@ export class SquishSurface {
     this.materialSeedUniform = requireUniform(gl, this.program, 'uMaterialSeed');
     this.translucencyUniform = requireUniform(gl, this.program, 'uTranslucency');
     this.iridescenceUniform = requireUniform(gl, this.program, 'uIridescence');
+    this.roughnessUniform = requireUniform(gl, this.program, 'uRoughness');
+    this.metallicUniform = requireUniform(gl, this.program, 'uMetallic');
+    this.pearlescenceUniform = requireUniform(gl, this.program, 'uPearlescence');
+    this.cloudinessUniform = requireUniform(gl, this.program, 'uCloudiness');
     this.wireframePassUniform = requireUniform(gl, this.program, 'uWireframePass');
 
     const vao = gl.createVertexArray();
@@ -843,6 +859,10 @@ export class SquishSurface {
     gl.uniform1f(this.materialSeedUniform, this.material.seed);
     gl.uniform1f(this.translucencyUniform, clamp01(this.material.translucency));
     gl.uniform1f(this.iridescenceUniform, clamp01(this.material.iridescence));
+    gl.uniform1f(this.roughnessUniform, clamp01(this.material.roughness));
+    gl.uniform1f(this.metallicUniform, clamp01(this.material.metallic));
+    gl.uniform1f(this.pearlescenceUniform, clamp01(this.material.pearlescence));
+    gl.uniform1f(this.cloudinessUniform, clamp01(this.material.cloudiness));
 
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.triangleIndexBuffer);
