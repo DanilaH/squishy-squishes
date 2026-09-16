@@ -3,6 +3,7 @@ dist/
 dist-yandex/
 dist-phaser-candidate/
 dist-phaser-yandex/
+dist-phaser-pages/
 squishy-squishes-phaser-draft.zip
 .vite/
 playwright-report/
