@@ -42,6 +42,7 @@ export class PhaserSquishSurface {
   private disposed = false;
   private lastMetricsAt = 0;
   private readonly frameTimes: number[] = [];
+  private readonly resizeObserver: ResizeObserver;
 
   public constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -88,6 +89,7 @@ export class PhaserSquishSurface {
           addSticker: (point) => owner.callbacks.addSticker(point),
           mixProgress: (distance, progress) => owner.callbacks.mixProgress(distance, progress),
         });
+        owner.syncCanvasSize();
         owner.applyPending();
         canvas.dataset.phaserReady = 'true';
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => owner.cleanupScene());
@@ -104,10 +106,25 @@ export class PhaserSquishSurface {
       type: Phaser.WEBGL, parent: canvas.parentElement, canvas,
       context: gl as unknown as CanvasRenderingContext2D,
       width: Math.max(1, canvas.clientWidth), height: Math.max(1, canvas.clientHeight),
-      transparent: true, scale: { mode: Phaser.Scale.RESIZE },
+      transparent: true, scale: { mode: Phaser.Scale.NONE },
       render: { antialias: true, premultipliedAlpha: true },
       audio: { noAudio: true }, scene: [StudioScene],
     });
+    // The stage's responsive CSS owns the displayed square playfield. Phaser's
+    // RESIZE mode instead follows the taller parent and vertically squashes art.
+    this.resizeObserver = new ResizeObserver(() => this.syncCanvasSize());
+    this.resizeObserver.observe(canvas);
+  }
+
+  /** Keep the WebGL backbuffer and simulation projection in the CSS playfield's aspect ratio. */
+  private syncCanvasSize(): void {
+    if (this.disposed || !this.scene) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect.width));
+    const height = Math.max(1, Math.round(rect.height));
+    if (this.game.scale.width !== width || this.game.scale.height !== height) {
+      this.game.scale.resize(width, height);
+    }
   }
 
   private applyPending(): void {
@@ -143,6 +160,7 @@ export class PhaserSquishSurface {
     this.stage = stage;
     this.decorSection = section;
     this.bridge?.setStage(stage, section);
+    this.syncCanvasSize();
   }
   public setActivityBlocked(value: boolean): void { this.blocked = value; this.bridge?.setBlocked(value); }
   public resetTiming(): void { this.squish?.resetTiming(); this.frameTimes.length = 0; }
@@ -224,6 +242,7 @@ export class PhaserSquishSurface {
   public dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.resizeObserver.disconnect();
     this.cleanupScene();
     this.game.destroy(true);
     delete this.canvas.dataset.phaserReady;
