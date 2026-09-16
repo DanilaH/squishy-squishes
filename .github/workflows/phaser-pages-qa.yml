@@ -24,9 +24,9 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm install
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Build and smoke-test staged Pages tree
+      - name: Install Chromium and Firefox
+        run: npx playwright install --with-deps chromium firefox
+      - name: Build and smoke-test staged Pages tree in both browsers
         run: npm run pages:qa
       - name: Upload failure diagnostics
         if: failure()
