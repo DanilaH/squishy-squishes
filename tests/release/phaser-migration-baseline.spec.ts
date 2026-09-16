@@ -122,8 +122,11 @@ for (const viewport of [
     await page.evaluate(() => new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     }));
+    // Explicit path persists even when Playwright cleans successful test output directories.
+    const screenshotPath = `migration-baseline-evidence/old-engine-${viewport.name}.png`;
+    const screenshot = await page.screenshot({ path: screenshotPath });
     await testInfo.attach(`old-engine-${viewport.name}`, {
-      body: await page.screenshot(),
+      body: screenshot,
       contentType: 'image/png',
     });
   });
