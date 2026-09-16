@@ -20,8 +20,10 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - name: Apply exact-guarded source integration
+      - name: Apply exact-guarded studio integration
         run: node scripts/migration/patch-real-studio.mjs
+      - name: Exclude Phaser from normal release imports
+        run: node scripts/migration/patch-studio-factory.mjs
       - name: Commit changes to migration branch only
         shell: bash
         run: |
@@ -32,5 +34,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add src/sandbox/SandboxApp.ts src/experiments/phaser/PhaserSquishCandidate.ts
-          git commit -m 'Connect original SandboxApp to opt-in Phaser renderer'
+          git commit -m 'Keep Phaser studio isolated from ordinary release build'
           git push origin HEAD:migration/phaser-real-studio
