@@ -19,17 +19,18 @@ if (!root) throw new Error('Missing Phaser spike root');
 // No second canvas, offscreen copy or concurrent raw-GL requestAnimationFrame.
 const canvas = document.createElement('canvas');
 canvas.style.touchAction = 'none';
-const gl = canvas.getContext('webgl2', {
+const initialContext = canvas.getContext('webgl2', {
   alpha: false,
   antialias: true,
   depth: true,
   stencil: true,
   premultipliedAlpha: true,
 });
-if (!gl) {
+if (!initialContext) {
   root.textContent = 'This experiment needs WebGL2.';
   throw new Error('Phaser squishy spike requires WebGL2');
 }
+const gl: WebGL2RenderingContext = initialContext;
 
 class SquishSpikeScene extends Phaser.Scene {
   private squish: PhaserSquishExtern | null = null;
@@ -102,7 +103,7 @@ class SquishSpikeScene extends Phaser.Scene {
     document.body.dataset.phaserSpike = 'ready';
   }
 
-  public update(_time: number, delta: number): void {
+  public override update(_time: number, delta: number): void {
     const squish = this.squish;
     if (!squish) return;
     squish.advance(delta);
@@ -124,7 +125,9 @@ const game = new Phaser.Game({
   type: Phaser.WEBGL,
   parent: root,
   canvas,
-  context: gl,
+  // Phaser 4's GameConfig context declaration is 2D-only, while its WebGL renderer
+  // accepts an existing GL context. This cast is confined to the isolated spike.
+  context: gl as unknown as CanvasRenderingContext2D,
   width: Math.max(320, root.clientWidth),
   height: Math.max(320, root.clientHeight),
   backgroundColor: '#171225',
