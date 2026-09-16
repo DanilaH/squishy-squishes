@@ -1,5 +1,5 @@
 import { installReleaseSession } from '../platform/releaseSession';
-import { createSquishyPlatformRuntime } from '../platform/runtime';
+import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../platform/runtime';
 import {
   appendSavedSquishy,
   createDefaultSaveV3,
@@ -19,19 +19,28 @@ import {
 } from '../platform/saveV3Rewards';
 import { SandboxLibraryApp } from '../sandbox/SandboxLibraryApp';
 import { getSquishyIdea, matchSquishyIdea } from '../sandbox/ideas';
-import type { SandboxLanguage } from '../sandbox/SandboxApp';
+import type { SandboxAppOptions, SandboxLanguage } from '../sandbox/SandboxApp';
 import { getStartupSnapshot, markStartup } from './startup';
 
 export interface SquishyAppHandle {
   dispose(): Promise<void>;
 }
 
+/** Optional candidate seams. The normal entry passes no options and never imports Phaser. */
+export interface SquishyBootstrapOptions {
+  readonly makerRendererOptions?: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
+  readonly createRuntime?: () => Promise<SquishyPlatformRuntime>;
+}
+
 const reportError = (scope: string, error: unknown): void => {
   console.error(`[squishy:${scope}]`, error);
 };
 
-export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<SquishyAppHandle> => {
-  const runtime = await createSquishyPlatformRuntime();
+export const bootstrapSquishyApp = async (
+  root: HTMLDivElement,
+  options: SquishyBootstrapOptions = {},
+): Promise<SquishyAppHandle> => {
+  const runtime = await (options.createRuntime ?? createSquishyPlatformRuntime)();
   markStartup('platformReady');
   document.body.dataset.releasePlatform = runtime.kind;
   document.body.dataset.releaseBuild = import.meta.env.PROD ? 'production' : 'development';
@@ -39,6 +48,7 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
   if (
     import.meta.env.VITE_PLATFORM !== 'yandex'
     && new URLSearchParams(window.location.search).get('appearanceProbe') === '1'
+    && !options.makerRendererOptions
   ) {
     const { installAppearanceProbe } = await import('../debug/installAppearanceProbe');
     const removeAppearanceProbe = await installAppearanceProbe(root, runtime.storage);
@@ -91,6 +101,7 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
 
   const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
   const app = new SandboxLibraryApp(root, {
+    ...options.makerRendererOptions ? { makerRendererOptions: options.makerRendererOptions } : {},
     language,
     muted: settingsState.muted,
     initialLibrary: saveState.library,
@@ -151,7 +162,7 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
   markStartup('gameReady');
 
   let removeDebugTools = (): void => undefined;
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV && !options.makerRendererOptions) {
     const { installDebugTools } = await import('../debug/installDebugTools');
     removeDebugTools = installDebugTools({
       resetSave: async () => {
