@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, readdir, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -13,7 +13,8 @@ test('prepares transparent authored art and refuses accidental replacement', asy
   const root = await mkdtemp(join(tmpdir(), 'squishy-image-'));
   const input = join(root, 'master.png');
   const output = join(root, 'ui-button.webp');
-  t.after(async () => { await import('node:fs/promises').then(({ rm }) => rm(root, { recursive: true, force: true })); });
+  const avifOutput = join(root, 'ui-button.avif');
+  t.after(() => rm(root, { recursive: true, force: true }));
 
   await sharp(Buffer.from('<svg width="128" height="128" xmlns="http://www.w3.org/2000/svg"><circle cx="64" cy="64" r="38" fill="#ff678a"/></svg>'))
     .png().toFile(input);
@@ -41,4 +42,8 @@ test('prepares transparent authored art and refuses accidental replacement', asy
 
   const forced = invoke(input, output, '--canvas=128', '--padding=16', '--force');
   assert.equal(forced.status, 0, forced.stderr || forced.stdout);
+  await writeFile(avifOutput, Buffer.from('stale AVIF bytes'));
+  const webpOnly = invoke(input, output, '--canvas=128', '--padding=16', '--webp-only', '--force');
+  assert.equal(webpOnly.status, 0, webpOnly.stderr || webpOnly.stdout);
+  await assert.rejects(stat(avifOutput), { code: 'ENOENT' });
 });
