@@ -67,7 +67,7 @@ const completeMix = async (page: Page): Promise<void> => {
   await page.locator('[data-action="mix-continue"]').click();
 };
 
-test('exact upload-root index boots real Yandex adapter and Phaser; pause stacks safely', async ({ page }) => {
+test('exact upload-root index boots real Yandex adapter and Phaser; pause and bfcache stack safely', async ({ page }) => {
   await installSdk(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
@@ -75,13 +75,21 @@ test('exact upload-root index boots real Yandex adapter and Phaser; pause stacks
   expect(await page.evaluate(() => document.body.dataset.releasePlatform)).toBe('yandex');
   expect(await sdkControls(page)).toMatchObject({ init: 1, ready: 1, starts: 1 });
   await page.locator('[data-library-new]').first().click();
-  await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+  const canvas = page.locator('[data-sandbox-canvas]');
+  await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
   await page.evaluate(() => (window as Window & { __phaserDraftSdk: DraftSdkControls }).__phaserDraftSdk.pause());
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('aria-busy', 'true');
   expect((await sdkControls(page)).stops).toBe(1);
   await page.evaluate(() => (window as Window & { __phaserDraftSdk: DraftSdkControls }).__phaserDraftSdk.resume());
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('aria-busy', 'false');
   expect((await sdkControls(page)).starts).toBe(2);
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })));
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('aria-busy', 'true');
+  expect((await sdkControls(page)).stops).toBe(2);
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('aria-busy', 'false');
+  await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
+  expect(await sdkControls(page)).toMatchObject({ ready: 1, starts: 3 });
 });
 
 test('same upload-root bundle writes isolated V3 with unchanged real Library flow', async ({ page }) => {
