@@ -1,6 +1,9 @@
 node_modules/
 dist/
 dist-yandex/
+dist-phaser-candidate/
+dist-phaser-yandex/
+squishy-squishes-phaser-draft.zip
 .vite/
 playwright-report/
 test-results/
