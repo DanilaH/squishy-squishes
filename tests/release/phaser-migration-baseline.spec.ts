@@ -2,10 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { MATERIALS } from '../../src/game/content';
 import { SHAPES, createShapeField } from '../../src/game/shapes';
-import {
-  createAppearanceStroke,
-  createMixInPlacement,
-} from '../../src/sandbox/appearance';
+import { createAppearanceStroke, createMixInPlacement } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument, createStickerPlacement } from '../../src/sandbox/decor';
 import type { SavedSquishy } from '../../src/sandbox/types';
 import {
@@ -20,7 +17,7 @@ import {
   grantS5ShelfExpansion,
 } from '../../src/platform/saveV3Rewards';
 
-// These fixtures are synthetic. Never extract a real player's local/cloud save for migration QA.
+// Synthetic fixtures only; never extract a real player's local/cloud save for migration QA.
 const decoratedToy = (): SavedSquishy => ({
   id: 'baseline-toy-0',
   createdAt: 1_700_000_000_000,
@@ -116,7 +113,7 @@ for (const viewport of [
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
     const canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toBeVisible();
-    await expect(page.locator('[data-shape]')).toHaveCount(6);
+    await expect(page.locator('.sandbox-shape[data-shape]')).toHaveCount(6);
     expect(await canvas.evaluate((node) => (node as HTMLCanvasElement)
       .getContext('webgl2')?.getContextAttributes()?.alpha)).toBe(true);
     const box = await canvas.boundingBox();
