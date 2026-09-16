@@ -1,5 +1,5 @@
 import { getShape } from '../game/shapes';
-import { SandboxApp, type SandboxLanguage } from './SandboxApp';
+import { SandboxApp, type SandboxAppOptions, type SandboxLanguage } from './SandboxApp';
 import {
   SQUISHY_IDEAS,
   getIdeaLabel,
@@ -29,6 +29,8 @@ export interface SandboxLibraryAppOptions {
   readonly onAppendSquishy: (draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
   readonly onReplaceSquishy: (targetId: string, draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
   readonly onDeleteSquishy: (targetId: string) => Promise<readonly SavedSquishy[]>;
+  /** Candidate-only renderer port. Ordinary library bootstrap leaves it absent. */
+  readonly makerRendererOptions?: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
   readonly onMutedChange: (muted: boolean) => void | Promise<void>;
 }
 
@@ -400,6 +402,7 @@ export class SandboxLibraryApp {
     const host = this.root.querySelector<HTMLDivElement>('[data-sandbox-maker-host]');
     if (!host) throw new Error('Sandbox library failed to mount maker host.');
     this.currentMaker = new SandboxApp(host, {
+      ...this.options.makerRendererOptions,
       language: this.options.language,
       muted: this.muted,
       savedSquishy: toy,
