@@ -20,6 +20,7 @@ import {
 import { SandboxLibraryApp } from '../sandbox/SandboxLibraryApp';
 import { getSquishyIdea, matchSquishyIdea } from '../sandbox/ideas';
 import type { SandboxLanguage } from '../sandbox/SandboxApp';
+import { getStartupSnapshot, markStartup } from './startup';
 
 export interface SquishyAppHandle {
   dispose(): Promise<void>;
@@ -31,6 +32,7 @@ const reportError = (scope: string, error: unknown): void => {
 
 export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<SquishyAppHandle> => {
   const runtime = await createSquishyPlatformRuntime();
+  markStartup('platformReady');
   document.body.dataset.releasePlatform = runtime.kind;
   document.body.dataset.releaseBuild = import.meta.env.PROD ? 'production' : 'development';
 
@@ -40,8 +42,11 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
   ) {
     const { installAppearanceProbe } = await import('../debug/installAppearanceProbe');
     const removeAppearanceProbe = await installAppearanceProbe(root, runtime.storage);
+    markStartup('saveReady');
+    markStartup('shellRendered');
     runtime.activity.setGameplayDesired(true);
     runtime.markReady();
+    markStartup('gameReady');
     let probeDisposed = false;
     return {
       async dispose() {
@@ -65,6 +70,7 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
   let settingsState = await settingsRepository.loadOrDefault(
     (error) => reportError('settings-load', error),
   );
+  markStartup('saveReady');
 
   const persistSave = async (nextState: typeof saveState): Promise<void> => {
     await saveRepository.write(nextState);
@@ -137,10 +143,12 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
     },
   });
 
+  markStartup('shellRendered');
   const releaseSession = installReleaseSession(root, runtime);
   const unsubscribeActivity = runtime.activity.onBlockedChange((blocked) => app.setActivityBlocked(blocked));
   runtime.activity.setGameplayDesired(true);
   runtime.markReady();
+  markStartup('gameReady');
 
   let removeDebugTools = (): void => undefined;
   if (import.meta.env.DEV) {
@@ -161,6 +169,7 @@ export const bootstrapSquishyApp = async (root: HTMLDivElement): Promise<Squishy
         language: runtime.language,
         save: saveState,
         settings: settingsState,
+        startup: getStartupSnapshot(),
       }),
     });
   }
