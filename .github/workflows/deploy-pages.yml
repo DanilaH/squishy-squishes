@@ -29,13 +29,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build
-        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build and browser-test original Pages game plus isolated Phaser preview
+        run: npm run pages:qa
 
       - name: Publish dist to gh-pages
         shell: bash
         run: |
           set -euo pipefail
+          test -f dist/index.html
+          test -f dist/phaser/index.html
           rm -rf /tmp/squishy-pages
           mkdir -p /tmp/squishy-pages
           cp -a dist/. /tmp/squishy-pages/
