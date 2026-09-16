@@ -16,7 +16,7 @@ export default defineConfig({
     launchOptions: { args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
   },
   webServer: {
-    command: 'npx vite preview --outDir dist-phaser-spike --host 127.0.0.1 --port 4181 --strictPort',
+    command: 'npx vite preview --mode phaser-spike --host 127.0.0.1 --port 4181 --strictPort',
     port: 4181,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
