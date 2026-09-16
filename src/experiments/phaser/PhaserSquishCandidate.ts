@@ -189,9 +189,17 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, gpu.shapeField);
     const previousAlignment = gl.getParameter(gl.UNPACK_ALIGNMENT) as number;
+    const previousFlip = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL) as boolean;
+    // Phaser may have flipped a DOM texture earlier. These canonical R8 bytes are
+    // bottom-row-first; inheriting Phaser's flip turns the heart/paw upside down.
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, FIELD_SIZE, FIELD_SIZE, 0, gl.RED, gl.UNSIGNED_BYTE, field);
-    gl.pixelStorei(gl.UNPACK_ALIGNMENT, previousAlignment);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+    try {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, FIELD_SIZE, FIELD_SIZE, 0, gl.RED, gl.UNSIGNED_BYTE, field);
+    } finally {
+      gl.pixelStorei(gl.UNPACK_ALIGNMENT, previousAlignment);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, previousFlip ? 1 : 0);
+    }
   }
 
   private uploadAppearance(gpu: GpuResources): void {
