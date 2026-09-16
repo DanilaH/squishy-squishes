@@ -28,6 +28,10 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Build and test isolated Phaser candidate
         run: npm run candidate:qa
+      - name: Validate Phaser against the original Yandex SDK contract (stub)
+        run: |
+          VITE_PLATFORM=yandex npm run candidate:build
+          npx playwright test --config=playwright.phaser-yandex-stub.config.ts
       - name: Upload passing candidate screenshots
         if: success() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
