@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: candidate ? 'dist-phaser-candidate' : mode === 'yandex' ? 'dist-yandex' : 'dist',
       sourcemap: false,
-      ...(candidate ? { rollupOptions: { input: 'phaser-candidate.html' } } : {}),
+      ...(candidate ? { rollupOptions: { input: ['phaser-candidate.html', 'phaser-parity.html'] } } : {}),
     },
     server: { host: true },
   };
