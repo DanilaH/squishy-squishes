@@ -2,6 +2,7 @@ import { MATERIALS, getMaterial, getPalette, type MaterialId } from '../game/con
 import { SquishyAudio } from '../game/SquishyAudio';
 import { SHAPES, getShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { SquishSurface, type SquishMaterialStyle, type SquishMetrics } from '../squish/SquishSurface';
+import { PhaserSquishSurface } from './PhaserSquishSurface';
 import {
   APPEARANCE_TARGET_BYTES,
   APPEARANCE_TEXTURE_SIZE,
@@ -50,6 +51,7 @@ export interface SandboxAppOptions {
   readonly initialShapeId?: ShapeId;
   readonly startSavedInSqueeze?: boolean;
   readonly onExitToLibrary?: () => void;
+  readonly rendererBackend?: 'legacy' | 'phaser'; // Phaser is opt-in only in the isolated candidate.
   readonly onSaveSquishy: (draft: SandboxDraft) => Promise<SavedSquishy | null>;
   readonly onMutedChange: (muted: boolean) => void | Promise<void>;
 }
@@ -299,7 +301,7 @@ export class SandboxApp {
   private readonly mixContinueButton: HTMLButtonElement;
   private readonly saveButton: HTMLButtonElement;
   private readonly muteButton: HTMLButtonElement;
-  private readonly renderer: SquishSurface;
+  private readonly renderer: SquishSurface | PhaserSquishSurface;
   private readonly audio = new SquishyAudio();
   private readonly appearanceCanvas = document.createElement('canvas');
   private readonly appearanceContext: CanvasRenderingContext2D;
@@ -374,7 +376,43 @@ export class SandboxApp {
     this.saveButton = this.requireElement<HTMLButtonElement>('[data-action="save"]');
     this.muteButton = this.requireElement<HTMLButtonElement>('[data-action="mute"]');
 
-    this.renderer = new SquishSurface(this.canvas, this.handleMetrics, this.audio);
+    this.renderer = options.rendererBackend === 'phaser'
+      ? new PhaserSquishSurface(this.canvas, this.handleMetrics, this.audio, {
+          paintStamp: (point) => {
+            this.authoredStrokeMode = this.paintTool === 'erase' ? 1 : 0;
+            this.authoredStrokeColor = this.paintColor;
+            this.authoredPoints = [point];
+            drawAppearanceStamp(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, point);
+            this.scheduleTextureUpload();
+          },
+          paintSegment: (from, to) => {
+            if (this.authoredPoints.length >= 320) return;
+            drawAppearanceSegment(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, from, to);
+            this.authoredPoints.push(to);
+            this.scheduleTextureUpload();
+          },
+          paintEnd: () => { this.finishPaintStroke(); this.authoredPoints = []; },
+          addMixin: (point) => this.addMixinAt(point),
+          addSticker: (point) => {
+            if (this.draft.decor.stickers.length >= MAX_DECOR_STICKERS) return;
+            const placement = createStickerPlacement(this.selectedSticker, point, this.draft.decor.stickers.length);
+            this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers: [...this.draft.decor.stickers, placement] } };
+            this.replayAndUpload();
+            this.updateDecorUi();
+          },
+          mixProgress: (distance, progress) => {
+            this.mixDistance = distance;
+            this.mixProgressFill.style.transform = `scaleX(${progress})`;
+            this.mixContinueButton.disabled = progress < 1;
+            this.status.textContent = progress >= 1 ? this.copy.mixReady : this.copy.mixMore;
+            this.shell.dataset.mixProgress = progress.toFixed(3);
+          },
+          onFrame: () => {
+            if (!this.rigidMixinCanvas.hidden) this.updateRigidMixinOverlay();
+            if (!this.accessoryCanvas.hidden) this.updateAccessoryOverlay();
+          },
+        })
+      : new SquishSurface(this.canvas, this.handleMetrics, this.audio);
     this.renderer.setFillProgress(1);
     this.renderer.setMoldProgress(1);
     this.renderer.setFillingAmount(0);
@@ -550,10 +588,12 @@ export class SandboxApp {
   private bindEvents(): void {
     const signal = this.abortController.signal;
     this.root.addEventListener('click', this.handleClick, { signal });
-    this.canvas.addEventListener('pointerdown', this.handlePointerDown, { signal });
-    this.canvas.addEventListener('pointermove', this.handlePointerMove, { signal });
-    this.canvas.addEventListener('pointerup', this.handlePointerEnd, { signal });
-    this.canvas.addEventListener('pointercancel', this.handlePointerEnd, { signal });
+    if (!(this.renderer instanceof PhaserSquishSurface)) {
+      this.canvas.addEventListener('pointerdown', this.handlePointerDown, { signal });
+      this.canvas.addEventListener('pointermove', this.handlePointerMove, { signal });
+      this.canvas.addEventListener('pointerup', this.handlePointerEnd, { signal });
+      this.canvas.addEventListener('pointercancel', this.handlePointerEnd, { signal });
+    }
   }
 
   private readonly handleClick = (event: MouseEvent): void => {
@@ -885,6 +925,7 @@ export class SandboxApp {
     this.shell.dataset.decorSection = next;
     this.updatePressed('[data-decor-section]', 'decorSection', next);
     for (const panel of this.root.querySelectorAll<HTMLElement>('[data-decor-panel]')) panel.hidden = panel.dataset.decorPanel !== next;
+    this.syncInteractivity();
   }
 
   private updateDecorUi(): void {
@@ -999,7 +1040,7 @@ export class SandboxApp {
       return;
     }
     this.rigidMixinCanvas.hidden = false;
-    if (this.rigidMixinFrame === 0) this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);
+    if (this.rigidMixinFrame === 0 && !(this.renderer instanceof PhaserSquishSurface)) this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);
   }
 
   private readonly updateRigidMixinOverlay = (): void => {
@@ -1036,7 +1077,7 @@ export class SandboxApp {
       }
     }
 
-    this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);
+    if (!(this.renderer instanceof PhaserSquishSurface)) this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);
   };
 
   private refreshAccessoryGraphic(): void {
@@ -1053,7 +1094,7 @@ export class SandboxApp {
     this.accessoryCanvas.hidden = false;
     this.accessoryCanvas.dataset.accessoryId = accessory;
     drawAccessoryGraphic(this.accessoryContext, accessory, this.accessoryCanvas.width, this.accessoryCanvas.height);
-    if (this.accessoryFrame === 0) this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
+    if (this.accessoryFrame === 0 && !(this.renderer instanceof PhaserSquishSurface)) this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
   }
 
   private readonly updateAccessoryOverlay = (): void => {
@@ -1097,7 +1138,7 @@ export class SandboxApp {
       this.accessoryCanvas.dataset.accessoryAnchorY = anchorY.toFixed(2);
       this.accessoryCanvas.dataset.accessoryMatrix = [a, b, c, d].map((value) => value.toFixed(4)).join(',');
     }
-    this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
+    if (!(this.renderer instanceof PhaserSquishSurface)) this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
   };
 
   private applyMaterial(materialId: MaterialId): void {
@@ -1146,6 +1187,11 @@ export class SandboxApp {
   }
 
   private syncInteractivity(): void {
+    if (this.renderer instanceof PhaserSquishSurface) {
+      this.renderer.setStudioStage(this.stage, this.decorSection);
+      this.renderer.setActivityBlocked(this.activityBlocked);
+      return;
+    }
     const shouldRenderInteract = !this.activityBlocked && (this.stage === 'mix' || this.stage === 'squeeze');
     this.renderer.setInteractive(shouldRenderInteract);
   }
