@@ -136,7 +136,7 @@ export const MATERIALS: readonly MaterialSpec[] = [
   { id: 'jelly', label: 'Jelly', translucency: 0.72, iridescence: 0.05, roughness: 0.16, metallic: 0, pearlescence: 0.04, cloudiness: 0.02 },
   { id: 'holo', label: 'Holographic', translucency: 0.16, iridescence: 0.92, roughness: 0.20, metallic: 0.08, pearlescence: 0.18, cloudiness: 0 },
   { id: 'marshmallow', label: 'Marshmallow', translucency: 0.03, iridescence: 0, roughness: 0.92, metallic: 0, pearlescence: 0.03, cloudiness: 0.62 },
-  { id: 'pearl', label: 'Pearl', translucency: 0.10, iridescence: 0.10, roughness: 0.34, metallic: 0.10, pearlescence: 0.90, cloudiness: 0.10 },
+  { id: 'pearl', label: 'Pearl', translucency: 0.08, iridescence: 0.20, roughness: 0.30, metallic: 0.08, pearlescence: 1.0, cloudiness: 0.08 },
   { id: 'chrome', label: 'Chrome', translucency: 0, iridescence: 0.05, roughness: 0.06, metallic: 0.96, pearlescence: 0.08, cloudiness: 0 },
 ] as const;
 

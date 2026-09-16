@@ -156,8 +156,10 @@ void main() {
   float cloudA = 0.5 + 0.5 * sin((vUv.x * 2.2 + vUv.y * 1.45 + uMaterialSeed * 1.7) * 6.2831853);
   float cloudB = 0.5 + 0.5 * sin((vUv.x * 4.7 - vUv.y * 3.1 + uMaterialSeed * 2.9) * 6.2831853);
   float cloudField = cloudA * 0.62 + cloudB * 0.38;
-  vec3 cloudyBase = mix(base, uSheenColor, 0.10 + cloudField * 0.12);
-  base = mix(base, cloudyBase, cloudiness * (0.66 + edge * 0.10));
+  float milkyWeight = cloudiness * (0.72 + cloudField * 0.18);
+  vec3 milkyTint = mix(uSheenColor, vec3(1.0), 0.42 + cloudField * 0.10);
+  vec3 cloudyBase = mix(base * (0.98 + cloudField * 0.025), milkyTint, 0.24 + cloudField * 0.10);
+  base = mix(base, cloudyBase, clamp(milkyWeight, 0.0, 0.86));
 
   float iridescence = clamp(uIridescence, 0.0, 1.0);
   float spectralPhase = vUv.x * 0.72 + vUv.y * 0.48 + uMaterialSeed * 0.61 + uCompression * 0.18;
@@ -168,9 +170,10 @@ void main() {
 
   float pearlescence = clamp(uPearlescence, 0.0, 1.0);
   float pearlBand = 0.5 + 0.5 * sin((vUv.x * 0.78 + vUv.y * 0.55 + uMaterialSeed * 0.71 + uCompression * 0.06) * 6.2831853);
-  vec3 pearlSpectrum = mix(vec3(1.0), spectralColor(spectralPhase * 0.42 + 0.17), 0.30);
-  vec3 pearlSurface = base * (0.88 + pearlBand * 0.05) + pearlSpectrum * (0.08 + pearlBand * 0.08);
-  base = mix(base, pearlSurface, pearlescence * (0.58 + edge * 0.16));
+  float pearlCross = 0.5 + 0.5 * sin((vUv.x * 0.44 - vUv.y * 0.67 + uMaterialSeed * 0.33) * 6.2831853);
+  vec3 pearlSpectrum = mix(vec3(1.0), spectralColor(spectralPhase * 0.46 + pearlCross * 0.14 + 0.12), 0.52);
+  vec3 pearlSurface = base * (0.92 + pearlBand * 0.035) + pearlSpectrum * (0.10 + pearlBand * 0.13);
+  base = mix(base, pearlSurface, pearlescence * (0.72 + edge * 0.14));
 
   float metallic = clamp(uMetallic, 0.0, 1.0);
   float metalBand = 0.5 + 0.5 * sin((vUv.y * 1.18 + vUv.x * 0.34 + uMaterialSeed * 0.53 + uCompression * 0.12) * 6.2831853);
