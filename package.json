@@ -13,6 +13,8 @@
     "preview": "vite preview",
     "build:yandex": "tsc --noEmit && vite build --mode yandex",
     "verify:yandex": "node scripts/verify-yandex-dist.mjs",
+    "draft:build": "tsc --noEmit && vite build --mode phaser-yandex && node scripts/verify-phaser-yandex-dist.mjs",
+    "draft:qa": "npm run draft:build && playwright test --config=playwright.phaser-yandex.config.ts",
     "asset:prepare": "node scripts/prepare-image.mjs",
     "asset:smoke": "node --test tests/tooling/image-pipeline.test.mjs",
     "release:check": "npm run typecheck && npm run asset:smoke && npm run build && npm run build:yandex && npm run verify:yandex",
