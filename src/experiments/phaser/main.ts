@@ -1,24 +1,23 @@
 import Phaser from 'phaser';
-import { MATERIALS } from '../../game/content';
+import { MATERIALS, type MaterialId } from '../../game/content';
 import { SHAPES, type ShapeId } from '../../game/shapes';
-import type { MaterialId } from '../../game/content';
-import './candidate.css';
 import '../../sandbox-core.css';
+import './candidate.css';
 import { PhaserSquishCandidate } from './PhaserSquishCandidate';
 
-interface CandidateDebug {
-  snapshot(): ReturnType<PhaserSquishCandidate['snapshot']>;
-  destroy(): void;
-}
-
 declare global {
-  interface Window { __squishyPhaserCandidate?: CandidateDebug; }
+  interface Window {
+    __squishyPhaserCandidate?: {
+      snapshot(): ReturnType<PhaserSquishCandidate['snapshot']>;
+      destroy(): void;
+    };
+  }
 }
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Candidate root is missing');
 
-// Technical candidate only. Production entrypoint/Library, SDK and saved data are untouched.
+// Only this separate HTML entry runs Phaser. Original V3/SDK/ads and main.ts are untouched.
 root.innerHTML = `
   <main class="sandbox-shell phaser-candidate-shell" data-candidate-stage="loading" data-shape="soft-square" data-material="soft">
     <header class="sandbox-topbar"><strong>SQUISHY SQUISHES</strong><span>M2 · PHASER CANDIDATE</span></header>
@@ -50,16 +49,30 @@ const gl = canvas.getContext('webgl2', {
   depth: true,
   stencil: true,
   premultipliedAlpha: true,
-  preserveDrawingBuffer: true, // Candidate browser pixel tests only; revisit before release.
+  preserveDrawingBuffer: true, // Candidate pixel sampling only; remove before production.
 });
 if (!gl) {
   shell.dataset.candidateStage = 'unsupported';
   status.textContent = 'WebGL2 is required for this technical preview.';
 } else {
   let game: Phaser.Game | null = null;
+  let currentScene: CandidateScene | null = null;
   let destroyed = false;
+
+  const destroyGame = (): void => {
+    if (destroyed) return;
+    destroyed = true;
+    currentScene?.cleanup(); // game.destroy() does not guarantee the Scene SHUTDOWN event.
+    game?.destroy(true);
+    canvas.remove();
+    shell.dataset.candidateStage = 'destroyed';
+    delete window.__squishyPhaserCandidate;
+  };
+
   class CandidateScene extends Phaser.Scene {
     private squish: PhaserSquishCandidate | null = null;
+    private cleanupStarted = false;
+    private detachClicks: (() => void) | null = null;
     private readonly onBlur = (): void => this.squish?.cancel();
     private readonly onHidden = (): void => { if (document.hidden) this.squish?.cancel(); };
     private readonly onContextLost = (event: Event): void => {
@@ -68,19 +81,19 @@ if (!gl) {
       status.textContent = 'WebGL context lost; restoring…';
     };
     private readonly onContextRestored = (): void => { status.textContent = 'WebGL context restored'; };
-    private readonly onPointerCancel = (): void => { this.squish?.cancel(); };
+    private readonly onPointerCancel = (): void => this.squish?.cancel();
 
     constructor() { super({ key: 'SquishyCandidateScene' }); }
     create(): void {
       const squish = new PhaserSquishCandidate(this, gl!);
       this.squish = squish;
+      currentScene = this;
       this.add.existing(squish);
-      // Native pointer capture preserves release outside the playfield.
       this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
         if (!squish.begin(pointer)) return;
         const native = pointer.event;
         if (native instanceof PointerEvent) {
-          try { canvas.setPointerCapture(native.pointerId); } catch { /* Capture is best effort. */ }
+          try { canvas.setPointerCapture(native.pointerId); } catch { /* Best effort. */ }
         }
       });
       this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => squish.move(pointer));
@@ -112,38 +125,41 @@ if (!gl) {
         }
       };
       shell.addEventListener('click', onClick);
-      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-        shell.removeEventListener('click', onClick);
-        window.removeEventListener('blur', this.onBlur);
-        document.removeEventListener('visibilitychange', this.onHidden);
-        canvas.removeEventListener('webglcontextlost', this.onContextLost);
-        canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
-        canvas.removeEventListener('pointercancel', this.onPointerCancel);
-        squish.dispose();
-        this.squish = null;
-        delete window.__squishyPhaserCandidate;
-        shell.dataset.candidateStage = 'destroyed';
-      });
-      window.__squishyPhaserCandidate = {
-        snapshot: () => squish.snapshot(),
-        destroy: () => { if (!destroyed) { destroyed = true; game?.destroy(true); } },
-      };
+      this.detachClicks = () => shell.removeEventListener('click', onClick);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
+      this.events.once(Phaser.Scenes.Events.DESTROY, this.cleanup, this);
+      window.__squishyPhaserCandidate = { snapshot: () => squish.snapshot(), destroy: destroyGame };
       shell.dataset.candidateStage = 'ready';
       status.textContent = 'Hold and pull · Phaser 4 / shared simulation';
     }
     override update(time: number, delta: number): void {
       this.squish?.advance(delta, performance.now());
       if (this.squish && Math.floor(time / 250) !== Math.floor((time - delta) / 250)) {
-        const { squeezes } = this.squish.snapshot();
-        status.textContent = `Hold and pull · Squeezes: ${squeezes}`;
+        status.textContent = `Hold and pull · Squeezes: ${this.squish.snapshot().squeezes}`;
       }
+    }
+    public cleanup(): void {
+      if (this.cleanupStarted) return;
+      this.cleanupStarted = true;
+      this.detachClicks?.();
+      this.detachClicks = null;
+      window.removeEventListener('blur', this.onBlur);
+      document.removeEventListener('visibilitychange', this.onHidden);
+      canvas.removeEventListener('webglcontextlost', this.onContextLost);
+      canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
+      canvas.removeEventListener('pointercancel', this.onPointerCancel);
+      this.squish?.dispose();
+      this.squish = null;
+      currentScene = null;
+      delete window.__squishyPhaserCandidate;
+      shell.dataset.candidateStage = 'destroyed';
     }
   }
   game = new Phaser.Game({
     type: Phaser.WEBGL,
     parent: host,
     canvas,
-    // Phaser 4's GameConfig context field is typed 2D-only; WebGL renderer accepts WebGL2.
+    // Phaser 4 GameConfig context field is 2D-only; WebGL renderer accepts WebGL2.
     context: gl as unknown as CanvasRenderingContext2D,
     width: Math.max(1, host.clientWidth),
     height: Math.max(1, host.clientHeight),
@@ -154,6 +170,6 @@ if (!gl) {
     scene: [CandidateScene],
   });
   window.addEventListener('pagehide', (event: PageTransitionEvent) => {
-    if (!event.persisted && !destroyed) { destroyed = true; game?.destroy(true); }
-  });
+    if (!event.persisted) destroyGame();
+  }, { once: true });
 }
