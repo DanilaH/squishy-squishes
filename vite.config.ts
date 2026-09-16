@@ -1,4 +1,3 @@
-import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 export default defineConfig(({ mode }) => {
@@ -8,7 +7,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: spike ? 'dist-phaser-spike' : mode === 'yandex' ? 'dist-yandex' : 'dist',
       sourcemap: false,
-      ...(spike ? { rollupOptions: { input: resolve(import.meta.dirname, 'phaser-spike.html') } } : {}),
+      ...(spike ? { rollupOptions: { input: 'phaser-spike.html' } } : {}),
     },
     server: { host: true },
   };
