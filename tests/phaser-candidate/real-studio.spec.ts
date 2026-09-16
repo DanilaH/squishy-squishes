@@ -97,7 +97,7 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
   await expect(page.locator('[data-sandbox-rigid-mixins]')).toBeVisible();
   expect(await page.evaluate(() => window.__squishyRealStudio!.snapshot().canvasCount)).toBe(1);
   await page.evaluate(() => window.__squishyRealStudio!.dispose());
-  await expect(page.locator('[data-sandbox-canvas]')).not.toHaveAttribute('data-phaser-ready', 'true');
+  await expect(page.locator('[data-sandbox-canvas]')).toHaveCount(0);
 });
 
 test('M4 real studio: activity blockers cancel gesture and Finish leaves canvas click-through', async ({ page }) => {
