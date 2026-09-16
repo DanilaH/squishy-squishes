@@ -26,7 +26,7 @@ jobs:
         run: npm install
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Build and smoke-test staged Pages tree
+      - name: Build and smoke-test staged Pages tree, including touch gestures
         run: npm run pages:qa
       - name: Upload failure diagnostics
         if: failure()
