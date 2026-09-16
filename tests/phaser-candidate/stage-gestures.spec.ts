@@ -76,7 +76,7 @@ test('M4 input: mix-in spacing and stickers use canonical hit UV, not squish ges
   expect(s.mixins).toBe(1);
   s.router.move(pointer(1, 0.1));
   expect(s.mixins).toBe(1);
-  // client pixel distance matters, whereas x/y are normalized for this fake host.
+  // Client pixel distance matters, whereas x/y are normalized for this fake host.
   s.router.move({ ...pointer(1, 0.2), clientX: 25 });
   expect(s.mixins).toBe(2);
   s.router.up(1);
@@ -94,7 +94,8 @@ test('M4 input: mix-in spacing and stickers use canonical hit UV, not squish ges
 test('M4 input: Mix owns distance and valid squish together; outside Mix still counts distance', () => {
   const s = setup();
   s.router.setStage('mix');
-  expect(s.router.down(pointer(1, 2))).toBe(true);
+  // Local x is outside shape, and the unrelated client coordinate starts at 0.
+  expect(s.router.down({ ...pointer(1, 2), clientX: 0 })).toBe(true);
   expect(s.active).toBe(false);
   for (let i = 1; i <= 20; i++) {
     s.router.move({ ...pointer(1, 2), clientX: i * 90 });
