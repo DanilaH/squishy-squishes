@@ -1,14 +1,19 @@
 import Phaser from 'phaser';
 import { MATERIALS, type MaterialId } from '../../game/content';
 import { SHAPES, type ShapeId } from '../../game/shapes';
+import { createAppearanceStroke, createMixInPlacement } from '../../sandbox/appearance';
+import { createStickerPlacement, type DecorDocumentV1 } from '../../sandbox/decor';
 import '../../sandbox-core.css';
 import './candidate.css';
 import { PhaserSquishCandidate } from './PhaserSquishCandidate';
+
+type RendererFixture = 'clear' | 'paint' | 'mixins' | 'decor' | 'foam' | 'pearl' | 'wireframe' | 'mold' | 'palette';
 
 declare global {
   interface Window {
     __squishyPhaserCandidate?: {
       snapshot(): ReturnType<PhaserSquishCandidate['snapshot']>;
+      fixture(kind: RendererFixture): void;
       destroy(): void;
     };
   }
@@ -20,7 +25,7 @@ if (!root) throw new Error('Candidate root is missing');
 // Only this separate HTML entry runs Phaser. Original V3/SDK/ads and main.ts are untouched.
 root.innerHTML = `
   <main class="sandbox-shell phaser-candidate-shell" data-candidate-stage="loading" data-shape="soft-square" data-material="soft">
-    <header class="sandbox-topbar"><strong>SQUISHY SQUISHES</strong><span>M2 · PHASER CANDIDATE</span></header>
+    <header class="sandbox-topbar"><strong>SQUISHY SQUISHES</strong><span>M3 · PHASER CANDIDATE</span></header>
     <section class="sandbox-copy"><span>ENGINE MIGRATION · TECHNICAL PREVIEW</span><h1>Try the squish</h1><p>Same spring simulation, original shader, Phaser-owned rendering. No saves or ads here.</p></section>
     <section class="sandbox-stage" aria-label="Squishy workbench">
       <div class="sandbox-glow" aria-hidden="true"></div>
@@ -128,7 +133,51 @@ if (!gl) {
       this.detachClicks = () => shell.removeEventListener('click', onClick);
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
       this.events.once(Phaser.Scenes.Events.DESTROY, this.cleanup, this);
-      window.__squishyPhaserCandidate = { snapshot: () => squish.snapshot(), destroy: destroyGame };
+
+      // Explicitly test-only controls; fixtures use the production document creators/replayers.
+      const fixture = (kind: RendererFixture): void => {
+        squish.setAppearanceDocuments(null, null);
+        squish.setPalette('milk');
+        squish.setFillingAmount(0);
+        squish.setFillingStyle('none');
+        squish.setFillProgress(1);
+        squish.setMoldProgress(1);
+        squish.setWireframe(false);
+        if (kind === 'paint') {
+          squish.setAppearanceDocuments({
+            v: 1,
+            strokes: [createAppearanceStroke(0, 0xff1764, 74, [
+              { u: 0.35, v: 0.43 }, { u: 0.52, v: 0.5 }, { u: 0.67, v: 0.56 },
+            ])],
+            mixins: [],
+          }, null);
+        } else if (kind === 'mixins') {
+          squish.setAppearanceDocuments({
+            v: 1, strokes: [], mixins: [
+              createMixInPlacement('stars', { u: 0.47, v: 0.53 }, 45, 0),
+              createMixInPlacement('glitter', { u: 0.65, v: 0.43 }, 32, 0.12),
+            ],
+          }, null);
+        } else if (kind === 'decor') {
+          const decor: DecorDocumentV1 = {
+            v: 1, eyes: 'happy', mouth: 'smile', blush: true,
+            stickers: [createStickerPlacement('star', { u: 0.67, v: 0.36 }, 0)], accessory: null,
+          };
+          squish.setAppearanceDocuments(null, decor);
+        } else if (kind === 'foam' || kind === 'pearl') {
+          squish.setFillingStyle(kind);
+          squish.setFillingAmount(0.85);
+          squish.setFillProgress(0.78);
+        } else if (kind === 'wireframe') {
+          squish.setWireframe(true);
+        } else if (kind === 'mold') {
+          squish.setMoldProgress(0.4);
+        } else if (kind === 'palette') {
+          squish.setPalette('strawberry');
+        }
+        shell.dataset.candidateFixture = kind;
+      };
+      window.__squishyPhaserCandidate = { snapshot: () => squish.snapshot(), fixture, destroy: destroyGame };
       shell.dataset.candidateStage = 'ready';
       status.textContent = 'Hold and pull · Phaser 4 / shared simulation';
     }
