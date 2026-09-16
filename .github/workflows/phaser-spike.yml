@@ -1,0 +1,39 @@
+name: Phaser Migration Spike
+
+on:
+  pull_request:
+    paths:
+      - 'src/experiments/phaser/**'
+      - 'tests/phaser/**'
+      - 'phaser-spike.html'
+      - 'playwright.phaser-spike.config.ts'
+      - 'vite.config.ts'
+      - 'package.json'
+      - '.github/workflows/phaser-spike.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  experiment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - name: Build and test native Phaser Extern prototype
+        run: npm run spike:qa
+      - name: Keep prototype screenshots and failure traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phaser-spike-evidence
+          path: |
+            test-results/**/phaser-*.png
+            test-results/**/trace.zip
+            test-results/**/test-failed-*.png
+          if-no-files-found: warn
