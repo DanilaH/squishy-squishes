@@ -1,0 +1,53 @@
+name: Phaser Yandex DRAFT
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  phaser-yandex-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Audit exact DRAFT bundle and exercise compiled index
+        run: npm run draft:qa
+      - name: Package verified Phaser DRAFT root
+        run: |
+          cd dist-phaser-yandex
+          zip -r ../squishy-squishes-phaser-draft.zip .
+          cd ..
+          sha256sum squishy-squishes-phaser-draft.zip
+      - name: Upload verified Phaser DRAFT archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: squishy-squishes-phaser-draft
+          path: squishy-squishes-phaser-draft.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phaser-yandex-draft-failure
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
