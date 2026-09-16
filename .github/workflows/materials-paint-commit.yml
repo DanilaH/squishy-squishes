@@ -1,0 +1,42 @@
+name: Commit Materials and Paint Patch
+
+on:
+  push:
+    branches:
+      - sandbox-polish-materials-02
+
+permissions:
+  contents: write
+
+jobs:
+  commit-patch:
+    if: github.event.head_commit.message != 'Add tactile material identities and paint-entry drawing'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Reuse focused patch script
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/materials-paint-patch.yml').read_text()
+          start_marker = "          python3 - <<'PY'\n"
+          end_marker = "          PY\n"
+          start = workflow.index(start_marker) + len(start_marker)
+          end = workflow.index(end_marker, start)
+          lines = workflow[start:end].splitlines()
+          prefix = '          '
+          script = '\n'.join(line[len(prefix):] if line.startswith(prefix) else line for line in lines) + '\n'
+          Path('/tmp/materials-paint-patch.py').write_text(script)
+          PY
+          python3 /tmp/materials-paint-patch.py
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/game/content.ts src/sandbox/SandboxApp.ts src/squish/SquishSurface.ts src/squish/shaders.ts src/sandbox/libraryThumbnail.ts src/sandbox-polish-01.css tests/release/materials-paint.spec.ts
+          git commit -m "Add tactile material identities and paint-entry drawing"
+          git push origin HEAD:sandbox-polish-materials-02
