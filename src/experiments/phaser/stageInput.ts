@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { getShape, isPointInsideShape } from '../../game/shapes';
+import type { ShapeId } from '../../game/shapes';
 import {
   APPEARANCE_TARGET_BYTES,
   MAX_APPEARANCE_STROKES,
@@ -17,12 +17,15 @@ import type { StudioGestureStage, StudioDecorSection } from '../../sandbox/Stage
 import { PhaserSquishCandidate } from './PhaserSquishCandidate';
 
 // Browser integration fixture, not the shipping Library, V3 repository or SDK.
-// The reusable PhaserStudioGestureBridge owns all playfield pointer listeners.
+// Phaser and the original renderer both delegate UV/hit tests to SquishSimulation.
 declare global {
   interface Window {
     __squishyStageInput?: {
       snapshot(): { stage: StudioGestureStage; paintStrokes: number; mixinCount: number; stickerCount: number; mixProgress: number; squeezes: number; active: boolean; owner: number | null; canvasCount: number };
       stage(stage: StudioGestureStage, decorSection?: StudioDecorSection): void;
+      shape(shapeId: ShapeId): void;
+      pointToUv(x: number, y: number): AppearancePoint | null;
+      projectUvToCanvas(u: number, v: number): { x: number; y: number };
       blocked(value: boolean): void;
       destroy(): void;
     };
@@ -103,20 +106,14 @@ class StudioInputScene extends Phaser.Scene {
     this.squish = squish;
     this.add.existing(squish);
     const bridge = new PhaserStudioGestureBridge(this, canvas, {
-      pointToUv: (x, y) => {
-        const radius = Math.max(1, Math.min(this.scale.width, this.scale.height) * 0.34);
-        const localX = (x - this.scale.width / 2) / radius;
-        const localY = (this.scale.height / 2 - y) / radius;
-        if (!isPointInsideShape(getShape('soft-square'), localX, localY)) return null;
-        return { u: Math.min(1, Math.max(0, localX * 0.5 + 0.5)), v: Math.min(1, Math.max(0, localY * 0.5 + 0.5)) };
-      },
+      pointToUv: (x, y) => squish.pointToUv(x, y),
       beginSquish: (pointer) => squish.begin(pointer),
       moveSquish: (pointer) => squish.move(pointer),
       endSquish: (pointer) => squish.end(pointer),
       cancelSquish: () => squish.cancel(),
       paintStamp: (point) => { this.strokePoints = [point]; this.replay(); },
       paintSegment: (_from, to) => {
-        // Keep the transient V1 document within its point encoding limit.
+        // The transient V1 document must remain under its encoded point ceiling.
         if (this.strokePoints.length < 320) this.strokePoints.push(to);
         this.replay();
       },
@@ -167,6 +164,9 @@ class StudioInputScene extends Phaser.Scene {
     window.__squishyStageInput = {
       snapshot: () => ({ stage: this.stage, paintStrokes: this.appearance.value.strokes.length, mixinCount: this.appearance.value.mixins.length, stickerCount: this.decor.value.stickers.length, mixProgress: this.mixProgress, squeezes: squish.snapshot().squeezes, active: squish.snapshot().active, owner: bridge.snapshot().owner, canvasCount: host.querySelectorAll('canvas').length }),
       stage: (stage, section) => this.setStage(stage, section),
+      shape: (shapeId) => { bridge.cancel(); squish.setShape(shapeId); this.replay(); },
+      pointToUv: (x, y) => squish.pointToUv(x, y),
+      projectUvToCanvas: (u, v) => squish.projectUvToCanvas(u, v),
       blocked: (value) => { this.blocked = value; bridge.setBlocked(value); shell.dataset.blocked = String(value); },
       destroy,
     };

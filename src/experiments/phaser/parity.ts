@@ -16,8 +16,7 @@ declare global {
   }
 }
 
-// This page exists solely to compare *actual* browser output. It is excluded
-// from the default Pages and Yandex builds and does not contain production UI.
+// Test-only comparison of browser-composited frames; not a second shipping renderer.
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Parity fixture root missing');
 root.innerHTML = `
@@ -110,9 +109,10 @@ const fixture = (kind: Fixture): void => {
 
   old.setShape(getShape(shapeId));
   squish.setShape(shapeId);
-  old.setMaterial(styleFor(materialId));
-  squish.setMaterial(materialId);
-  squish.setPalette('milk');
+  const style = styleFor(materialId);
+  old.setMaterial(style);
+  // Exercise the exact original studio's material object path, not inferred presets.
+  squish.setMaterialStyle(style);
   old.setMoldProgress(1);
   squish.setMoldProgress(1);
   old.setFillingAmount(amount);
@@ -127,10 +127,11 @@ const fixture = (kind: Fixture): void => {
     replayAppearanceDocument(appearanceContext, appearance);
     renderSurfaceDecor(appearanceContext, decor, getShape(shapeId));
     old.setAppearanceTexture(appearanceCanvas);
-    squish.setAppearanceDocuments(appearance, decor);
+    // The final studio already bakes Canvas2D once. Phaser receives those same pixels.
+    squish.setAppearanceCanvas(appearanceCanvas);
   } else {
     old.setAppearanceTexture(null);
-    squish.setAppearanceDocuments(null, null);
+    squish.setAppearanceCanvas(null);
   }
   shell.dataset.parityFixture = kind;
 };

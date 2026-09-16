@@ -53,8 +53,6 @@ export class PhaserStudioGestureBridge {
     scene.input.on('pointermove', this.handleMove);
     scene.input.on('pointerup', this.handleUp);
     scene.input.on('pointerupoutside', this.handleUp);
-    // Phaser input does not guarantee a matching pointerup on all browsers
-    // after these interruptions. In particular, no cancelled squeeze is earned.
     canvas.addEventListener('pointercancel', this.handleCancel, { signal: this.abort.signal });
     canvas.addEventListener('lostpointercapture', this.handleLostCapture, { signal: this.abort.signal });
     window.addEventListener('blur', this.handleCancel, { signal: this.abort.signal });
@@ -67,12 +65,18 @@ export class PhaserStudioGestureBridge {
   public setStage(stage: StudioGestureStage, decorSection?: StudioDecorSection): void {
     if (this.disposed) return;
     this.router.setStage(stage, decorSection);
-    // Preserve the original Finish-only playfield click-through.
     this.canvas.style.pointerEvents = stage === 'finish' ? 'none' : 'auto';
   }
 
   public setBlocked(blocked: boolean): void {
     if (!this.disposed) this.router.setBlocked(blocked);
+  }
+
+  /** Cancel any captured gesture before changing shape or loading another toy. */
+  public cancel(): void {
+    if (this.disposed) return;
+    this.router.cancel();
+    this.pointers.clear();
   }
 
   public snapshot(): ReturnType<StageGestureRouter['snapshot']> { return this.router.snapshot(); }
@@ -113,24 +117,16 @@ export class PhaserStudioGestureBridge {
     this.pointers.delete(pointer.id);
   };
 
-  private readonly handleCancel = (): void => {
-    if (this.disposed) return;
-    this.router.cancel();
-    this.pointers.clear();
-  };
-
-  private readonly handleVisibility = (): void => {
-    if (document.hidden) this.handleCancel();
-  };
-
+  private readonly handleCancel = (): void => { this.cancel(); };
+  private readonly handleVisibility = (): void => { if (document.hidden) this.cancel(); };
   private readonly handleLostCapture = (): void => {
-    if (this.router.snapshot().owner !== null) this.handleCancel();
+    if (this.router.snapshot().owner !== null) this.cancel();
   };
 
   public dispose(): void {
     if (this.disposed) return;
-    this.disposed = true;
     this.router.cancel();
+    this.disposed = true;
     this.pointers.clear();
     this.abort.abort();
     this.scene.input.off('pointerdown', this.handleDown);
