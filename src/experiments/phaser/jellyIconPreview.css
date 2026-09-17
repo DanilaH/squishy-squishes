@@ -1,0 +1,85 @@
+/* Phaser Pages only: a hand-picked subset of the uploaded Nieobie CC0 icon pack.
+   The existing native buttons and translated text remain the hit targets and
+   accessible names. Only alpha masks are shipped, not the entire source pack. */
+#app[data-jelly-ui-ready] :is(
+  .sandbox-library-new, .sandbox-library-ideas,
+  .sandbox-shell [data-action='new'], .sandbox-shell [data-action='home'],
+  .sandbox-shell [data-action='save'],
+  .sandbox-shell [data-paint-tool='paint'], .sandbox-shell [data-paint-tool='erase'],
+  .sandbox-shell [data-action$='-undo'], .sandbox-sound
+) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+#app[data-jelly-ui-ready] :is(
+  .sandbox-library-new, .sandbox-library-ideas,
+  .sandbox-shell [data-action='new'], .sandbox-shell [data-action='home'],
+  .sandbox-shell [data-action='save'],
+  .sandbox-shell [data-paint-tool='paint'], .sandbox-shell [data-paint-tool='erase'],
+  .sandbox-shell [data-action$='-undo'], .sandbox-sound
+)::before {
+  content: '';
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  filter: drop-shadow(0 1px 0 rgba(114,63,14,.35));
+}
+
+#app[data-jelly-ui-ready] :is(.sandbox-library-new, .sandbox-shell [data-action='new'])::before {
+  -webkit-mask-image: url('../../../biba/no-padding/128px/white/11-symbols/plus.png');
+  mask-image: url('../../../biba/no-padding/128px/white/11-symbols/plus.png');
+}
+#app[data-jelly-ui-ready] .sandbox-library-ideas::before {
+  -webkit-mask-image: url('../../../biba/no-padding/128px/white/2-items/book.png');
+  mask-image: url('../../../biba/no-padding/128px/white/2-items/book.png');
+}
+#app[data-jelly-ui-ready] .sandbox-shell [data-action='home']::before {
+  -webkit-mask-image: url('../../../biba/no-padding/128px/white/6-buildings/house.png');
+  mask-image: url('../../../biba/no-padding/128px/white/6-buildings/house.png');
+}
+#app[data-jelly-ui-ready] .sandbox-shell [data-action='save']::before {
+  -webkit-mask-image: url('../../../biba/no-padding/128px/white/8-ui/save.png');
+  mask-image: url('../../../biba/no-padding/128px/white/8-ui/save.png');
+}
+#app[data-jelly-ui-ready] .sandbox-shell [data-paint-tool='paint']::before {
+  -webkit-mask-image: url('../../../biba/no-padding/128px/white/10-editing/brush.png');
+  mask-image: url('../../../biba/no-padding/128px/white/10-editing/brush.png');
+}
+#app[data-jelly-ui-ready] .sandbox-shell [data-paint-tool='erase']::before {
+  -webkit-mask-image: url('../../../biba/no-padding/128px/white/10-editing/eraser.png');
+  mask-image: url('../../../biba/no-padding/128px/white/10-editing/eraser.png');
+}
+#app[data-jelly-ui-ready] .sandbox-shell [data-action$='-undo']::before {
+  -webkit-mask-image: url('../../../biba/no-padding/128px/white/10-editing/undo.png');
+  mask-image: url('../../../biba/no-padding/128px/white/10-editing/undo.png');
+}
+#app[data-jelly-ui-ready] .sandbox-sound::before {
+  -webkit-mask-image: url('../../../biba/no-padding/128px/white/9-media/volume.png');
+  mask-image: url('../../../biba/no-padding/128px/white/9-media/volume.png');
+  width: 13px;
+  height: 13px;
+}
+#app[data-jelly-ui-ready] .sandbox-sound[aria-pressed='true']::before {
+  -webkit-mask-image: url('../../../biba/no-padding/128px/white/9-media/mute.png');
+  mask-image: url('../../../biba/no-padding/128px/white/9-media/mute.png');
+}
+/* At 320 CSS px the paint tool row has five controls; keep the original tap
+   target sizes and translated captions while leaving enough room for icons. */
+@media (max-width: 390px) {
+  #app[data-jelly-ui-ready] .sandbox-shell [data-paint-tool] { gap: 2px; font-size: 11px; padding-inline: 4px; }
+  #app[data-jelly-ui-ready] .sandbox-shell [data-paint-tool]::before { width: 13px; height: 13px; }
+  #app[data-jelly-ui-ready] .sandbox-sound { gap: 3px; font-size: 11px; }
+  #app[data-jelly-ui-ready] .sandbox-library-heading__actions > button { gap: 4px; padding-inline: 7px; }
+  #app[data-jelly-ui-ready] .sandbox-library-heading__actions > button::before { width: 14px; height: 14px; }
+}
