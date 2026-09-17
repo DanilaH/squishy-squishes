@@ -1,0 +1,33 @@
+name: Temporary jelly UI source export
+on:
+  push:
+    branches: [feat/phaser-jelly-ui-pass-01]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Export scoped sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: squishy-ui-working-sources
+          path: |
+            AGENTS.md
+            README.md
+            src/
+            docs/
+            scripts/
+            tests/
+            public/
+            biba/ChatGPT Image Sep 17, 2026, 04_27_10 PM.png
+            index.html
+            phaser-*.html
+            vite.config.ts
+            package.json
+            package-lock.json
+            tsconfig.json
+            playwright*.ts
+          if-no-files-found: error
+          retention-days: 1
