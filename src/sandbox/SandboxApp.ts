@@ -614,9 +614,14 @@ export class SandboxApp {
 
     const shapeId = target.dataset.shape as ShapeId | undefined;
     if (shapeId && SHAPES.some((shape) => shape.id === shapeId)) {
-      this.draft = { ...this.draft, shapeId };
-      this.applyDraftToRenderer();
-      this.updatePressed('[data-shape]', 'shape', shapeId);
+      if (shapeId !== this.draft.shapeId) {
+        this.draft = { ...this.draft, shapeId };
+        this.applyDraftToRenderer();
+        // Face and blush are shape-relative. Rebuild the authored texture after
+        // changing a shape, without dropping paint, mix-ins or stickers.
+        this.replayAndUpload();
+      }
+      this.updatePressed('button[data-shape]', 'shape', shapeId);
       return;
     }
 
@@ -1019,7 +1024,7 @@ export class SandboxApp {
     this.mixDistance = 0;
     this.replayAndUpload();
     this.applyDraftToRenderer();
-    this.updatePressed('[data-shape]', 'shape', this.draft.shapeId);
+    this.updatePressed('button[data-shape]', 'shape', this.draft.shapeId);
     this.updatePressed('[data-material]', 'material', this.draft.materialId);
     this.updatePressed('[data-paint-tool]', 'paintTool', 'paint');
     this.updatePressed('[data-paint-color]', 'paintColor', String(this.paintColor));
@@ -1040,7 +1045,7 @@ export class SandboxApp {
     };
     this.applyDraftToRenderer();
     this.replayAndUpload();
-    this.updatePressed('[data-shape]', 'shape', saved.shapeId);
+    this.updatePressed('button[data-shape]', 'shape', saved.shapeId);
     this.updatePressed('[data-material]', 'material', saved.materialId);
     this.updateAppearanceDataset();
     this.updateDecorUi();

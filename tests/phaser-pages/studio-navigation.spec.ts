@@ -74,8 +74,23 @@ test('studio back navigation retains creative work and completed Mix, then reset
   await page.mouse.click(decor.x, decor.y);
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
   await expect(page.locator('[data-action="decor-undo"]')).toBeEnabled();
+  // Changing the shape *after* decorating must preserve creative data and rebake
+  // the shape-relative face rather than keeping the old shape's texture.
   await back.click();
   await expect(shell).toHaveAttribute('data-stage', 'mix');
+  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
+  await back.click();
+  await back.click();
+  await back.click();
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
+  await page.locator('button[data-shape="mochi"]').click();
+  await expect(shell).toHaveAttribute('data-shape', 'mochi');
+  await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
+  await expect(shell).toHaveAttribute('data-paint-strokes', '1');
+  await expect(shell).toHaveAttribute('data-mixin-count', '1');
+  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-action="mixin-continue"]').click();
   await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
   await page.locator('[data-action="mix-continue"]').click();
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
@@ -90,7 +105,7 @@ test('studio back navigation retains creative work and completed Mix, then reset
   }));
   expect(saved.original).toBe('original-save-untouched');
   const parsed = JSON.parse(saved.preview ?? 'null');
-  expect(parsed.library[0]).toMatchObject({ shapeId: 'heart', materialId: 'holo' });
+  expect(parsed.library[0]).toMatchObject({ shapeId: 'mochi', materialId: 'holo' });
   expect(parsed.library[0].appearance.strokes).toHaveLength(1);
   expect(parsed.library[0].appearance.mixins).toHaveLength(1);
   expect(parsed.library[0].decor.s).toHaveLength(1);
