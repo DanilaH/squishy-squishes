@@ -1,0 +1,30 @@
+name: Apply isolated studio navigation patch
+
+on:
+  push:
+    branches:
+      - feat/studio-back-navigation
+    paths:
+      - .github/workflows/apply-studio-navigation.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.repository == 'DanilaH/squishy-squishes' && github.ref == 'refs/heads/feat/studio-back-navigation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - name: Apply exact-match source edits and commit to this isolated branch
+        run: |
+          python3 scripts/patch-studio-navigation.py
+          git diff --check
+          git add src/sandbox/SandboxApp.ts src/sandbox/StageGestureRouter.ts
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Add reversible studio stages and preserve completed Mix'
+          git push origin HEAD:refs/heads/feat/studio-back-navigation
