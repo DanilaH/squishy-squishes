@@ -7,7 +7,7 @@ const layouts = [
   { name: 'en-desktop', locale: 'en-US', width: 1280, height: 800 },
 ] as const;
 
-/** Inspect the actual hit targets and layout, not just whether the DOM renders. */
+/** Inspect the actual hit targets and captions, not deliberate SVG silhouette overflow. */
 const checkControls = async (page: Page, label: string): Promise<void> => {
   const issues = await page.locator(
     '.sandbox-controls button:visible, .sandbox-topbar button:visible, '
@@ -22,8 +22,11 @@ const checkControls = async (page: Page, label: string): Promise<void> => {
     if (rect.left < -1 || rect.right > innerWidth + 1 || rect.top < -1 || rect.bottom > innerHeight + 1) {
       errors.push(`${id}: outside viewport ${Math.round(rect.left)},${Math.round(rect.top)} ${Math.round(rect.width)}x${Math.round(rect.height)}`);
     }
-    if (element.scrollWidth > element.clientWidth + 2) errors.push(`${id}: caption overflows horizontally`);
-    if (element.scrollHeight > element.clientHeight + 2) errors.push(`${id}: caption overflows vertically`);
+    // Shape SVG polygons intentionally extend outside their SVG viewBox, so
+    // button.scrollWidth is *not* a measure of its caption's readability.
+    const caption = element.matches('.sandbox-shape') ? element.lastElementChild : element;
+    if (caption && caption.scrollWidth > caption.clientWidth + 2) errors.push(`${id}: caption overflows horizontally`);
+    if (caption && caption.scrollHeight > caption.clientHeight + 2) errors.push(`${id}: caption overflows vertically`);
     if (!hit || !element.contains(hit)) errors.push(`${id}: hit target intercepted by ${hit?.tagName ?? 'nothing'}`);
     return errors;
   }));
