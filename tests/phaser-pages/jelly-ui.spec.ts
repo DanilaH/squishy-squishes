@@ -8,7 +8,32 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
   await expect(root).toHaveAttribute('data-jelly-ui-ready', '');
   const newToy = page.locator('[data-library-new]').first();
   await expect(newToy).toHaveCSS('background-image', /honey-wide.*webp/);
-  await page.screenshot({ path: testInfo.outputPath('candy-jelly-library-phone.png') });
+
+  // Unlike the earlier side-by-side header, the full title and both touch
+  // targets must have their own space even on a narrow portrait phone.
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const title = page.locator('.sandbox-library-heading h1');
+    const actions = page.locator('.sandbox-library-heading__actions');
+    const titleBox = await title.boundingBox();
+    const actionsBox = await actions.boundingBox();
+    const ideasBox = await actions.locator('button').first().boundingBox();
+    const newBox = await actions.locator('button').last().boundingBox();
+    expect(titleBox).not.toBeNull();
+    expect(actionsBox).not.toBeNull();
+    expect(ideasBox).not.toBeNull();
+    expect(newBox).not.toBeNull();
+    expect(titleBox!.y + titleBox!.height).toBeLessThan(actionsBox!.y);
+    expect(ideasBox!.x + ideasBox!.width).toBeLessThan(newBox!.x);
+    expect(newBox!.x + newBox!.width).toBeLessThanOrEqual(width);
+    expect(ideasBox!.height).toBeGreaterThanOrEqual(44);
+    expect(newBox!.height).toBeGreaterThanOrEqual(44);
+    const titleLineCount = await title.evaluate((element) =>
+      element.getBoundingClientRect().height / parseFloat(getComputedStyle(element).lineHeight));
+    expect(titleLineCount).toBeLessThan(1.2);
+    await page.screenshot({ path: testInfo.outputPath(`candy-jelly-library-${width}.png`) });
+  }
+
   await newToy.click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
   await expect(page.locator('[data-action="shape-continue"]')).toHaveCSS('background-image', /honey-wave.*webp/);
