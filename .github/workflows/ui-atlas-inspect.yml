@@ -1,0 +1,22 @@
+name: Temporary UI atlas inspection
+
+on:
+  push:
+    branches:
+      - feat/ui-atlas-inspection
+
+permissions:
+  contents: read
+
+jobs:
+  export-atlases:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Export source PNG atlases
+        uses: actions/upload-artifact@v4
+        with:
+          name: squishy-ui-source-atlases
+          path: biba/*.png
+          if-no-files-found: error
+          retention-days: 1
