@@ -1,0 +1,32 @@
+name: Temporary Nunito lock refresh
+on:
+  push:
+    branches: [feat/phaser-jelly-ui-pass-01]
+permissions:
+  contents: write
+jobs:
+  lock:
+    if: "!contains(github.event.head_commit.message, '[nunito lock]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Refresh lockfile once
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Refresh lockfile for local Nunito font [nunito lock]'
+          git fetch origin feat/phaser-jelly-ui-pass-01
+          git rebase origin/feat/phaser-jelly-ui-pass-01
+          git push origin HEAD:feat/phaser-jelly-ui-pass-01
