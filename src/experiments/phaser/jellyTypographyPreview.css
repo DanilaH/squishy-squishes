@@ -32,17 +32,17 @@
   text-shadow: 0 1px 0 rgba(255,255,255,.65);
 }
 
-/* Ivory lettering with a deeper golden outline stays legible on the shiny,
-   light-centered honey assets. Keep headings plum on the pale background. */
+/* Ivory lettering with a deep golden outline stays legible on shiny,
+   light-centered honey art. Headings remain plum on the pale background. */
 #app[data-jelly-ui-ready] :is(.sandbox-library-new, .sandbox-library-ideas,
   .sandbox-library-reward > button, .sandbox-library-modal__cancel,
   .sandbox-panel .sandbox-primary, .sandbox-panel .sandbox-secondary,
   .sandbox-decor-tabs > button) {
   color: #fffef6;
-  -webkit-text-stroke: 1.15px #945315;
+  -webkit-text-stroke: .85px #945315;
   font-weight: 900;
   letter-spacing: 0;
-  font-size: clamp(12px, 3vw, 14px);
+  font-size: clamp(13px, 3.7vw, 15px);
   line-height: 1.15;
   text-shadow:
     1px 0 #945315, -1px 0 #945315,
@@ -50,7 +50,7 @@
     0 2px 0 #704012, 0 3px 4px rgba(74, 35, 9, .38);
 }
 
-/* Do not put a gold stroke on red destructive actions. */
+/* Red destructive actions should not inherit the honey lettering. */
 #app[data-jelly-ui-ready] :is(.sandbox-library-modal__danger,
   .sandbox-panel [data-action='paint-clear'],
   .sandbox-panel [data-action='mixin-clear'],
@@ -62,8 +62,8 @@
 
 #app[data-jelly-ui-ready] .sandbox-sound {
   color: #fffef6;
-  -webkit-text-stroke: 1px #945315;
-  font-size: 12px;
+  -webkit-text-stroke: .8px #945315;
+  font-size: 13px;
   font-weight: 850;
   letter-spacing: 0;
   text-shadow:
@@ -81,7 +81,7 @@
   min-height: 65px !important;
   background-size: contain;
   background-color: transparent;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 /* Desktop's 430px canvas can overlap the shape tray's upper edge. Raise the
