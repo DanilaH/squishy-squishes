@@ -12,6 +12,7 @@ import '../../sandbox-ideas.css';
 import '../../sandbox-polish-01.css';
 import './candyStudioPreview.css';
 import './jellyUiPreview.css';
+import './jellyTypographyPreview.css';
 import { preloadJellyUi } from './jellyUiPreload';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
@@ -58,12 +59,12 @@ root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="st
 void preloadJellyUi().then((ready) => {
   if (ready) root.dataset.jellyUiReady = '';
   return bootstrapSquishyApp(root, {
-  createRuntime: createPagesRuntime,
-  makerRendererOptions: {
-    rendererBackend: 'phaser',
-    makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
-      new PhaserSquishSurface(canvas, onMetrics, audio, callbacks),
-  },
+    createRuntime: createPagesRuntime,
+    makerRendererOptions: {
+      rendererBackend: 'phaser',
+      makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
+        new PhaserSquishSurface(canvas, onMetrics, audio, callbacks),
+    },
   });
 }).then((handle) => {
   const listeners = new AbortController();
