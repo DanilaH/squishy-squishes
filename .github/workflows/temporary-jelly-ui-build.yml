@@ -1,0 +1,33 @@
+name: Temporary jelly UI image build
+on:
+  push:
+    branches: [feat/phaser-jelly-ui-pass-01]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Generate reviewed UI derivatives once
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f src/experiments/phaser/ui-assets/honey-wide.webp; then
+            echo 'Already committed; skipping one-time generation'
+            exit 0
+          fi
+          npm install
+          node scripts/build-jelly-ui.mjs
+          node scripts/apply-jelly-ui-entry.mjs
+          npm run asset:smoke
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/experiments/phaser/ui-assets src/experiments/phaser/pagesPreview.ts package.json
+          git commit -m 'Preload and apply honey jelly buttons in Phaser Pages preview'
+          git push origin HEAD:feat/phaser-jelly-ui-pass-01
