@@ -63,6 +63,13 @@
   font-size: 14px;
 }
 
+/* Desktop's 430px canvas can overlap the shape tray's upper edge. Raise the
+   controls instead of disabling canvas input needed during Paint and Squeeze. */
+#app[data-jelly-ui-ready] .sandbox-controls {
+  position: relative;
+  z-index: 3;
+}
+
 /* The original stage overrides use purple outlines and raised shadows;
    keep the selection/focus language consistent with the new ink. */
 #app[data-jelly-ui-ready] .sandbox-shell[data-stage='shape'] .sandbox-shape[aria-pressed='true'],
