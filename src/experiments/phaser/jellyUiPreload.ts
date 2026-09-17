@@ -1,23 +1,25 @@
-// Decode the immediately reachable UI art before displaying the Library.
-// A failed fetch/decode leaves the previous CSS-only buttons fully usable.
-const paths = [
-  './ui-assets/honey-wide.webp',
-  './ui-assets/honey-pill.webp',
-  './ui-assets/honey-small.webp',
-  './ui-assets/honey-wave.webp',
-  './ui-assets/red-wide.webp',
-] as const;
+// Decode immediately reachable UI art before the Library becomes playable.
+// Each URL must use a static literal so Vite rewrites it to the hashed asset
+// under the correct Pages/Yandex build prefix; dynamic new URL(path, import.meta.url)
+// incorrectly requests /phaser/assets/ui-assets/*.webp in the staged preview.
+const urls = [
+  new URL('./ui-assets/honey-wide.webp', import.meta.url).href,
+  new URL('./ui-assets/honey-pill.webp', import.meta.url).href,
+  new URL('./ui-assets/honey-small.webp', import.meta.url).href,
+  new URL('./ui-assets/honey-wave.webp', import.meta.url).href,
+  new URL('./ui-assets/red-wide.webp', import.meta.url).href,
+];
 
 const decodeImage = async (url: string): Promise<void> => {
   const image = new Image();
   image.src = url;
   await image.decode();
-  if (image.naturalWidth === 0 || image.naturalHeight === 0) throw new Error(`Empty UI image: ${url}`);
+  if (!image.naturalWidth || !image.naturalHeight) throw new Error(`Empty UI image: ${url}`);
 };
 
 export const preloadJellyUi = async (): Promise<boolean> => {
   try {
-    await Promise.all(paths.map((path) => decodeImage(new URL(path, import.meta.url).href)));
+    await Promise.all(urls.map(decodeImage));
     return true;
   } catch (error) {
     console.warn('[squishy:jelly-ui] Image preload failed; using CSS-only controls.', error);
