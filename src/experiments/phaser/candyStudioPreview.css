@@ -46,6 +46,15 @@
   text-shadow: 0 2px 0 rgba(255, 255, 255, .75);
 }
 
+/* Six columns squeezed the labels into illegible slivers on phones. A 3 x 2
+   tray retains larger toy silhouettes without stealing canvas hit area. */
+.sandbox-shell[data-stage="shape"] [data-panel="shape"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 620px;
+  margin-inline: auto;
+}
+
 /* Raised gumdrop tiles: silhouette first, text second; existing SVG and HTML remain. */
 .sandbox-shell[data-stage="shape"] .sandbox-shape {
   --tile-top: #fff4fb;
@@ -54,7 +63,8 @@
   --tile-fill: #efb6de;
   --tile-stroke: #b963a0;
   position: relative;
-  padding: 5px 2px 4px;
+  min-height: 82px !important;
+  padding: 5px 4px 4px;
   border: 2px solid rgba(255,255,255,.95);
   border-bottom-color: var(--tile-edge);
   border-radius: 18px;
@@ -74,8 +84,8 @@
   --tile-fill: #f6d48c; --tile-stroke: #b68b44;
 }
 .sandbox-shell[data-stage="shape"] .sandbox-shape__icon {
-  width: clamp(29px, 7vw, 42px);
-  height: clamp(29px, 7vw, 42px);
+  width: clamp(34px, 10vw, 48px);
+  height: clamp(34px, 10vw, 48px);
   filter: drop-shadow(0 2px 1px rgba(83, 42, 96, .17));
 }
 .sandbox-shell[data-stage="shape"] .sandbox-shape__icon polygon {
@@ -85,9 +95,11 @@
 }
 .sandbox-shell[data-stage="shape"] .sandbox-shape span:last-child {
   color: var(--candy-ink);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.1;
   font-weight: 900;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 .sandbox-shell[data-stage="shape"] .sandbox-shape[aria-pressed="true"] {
   transform: translateY(-2px);
@@ -160,12 +172,17 @@
 }
 
 @media (max-height: 740px) and (orientation: portrait) {
-  .sandbox-shell[data-stage="shape"] .sandbox-shape__icon { width: 26px; height: 26px; }
+  .sandbox-shell[data-stage="shape"] .sandbox-shape { min-height: 72px !important; }
+  .sandbox-shell[data-stage="shape"] .sandbox-shape__icon { width: 30px; height: 30px; }
   .sandbox-shell[data-stage="finish"] .sandbox-material__orb { width: 27px; height: 27px; }
 }
 @media (max-height: 520px) and (orientation: landscape) {
   .sandbox-shell[data-stage="shape"] .sandbox-copy > span,
   .sandbox-shell[data-stage="finish"] .sandbox-copy > span { margin-left: 0; }
+  .sandbox-shell[data-stage="shape"] [data-panel="shape"] { gap: 8px; }
+  .sandbox-shell[data-stage="shape"] .sandbox-shape { min-height: 63px !important; padding: 3px 4px; }
+  .sandbox-shell[data-stage="shape"] .sandbox-shape__icon { width: 27px; height: 27px; }
+  .sandbox-shell[data-stage="shape"] .sandbox-shape span:last-child { font-size: 10px; }
   .sandbox-shell[data-stage="finish"] .sandbox-material__orb { width: 22px; height: 22px; }
 }
 @media (prefers-reduced-motion: reduce) {
