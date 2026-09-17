@@ -15,6 +15,9 @@ const checkControls = async (page: Page, label: string): Promise<void> => {
     + '.sandbox-ideas-heading button:visible, .sandbox-library-modal button:visible',
   ).evaluateAll((elements) => elements.flatMap((element) => {
     if (!(element instanceof HTMLButtonElement)) return [];
+    // Background buttons must be inert under an open confirmation dialog.
+    // Audit only the controls in the active modal until it is dismissed.
+    if (document.querySelector('.sandbox-library-modal') && !element.closest('.sandbox-library-modal')) return [];
     const rect = element.getBoundingClientRect();
     const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
     const errors: string[] = [];
