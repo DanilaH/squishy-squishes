@@ -1,0 +1,191 @@
+/* Deliberately isolated to the Phaser Pages preview. This is a small visual
+   direction test for Shape and Finish, not a production-wide UI pack. */
+.sandbox-shell[data-stage="shape"],
+.sandbox-shell[data-stage="finish"] {
+  --candy-ink: #49345f;
+  --candy-edge: #d6b7e4;
+  --candy-accent: #7530b2;
+  --sandbox-ink: var(--candy-ink);
+  --sandbox-muted: #675477;
+  background:
+    radial-gradient(circle at 19% 13%, rgba(255, 195, 222, .76), transparent 35%),
+    radial-gradient(circle at 82% 24%, rgba(173, 230, 253, .72), transparent 37%),
+    linear-gradient(155deg, #fff3e7 0%, #fff2fa 51%, #eaf8ff 100%);
+}
+
+/* Keep the squishy visually dominant: the tabletop is decorative, never interactive. */
+.sandbox-shell[data-stage="shape"] .sandbox-stage::before,
+.sandbox-shell[data-stage="finish"] .sandbox-stage::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  width: min(94%, 490px);
+  height: min(72%, 340px);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255,255,255,.81) 0 40%, rgba(250,213,243,.42) 59%, transparent 74%);
+  pointer-events: none;
+}
+
+.sandbox-shell[data-stage="shape"] .sandbox-copy > span,
+.sandbox-shell[data-stage="finish"] .sandbox-copy > span {
+  width: max-content;
+  min-height: 0;
+  margin: 0 auto 5px;
+  padding: 3px 12px;
+  border: 1px solid rgba(157, 96, 186, .16);
+  border-radius: 100px;
+  background: rgba(255, 255, 255, .76);
+  box-shadow: 0 2px 0 rgba(180, 132, 191, .18);
+  color: #75428a;
+  letter-spacing: .08em;
+}
+
+.sandbox-shell[data-stage="shape"] .sandbox-copy h1,
+.sandbox-shell[data-stage="finish"] .sandbox-copy h1 {
+  color: #503163;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, .75);
+}
+
+/* Six columns squeezed the labels into illegible slivers on phones. A 3 x 2
+   tray retains larger toy silhouettes without stealing canvas hit area. */
+.sandbox-shell[data-stage="shape"] [data-panel="shape"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 620px;
+  margin-inline: auto;
+}
+
+/* Raised gumdrop tiles: silhouette first, text second; existing SVG and HTML remain. */
+.sandbox-shell[data-stage="shape"] .sandbox-shape {
+  --tile-top: #fff4fb;
+  --tile-bottom: #f3d1ef;
+  --tile-edge: #daadd7;
+  --tile-fill: #efb6de;
+  --tile-stroke: #b963a0;
+  position: relative;
+  min-height: 82px !important;
+  padding: 5px 4px 4px;
+  border: 2px solid rgba(255,255,255,.95);
+  border-bottom-color: var(--tile-edge);
+  border-radius: 18px;
+  background: linear-gradient(162deg, var(--tile-top), var(--tile-bottom));
+  box-shadow: 0 4px 0 var(--tile-edge), 0 8px 13px rgba(80, 53, 89, .13), inset 0 2px 0 rgba(255,255,255,.8);
+  color: var(--candy-ink);
+  transition: transform 110ms ease, box-shadow 110ms ease;
+}
+.sandbox-shell[data-stage="shape"] .sandbox-shape:nth-child(2),
+.sandbox-shell[data-stage="shape"] .sandbox-shape:nth-child(5) {
+  --tile-top: #ecfbff; --tile-bottom: #bdeefa; --tile-edge: #9dcdda;
+  --tile-fill: #a6dfea; --tile-stroke: #559ba9;
+}
+.sandbox-shell[data-stage="shape"] .sandbox-shape:nth-child(3),
+.sandbox-shell[data-stage="shape"] .sandbox-shape:nth-child(6) {
+  --tile-top: #fffbef; --tile-bottom: #fbe1a9; --tile-edge: #dec287;
+  --tile-fill: #f6d48c; --tile-stroke: #b68b44;
+}
+.sandbox-shell[data-stage="shape"] .sandbox-shape__icon {
+  width: clamp(34px, 10vw, 48px);
+  height: clamp(34px, 10vw, 48px);
+  filter: drop-shadow(0 2px 1px rgba(83, 42, 96, .17));
+}
+.sandbox-shell[data-stage="shape"] .sandbox-shape__icon polygon {
+  fill: var(--tile-fill);
+  stroke: var(--tile-stroke);
+  stroke-width: 2.5;
+}
+.sandbox-shell[data-stage="shape"] .sandbox-shape span:last-child {
+  color: var(--candy-ink);
+  font-size: 12px;
+  line-height: 1.1;
+  font-weight: 900;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.sandbox-shell[data-stage="shape"] .sandbox-shape[aria-pressed="true"] {
+  transform: translateY(-2px);
+  border-color: #8235b1;
+  box-shadow: 0 5px 0 #7133a1, 0 0 0 2px #fce8ff, 0 9px 15px rgba(91,42,121,.19);
+}
+.sandbox-shell[data-stage="shape"] .sandbox-shape[aria-pressed="true"]::after {
+  content: "✓";
+  position: absolute;
+  top: -7px;
+  right: -5px;
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #7433ae;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* The same raised material language, with real preview orbs and keyboard focus. */
+.sandbox-shell[data-stage="finish"] .sandbox-material {
+  border: 2px solid rgba(255,255,255,.96);
+  border-bottom-color: #dcc7e9;
+  border-radius: 18px;
+  background: linear-gradient(160deg, #fff, #f3e7fb);
+  box-shadow: 0 4px 0 #d6b8e5, 0 8px 13px rgba(82,55,103,.11), inset 0 2px 0 rgba(255,255,255,.95);
+  color: var(--candy-ink);
+  font-weight: 900;
+  transition: transform 110ms ease, box-shadow 110ms ease;
+}
+.sandbox-shell[data-stage="finish"] .sandbox-material__orb {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 2px solid rgba(255,255,255,.77);
+  filter: drop-shadow(0 2px 2px rgba(67,49,75,.16));
+}
+.sandbox-shell[data-stage="finish"] .sandbox-material[aria-pressed="true"] {
+  transform: translateY(-2px);
+  border-color: #8235b1;
+  background: linear-gradient(160deg, #fff, #f3dafa);
+  box-shadow: 0 5px 0 #7133a1, 0 0 0 2px #fce8ff, 0 9px 15px rgba(91,42,121,.19);
+}
+
+.sandbox-shell[data-stage="shape"] .sandbox-panel .sandbox-primary,
+.sandbox-shell[data-stage="finish"] .sandbox-panel .sandbox-primary {
+  border: 2px solid #a968d9;
+  border-bottom-color: #5c238a;
+  border-radius: 18px;
+  background: linear-gradient(175deg, #b963ed 0%, #8c3ec5 56%, #752cad 100%);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(62,19,97,.6);
+  box-shadow: 0 5px 0 #592486, 0 9px 17px rgba(91,42,121,.19), inset 0 2px rgba(255,255,255,.42);
+}
+.sandbox-shell[data-stage="shape"] .sandbox-panel .sandbox-primary:active,
+.sandbox-shell[data-stage="finish"] .sandbox-panel .sandbox-primary:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #592486, 0 3px 8px rgba(91,42,121,.18), inset 0 1px rgba(255,255,255,.42);
+}
+.sandbox-shell[data-stage="shape"] .sandbox-shape:focus-visible,
+.sandbox-shell[data-stage="finish"] .sandbox-material:focus-visible,
+.sandbox-shell[data-stage="shape"] .sandbox-primary:focus-visible,
+.sandbox-shell[data-stage="finish"] .sandbox-primary:focus-visible {
+  outline: 3px solid #402060;
+  outline-offset: 4px;
+}
+
+@media (max-height: 740px) and (orientation: portrait) {
+  .sandbox-shell[data-stage="shape"] .sandbox-shape { min-height: 72px !important; }
+  .sandbox-shell[data-stage="shape"] .sandbox-shape__icon { width: 30px; height: 30px; }
+  .sandbox-shell[data-stage="finish"] .sandbox-material__orb { width: 27px; height: 27px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .sandbox-shell[data-stage="shape"] .sandbox-copy > span,
+  .sandbox-shell[data-stage="finish"] .sandbox-copy > span { margin-left: 0; }
+  .sandbox-shell[data-stage="shape"] [data-panel="shape"] { gap: 8px; }
+  .sandbox-shell[data-stage="shape"] .sandbox-shape { min-height: 63px !important; padding: 3px 4px; }
+  .sandbox-shell[data-stage="shape"] .sandbox-shape__icon { width: 27px; height: 27px; }
+  .sandbox-shell[data-stage="shape"] .sandbox-shape span:last-child { font-size: 10px; }
+  .sandbox-shell[data-stage="finish"] .sandbox-material__orb { width: 22px; height: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sandbox-shell[data-stage="shape"] .sandbox-shape,
+  .sandbox-shell[data-stage="finish"] .sandbox-material { transition: none; }
+}

@@ -10,6 +10,7 @@ import '../../sandbox-core.css';
 import '../../sandbox-library.css';
 import '../../sandbox-ideas.css';
 import '../../sandbox-polish-01.css';
+import './candyStudioPreview.css';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
