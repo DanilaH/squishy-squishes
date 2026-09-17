@@ -95,7 +95,7 @@ test('studio back navigation retains creative work and completed Mix, then reset
   expect(parsed.library[0].appearance.mixins).toHaveLength(1);
   expect(parsed.library[0].decor.s).toHaveLength(1);
 
-  await page.locator('[data-action="new"]').click();
+  await page.locator('[data-panel="squeeze"] [data-action="new"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator('[data-action="shape-continue"]').click();
   await page.locator('[data-action="paint-continue"]').click();
