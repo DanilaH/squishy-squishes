@@ -85,3 +85,16 @@
   #app[data-jelly-ui-ready] .sandbox-library-heading__actions > button { gap: 4px; padding-inline: 7px; }
   #app[data-jelly-ui-ready] .sandbox-library-heading__actions > button::before { width: 14px; height: 14px; }
 }
+/* Two 50px-tall header CTAs must keep their full Russian labels in one line
+   even with the new leading glyph on 320px portrait screens. */
+@media (max-width: 350px) and (orientation: portrait) {
+  #app[data-jelly-ui-ready] .sandbox-library-heading__actions .sandbox-library-new {
+    font-size: 11px;
+    -webkit-text-stroke-width: .6px;
+    white-space: nowrap;
+  }
+  #app[data-jelly-ui-ready] .sandbox-library-heading__actions .sandbox-library-new::before {
+    width: 12px;
+    height: 12px;
+  }
+}
