@@ -27,7 +27,8 @@
     "candidate:qa": "npm run candidate:build && playwright test --config=playwright.phaser-candidate.config.ts"
   },
   "dependencies": {
-    "@danilah/mini-games-kit": "git+https://github.com/DanilaH/mini-games-kit.git#797b5689767e9dc1059514e0446479e054bf1352"
+    "@danilah/mini-games-kit": "git+https://github.com/DanilaH/mini-games-kit.git#797b5689767e9dc1059514e0446479e054bf1352",
+    "@fontsource-variable/nunito": "5.3.0"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
