@@ -18,7 +18,7 @@
     "pages:build": "tsc --noEmit && vite build --mode phaser-pages && node scripts/stage-phaser-pages.mjs",
     "pages:qa": "npm run build && npm run pages:build && playwright test --config=playwright.phaser-pages.config.ts",
     "asset:prepare": "node scripts/prepare-image.mjs",
-    "asset:smoke": "node --test tests/tooling/image-pipeline.test.mjs",
+    "asset:smoke": "node --test tests/tooling/image-pipeline.test.mjs tests/tooling/ui-atlas-map.test.mjs",
     "release:check": "npm run typecheck && npm run asset:smoke && npm run build && npm run build:yandex && npm run verify:yandex",
     "qa:browser": "playwright test --config=playwright.release.config.ts",
     "qa:release": "npm run release:check && npm run qa:browser",
