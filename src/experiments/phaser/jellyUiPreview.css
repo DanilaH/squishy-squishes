@@ -35,13 +35,10 @@
   background: rgba(255,249,237,.93);
   color: #94531b;
 }
-#app[data-jelly-ui-ready] .sandbox-library-modal {
-  --library-ink: #4d2c1e;
-  --library-muted: #735b50;
-}
+#app[data-jelly-ui-ready] .sandbox-library-modal { --library-ink: #4d2c1e; --library-muted: #735b50; }
 
-/* Horizontal button images are never used for the square shape/material tiles,
-   swatches, existing icons, library thumbnails or the WebGL squishy. */
+/* The horizontal art belongs on similarly shaped buttons, not square tiles,
+   colour swatches, thumbnails, materials or the deforming WebGL toy. */
 #app[data-jelly-ui-ready] :is(.sandbox-library-new, .sandbox-library-reward > button,
   .sandbox-panel .sandbox-primary) {
   border: 0;
@@ -68,6 +65,17 @@
   -webkit-tap-highlight-color: transparent;
   transition: transform 115ms ease, filter 115ms ease, opacity 115ms ease;
 }
+#app[data-jelly-ui-ready] :is(.sandbox-library-modal__danger,
+  .sandbox-panel [data-action="paint-clear"], .sandbox-panel [data-action="mixin-clear"],
+  .sandbox-panel [data-action="decor-clear"]) {
+  background: transparent url('./ui-assets/red-wide.webp') center / 100% 100% no-repeat;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: none;
+  color: #fff9ee;
+  text-shadow: 0 1px 2px rgba(105,10,15,.65);
+  transition: transform 115ms ease, filter 115ms ease, opacity 115ms ease;
+}
 #app[data-jelly-ui-ready] .sandbox-panel [data-action="shape-continue"],
 #app[data-jelly-ui-ready] .sandbox-panel [data-action="play-saved"] {
   background-image: url('./ui-assets/honey-wave.webp');
@@ -89,17 +97,6 @@
   color: #603b23;
   box-shadow: inset 0 1px rgba(255,255,255,.96), 0 3px 0 rgba(194,135,59,.26);
 }
-#app[data-jelly-ui-ready] :is(.sandbox-library-modal__danger,
-  .sandbox-panel [data-action="paint-clear"], .sandbox-panel [data-action="mixin-clear"],
-  .sandbox-panel [data-action="decor-clear"]) {
-  background: transparent url('./ui-assets/red-wide.webp') center / 100% 100% no-repeat;
-  border: 0;
-  border-radius: 18px;
-  box-shadow: none;
-  color: #fff9ee;
-  text-shadow: 0 1px 2px rgba(105,10,15,.65);
-  transition: transform 115ms ease, filter 115ms ease, opacity 115ms ease;
-}
 #app[data-jelly-ui-ready] :is(.sandbox-shape, .sandbox-material, .sandbox-library-card,
   .sandbox-library-add-card, .sandbox-idea-card, .sandbox-library-modal__sheet) {
   border-color: rgba(198,150,70,.33);
@@ -114,6 +111,7 @@
   box-shadow: 0 4px 0 #a96a30, 0 0 0 3px rgba(255,244,204,.92);
 }
 #app[data-jelly-ui-ready] .sandbox-shape[aria-pressed="true"]::after { background: #9a5518; }
+
 #app[data-jelly-ui-ready] :is(.sandbox-library-new, .sandbox-library-ideas,
   .sandbox-library-reward > button, .sandbox-library-modal__cancel, .sandbox-library-modal__danger,
   .sandbox-panel button, .sandbox-sound):active:not(:disabled) {
@@ -136,6 +134,34 @@
 @media (max-width: 700px) {
   #app[data-jelly-ui-ready] .sandbox-library-heading__actions { gap: 4px; }
   #app[data-jelly-ui-ready] .sandbox-library-heading .sandbox-library-new { padding-inline: 11px; }
+}
+/* Preserve the compact landscape header, but give portrait titles their own
+   row. At 320px, two side-by-side buttons otherwise compress the title. */
+@media (max-width: 700px) and (orientation: portrait) {
+  #app[data-jelly-ui-ready] .sandbox-library-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 15px;
+  }
+  #app[data-jelly-ui-ready] .sandbox-library-heading > div:first-child { min-width: 0; }
+  #app[data-jelly-ui-ready] .sandbox-library-heading h1 {
+    font-size: clamp(26px, 7vw, 31px);
+    line-height: 1;
+  }
+  #app[data-jelly-ui-ready] .sandbox-library-heading__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+  #app[data-jelly-ui-ready] .sandbox-library-heading__actions > button {
+    width: 100%;
+    min-width: 0;
+    min-height: 50px;
+    padding-inline: 12px;
+    line-height: 1.1;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   #app[data-jelly-ui-ready] :is(.sandbox-library-new, .sandbox-library-ideas,
