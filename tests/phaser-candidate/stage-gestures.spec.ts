@@ -91,7 +91,7 @@ test('M4 input: mix-in spacing and stickers use canonical hit UV, not squish ges
   s.router.up(1);
 });
 
-test('M4 input: Mix owns distance and valid squish together; outside Mix still counts distance', () => {
+test('M4 input: Mix retains progress on stage revisit, resets for a new toy and shares valid squish', () => {
   const s = setup();
   s.router.setStage('mix');
   // Local x is outside shape, and the unrelated client coordinate starts at 0.
@@ -104,16 +104,22 @@ test('M4 input: Mix owns distance and valid squish together; outside Mix still c
   expect(s.router.snapshot().mixDistance).toBe(1_800);
   s.router.up(1);
   expect(s.squeezeCount).toBe(0);
-  // A new Mix stage resets distance, and a hit starts the same shared simulation.
+  // Revisiting Mix from Decor restores progress rather than demanding a second grind.
   s.router.setStage('decor');
   s.router.setStage('mix');
-  expect(s.distance).toBe(0);
+  expect(s.distance).toBe(1_800);
   expect(s.router.down(pointer(2, 0))).toBe(true);
   expect(s.active).toBe(true);
   s.router.move({ ...pointer(2, 0.5), clientX: 40 });
   s.router.up(2);
   expect(s.squeezeCount).toBe(1);
-  expect(s.distance).toBe(40);
+  expect(s.distance).toBe(1_840);
+  // Creating another toy after saving must start the Mix counter from zero.
+  s.router.setStage('squeeze');
+  s.router.setStage('shape');
+  expect(s.router.snapshot().mixDistance).toBe(0);
+  s.router.setStage('mix');
+  expect(s.distance).toBe(0);
 });
 
 test('M4 input: squeeze requires hit; cancellation, blocking and stage change never credit', () => {

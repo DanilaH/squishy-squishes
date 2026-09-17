@@ -430,6 +430,7 @@ export class SandboxApp {
     this.bindEvents();
     if (this.savedSquishy) this.loadSavedSquishy(this.savedSquishy);
     else this.applyDraftToRenderer();
+    this.updateAppearanceDataset();
     this.setStage(this.stage);
   }
 
@@ -504,7 +505,8 @@ export class SandboxApp {
     return `
       <main class="sandbox-shell" data-sandbox-app data-stage="${this.stage}" data-shape="${this.draft.shapeId}" data-material="soft" data-sandbox-squeezes="0">
         <header class="sandbox-topbar">
-          <strong>${this.copy.studio}</strong>
+          <strong data-sandbox-brand>${this.copy.studio}</strong>
+          <button class="sandbox-sound" type="button" data-action="stage-back" hidden>← ${this.copy.back}</button>
           <button class="sandbox-sound" type="button" data-action="mute" aria-pressed="${this.muted}">${this.muted ? this.copy.muted : this.copy.sound}</button>
         </header>
 
@@ -703,7 +705,8 @@ export class SandboxApp {
     }
 
     const action = target.dataset.action;
-    if (action === 'shape-continue') this.setStage('paint');
+    if (action === 'stage-back') this.goBack();
+    else if (action === 'shape-continue') this.setStage('paint');
     else if (action === 'paint-continue') this.setStage('mixins');
     else if (action === 'paint-undo') this.undoPaint();
     else if (action === 'paint-clear') this.clearPaint();
@@ -950,13 +953,25 @@ export class SandboxApp {
     this.shell.dataset.decorStickerCount = String(this.draft.decor.stickers.length);
     this.shell.dataset.decorAccessory = this.draft.decor.accessory ?? 'none';
     this.shell.dataset.decorBytes = String(estimateDecorBytes(this.draft.decor));
+    for (const action of ['decor-undo', 'decor-clear']) {
+      const button = this.root.querySelector<HTMLButtonElement>(`[data-action="${action}"]`);
+      if (button) button.disabled = this.draft.decor.stickers.length === 0;
+    }
+  }
+
+  private goBack(): void {
+    if (this.stage === 'paint') this.setStage('shape');
+    else if (this.stage === 'mixins') this.setStage('paint');
+    else if (this.stage === 'mix') this.setStage('mixins');
+    else if (this.stage === 'decor') this.setStage('mix');
   }
 
   private beginMix(): void {
-    this.mixDistance = 0;
-    this.mixProgressFill.style.transform = 'scaleX(0)';
-    this.mixContinueButton.disabled = true;
-    this.shell.dataset.mixProgress = '0.000';
+    // Re-entering Mix after navigating back must not erase earned progress.
+    const progress = Math.min(1, this.mixDistance / MIX_DISTANCE_FOR_COMPLETE_PX);
+    this.mixProgressFill.style.transform = `scaleX(${progress})`;
+    this.mixContinueButton.disabled = progress < 1;
+    this.shell.dataset.mixProgress = progress.toFixed(3);
     this.setStage('mix');
   }
 
@@ -1177,7 +1192,11 @@ export class SandboxApp {
     this.stageStep.textContent = details.step;
     this.stageTitle.textContent = details.title;
     this.stageHint.textContent = details.hint;
-    this.status.textContent = next === 'mix' ? this.copy.mixMore : '';
+    this.status.textContent = next === 'mix'
+      ? (this.mixDistance >= MIX_DISTANCE_FOR_COMPLETE_PX ? this.copy.mixReady : this.copy.mixMore) : '';
+    const canGoBack = next === 'paint' || next === 'mixins' || next === 'mix' || next === 'decor';
+    this.requireElement<HTMLButtonElement>('[data-action="stage-back"]').hidden = !canGoBack;
+    this.requireElement<HTMLElement>('[data-sandbox-brand]').hidden = canGoBack;
     for (const panel of this.root.querySelectorAll<HTMLElement>('[data-panel]')) {
       panel.hidden = panel.dataset.panel !== next;
     }
@@ -1231,6 +1250,15 @@ export class SandboxApp {
     this.shell.dataset.appearanceBytes = String(estimateAppearanceBytes(this.draft.appearance));
     this.shell.dataset.paintStrokes = String(this.draft.appearance.strokes.length);
     this.shell.dataset.mixinCount = String(this.draft.appearance.mixins.length);
+    for (const [action, empty] of [
+      ['paint-undo', this.draft.appearance.strokes.length === 0],
+      ['paint-clear', this.draft.appearance.strokes.length === 0],
+      ['mixin-undo', this.draft.appearance.mixins.length === 0],
+      ['mixin-clear', this.draft.appearance.mixins.length === 0],
+    ] as const) {
+      const button = this.root.querySelector<HTMLButtonElement>(`[data-action="${action}"]`);
+      if (button) button.disabled = empty;
+    }
     this.updateDecorUi();
   }
 
