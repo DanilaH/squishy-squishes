@@ -1,0 +1,84 @@
+/* Phaser Pages only: a self-hosted rounded font and softer lavender ink tie
+   the honey controls to the pastel squishy tiles. No runtime CDN request. */
+@import '@fontsource-variable/nunito/wght.css';
+
+#app[data-jelly-ui-ready] {
+  --jelly-ink: #56375f;
+  --jelly-muted: #78617e;
+}
+
+#app[data-jelly-ui-ready] :is(.sandbox-shell, .sandbox-library-shell) {
+  font-family: 'Nunito Variable', ui-rounded, 'Segoe UI', system-ui, sans-serif;
+  --sandbox-ink: var(--jelly-ink);
+  --sandbox-muted: var(--jelly-muted);
+  --library-ink: var(--jelly-ink);
+  --library-muted: var(--jelly-muted);
+}
+
+#app[data-jelly-ui-ready] :is(.sandbox-shell[data-stage='shape'], .sandbox-shell[data-stage='finish']) {
+  --candy-ink: var(--jelly-ink);
+}
+
+#app[data-jelly-ui-ready] .sandbox-library-modal {
+  --library-ink: var(--jelly-ink);
+  --library-muted: var(--jelly-muted);
+}
+
+#app[data-jelly-ui-ready] :is(.sandbox-copy h1, .sandbox-library-heading h1,
+  .sandbox-ideas-heading h1, .sandbox-library-empty h2) {
+  color: var(--jelly-ink);
+  font-weight: 900;
+  letter-spacing: -.025em;
+  text-shadow: 0 1px 0 rgba(255,255,255,.65);
+}
+
+#app[data-jelly-ui-ready] :is(.sandbox-library-new, .sandbox-library-ideas,
+  .sandbox-library-reward > button, .sandbox-library-modal__cancel,
+  .sandbox-panel .sandbox-primary, .sandbox-panel .sandbox-secondary,
+  .sandbox-decor-tabs > button) {
+  color: #48284f;
+  font-weight: 900;
+  letter-spacing: 0;
+  font-size: clamp(12px, 3vw, 14px);
+  line-height: 1.15;
+  text-shadow: 0 1px 0 rgba(255,251,234,.62);
+}
+
+#app[data-jelly-ui-ready] .sandbox-sound {
+  color: #48284f;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+/* Preserve the asset's 580:201 silhouette instead of squeezing it into the
+   full-width, 48px-tall grid track. The clickable area remains >= 44px. */
+#app[data-jelly-ui-ready] .sandbox-panel [data-action='shape-continue'],
+#app[data-jelly-ui-ready] .sandbox-panel [data-action='play-saved'] {
+  justify-self: center;
+  width: min(188px, 100%);
+  min-height: 65px !important;
+  background-size: contain;
+  background-color: transparent;
+  font-size: 14px;
+}
+
+/* The original stage overrides use purple outlines and raised shadows;
+   keep the selection/focus language consistent with the new ink. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage='shape'] .sandbox-shape[aria-pressed='true'],
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage='finish'] .sandbox-material[aria-pressed='true'] {
+  border-color: #84508f;
+  box-shadow: 0 4px 0 #9a78a5, 0 0 0 2px #fff5fd, 0 7px 14px rgba(75,43,83,.16);
+}
+#app[data-jelly-ui-ready] .sandbox-shape[aria-pressed='true']::after {
+  background: #84508f;
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  #app[data-jelly-ui-ready] .sandbox-panel [data-action='shape-continue'],
+  #app[data-jelly-ui-ready] .sandbox-panel [data-action='play-saved'] {
+    width: min(158px, 100%);
+    min-height: 55px !important;
+    font-size: 12px;
+  }
+}
