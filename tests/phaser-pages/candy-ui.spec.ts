@@ -16,9 +16,10 @@ for (const viewport of viewports) {
     const shell = page.locator('[data-sandbox-app]');
     await expect(shell).toHaveAttribute('data-stage', 'shape');
     await expect(page.locator('[data-panel="shape"] .sandbox-shape')).toHaveCount(6);
-    await page.locator('[data-shape="heart"]').click();
-    await expect(page.locator('[data-shape="heart"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('[data-shape="heart"]')).toHaveCSS('border-top-width', '2px');
+    const heart = page.locator('button.sandbox-shape[data-shape="heart"]');
+    await heart.click();
+    await expect(heart).toHaveAttribute('aria-pressed', 'true');
+    await expect(heart).toHaveCSS('border-top-width', '2px');
     await page.screenshot({ path: testInfo.outputPath(`candy-shape-${viewport.name}.png`) });
 
     await page.locator('[data-action="shape-continue"]').click();
@@ -39,9 +40,10 @@ for (const viewport of viewports) {
     await page.locator('[data-action="decor-continue"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'finish');
     await expect(page.locator('[data-panel="finish"] .sandbox-material')).toHaveCount(6);
-    await page.locator('[data-material="pearl"]').click();
+    const pearl = page.locator('button.sandbox-material[data-material="pearl"]');
+    await pearl.click();
     await expect(shell).toHaveAttribute('data-material', 'pearl');
-    await expect(page.locator('[data-material="pearl"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(pearl).toHaveAttribute('aria-pressed', 'true');
     await page.screenshot({ path: testInfo.outputPath(`candy-finish-${viewport.name}.png`) });
     await expect(page.locator('[data-action="save"]')).toBeVisible();
   });
