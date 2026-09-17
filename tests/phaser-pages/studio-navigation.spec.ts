@@ -12,7 +12,7 @@ test('studio back navigation retains creative work and completed Mix, then reset
   const back = page.locator('[data-action="stage-back"]');
   await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
   await expect(back).toBeHidden();
-  await page.locator('[data-shape="heart"]').click();
+  await page.locator('button[data-shape="heart"]').click();
   await page.locator('[data-action="shape-continue"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
   await expect(back).toBeVisible();
@@ -46,7 +46,7 @@ test('studio back navigation retains creative work and completed Mix, then reset
   await back.click();
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await expect(back).toBeHidden();
-  await expect(page.locator('[data-shape="heart"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('button[data-shape="heart"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('[data-action="shape-continue"]').click();
   await page.locator('[data-action="paint-continue"]').click();
   await expect(shell).toHaveAttribute('data-mixin-count', '1');
