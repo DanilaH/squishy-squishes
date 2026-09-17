@@ -28,6 +28,14 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Build and smoke-test staged Pages tree, including touch gestures
         run: npm run pages:qa
+      - name: Upload Shape and Finish visual review snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phaser-candy-ui-screenshots
+          path: test-results/**/candy-*.png
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload failure diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
