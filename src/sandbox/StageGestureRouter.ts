@@ -53,9 +53,12 @@ export class StageGestureRouter {
 
   public setStage(stage: StudioGestureStage, decorSection: StudioDecorSection = this.decorSection): void {
     if (stage !== this.stage || decorSection !== this.decorSection) this.cancel();
-    if (stage === 'mix' && this.stage !== 'mix') {
+    // A new toy resets Mix; revisiting an earlier creative stage does not.
+    if (stage === 'shape' && (this.stage === 'home' || this.stage === 'squeeze')) {
       this.mixDistance = 0;
-      this.host.mixProgress(0, 0);
+    }
+    if (stage === 'mix' && this.stage !== 'mix') {
+      this.host.mixProgress(this.mixDistance, Math.min(1, this.mixDistance / MIX_DISTANCE_FOR_COMPLETE_PX));
     }
     this.stage = stage;
     this.decorSection = decorSection;
