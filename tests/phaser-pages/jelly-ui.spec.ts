@@ -8,7 +8,7 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
   await expect(root).toHaveAttribute('data-jelly-ui-ready', '');
   const newToy = page.locator('[data-library-new]').first();
   await expect(newToy).toHaveCSS('background-image', /honey-wide.*webp/);
-  await page.screenshot({ path: testInfo.outputPath('jelly-library-phone.png') });
+  await page.screenshot({ path: testInfo.outputPath('candy-jelly-library-phone.png') });
   await newToy.click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
   await expect(page.locator('[data-action="shape-continue"]')).toHaveCSS('background-image', /honey-wave.*webp/);
