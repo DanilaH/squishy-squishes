@@ -1,0 +1,30 @@
+name: Apply isolated shape rebake fix
+
+on:
+  push:
+    branches:
+      - fix/rebake-decor-on-shape-change
+    paths:
+      - .github/workflows/apply-shape-rebake-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.repository == 'DanilaH/squishy-squishes' && github.ref == 'refs/heads/fix/rebake-decor-on-shape-change'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - name: Apply asserted source and regression changes
+        run: |
+          python3 scripts/apply-shape-rebake-fix.py
+          git diff --check
+          git add src/sandbox/SandboxApp.ts tests/phaser-pages/studio-navigation.spec.ts
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Rebake shape-relative decor after changing a decorated shape'
+          git push origin HEAD:refs/heads/fix/rebake-decor-on-shape-change
