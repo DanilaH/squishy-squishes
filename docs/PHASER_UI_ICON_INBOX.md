@@ -12,7 +12,7 @@ The uploaded icon collection is attributed to [Nieobie/game-icon-pack](https://g
 
 - Keep mix-ins, facial expressions, stickers, accessories, material orbs and shape silhouettes as their own visual representations. Do not replace meaningful toy art with generic symbols.
 - The existing back arrows, clear/delete text and Continue/Play labels remain usable without new icons. Do not force an icon into a button when its caption or available width would suffer.
-- Honey jelly background PNG and extracted WebP buttons have a separate owner-supplied origin; **the right to use and modify that art commercially is not yet documented here**. Obtain the original source/license/receipt and record it before Yandex release.
+- The extracted honey jelly WebP buttons and their original source sheet were separately owner-supplied; **their commercial-use and modification rights are not established by the icon pack's CC0 license**. Record the source/license/receipt before shipping those buttons in the Yandex release.
 
 ## Review and constraints
 
