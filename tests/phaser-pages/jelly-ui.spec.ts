@@ -9,6 +9,15 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
   const newToy = page.locator('[data-library-new]').first();
   await expect(newToy).toHaveCSS('background-image', /honey-wide.*webp/);
 
+  // Font must be part of the offline Pages bundle, including Cyrillic; a
+  // fallback system font must not silently pass our visual QA.
+  await expect(page.locator('.sandbox-library-heading h1')).toHaveCSS('font-family', /Nunito Variable/);
+  const loadedFontCount = await page.evaluate(async () => {
+    const faces = await document.fonts.load('900 14px "Nunito Variable"', 'Continue Продолжить');
+    return faces.filter((face) => face.family.includes('Nunito') && face.status === 'loaded').length;
+  });
+  expect(loadedFontCount).toBeGreaterThan(0);
+
   // Unlike the earlier side-by-side header, the full title and both touch
   // targets must have their own space even on a narrow portrait phone.
   for (const width of [320, 390]) {
@@ -36,10 +45,19 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
 
   await newToy.click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
-  await expect(page.locator('[data-action="shape-continue"]')).toHaveCSS('background-image', /honey-wave.*webp/);
+  const continueButton = page.locator('[data-action="shape-continue"]');
+  await expect(continueButton).toHaveCSS('background-image', /honey-wave.*webp/);
+  await expect(continueButton).toHaveCSS('background-size', 'contain');
+  const buttonBox = await continueButton.boundingBox();
+  expect(buttonBox).not.toBeNull();
+  expect(buttonBox!.width / buttonBox!.height).toBeGreaterThan(2.7);
+  expect(buttonBox!.width / buttonBox!.height).toBeLessThan(3.1);
+  expect(buttonBox!.height).toBeGreaterThanOrEqual(44);
+  await page.screenshot({ path: testInfo.outputPath('candy-jelly-shape-390.png') });
+
   await page.locator('button[data-shape="heart"]').click();
   await expect(page.locator('button[data-shape="heart"]')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('[data-action="shape-continue"]').click();
+  await continueButton.click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
   await expect(page.locator('[data-action="paint-clear"]')).toHaveCSS('background-image', /red-wide.*webp/);
 });
