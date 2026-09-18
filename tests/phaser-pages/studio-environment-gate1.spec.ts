@@ -29,8 +29,7 @@ const measureAndPreview = async (page: Page) => page.evaluate(() => {
   const toyBottomProxy = cr.top + cr.height * 0.8;
   const tableTop = Math.min(toyBottomProxy - 3, sr.bottom - 3);
   const freeDepth = Math.max(0, Math.min(sr.bottom, pr.top - 8) - tableTop);
-  const previous = stage.querySelector('[data-studio-gate1-proxy]');
-  previous?.remove();
+  stage.querySelector('[data-studio-gate1-proxy]')?.remove();
   const overlay = document.createElement('div');
   overlay.dataset.studioGate1Proxy = '';
   Object.assign(overlay.style, { position: 'absolute', inset: '0', overflow: 'hidden', pointerEvents: 'none', zIndex: '0' });
@@ -38,13 +37,14 @@ const measureAndPreview = async (page: Page) => page.evaluate(() => {
   Object.assign(desk.style, {
     position: 'absolute', top: `${tableTop - sr.top}px`, left: '50%', transform: 'translateX(-50%)',
     width: `${Math.min(sr.width, Math.max(290, cr.width * 1.6))}px`,
-    height: `${Math.max(0, freeDepth)}px`,
+    height: `${freeDepth}px`,
     border: '2px dashed #9b4b1c', borderRadius: '13px 13px 3px 3px',
     background: 'rgba(225,156,78,.25)', boxShadow: 'inset 0 -7px rgba(108,65,116,.18)',
   });
   overlay.append(desk);
   stage.insertBefore(overlay, stage.firstChild);
-  const btns = [...shell.querySelectorAll<HTMLButtonElement>('.sandbox-controls button:visible, .sandbox-topbar button:visible')];
+  const btns = [...shell.querySelectorAll<HTMLButtonElement>('.sandbox-controls button, .sandbox-topbar button')]
+    .filter(b => b.getClientRects().length > 0);
   const hitIssues = btns.filter(b => {
     const r = b.getBoundingClientRect();
     const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
