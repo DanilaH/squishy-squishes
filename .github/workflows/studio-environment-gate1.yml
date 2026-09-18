@@ -1,0 +1,46 @@
+name: Studio environment Gate 1
+
+on:
+  push:
+    branches:
+      - feat/studio-environment-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  studio-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Build actual Phaser Pages preview
+        run: npm run pages:build
+      - name: Measure actual Shape/Paint and capture placeholder screenshots
+        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/studio-environment-gate1.spec.ts
+      - name: Upload geometry measurements and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-gate1-real-browser
+          path: |
+            test-results/**/studio-gate1-*.png
+            test-results/**/studio-gate1-*.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-gate1-failure
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 14
