@@ -39,6 +39,13 @@
   pointer-events: none;
 }
 
+.studio-env-decor-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .studio-env-decor {
   position: absolute;
   top: 62px;
@@ -63,16 +70,20 @@
   user-select: none;
 }
 
-/* Narrow portrait shows only edge glimpses of the unique side props. */
-@media (max-width: 350px) and (orientation: portrait) {
-  .studio-env-decor { top: 44px; width: 118px; }
-  .studio-env-decor--left { left: -75px; }
-  .studio-env-decor--right { right: -73px; }
+/* Ground legible miniature shelves at the phone's lower edges, rather than
+   showing disconnected leaves cropped from large desktop vignettes. */
+@media (max-width: 500px) and (orientation: portrait) {
+  .studio-env-decor { top: auto; bottom: 0; width: clamp(148px, 41vw, 174px); }
+  .studio-env-decor--left { left: -10px; }
+  .studio-env-decor--right { right: -10px; }
 }
-@media (min-width: 351px) and (max-width: 500px) and (orientation: portrait) {
-  .studio-env-decor { top: 44px; width: 148px; }
-  .studio-env-decor--left { left: -75px; }
-  .studio-env-decor--right { right: -83px; }
+
+/* A cramped desktop stage must not chop the tabletop down to a 20px strip.
+   Its legs are clipped before they create clutter under the real controls;
+   both the interactive canvas and every button remain above the artwork. */
+@media (min-width: 901px) and (orientation: landscape) {
+  .studio-env-stage-art { overflow: visible; }
+  .studio-env-desk { clip-path: inset(0 0 47% 0); }
 }
 @media (min-width: 501px) and (max-width: 900px) {
   .studio-env-decor { width: 300px; }
