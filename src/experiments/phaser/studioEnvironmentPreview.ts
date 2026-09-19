@@ -144,7 +144,11 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
   window.addEventListener('resize', schedule, { signal: abort.signal });
   void Promise.all(Object.values(assets).map(loadImage)).then((images) => {
     if (disposed) return;
-    deskTexture = composeDesk(images[2], images[3], images[4]);
+    const left = images[2];
+    const middle = images[3];
+    const right = images[4];
+    if (!left || !middle || !right) throw new Error('Missing Studio desk slices');
+    deskTexture = composeDesk(left, middle, right);
     decoded = true;
     root.dataset.studioEnvReady = '';
     schedule();
