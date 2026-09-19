@@ -11,8 +11,10 @@
   background-size: 320px 730px;
 }
 
+/* z-index works for the shell's grid items without forcing a new positioning mode.
+   Do not set position:relative here: the existing short-landscape layout deliberately
+   makes .sandbox-copy absolute, and overriding that pushed its heading below the viewport. */
 .sandbox-shell.studio-env-active > :is(.sandbox-topbar, .sandbox-copy, .sandbox-stage, .sandbox-controls, .sandbox-status) {
-  position: relative;
   z-index: 1;
 }
 
