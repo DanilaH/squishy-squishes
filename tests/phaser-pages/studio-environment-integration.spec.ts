@@ -11,8 +11,7 @@ const views = [
 ] as const;
 
 const check = async (page: Page, label: string): Promise<void> => {
-  // ResizeObserver/rAF runs asynchronously after the stage changes its controls layout.
-  // Wait for ACTUAL aligned DOM geometry, not a fixed timeout or a loosened assertion.
+  // ResizeObserver/rAF runs after stage changes its controls layout.
   await expect.poll(() => page.evaluate(() => {
     const shell = document.querySelector<HTMLElement>('[data-sandbox-app]');
     const stage = shell?.querySelector<HTMLElement>('.sandbox-stage');
@@ -20,13 +19,14 @@ const check = async (page: Page, label: string): Promise<void> => {
     if (!stage || !floor) return Number.POSITIVE_INFINITY;
     return Math.abs(floor.getBoundingClientRect().top - (stage.getBoundingClientRect().bottom - 22));
   }), { message: `${label}: floor settles under actual stage`, timeout: 6_000 }).toBeLessThan(2);
+
   const facts = await page.evaluate(() => {
     const shell = document.querySelector<HTMLElement>('[data-sandbox-app]');
     const stage = shell?.querySelector<HTMLElement>('.sandbox-stage');
     const canvas = stage?.querySelector<HTMLElement>('[data-sandbox-canvas]');
     const floor = shell?.querySelector<HTMLElement>('.studio-env-floor');
     const art = stage?.querySelector<HTMLElement>('.studio-env-stage-art');
-    const desk = art?.querySelector<HTMLElement>('[data-studio-desk]');
+    const desk = art?.querySelector<HTMLImageElement>('img[data-studio-desk]');
     if (!shell || !stage || !canvas || !floor || !art || !desk) throw new Error('Missing integrated Studio layers');
     const rect = (node: Element) => {
       const r = node.getBoundingClientRect();
@@ -41,39 +41,39 @@ const check = async (page: Page, label: string): Promise<void> => {
       const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
       return hit && b.contains(hit) ? [] : [b.dataset.action || b.textContent?.trim() || '(button)'];
     });
-    const backgrounds = [getComputedStyle(shell).backgroundImage, getComputedStyle(floor).backgroundImage];
-    const slices = [desk.children[0], desk.children[1], desk.children[2]].map((node) => {
-      if (!node) throw new Error('Missing desk slice');
-      return rect(node);
-    });
     return {
       viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
       stageName: shell.dataset.stage, stage: rect(stage), canvas: rect(canvas), floor: rect(floor),
       desk: rect(desk), deskVisible: shell.dataset.studioDeskVisible, deskDepth: shell.dataset.studioDeskDepth,
-      slices, backgrounds, imagesLoaded: images.map((i) => ({ src: i.currentSrc, loaded: i.complete && i.naturalWidth > 0 })),
-      middleBackground: getComputedStyle(desk.children[1]).backgroundImage,
-      canvasHit: canvasHit?.tagName || '', canvasAcceptsPointer: !!canvasHit && canvas.contains(canvasHit),
+      deskComposed: desk.currentSrc.startsWith('data:image/png;base64,'),
+      deskSize: { width: desk.naturalWidth, height: desk.naturalHeight },
+      deskChildren: desk.childElementCount,
+      backgrounds: [getComputedStyle(shell).backgroundImage, getComputedStyle(floor).backgroundImage],
+      imagesLoaded: images.map((i) => ({ src: i.currentSrc, loaded: i.complete && i.naturalWidth > 0 })),
+      canvasAcceptsPointer: !!canvasHit && canvas.contains(canvasHit),
       hitIssues, pageWidth: document.documentElement.scrollWidth,
       passiveArt: getComputedStyle(art).pointerEvents === 'none' && getComputedStyle(floor).pointerEvents === 'none',
     };
   });
   expect(facts.stageName, label).toMatch(/^(shape|paint)$/);
-  expect(facts.imagesLoaded).toHaveLength(4);
-  expect(facts.imagesLoaded.every((i) => i.loaded), `${label}: all four prop images decoded`).toBe(true);
+  expect(facts.imagesLoaded).toHaveLength(3);
+  expect(facts.imagesLoaded.every((i) => i.loaded), `${label}: both props and assembled desk decoded`).toBe(true);
+  expect(facts.deskComposed, `${label}: a single raster, not separately scaled slices`).toBe(true);
+  expect(facts.deskSize).toEqual({ width: 1237, height: 435 });
+  expect(facts.deskChildren).toBe(0);
   expect(facts.backgrounds[0]).toContain('studio-wall');
   expect(facts.backgrounds[1]).toContain('studio-floor');
-  expect(facts.middleBackground).toContain('studio-desk-middle');
   expect(facts.passiveArt).toBe(true);
   expect(facts.canvasAcceptsPointer, `${label}: the real Phaser canvas stays interactive`).toBe(true);
   expect(facts.hitIssues, `${label}: all controls must remain clickable`).toEqual([]);
   expect(facts.pageWidth, `${label}: no horizontal overflow`).toBeLessThanOrEqual(facts.viewport.width + 2);
   expect(Math.abs(facts.floor.y - (facts.stage.bottom - 22)), `${label}: floor follows actual stage`).toBeLessThan(2);
-  const expectedVisible = facts.viewport.height > 520 || facts.viewport.width <= facts.viewport.height;
-  if (!expectedVisible || Number(facts.deskDepth) < 35) expect(facts.deskVisible).toBe('false');
+  const landscapeShort = facts.viewport.width > facts.viewport.height && facts.viewport.height <= 520;
+  const expectedVisible = !landscapeShort && Number(facts.deskDepth) >= 16;
+  expect(facts.deskVisible, `${label}: compact tabletop must not disappear at 1280x800`).toBe(String(expectedVisible));
   if (facts.deskVisible === 'true') {
-    expect(facts.slices[0].right - facts.slices[1].x, `${label}: left/middle geometry`).toBeCloseTo(0, 1);
-    expect(facts.slices[1].right - facts.slices[2].x, `${label}: middle/right geometry`).toBeCloseTo(0, 1);
     expect(facts.desk.y).toBeGreaterThanOrEqual(facts.stage.y - 2);
+    expect(facts.desk.width / facts.desk.height, `${label}: retain original aspect`).toBeCloseTo(1237 / 435, 2);
   }
 };
 
