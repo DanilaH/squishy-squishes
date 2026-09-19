@@ -11,11 +11,32 @@ const assets = {
   decorRight: new URL('./studio-assets/studio-decor-right.png', import.meta.url).href,
 } as const;
 
-const loadImage = async (src: string): Promise<void> => {
+const loadImage = async (src: string): Promise<HTMLImageElement> => {
   const image = new Image();
   image.src = src;
   await image.decode();
   if (!image.naturalWidth || !image.naturalHeight) throw new Error(`Unable to decode ${src}`);
+  return image;
+};
+
+// The source has matching edge pixels, but three independently scaled DOM layers
+// create visible seams at fractional CSS widths/DPR. Compose at *integer source*
+// coordinates and scale the resulting single image only once in the browser.
+// The existing layout always uses the original 421:435:381 proportions, so the
+// middle does not need to be repeated for the current Studio composition.
+const composeDesk = (left: HTMLImageElement, middle: HTMLImageElement, right: HTMLImageElement): string => {
+  if (left.naturalHeight !== middle.naturalHeight || middle.naturalHeight !== right.naturalHeight) {
+    throw new Error('Studio desk slices have different heights');
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = left.naturalWidth + middle.naturalWidth + right.naturalWidth;
+  canvas.height = middle.naturalHeight;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Unable to compose Studio desk');
+  context.drawImage(left, 0, 0);
+  context.drawImage(middle, left.naturalWidth, 0);
+  context.drawImage(right, left.naturalWidth + middle.naturalWidth, 0);
+  return canvas.toDataURL('image/png');
 };
 
 const element = (tag: 'div' | 'img', className: string): HTMLDivElement | HTMLImageElement => {
@@ -30,6 +51,7 @@ const element = (tag: 'div' | 'img', className: string): HTMLDivElement | HTMLIm
 export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) => {
   let disposed = false;
   let decoded = false;
+  let deskTexture: string | null = null;
   let frame = 0;
   const abort = new AbortController();
   const observer = new MutationObserver(() => schedule());
@@ -42,7 +64,7 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
   let observedHeading: HTMLElement | null = null;
 
   const sync = (): void => {
-    if (disposed || !decoded) return;
+    if (disposed || !decoded || !deskTexture) return;
     const shell = root.querySelector<HTMLElement>('.sandbox-shell');
     if (!shell) return;
     const supported = shell.dataset.stage === 'shape' || shell.dataset.stage === 'paint';
@@ -80,15 +102,9 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
       leftDecor.src = assets.decorLeft;
       const rightDecor = element('img', 'studio-env-decor studio-env-decor--right') as HTMLImageElement;
       rightDecor.src = assets.decorRight;
-      const desk = element('div', 'studio-env-desk') as HTMLDivElement;
+      const desk = element('img', 'studio-env-desk') as HTMLImageElement;
       desk.dataset.studioDesk = '';
-      const leftEnd = element('img', 'studio-env-desk__end') as HTMLImageElement;
-      leftEnd.src = assets.left;
-      const middle = element('div', 'studio-env-desk__middle') as HTMLDivElement;
-      middle.style.backgroundImage = `url("${assets.middle}")`;
-      const rightEnd = element('img', 'studio-env-desk__end') as HTMLImageElement;
-      rightEnd.src = assets.right;
-      desk.append(leftEnd, middle, rightEnd);
+      desk.src = deskTexture;
       art.append(leftDecor, rightDecor, desk);
       stage.insertBefore(art, stage.firstChild);
     }
@@ -103,21 +119,16 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     const landscapeShort = innerWidth > innerHeight && innerHeight <= 520;
     const desk = art.querySelector<HTMLElement>('[data-studio-desk]');
     if (!desk) return;
-    const showDesk = !landscapeShort && visibleDepth >= 35;
+    // At 1280x800 Shape only a shallow tabletop fits. Clip its legs inside
+    // the existing stage rather than removing the workbench entirely.
+    const showDesk = !landscapeShort && visibleDepth >= 16;
     const scaleWidth = Math.min(innerWidth * 1.14, cr.width * 1.83);
     const imageHeight = scaleWidth * 435 / (421 + 435 + 381);
     const snap = (n: number): number => Math.round(n * devicePixelRatio) / devicePixelRatio;
-    const leftWidth = snap(imageHeight * 421 / 435);
-    const rightWidth = snap(imageHeight * 381 / 435);
-    const deskWidth = snap(scaleWidth);
-    const deskHeight = snap(imageHeight);
-    desk.style.display = showDesk ? 'flex' : 'none';
+    desk.style.display = showDesk ? 'block' : 'none';
     desk.style.top = `${snap(top - sr.top)}px`;
-    desk.style.width = `${deskWidth}px`;
-    desk.style.height = `${deskHeight}px`;
-    const ends = desk.querySelectorAll<HTMLElement>('.studio-env-desk__end');
-    if (ends[0]) ends[0].style.width = `${leftWidth}px`;
-    if (ends[1]) ends[1].style.width = `${rightWidth}px`;
+    desk.style.width = `${snap(scaleWidth)}px`;
+    desk.style.height = `${snap(imageHeight)}px`;
     floor.style.top = `${snap(sr.bottom - shell.getBoundingClientRect().top - 22)}px`;
     shell.dataset.studioDeskVisible = String(showDesk);
     shell.dataset.studioDeskDepth = String(Math.round(visibleDepth));
@@ -131,13 +142,14 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
 
   observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-stage'] });
   window.addEventListener('resize', schedule, { signal: abort.signal });
-  void Promise.all(Object.values(assets).map(loadImage)).then(() => {
+  void Promise.all(Object.values(assets).map(loadImage)).then((images) => {
     if (disposed) return;
+    deskTexture = composeDesk(images[2], images[3], images[4]);
     decoded = true;
     root.dataset.studioEnvReady = '';
     schedule();
   }).catch((error: unknown) => {
-    console.warn('[squishy:studio-preview] Environment assets failed to decode; original UI retained.', error);
+    console.warn('[squishy:studio-preview] Environment assets failed to decode or compose; original UI retained.', error);
   });
 
   return () => {
