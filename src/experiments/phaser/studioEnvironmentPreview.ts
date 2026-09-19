@@ -33,6 +33,13 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
   let frame = 0;
   const abort = new AbortController();
   const observer = new MutationObserver(() => schedule());
+  // The real stage changes height AFTER its data-stage mutation (notably on wide Paint).
+  // Observing layout keeps the floor and desk aligned without moving gameplay/UI.
+  const geometryObserver = new ResizeObserver(() => schedule());
+  let observedStage: HTMLElement | null = null;
+  let observedCanvas: HTMLElement | null = null;
+  let observedControls: HTMLElement | null = null;
+  let observedHeading: HTMLElement | null = null;
 
   const sync = (): void => {
     if (disposed || !decoded) return;
@@ -40,6 +47,8 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     if (!shell) return;
     const supported = shell.dataset.stage === 'shape' || shell.dataset.stage === 'paint';
     if (!supported) {
+      geometryObserver.disconnect();
+      observedStage = observedCanvas = observedControls = observedHeading = null;
       shell.classList.remove('studio-env-active');
       shell.querySelector('.studio-env-floor')?.remove();
       shell.querySelector('.studio-env-stage-art')?.remove();
@@ -48,7 +57,16 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     const stage = shell.querySelector<HTMLElement>('.sandbox-stage');
     const canvas = stage?.querySelector<HTMLElement>('[data-sandbox-canvas]');
     const controls = shell.querySelector<HTMLElement>('.sandbox-controls');
+    const heading = shell.querySelector<HTMLElement>('.sandbox-copy');
     if (!stage || !canvas || !controls) return;
+    if (stage !== observedStage || canvas !== observedCanvas || controls !== observedControls || heading !== observedHeading) {
+      geometryObserver.disconnect();
+      for (const node of [stage, canvas, controls, heading]) if (node) geometryObserver.observe(node);
+      observedStage = stage;
+      observedCanvas = canvas;
+      observedControls = controls;
+      observedHeading = heading;
+    }
     shell.classList.add('studio-env-active');
     let floor = shell.querySelector<HTMLElement>('.studio-env-floor');
     if (!floor) {
@@ -126,6 +144,7 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     disposed = true;
     abort.abort();
     observer.disconnect();
+    geometryObserver.disconnect();
     if (frame) cancelAnimationFrame(frame);
     root.querySelectorAll('.studio-env-floor, .studio-env-stage-art').forEach((node) => node.remove());
     root.querySelectorAll('.studio-env-active').forEach((node) => node.classList.remove('studio-env-active'));
