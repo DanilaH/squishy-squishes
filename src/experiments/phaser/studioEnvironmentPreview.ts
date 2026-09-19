@@ -98,6 +98,9 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     let art = stage.querySelector<HTMLElement>('.studio-env-stage-art');
     if (!art) {
       art = element('div', 'studio-env-stage-art') as HTMLDivElement;
+      // Tall side props must remain clipped to the stage even when the desk
+      // extends into the background below the stage on compact desktops.
+      const decorClip = element('div', 'studio-env-decor-clip') as HTMLDivElement;
       const leftDecor = element('img', 'studio-env-decor studio-env-decor--left') as HTMLImageElement;
       leftDecor.src = assets.decorLeft;
       const rightDecor = element('img', 'studio-env-decor studio-env-decor--right') as HTMLImageElement;
@@ -105,22 +108,26 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
       const desk = element('img', 'studio-env-desk') as HTMLImageElement;
       desk.dataset.studioDesk = '';
       desk.src = deskTexture;
-      art.append(leftDecor, rightDecor, desk);
+      decorClip.append(leftDecor, rightDecor);
+      art.append(decorClip, desk);
       stage.insertBefore(art, stage.firstChild);
     }
     const sr = stage.getBoundingClientRect();
     const cr = canvas.getBoundingClientRect();
     const pr = controls.getBoundingClientRect();
-    // Based on real Gate 1 DOM geometry, not a guessed illustrated room.
-    // 80% of canvas is only a proxy for the toy's lower silhouette, not a physics bound.
-    const toyBottomProxy = cr.top + cr.height * 0.8;
+    // The shader draws around the canvas centre with a 0.34 * canvas radius.
+    // Start the desk just behind the toy's silhouette. The canvas is above the
+    // passive artwork, so the surface cannot intercept pointer input.
+    const toyBottomProxy = cr.top + cr.height * 0.76;
     const top = Math.min(toyBottomProxy - 3, sr.bottom - 3);
-    const visibleDepth = Math.max(0, Math.min(sr.bottom, pr.top - 8) - top);
+    const desktop = innerWidth >= 901 && innerWidth > innerHeight;
+    // Desktop tabletop/front may occupy the background below a short stage;
+    // portrait retains the existing stage/controls clipping boundary.
+    const deskEdge = desktop ? Math.min(pr.bottom, top + cr.width * 1.83 * 0.19) : Math.min(sr.bottom, pr.top - 8);
+    const visibleDepth = Math.max(0, deskEdge - top);
     const landscapeShort = innerWidth > innerHeight && innerHeight <= 520;
     const desk = art.querySelector<HTMLElement>('[data-studio-desk]');
     if (!desk) return;
-    // At 1280x800 Shape only a shallow tabletop fits. Clip its legs inside
-    // the existing stage rather than removing the workbench entirely.
     const showDesk = !landscapeShort && visibleDepth >= 16;
     const scaleWidth = Math.min(innerWidth * 1.14, cr.width * 1.83);
     const imageHeight = scaleWidth * 435 / (421 + 435 + 381);
