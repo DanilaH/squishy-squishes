@@ -1,0 +1,55 @@
+name: Studio environment integration QA
+
+on:
+  push:
+    branches:
+      - feat/studio-environment-v1
+  pull_request:
+    branches:
+      - feat/phaser-jelly-ui-pass-01
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  studio-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build real Pages preview
+        run: npm run pages:build
+      - name: Verify PNG bytes and CSS/asset bundle
+        run: |
+          test "$(find src/experiments/phaser/studio-assets -maxdepth 1 -name 'studio-*.png' | wc -l)" -eq 7
+          test "$(find dist -type f -name 'studio-*.png' | wc -l)" -eq 7
+      - name: Verify live environment, asset fallback, resize and input
+        run: npx playwright test tests/phaser-pages/studio-environment-integration.spec.ts tests/phaser-pages/studio-environment-landscape-regression.spec.ts tests/phaser-pages/studio-environment-resilience.spec.ts --config=playwright.phaser-pages.config.ts
+      - name: Upload real-browser Studio screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-v8-live-shape-paint
+          path: test-results/**/studio-v8-*.png
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify existing full-flow Pages behavior
+        run: npx playwright test tests/phaser-pages/jelly-ui-coverage.spec.ts --config=playwright.phaser-pages.config.ts
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-v8-integration-failure
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
