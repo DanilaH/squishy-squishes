@@ -11,6 +11,9 @@ import '../../sandbox-library.css';
 import '../../sandbox-ideas.css';
 import '../../sandbox-polish-01.css';
 import './candyStudioPreview.css';
+import './jellyUiPreview.css';
+import './jellyTypographyPreview.css';
+import { preloadJellyUi } from './jellyUiPreload';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
@@ -51,13 +54,18 @@ const canStartPhaser = (): boolean => {
   }
 };
 
-void bootstrapSquishyApp(root, {
-  createRuntime: createPagesRuntime,
-  makerRendererOptions: {
-    rendererBackend: 'phaser',
-    makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
-      new PhaserSquishSurface(canvas, onMetrics, audio, callbacks),
-  },
+// Session-reachable UI images decode before the first playable Library frame.
+root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
+void preloadJellyUi().then((ready) => {
+  if (ready) root.dataset.jellyUiReady = '';
+  return bootstrapSquishyApp(root, {
+    createRuntime: createPagesRuntime,
+    makerRendererOptions: {
+      rendererBackend: 'phaser',
+      makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
+        new PhaserSquishSurface(canvas, onMetrics, audio, callbacks),
+    },
+  });
 }).then((handle) => {
   const listeners = new AbortController();
   // Capture before the Library's delegated bubble click, but only on maker entry.

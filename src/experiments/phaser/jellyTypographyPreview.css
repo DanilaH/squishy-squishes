@@ -1,0 +1,143 @@
+/* Phaser Pages only: a self-hosted rounded font and softer lavender ink tie
+   the honey controls to the pastel squishy tiles. No runtime CDN request. */
+@import '@fontsource-variable/nunito/wght.css';
+
+#app[data-jelly-ui-ready] {
+  --jelly-ink: #56375f;
+  --jelly-muted: #78617e;
+}
+
+#app[data-jelly-ui-ready] :is(.sandbox-shell, .sandbox-library-shell) {
+  font-family: 'Nunito Variable', ui-rounded, 'Segoe UI', system-ui, sans-serif;
+  --sandbox-ink: var(--jelly-ink);
+  --sandbox-muted: var(--jelly-muted);
+  --library-ink: var(--jelly-ink);
+  --library-muted: var(--jelly-muted);
+}
+
+#app[data-jelly-ui-ready] :is(.sandbox-shell[data-stage='shape'], .sandbox-shell[data-stage='finish']) {
+  --candy-ink: var(--jelly-ink);
+}
+
+#app[data-jelly-ui-ready] .sandbox-library-modal {
+  --library-ink: var(--jelly-ink);
+  --library-muted: var(--jelly-muted);
+}
+
+#app[data-jelly-ui-ready] :is(.sandbox-copy h1, .sandbox-library-heading h1,
+  .sandbox-ideas-heading h1, .sandbox-library-empty h2) {
+  color: var(--jelly-ink);
+  font-weight: 900;
+  letter-spacing: -.025em;
+  text-shadow: 0 1px 0 rgba(255,255,255,.65);
+}
+
+/* Ivory lettering with a deep golden outline stays legible on shiny,
+   light-centered honey art. Headings remain plum on the pale background. */
+#app[data-jelly-ui-ready] :is(.sandbox-library-new, .sandbox-library-ideas,
+  .sandbox-library-reward > button, .sandbox-library-modal__cancel,
+  .sandbox-panel .sandbox-primary, .sandbox-panel .sandbox-secondary,
+  .sandbox-decor-tabs > button) {
+  color: #fffef6;
+  -webkit-text-stroke: .85px #945315;
+  font-weight: 900;
+  letter-spacing: 0;
+  font-size: clamp(13px, 3.7vw, 15px);
+  line-height: 1.15;
+  text-shadow:
+    1px 0 #945315, -1px 0 #945315,
+    0 1px #945315, 0 -1px #945315,
+    0 2px 0 #704012, 0 3px 4px rgba(74, 35, 9, .38);
+}
+
+/* Red destructive actions should not inherit the honey lettering. */
+#app[data-jelly-ui-ready] :is(.sandbox-library-modal__danger,
+  .sandbox-panel [data-action='paint-clear'],
+  .sandbox-panel [data-action='mixin-clear'],
+  .sandbox-panel [data-action='decor-clear']) {
+  color: #fffef6;
+  -webkit-text-stroke: 0;
+  text-shadow: 0 1px 2px rgba(105,10,15,.65);
+}
+
+#app[data-jelly-ui-ready] .sandbox-sound {
+  color: #fffef6;
+  -webkit-text-stroke: .8px #945315;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-shadow:
+    1px 0 #945315, -1px 0 #945315,
+    0 1px #945315, 0 -1px #945315,
+    0 2px 0 #704012;
+}
+
+/* Preserve the asset's 580:201 silhouette instead of squeezing it into the
+   full-width, 48px-tall grid track. The clickable area remains >= 44px. */
+#app[data-jelly-ui-ready] .sandbox-panel [data-action='shape-continue'],
+#app[data-jelly-ui-ready] .sandbox-panel [data-action='play-saved'] {
+  justify-self: center;
+  width: min(188px, 100%);
+  min-height: 65px !important;
+  background-size: contain;
+  background-color: transparent;
+  font-size: 15px;
+}
+
+/* Desktop's 430px canvas can overlap the shape tray's upper edge. Raise the
+   controls instead of disabling canvas input needed during Paint and Squeeze. */
+#app[data-jelly-ui-ready] .sandbox-controls {
+  position: relative;
+  z-index: 3;
+}
+
+/* Material labels like Marshmallow/Маршмеллоу must stay inside their own card.
+   The same compact layout works before the user's icon pack is available. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage='finish'] .sandbox-material {
+  min-width: 0;
+  padding-inline: 4px;
+  gap: 5px;
+}
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage='finish'] .sandbox-material > span:last-child {
+  min-width: 0;
+  max-width: 100%;
+  font-size: clamp(10px, 2.85vw, 12px);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+/* The original stage overrides use purple outlines and raised shadows;
+   keep the selection/focus language consistent with the new ink. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage='shape'] .sandbox-shape[aria-pressed='true'],
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage='finish'] .sandbox-material[aria-pressed='true'] {
+  border-color: #84508f;
+  box-shadow: 0 4px 0 #9a78a5, 0 0 0 2px #fff5fd, 0 7px 14px rgba(75,43,83,.16);
+}
+#app[data-jelly-ui-ready] .sandbox-shape[aria-pressed='true']::after {
+  background: #84508f;
+}
+
+@media (max-width: 620px) {
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='finish'] .sandbox-material__orb {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  #app[data-jelly-ui-ready] .sandbox-panel [data-action='shape-continue'],
+  #app[data-jelly-ui-ready] .sandbox-panel [data-action='play-saved'] {
+    width: min(158px, 100%);
+    min-height: 55px !important;
+    font-size: 12px;
+  }
+  /* Six tiny columns clipped localized material names and even English
+     Marshmallow; use two compact rows within the existing right-hand tray. */
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='finish'] .sandbox-material-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='finish'] .sandbox-material > span:last-child {
+    font-size: 12px;
+  }
+}
