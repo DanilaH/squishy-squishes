@@ -27,7 +27,8 @@ const check = async (page: Page, label: string): Promise<void> => {
     const floor = shell?.querySelector<HTMLElement>('.studio-env-floor');
     const art = stage?.querySelector<HTMLElement>('.studio-env-stage-art');
     const desk = art?.querySelector<HTMLImageElement>('img[data-studio-desk]');
-    if (!shell || !stage || !canvas || !floor || !art || !desk) throw new Error('Missing integrated Studio layers');
+    const decorClip = art?.querySelector<HTMLElement>('.studio-env-decor-clip');
+    if (!shell || !stage || !canvas || !floor || !art || !desk || !decorClip) throw new Error('Missing integrated Studio layers');
     const rect = (node: Element) => {
       const r = node.getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom };
@@ -48,6 +49,10 @@ const check = async (page: Page, label: string): Promise<void> => {
       deskComposed: desk.currentSrc.startsWith('data:image/png;base64,'),
       deskSize: { width: desk.naturalWidth, height: desk.naturalHeight },
       deskChildren: desk.childElementCount,
+      artOverflow: getComputedStyle(art).overflow,
+      decorOverflow: getComputedStyle(decorClip).overflow,
+      deskClip: getComputedStyle(desk).clipPath,
+      decorRects: Array.from(decorClip.querySelectorAll('img')).map(rect),
       backgrounds: [getComputedStyle(shell).backgroundImage, getComputedStyle(floor).backgroundImage],
       imagesLoaded: images.map((i) => ({ src: i.currentSrc, loaded: i.complete && i.naturalWidth > 0 })),
       canvasAcceptsPointer: !!canvasHit && canvas.contains(canvasHit),
@@ -61,6 +66,7 @@ const check = async (page: Page, label: string): Promise<void> => {
   expect(facts.deskComposed, `${label}: a single raster, not separately scaled slices`).toBe(true);
   expect(facts.deskSize).toEqual({ width: 1237, height: 435 });
   expect(facts.deskChildren).toBe(0);
+  expect(facts.decorOverflow, `${label}: shelf and plant props stay clipped`).toBe('hidden');
   expect(facts.backgrounds[0]).toContain('studio-wall');
   expect(facts.backgrounds[1]).toContain('studio-floor');
   expect(facts.passiveArt).toBe(true);
@@ -73,6 +79,19 @@ const check = async (page: Page, label: string): Promise<void> => {
   expect(facts.deskVisible, `${label}: visibility respects actual stage depth`).toBe(String(expectedVisible));
   if (facts.viewport.width === 1280 && facts.viewport.height === 800 && facts.stageName === 'shape') {
     expect(facts.deskVisible, `${label}: compact desktop must retain the tabletop`).toBe('true');
+    expect(facts.artOverflow, `${label}: desk cannot be clipped at the stage edge`).toBe('visible');
+    expect(facts.deskClip, `${label}: only tabletop/front should extend below the stage`).toContain('59%');
+    // Verify a *substantial* tabletop extends past the former clipping edge;
+    // the previous 20px strip incorrectly passed a Boolean visibility test.
+    expect(facts.desk.y + facts.desk.height * 0.41 - facts.stage.bottom,
+      `${label}: real tabletop/front must extend beyond stage by >=70px`).toBeGreaterThanOrEqual(70);
+  }
+  if (facts.viewport.width <= 390 && facts.viewport.height > facts.viewport.width) {
+    expect(facts.decorRects).toHaveLength(2);
+    expect(facts.decorRects[0]!.width, `${label}: left furniture is a coherent miniature, not a leaf sliver`).toBeGreaterThanOrEqual(140);
+    expect(facts.decorRects[1]!.width, `${label}: right furniture is a coherent miniature, not a leaf sliver`).toBeGreaterThanOrEqual(140);
+    expect(Math.abs(facts.decorRects[0]!.bottom - facts.stage.bottom), `${label}: left prop grounded`).toBeLessThan(2);
+    expect(Math.abs(facts.decorRects[1]!.bottom - facts.stage.bottom), `${label}: right prop grounded`).toBeLessThan(2);
   }
   if (facts.deskVisible === 'true') {
     expect(facts.desk.y).toBeGreaterThanOrEqual(facts.stage.y - 2);
