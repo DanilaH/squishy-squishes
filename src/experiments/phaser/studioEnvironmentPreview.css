@@ -79,11 +79,11 @@
 }
 
 /* A cramped desktop stage must not chop the tabletop down to a 20px strip.
-   Its legs are clipped before they create clutter under the real controls;
-   both the interactive canvas and every button remain above the artwork. */
+   The desk extends beneath the controls but is cut at the wooden apron before
+   the source image's purple legs; controls and canvas stay above passive art. */
 @media (min-width: 901px) and (orientation: landscape) {
   .studio-env-stage-art { overflow: visible; }
-  .studio-env-desk { clip-path: inset(0 0 47% 0); }
+  .studio-env-desk { clip-path: inset(0 0 59% 0); }
 }
 @media (min-width: 501px) and (max-width: 900px) {
   .studio-env-decor { width: 300px; }
