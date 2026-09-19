@@ -1,5 +1,7 @@
 /* Pages-only environment. All artwork is noninteractive and remains behind the real canvas/UI. */
-.sandbox-shell.studio-env-active:is([data-stage='shape'], [data-stage='paint']) {
+/* The jelly UI stylesheet uses #app[data-jelly-ui-ready] .sandbox-shell[data-stage],
+   so the environment selector must outrank its background shorthand. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='shape'], [data-stage='paint']) {
   position: relative;
   isolation: isolate;
   background-color: #ffeadb;
