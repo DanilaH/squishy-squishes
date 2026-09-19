@@ -1,0 +1,93 @@
+/* Pages-only environment. All artwork is noninteractive and remains behind the real canvas/UI. */
+.sandbox-shell.studio-env-active:is([data-stage='shape'], [data-stage='paint']) {
+  position: relative;
+  isolation: isolate;
+  background-color: #ffeadb;
+  background-image: url('./studio-assets/studio-wall.png');
+  background-position: left top;
+  background-repeat: repeat-x;
+  background-size: 320px 730px;
+}
+
+.sandbox-shell.studio-env-active > :is(.sandbox-topbar, .sandbox-copy, .sandbox-stage, .sandbox-controls, .sandbox-status) {
+  position: relative;
+  z-index: 1;
+}
+
+.studio-env-floor {
+  position: absolute;
+  z-index: 0;
+  inset-inline: 0;
+  bottom: 0;
+  background-color: #da9d74;
+  background-image: url('./studio-assets/studio-floor.png');
+  background-position: left top;
+  background-repeat: repeat-x;
+  background-size: 320px 348px;
+  pointer-events: none;
+}
+
+.studio-env-stage-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.studio-env-decor {
+  position: absolute;
+  top: 62px;
+  width: 356px;
+  height: auto;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+.studio-env-decor--left { left: -38px; }
+.studio-env-decor--right { right: -35px; }
+
+.studio-env-desk {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  pointer-events: none;
+  max-width: none;
+}
+.studio-env-desk__end {
+  display: block;
+  flex: 0 0 auto;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+.studio-env-desk__middle {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  background-repeat: repeat-x;
+  background-position: 0 0;
+  background-size: auto 100%;
+  pointer-events: none;
+}
+
+/* Narrow portrait shows only edge glimpses of the unique side props. */
+@media (max-width: 350px) and (orientation: portrait) {
+  .studio-env-decor { top: 44px; width: 118px; }
+  .studio-env-decor--left { left: -75px; }
+  .studio-env-decor--right { right: -73px; }
+}
+@media (min-width: 351px) and (max-width: 500px) and (orientation: portrait) {
+  .studio-env-decor { top: 44px; width: 148px; }
+  .studio-env-decor--left { left: -75px; }
+  .studio-env-decor--right { right: -83px; }
+}
+@media (min-width: 501px) and (max-width: 900px) {
+  .studio-env-decor { width: 300px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .studio-env-decor, .studio-env-desk { display: none !important; }
+}
