@@ -70,10 +70,15 @@ const check = async (page: Page, label: string): Promise<void> => {
   expect(Math.abs(facts.floor.y - (facts.stage.bottom - 22)), `${label}: floor follows actual stage`).toBeLessThan(2);
   const landscapeShort = facts.viewport.width > facts.viewport.height && facts.viewport.height <= 520;
   const expectedVisible = !landscapeShort && Number(facts.deskDepth) >= 16;
-  expect(facts.deskVisible, `${label}: compact tabletop must not disappear at 1280x800`).toBe(String(expectedVisible));
+  expect(facts.deskVisible, `${label}: visibility respects actual stage depth`).toBe(String(expectedVisible));
+  if (facts.viewport.width === 1280 && facts.viewport.height === 800 && facts.stageName === 'shape') {
+    expect(facts.deskVisible, `${label}: compact desktop must retain the tabletop`).toBe('true');
+  }
   if (facts.deskVisible === 'true') {
     expect(facts.desk.y).toBeGreaterThanOrEqual(facts.stage.y - 2);
-    expect(facts.desk.width / facts.desk.height, `${label}: retain original aspect`).toBeCloseTo(1237 / 435, 2);
+    // Width and height are each snapped to the nearest physical pixel, so
+    // narrow DPR1 views legitimately differ slightly from the source ratio.
+    expect(Math.abs(facts.desk.width / facts.desk.height - 1237 / 435), `${label}: retain aspect within DPR snapping`).toBeLessThan(0.02);
   }
 };
 
