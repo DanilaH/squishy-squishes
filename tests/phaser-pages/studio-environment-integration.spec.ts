@@ -11,6 +11,15 @@ const views = [
 ] as const;
 
 const check = async (page: Page, label: string): Promise<void> => {
+  // ResizeObserver/rAF runs asynchronously after the stage changes its controls layout.
+  // Wait for ACTUAL aligned DOM geometry, not a fixed timeout or a loosened assertion.
+  await expect.poll(() => page.evaluate(() => {
+    const shell = document.querySelector<HTMLElement>('[data-sandbox-app]');
+    const stage = shell?.querySelector<HTMLElement>('.sandbox-stage');
+    const floor = shell?.querySelector<HTMLElement>('.studio-env-floor');
+    if (!stage || !floor) return Number.POSITIVE_INFINITY;
+    return Math.abs(floor.getBoundingClientRect().top - (stage.getBoundingClientRect().bottom - 22));
+  }), { message: `${label}: floor settles under actual stage`, timeout: 6_000 }).toBeLessThan(2);
   const facts = await page.evaluate(() => {
     const shell = document.querySelector<HTMLElement>('[data-sandbox-app]');
     const stage = shell?.querySelector<HTMLElement>('.sandbox-stage');
