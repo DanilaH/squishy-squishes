@@ -4,6 +4,7 @@ on:
     branches: [feat/library-hall-pages-preview]
     paths:
       - 'src/experiments/phaser/libraryHallPreview.*'
+      - 'src/experiments/phaser/libraryHallPolish.css'
       - 'src/experiments/phaser/studioPagesPreview.ts'
       - 'src/experiments/phaser/library-assets/**'
       - 'tests/phaser-pages/library-hall-integration.spec.ts'
@@ -36,6 +37,8 @@ jobs:
             test-results/**/library-hall-*.json
           if-no-files-found: ignore
           retention-days: 14
+      - name: Full existing Phaser Pages regression suite
+        run: npm run pages:qa
       - name: Upload failure traces
         if: failure()
         uses: actions/upload-artifact@v4
