@@ -1,13 +1,15 @@
 import './libraryHallPreview.css';
 
-// These are source-pinned, generated WebPs, not painted UI or fake squishy thumbnails.
+// Two actual split exports from the approved room master + three isolated
+// editable SVG objects from the subsequently accepted flat-decor preview.
+// Do not revert the flat leaves to the more detailed foliage in the old master.
 const art = {
-  wall: new URL('./library-assets/wall.webp', import.meta.url).href,
-  floor: new URL('./library-assets/floor.webp', import.meta.url).href,
+  wall: new URL('./library-assets/approved-master-wall.webp', import.meta.url).href,
+  floor: new URL('./library-assets/approved-master-floor.webp', import.meta.url).href,
   pedestal: new URL('./library-assets/pedestal.webp', import.meta.url).href,
-  cabinet: new URL('./library-assets/cabinet.webp', import.meta.url).href,
-  shelf: new URL('./library-assets/shelf.webp', import.meta.url).href,
-  plant: new URL('./library-assets/plant.webp', import.meta.url).href,
+  cabinet: new URL('./library-assets/approved-flat-cabinet.svg', import.meta.url).href,
+  shelf: new URL('./library-assets/approved-flat-shelf.svg', import.meta.url).href,
+  plant: new URL('./library-assets/approved-flat-plant.svg', import.meta.url).href,
 } as const;
 
 const PER_ROOM = 2;
@@ -63,6 +65,7 @@ export const mountLibraryHallPreview = (root: HTMLElement): void => {
     lastCount = count;
     shell.dataset.libraryHallMounted = 'true';
     shell.classList.add('is-library-hall');
+    shell.dataset.libraryHallArt = 'approved-master-flat-decor';
     currentShell = shell;
 
     const scene = document.createElement('div');
@@ -81,7 +84,6 @@ export const mountLibraryHallPreview = (root: HTMLElement): void => {
     const grid = shell.querySelector<HTMLElement>('.sandbox-library-grid') ?? document.createElement('section');
     grid.classList.add('sandbox-library-grid');
     if (!grid.hasAttribute('aria-label')) grid.setAttribute('aria-label', shell.querySelector('h1')?.textContent ?? 'Collection');
-    // The header already exposes New; do not make the extra grid CTA a third pedestal.
     grid.querySelector('.sandbox-library-add-card')?.remove();
     const stage = document.createElement('section');
     stage.className = 'library-hall-stage';
