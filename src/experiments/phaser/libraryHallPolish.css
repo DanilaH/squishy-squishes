@@ -10,6 +10,10 @@
   min-height: 34px;
   background: rgba(255, 247, 233, .94);
 }
+/* The isolated transparent SVG art is cropped to its actual silhouette. */
+#app .library-hall-scene__cabinet { aspect-ratio: 326 / 654; }
+#app .library-hall-scene__shelf { aspect-ratio: 572 / 257; }
+#app .library-hall-scene__plant { aspect-ratio: 271 / 416; }
 /* Furniture must remain complete as widths transition from phone to desktop. */
 #app .library-hall-scene__cabinet { left: max(8px, calc(50% - 560px)); }
 #app .library-hall-scene__shelf { right: max(8px, calc(50% - 555px)); }
