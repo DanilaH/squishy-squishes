@@ -13,14 +13,13 @@ jobs:
     if: github.repository == 'DanilaH/squishy-squishes'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci
+          node-version: '24'
+      - run: npm install
       - name: Build source-pinned game sprites
         run: node scripts/build-library-hall.mjs
       - name: Commit verified binary outputs to preview branch only
