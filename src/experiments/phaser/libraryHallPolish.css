@@ -10,6 +10,14 @@
   min-height: 34px;
   background: rgba(255, 247, 233, .94);
 }
+/* Furniture must remain complete as widths transition from phone to desktop. */
+#app .library-hall-scene__cabinet { left: max(8px, calc(50% - 560px)); }
+#app .library-hall-scene__shelf { right: max(8px, calc(50% - 555px)); }
+#app .library-hall-scene__plant { right: max(8px, calc(50% - 580px)); }
+@media (min-width: 431px) and (max-width: 899px) {
+  /* The floor plant would cross the right stand at tablet widths. */
+  #app .library-hall-scene__plant { display: none; }
+}
 
 /* The old 41%-high background box constrained desktop stands to ~185px, even
    with 470px of grid width. Scale the stand and the real thumbnail together. */
@@ -42,7 +50,7 @@
 }
 
 @media (max-width: 430px) and (orientation: portrait) {
-  /* Show entire approved objects, not a partial cabinet or a clipped leaf. */
+  /* Show entire objects, not a partial cabinet or a clipped leaf. */
   #app .library-hall-scene__cabinet {
     left: 6px;
     top: 25%;
