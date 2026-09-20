@@ -19,8 +19,7 @@
   #app .library-hall-scene__plant { display: none; }
 }
 
-/* The old 41%-high background box constrained desktop stands to ~185px, even
-   with 470px of grid width. Scale the stand and the real thumbnail together. */
+/* Scale the podium and the real thumbnail together on tablet and desktop. */
 @media (min-width: 600px) and (min-height: 600px) {
   #app .is-library-hall .library-hall-stage {
     width: min(100%, 880px);
@@ -40,7 +39,9 @@
   }
   #app .is-library-hall .sandbox-library-card__canvas {
     height: 90%;
-    transform: translateY(clamp(10px, 2dvh, 19px));
+    /* The canvas has transparent intrinsic padding. Positive translation sank
+       the real heart tip below the tabletop on 768px tablets. */
+    transform: translateY(0);
   }
   #app .is-library-hall .sandbox-library-card__footer {
     bottom: -33px;
