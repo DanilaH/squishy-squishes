@@ -1,16 +1,16 @@
 # Squishy Squishes — agent contract
 
-## Current product (16 September 2026)
+## Current product and entrypoints (20 September 2026)
 
-This project is a freeform, touch-first squishy maker, **not** the retired recipe/XP progression game. The accepted S0–S6 sandbox plus two polish passes are merged; PR #29 is the baseline. The active product work is recognizable new shapes and a more toy-like UI, not new progression, economy or physics systems.
+Squishy Squishes is a freeform, touch-first squishy maker, **not** the retired recipe/XP progression game. The S0–S6 sandbox and polish work are complete; later Phaser Pages, jelly UI and warm Studio changes have also been merged as **isolated preview work** (PRs #54 and #56). Do not confuse the `/phaser/` Pages preview with an approved replacement of the original production/Yandex entrypoints, and do not restore recipe-gated progression.
 
 Player path: `Library → New Squishy → Shape → Paint → Mix-ins → Mix → Decorate → Finish/Save → Squeeze`.
 
-Read `docs/SANDBOX_PIVOT_01_MASTER_PLAN.md`, `docs/SANDBOX_PIVOT_01_ASSET_PLAN.md`, `docs/SANDBOX_PIVOT_S3_DECOR.md`, `docs/IMPLEMENTATION_ROADMAP.md` (its S5/S6 status labels are historical), `docs/PROJECT_DECISIONS.md`, and `docs/RUNTIME_ASSETS.md`. Historical recipe/XP documents are evidence only; do not treat their instructions as active.
+Start with [`docs/README.md`](docs/README.md) to distinguish current source-of-truth documents from historical evidence. Read `docs/SANDBOX_PIVOT_01_MASTER_PLAN.md`, `docs/SANDBOX_PIVOT_01_ASSET_PLAN.md`, `docs/SANDBOX_PIVOT_S3_DECOR.md`, `docs/PROJECT_DECISIONS.md` and `docs/RUNTIME_ASSETS.md` as needed. `docs/IMPLEMENTATION_ROADMAP.md` is historical and its S5/S6 status labels are stale; do not use its timeline as the active backlog. The former dark-lab `docs/ART_DIRECTION.md` predates the accepted warm Studio environment and is **not** the current art reference. Use the actual approved Studio source/merged sprites and real-browser evidence for new art; never treat a generated presentation or a candidate PNG as a tested game asset. Historical recipe/XP documents are evidence only.
 
-## Scoped Phaser migration authorization (implementation branches only)
+## Scoped Phaser migration authorization
 
-The user approved migration of the **existing** game to Phaser 4 first, **without** changing its current portrait-first responsive layout, graphics or gameplay. Landscape redesign and a portrait rotation gate are a separate future project. The reviewed migration roadmap is `docs/PHASER_LANDSCAPE_MIGRATION_PLAN.md` on the documentation branch / PR #32 (the filename is historical). This section overrides only the old blanket Phaser prohibition **for dedicated migration branches**; it does not make the experimental PR #31 production-ready or authorize a default-entrypoint switch.
+The user approved migration of the **existing** game to Phaser 4 first, **without** changing its portrait-first responsive layout, graphics or gameplay as part of the engine cutover. Landscape redesign and a portrait rotation gate are separate future decisions. The reviewed roadmap is `docs/PHASER_LANDSCAPE_MIGRATION_PLAN.md` (filename historical). This authorization permits Phaser work in isolated migration/preview entrypoints; neither the old experimental PR #31 nor later merged preview art/UI automatically authorizes a production/Yandex cutover.
 
 Required order: freeze regression fixtures and visual/interaction baselines; extract the single physics implementation while the old renderer still runs; build a separate Phaser candidate; port original GLSL/shape fields/appearance, gestures and full sandbox; validate saves, audio, analytics, ads and Yandex DRAFT; then cut over reversibly. Phaser owns the visible WebGL2 render context, scene frame loop and playfield input. Existing DOM Library/controls, portrait-first CSS, offscreen appearance baking and existing visible 2D decor layers may remain with explicit ownership; visible overlay updates must ultimately follow the Phaser frame, not an independent RAF. Preserve transparent compositing and drop shadows.
 

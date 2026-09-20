@@ -1,73 +1,19 @@
-# Phone QA Panel — production test utility
+# Phone QA Panel — historical V2 production test utility
 
-**Date:** 2026-09-14
-**Status:** IMPLEMENTED / STRUCTURAL PASS
-**Scope:** temporary production QA surface for deployed phone testing during Phase 6/7.
+**Date:** 2026-09-14. **Historical status:** implemented / structural pass for the retired recipe/XP game. This is **not** a current SaveState V3 contract; do not reintroduce XP/rank controls or a production QA launcher to the freeform sandbox on the strength of this document.
 
-## Goal
+## Purpose and behavior at the time
 
-Let the tester reach progression/content states immediately on GitHub Pages without replaying the normal grind.
+The temporary Pages phone panel let testers reach recipe/progression states without replaying the game. It edited the same canonical `SaveStateV2` repository used by that version, not a second save implementation. Controls selected rank 1–8, adjusted XP by ±25/100, toggled valid recipe completions, completed/cleared all, reset through the existing hardened path and displayed rank/XP/count. No stage skipping, renderer tuning, arbitrary localStorage editor, save bump or new progression system.
 
-The panel edits the same persisted `SaveStateV2` used by the game. It is not a second progression system and does not require DEV mode.
+The independent review required the panel **outside** `VerticalSliceApp`, canonical-ID filtering and `totalCrafts >= completedVariantIds.length`, nonnegative XP, independent rank/recipe controls, `await write()` plus `flush()` before reload, and reset via `resetProgressSave()`. Panel open/closed preference was session-only; the ordinary bootstrap reloaded canonical persisted state after each change. The launcher lived in the debug strip and the panel was sized for phone use.
 
-## Controls
+## Implementation review and evidence
 
-- set Lab Rank directly to any currently defined rank;
-- adjust total Lab XP by `-100`, `-25`, `+25`, or `+100`;
-- mark any canonical recipe completed/uncompleted;
-- complete all recipes;
-- clear completed recipes without changing XP;
-- full progress reset through the existing hardened reset path;
-- show the current rank, total XP, and completion count.
+The implementation review recorded those boundaries as met without changing game/craft/renderer or progression formulas. The first strict validation caught a TypeScript DOM issue because `HTMLElement.hidden` could be `boolean | 'until-found'`; converting the state explicitly to boolean fixed it. GitHub Actions run [`34849890352`](https://github.com/DanilaH/squishy-squishes/actions/runs/34849890352) then passed typecheck and production build. **This did not prove deployed physical-phone usage.** The original release rule required the temporary production QA surface to be removed or disabled before a shipping Yandex build; verify current source when assessing that rule, rather than assuming this historical panel remains installed.
 
-## Persistence model
+## Immutable original documents
 
-QA mutations write a valid `SaveStateV2` through the existing save repository and flush it before applying the new runtime state.
-
-To avoid creating another live progression owner, the production QA panel reloads the page after a successful mutation. The normal bootstrap then reloads the exact persisted state through the canonical migration/codec path.
-
-The panel keeps only its open/closed UI preference in `sessionStorage`; game/progression data remains exclusively in the canonical save repository.
-
-## State rules
-
-- XP is clamped to a non-negative integer;
-- completed IDs come only from the canonical recipe registry;
-- direct rank selection sets XP to that rank's canonical minimum threshold;
-- completion flags and rank/XP remain independently editable so locked/completed edge cases can be exercised deliberately;
-- `totalCrafts` never becomes lower than the number of completed recipes;
-- settings such as mute are untouched.
-
-## UI rules
-
-- one `QA` launcher sits beside the existing Metrics/Mesh/Mute controls;
-- the panel is compact and scrollable for phone screens;
-- Collection and the main selector are unchanged;
-- controls are clearly separated as QA-only tooling;
-- panel-open state survives the automatic reload so repeated edits are practical.
-
-## Non-goals
-
-- no stage skipping;
-- no renderer/material tuning controls;
-- no arbitrary localStorage editor;
-- no save-schema bump;
-- no new route/state machine;
-- no permanent release/admin system.
-
-## Removal rule
-
-This is a temporary testing utility. Release hardening must remove or explicitly disable the production QA panel before a shipping Yandex build.
-
-## Validation
-
-GitHub Actions run `34849890352` passed strict typecheck and production build after one DOM typing correction found by the first run.
-
-## Acceptance
-
-- rank 1–8 can be reached in one tap;
-- Rank 8 immediately exposes the Phase 6 premium recipes through normal Collection rules;
-- XP +/- controls persist after reload;
-- individual/all/none completion edits persist after reload;
-- full reset still clears migration-source saves through the existing reset implementation;
-- old gameplay/craft tuning is untouched;
-- strict typecheck and production build pass.
+- [Original panel specification](https://github.com/DanilaH/squishy-squishes/blob/223c84339c7700b0ae0d53749be86d13fb56f30f/docs/PHONE_QA_PANEL.md)
+- [Independent pre-implementation review](https://github.com/DanilaH/squishy-squishes/blob/223c84339c7700b0ae0d53749be86d13fb56f30f/docs/PHONE_QA_PANEL_REVIEW.md)
+- [Implementation review](https://github.com/DanilaH/squishy-squishes/blob/223c84339c7700b0ae0d53749be86d13fb56f30f/docs/PHONE_QA_PANEL_IMPLEMENTATION_REVIEW.md)
