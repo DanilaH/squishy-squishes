@@ -1,0 +1,215 @@
+/* Isolated Phaser Pages hall: source art is behind real DOM controls/canvases. */
+#app .sandbox-library-shell.is-library-hall {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  background: #f2c6a6;
+}
+#app .is-library-hall > :not(.library-hall-scene) { position: relative; z-index: 1; }
+#app .is-library-hall .sandbox-library-heading { flex: 0 0 auto; margin: 7px auto 5px; }
+#app .is-library-hall .sandbox-library-heading h1 { font-size: clamp(25px, 4vw, 38px); }
+#app .is-library-hall .sandbox-library-topbar { flex: 0 0 auto; }
+#app .is-library-hall .sandbox-library-status { color: #6d4c57; }
+#app .is-library-hall .sandbox-library-heading > div:first-child { min-width: 0; }
+
+#app .library-hall-scene {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #efc19f;
+}
+#app .library-hall-scene > div { position: absolute; pointer-events: none; }
+#app .library-hall-scene__wall {
+  inset: 0 0 42%;
+  background: var(--hall-wall) center top / cover no-repeat;
+}
+#app .library-hall-scene__floor {
+  inset: 55% 0 0;
+  border-top: 5px solid #b78053;
+  background: var(--hall-floor) center top / cover no-repeat;
+}
+#app .library-hall-scene__cabinet {
+  width: clamp(76px, 11vw, 145px);
+  aspect-ratio: 256 / 522;
+  left: max(-34px, calc(50% - 560px));
+  top: 28%;
+  background: var(--hall-cabinet) center / contain no-repeat;
+}
+#app .library-hall-scene__shelf {
+  width: clamp(100px, 15vw, 195px);
+  aspect-ratio: 440 / 192;
+  right: max(-25px, calc(50% - 555px));
+  top: 22%;
+  background: var(--hall-shelf) center / contain no-repeat;
+}
+#app .library-hall-scene__plant {
+  width: clamp(76px, 10vw, 130px);
+  aspect-ratio: 244 / 343;
+  right: max(-30px, calc(50% - 580px));
+  bottom: 22%;
+  background: var(--hall-plant) center / contain no-repeat;
+}
+
+#app .is-library-hall .library-hall-stage {
+  width: min(100%, 650px);
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: center;
+  margin: 0 auto;
+}
+#app .is-library-hall .library-hall-stage .sandbox-library-grid {
+  width: min(100%, 470px);
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(4px, 1.5vw, 16px);
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  padding: 4px 0 0;
+}
+#app .is-library-hall .sandbox-library-card,
+#app .is-library-hall .library-hall-vacant {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: clamp(145px, 31dvh, 265px);
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+#app .is-library-hall .sandbox-library-card[hidden] { display: none !important; }
+#app .is-library-hall .sandbox-library-card::before,
+#app .is-library-hall .library-hall-vacant::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 52%;
+  width: 100%;
+  height: 41%;
+  background: var(--hall-pedestal) center / contain no-repeat;
+  pointer-events: none;
+}
+#app .is-library-hall .sandbox-library-card__play {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 70%;
+  aspect-ratio: auto;
+  background: transparent;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+#app .is-library-hall .sandbox-library-card__canvas {
+  display: block;
+  width: 100%;
+  height: 83%;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+#app .is-library-hall .sandbox-library-card__cta { display: none; }
+#app .is-library-hall .sandbox-library-card__footer {
+  position: relative;
+  z-index: 2;
+  min-height: 36px;
+  margin-top: 0;
+  padding: 0 2px;
+  border-radius: 11px;
+  background: rgba(255, 246, 234, .90);
+  color: #513e58;
+}
+#app .is-library-hall .sandbox-library-card__footer strong { font-size: 10px; }
+#app .is-library-hall .sandbox-library-delete { width: 35px; height: 35px; color: #754e71; }
+#app .is-library-hall .sandbox-library-add-card { display: none; }
+
+#app .library-hall-nav {
+  flex: 0 0 auto;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding-bottom: 3px;
+  color: #4e374d;
+  font-weight: 900;
+  font-size: 13px;
+}
+#app .library-hall-nav button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #dca778;
+  border-radius: 50%;
+  background: #fff2df;
+  color: #644467;
+  box-shadow: 0 3px 0 #c99c74;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+#app .library-hall-nav button:disabled { opacity: .42; cursor: default; }
+#app .library-hall-nav button:focus-visible { outline: 3px solid #7650ac; outline-offset: 3px; }
+#app .library-hall-nav output { min-width: 42px; text-align: center; }
+
+#app .is-library-hall .sandbox-library-empty {
+  width: min(100%, 420px);
+  flex: 0 0 auto;
+  margin: 0 auto 3px;
+  padding: 4px 7px;
+  border-radius: 12px;
+  background: rgba(255, 244, 230, .92);
+}
+#app .is-library-hall .sandbox-library-empty__toy,
+#app .is-library-hall .sandbox-library-empty .sandbox-library-new--hero { display: none; }
+#app .is-library-hall .sandbox-library-empty h2 { font-size: 13px; }
+#app .is-library-hall .sandbox-library-empty p { margin: 2px auto; font-size: 11px; }
+#app .is-library-hall .sandbox-library-full-zone { flex: 0 0 auto; margin: 2px auto 0; gap: 3px; }
+#app .is-library-hall .sandbox-library-full-note { margin: 0; }
+#app .is-library-hall .sandbox-library-reward { padding: 6px 10px; border-radius: 13px; }
+#app .is-library-hall .sandbox-library-reward__copy > p { display: none; }
+#app .is-library-hall .sandbox-library-reward > button { min-height: 37px; }
+#app .is-library-hall .sandbox-library-reward-message { flex: 0 0 auto; margin: 0 auto; }
+
+@media (max-width: 430px) {
+  #app .library-hall-scene__cabinet { left: -48px; top: 31%; }
+  #app .library-hall-scene__shelf { right: -36px; top: 28%; }
+  #app .library-hall-scene__plant { display: none; }
+  #app .is-library-hall .library-hall-stage .sandbox-library-grid { width: 100%; }
+  #app .is-library-hall .sandbox-library-card__footer { padding-inline: 2px; }
+  #app .is-library-hall .sandbox-library-heading h1 { font-size: 25px; }
+  #app .is-library-hall .sandbox-library-heading { gap: 5px; }
+  #app .is-library-hall .sandbox-library-heading__actions { gap: 3px; }
+  #app .is-library-hall .sandbox-library-heading__actions > button { padding-inline: 6px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  #app .library-hall-scene__cabinet,
+  #app .library-hall-scene__shelf,
+  #app .library-hall-scene__plant { display: none; }
+  #app .is-library-hall .sandbox-library-heading { margin: 1px auto 2px; }
+  #app .is-library-hall .sandbox-library-heading h1 { font-size: 21px; }
+  #app .is-library-hall .library-hall-stage .sandbox-library-grid { width: min(100%, 390px); }
+  #app .is-library-hall .sandbox-library-card,
+  #app .is-library-hall .library-hall-vacant { height: min(37dvh, 151px); }
+  #app .is-library-hall .sandbox-library-card__footer { min-height: 30px; }
+  #app .library-hall-nav { min-height: 34px; gap: 12px; }
+  #app .library-hall-nav button { width: 33px; height: 33px; font-size: 24px; }
+  #app .is-library-hall .sandbox-library-empty p { display: none; }
+  #app .is-library-hall .sandbox-library-reward { padding: 3px 6px; }
+}
