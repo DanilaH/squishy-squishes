@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="326" height="654" viewBox="140 134 326 654">
+<g stroke-linecap="round" stroke-linejoin="round"><rect x="158" y="404" width="287" height="310" rx="16" fill="#B99CCF" stroke="#8D739E" stroke-width="3"/>
+<path d="M 158 673 L 445 673 L 431 717 L 173 717 Z" fill="#A98BC1" stroke="#8D739E" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="180" y="700" width="39" height="83" rx="8" fill="#E9B178" stroke="#B67F52" stroke-width="3"/>
+<rect x="387" y="700" width="39" height="83" rx="8" fill="#E9B178" stroke="#B67F52" stroke-width="3"/>
+<rect x="146" y="377" width="314" height="45" rx="9" fill="#F2C28D" stroke="#B67F52" stroke-width="3"/>
+<rect x="193" y="444" width="214" height="233" rx="11" fill="#B99CCF" stroke="#8D739E" stroke-width="3"/>
+<rect x="210" y="460" width="181" height="201" rx="8" fill="#B99CCF" stroke="#A88BBE" stroke-width="2"/>
+<ellipse cx="361" cy="564" rx="14" ry="14" fill="#F2C28D" stroke="#B67F52" stroke-width="2"/>
+<path d="M 300 377 Q 250.5 196.0 201 205" fill="none" stroke="#4E7143" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 300 377 Q 272.5 146.0 245 155" fill="none" stroke="#4E7143" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 300 377 Q 326.0 133.0 352 142" fill="none" stroke="#4E7143" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 300 377 Q 355.0 209.0 410 218" fill="none" stroke="#4E7143" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 300 377 Q 292.35 271.49 201 205 Q 212.61 317.39 300 377 Z" fill="#64874D"/>
+<path d="M 300 377 Q 311.46 261.06 245 155 Q 235.74 279.82 300 377 Z" fill="#79964E"/>
+<path d="M 300 377 Q 367.92 273.71 352 142 Q 282.00 254.69 300 377 Z" fill="#64874D"/>
+<path d="M 300 377 Q 388.98 325.71 410 218 Q 316.62 275.65 300 377 Z" fill="#79964E"/>
+<path d="M 242 305 L 352 305 L 342 380 Q 297.0 388 252 380 Z" fill="#F6D8B4" stroke="#C6A283" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 248 356.75 L 346 356.75 L 342 380 Q 297.0 388 252 380 Z" fill="#B69BD1"/>
+<ellipse cx="297.0" cy="305" rx="57.0" ry="9" fill="#F6D8B4" stroke="#C6A283" stroke-width="2"/></g></svg>
