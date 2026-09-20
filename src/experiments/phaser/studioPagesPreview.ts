@@ -3,6 +3,7 @@
 import './pagesPreview';
 import { mountStudioEnvironmentPreview } from './studioEnvironmentPreview';
 import { mountLibraryHallPreview } from './libraryHallPreview';
+import './libraryHallPolish.css';
 
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('Missing #app root.');
