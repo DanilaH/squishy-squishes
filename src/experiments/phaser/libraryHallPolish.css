@@ -1,0 +1,97 @@
+/* Real Chromium review adjustments. This stylesheet loads after the isolated Hall rules. */
+#app .is-library-hall .sandbox-library-card__canvas {
+  transform: translateY(clamp(8px, 2dvh, 18px));
+}
+#app .is-library-hall .sandbox-library-card__footer {
+  position: absolute;
+  inset: auto 3% 0;
+  width: 94%;
+  margin: 0;
+  min-height: 34px;
+  background: rgba(255, 247, 233, .94);
+}
+/* The isolated transparent SVG art is cropped to its actual silhouette. */
+#app .library-hall-scene__cabinet { aspect-ratio: 326 / 654; }
+#app .library-hall-scene__shelf { aspect-ratio: 572 / 257; }
+#app .library-hall-scene__plant { aspect-ratio: 271 / 416; }
+/* Furniture must remain complete as widths transition from phone to desktop. */
+#app .library-hall-scene__cabinet { left: max(8px, calc(50% - 560px)); }
+#app .library-hall-scene__shelf { right: max(8px, calc(50% - 555px)); }
+#app .library-hall-scene__plant { right: max(8px, calc(50% - 580px)); }
+@media (min-width: 431px) and (max-width: 899px) {
+  /* The floor plant would cross the right stand at tablet widths. */
+  #app .library-hall-scene__plant { display: none; }
+}
+
+/* Scale the podium and the real thumbnail together on tablet and desktop. */
+@media (min-width: 600px) and (min-height: 600px) {
+  #app .is-library-hall .library-hall-stage {
+    width: min(100%, 880px);
+  }
+  #app .is-library-hall .library-hall-stage .sandbox-library-grid {
+    width: min(100%, 700px);
+    gap: clamp(18px, 3vw, 38px);
+  }
+  #app .is-library-hall .sandbox-library-card,
+  #app .is-library-hall .library-hall-vacant {
+    height: clamp(265px, 39dvh, 355px);
+  }
+  #app .is-library-hall .sandbox-library-card::before,
+  #app .is-library-hall .library-hall-vacant::before {
+    top: 46%;
+    height: 55%;
+  }
+  #app .is-library-hall .sandbox-library-card__canvas {
+    height: 90%;
+    /* The canvas has transparent intrinsic padding. Positive translation sank
+       the real heart tip below the tabletop on 768px tablets. */
+    transform: translateY(0);
+  }
+  #app .is-library-hall .sandbox-library-card__footer {
+    bottom: -33px;
+    min-height: 34px;
+  }
+  #app .is-library-hall .sandbox-library-card__footer strong { font-size: 12px; }
+}
+
+@media (max-width: 430px) and (orientation: portrait) {
+  /* Show entire objects, not a partial cabinet or a clipped leaf. */
+  #app .library-hall-scene__cabinet {
+    left: 6px;
+    top: 25%;
+    width: 66px;
+  }
+  #app .library-hall-scene__shelf {
+    right: 6px;
+    top: 30%;
+    width: 92px;
+  }
+  /* Keep the wooden base fully visible instead of masking it with the label. */
+  #app .is-library-hall .sandbox-library-card__footer {
+    bottom: -24px;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  #app .is-library-hall .library-hall-stage .sandbox-library-grid {
+    width: min(100%, 450px);
+  }
+  #app .is-library-hall .sandbox-library-card,
+  #app .is-library-hall .library-hall-vacant {
+    height: min(40dvh, 156px);
+  }
+  #app .is-library-hall .sandbox-library-card::before,
+  #app .is-library-hall .library-hall-vacant::before {
+    top: 42%;
+    height: 60%;
+  }
+  #app .is-library-hall .sandbox-library-card__canvas {
+    height: 87%;
+    transform: translateY(4px);
+  }
+  /* Place captions below the wooden base and above the navigation row. */
+  #app .is-library-hall .sandbox-library-card__footer {
+    inset: 102% 3% auto;
+    min-height: 25px;
+  }
+}

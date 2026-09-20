@@ -1,8 +1,11 @@
-// Keep the actual Phaser Pages bootstrap intact. The extra art is a removable
-// Pages-only layer; no change to main, Yandex, physics, or player saves.
+// Both visual environments are removable Phaser Pages-only layers.
+// Main/Yandex entrypoints, player saves, input, and physics remain unchanged.
 import './pagesPreview';
 import { mountStudioEnvironmentPreview } from './studioEnvironmentPreview';
+import { mountLibraryHallPreview } from './libraryHallPreview';
+import './libraryHallPolish.css';
 
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('Missing #app root.');
 mountStudioEnvironmentPreview(root);
+mountLibraryHallPreview(root);
