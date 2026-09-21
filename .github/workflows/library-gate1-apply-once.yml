@@ -1,0 +1,32 @@
+name: One-time Library gate 1 shader patch
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: ['.github/workflows/library-gate1-apply-once.yml']
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.repository == 'DanilaH/squishy-squishes'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Verify source anchored patch and apply only intended files
+        shell: bash
+        run: |
+          node scripts/library-gate1-apply-once.mjs
+          git apply --check library-gate1-verified.patch
+          git apply library-gate1-verified.patch
+          git diff --check
+          git add .github/workflows/library-hall-qa.yml src/sandbox/libraryStudioThumbnail.ts src/sandbox/libraryThumbnail.ts src/sandbox/SandboxLibraryApp.ts src/experiments/phaser/studioPagesPreview.ts tests/phaser-pages/library-hall-studio-shader.spec.ts
+          git diff --cached --check
+          git diff --cached --quiet && exit 1
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(library): share exact still Studio shader across saved toys'
+          git push origin HEAD:feat/library-visual-recovery-sep21
