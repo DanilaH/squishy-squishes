@@ -135,6 +135,10 @@ export const drawPagesAccessoryGraphic = (ctx: CanvasRenderingContext2D, id: Acc
   ctx.clearRect(0, 0, width, height);
   ctx.save();
   ctx.translate(width * .5, height * .92);
+  // The original 108px-tall bunny ears were cut by the native 256px Hall
+  // canvas on square/heart/mushroom/paw. Shorten the authored geometry at its
+  // shared source, so Studio, Squeeze and Hall retain the same seated asset.
+  if (id === 'bunny-ears') ctx.scale(1, .66);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.strokeStyle = 'rgba(84,61,78,.48)'; ctx.lineWidth = 2.4;
   ctx.shadowColor = 'rgba(67,42,56,.20)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 2;
