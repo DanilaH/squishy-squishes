@@ -1,15 +1,15 @@
 import './libraryHallPreview.css';
 
-// Two actual split exports from the approved room master + three isolated
-// editable SVG objects from the subsequently accepted flat-decor preview.
-// Do not revert the flat leaves to the more detailed foliage in the old master.
+// All six active artwork exports originate from the owner's 223c843 "Library"
+// commit. Keep the original source PNGs; do not substitute a different master
+// or recreate props from an unrelated screenshot.
 const art = {
-  wall: new URL('./library-assets/approved-master-wall.webp', import.meta.url).href,
-  floor: new URL('./library-assets/approved-master-floor.webp', import.meta.url).href,
+  wall: new URL('./library-assets/wall.webp', import.meta.url).href,
+  floor: new URL('./library-assets/floor.webp', import.meta.url).href,
   pedestal: new URL('./library-assets/pedestal.webp', import.meta.url).href,
-  cabinet: new URL('./library-assets/approved-flat-cabinet.svg', import.meta.url).href,
-  shelf: new URL('./library-assets/approved-flat-shelf.svg', import.meta.url).href,
-  plant: new URL('./library-assets/approved-flat-plant.svg', import.meta.url).href,
+  cabinet: new URL('./library-assets/cabinet.webp', import.meta.url).href,
+  shelf: new URL('./library-assets/shelf.webp', import.meta.url).href,
+  plant: new URL('./library-assets/plant.webp', import.meta.url).href,
 } as const;
 
 const PER_ROOM = 2;
@@ -20,7 +20,7 @@ const decode = async (url: string): Promise<void> => {
   if (!image.naturalWidth || !image.naturalHeight) throw new Error(`Empty Library image: ${url}`);
 };
 
-/** Only decorate the isolated /phaser/ Pages app; main and Yandex keep their existing Library. */
+/** Only decorate the isolated /phaser/ Pages app; main / and Yandex keep their existing Library. */
 export const mountLibraryHallPreview = (root: HTMLElement): void => {
   let ready = false;
   let room = 0;
@@ -65,7 +65,7 @@ export const mountLibraryHallPreview = (root: HTMLElement): void => {
     lastCount = count;
     shell.dataset.libraryHallMounted = 'true';
     shell.classList.add('is-library-hall');
-    shell.dataset.libraryHallArt = 'approved-master-flat-decor';
+    shell.dataset.libraryHallArt = 'owner-library-223c843';
     currentShell = shell;
 
     const scene = document.createElement('div');
