@@ -151,6 +151,23 @@ const paintPreviewVolume = (context: CanvasRenderingContext2D, toy: SavedSquishy
   context.fillRect(-110, -110, 220, 220);
   context.restore();
 
+  // Approximate the Studio shader's metalSharp band, not a generic white
+  // diagonal stripe. The existing outer shape clip also clips this reflection;
+  // low-opacity dark flanks give the narrow highlight contrast while keeping
+  // saved paint/decor visible. The light is static until feel gets its own gate.
+  if (toy.materialId === 'chrome') {
+    const metalReflection = context.createLinearGradient(74, 49, 138, 210);
+    metalReflection.addColorStop(0, 'rgba(38,34,30,0)');
+    metalReflection.addColorStop(0.25, 'rgba(38,34,30,0.22)');
+    metalReflection.addColorStop(0.35, 'rgba(245,235,214,0.07)');
+    metalReflection.addColorStop(0.43, 'rgba(255,253,240,0.68)');
+    metalReflection.addColorStop(0.51, 'rgba(247,240,225,0.15)');
+    metalReflection.addColorStop(0.64, 'rgba(38,34,30,0.22)');
+    metalReflection.addColorStop(1, 'rgba(38,34,30,0)');
+    context.fillStyle = metalReflection;
+    context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+  }
+
   // A narrow top-left glint and muted lower bounce; neither sweeps with time.
   context.save();
   buildShapePath(context, toy, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
@@ -245,9 +262,14 @@ export const renderLibraryThumbnail = (
   context.save();
   buildShapePath(context, toy, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   context.lineWidth = 4;
-  context.strokeStyle = toy.materialId === 'jelly'
-    ? 'rgba(66, 159, 161, 0.38)'
-    : 'rgba(118, 80, 141, 0.22)';
+  // The Pages preview uses the real Studio milk palette; a legacy aqua
+  // jelly outline would create a cyan halo around an otherwise warm toy.
+  // Ordinary/Yandex cards deliberately retain their pre-existing pixels.
+  context.strokeStyle = pagesMaterialLighting && toy.materialId === 'jelly'
+    ? 'rgba(184,158,125,0.30)'
+    : toy.materialId === 'jelly'
+      ? 'rgba(66,159,161,0.38)'
+      : 'rgba(118,80,141,0.22)';
   context.stroke();
   context.restore();
 };
