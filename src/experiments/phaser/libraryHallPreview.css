@@ -39,7 +39,7 @@
   width: clamp(76px, 11vw, 145px);
   aspect-ratio: 256 / 522;
   left: max(-34px, calc(50% - 560px));
-  top: 28%;
+  top: 19%;
   background: var(--hall-cabinet) center / contain no-repeat;
 }
 #app .library-hall-scene__shelf {
@@ -53,7 +53,7 @@
   width: clamp(76px, 10vw, 130px);
   aspect-ratio: 244 / 343;
   right: max(-30px, calc(50% - 580px));
-  bottom: 22%;
+  top: 33%;
   background: var(--hall-plant) center / contain no-repeat;
 }
 
