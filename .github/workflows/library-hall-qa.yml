@@ -5,20 +5,26 @@ on:
     paths:
       - 'src/experiments/phaser/libraryHallPreview.*'
       - 'src/experiments/phaser/libraryHallPolish.css'
+      - 'src/experiments/phaser/libraryHallGrounding.css'
       - 'src/experiments/phaser/studioPagesPreview.ts'
+      - 'src/sandbox/libraryThumbnail.ts'
       - 'src/experiments/phaser/library-assets/**'
       - 'scripts/build-library-hall.mjs'
+      - 'scripts/export-library-ground-shadow.mjs'
       - 'scripts/verify-library-art.mjs'
       - 'tests/phaser-pages/library-hall-*.spec.ts'
       - '.github/workflows/library-hall-qa.yml'
   push:
-    branches: [feat/library-hall-pages-preview]
+    branches: [feat/library-visual-recovery-sep21]
     paths:
       - 'src/experiments/phaser/libraryHallPreview.*'
       - 'src/experiments/phaser/libraryHallPolish.css'
+      - 'src/experiments/phaser/libraryHallGrounding.css'
       - 'src/experiments/phaser/studioPagesPreview.ts'
+      - 'src/sandbox/libraryThumbnail.ts'
       - 'src/experiments/phaser/library-assets/**'
       - 'scripts/build-library-hall.mjs'
+      - 'scripts/export-library-ground-shadow.mjs'
       - 'scripts/verify-library-art.mjs'
       - 'tests/phaser-pages/library-hall-*.spec.ts'
       - '.github/workflows/library-hall-qa.yml'
@@ -36,14 +42,14 @@ jobs:
           node-version: 24
       - run: npm install
       - run: npx playwright install --with-deps chromium
-      - name: Reproduce owner Library source exports without overwriting manifest
-        run: node scripts/build-library-hall.mjs
-      - name: Verify owner Library art source and output hashes
+      - name: Reproduce original Library source exports without overwriting manifest
+        run: node scripts/build-library-hall.mjs && node scripts/export-library-ground-shadow.mjs
+      - name: Verify all seven owner Library art source and output hashes
         run: node scripts/verify-library-art.mjs
       - name: Strict TS and staged Pages build
         run: npm run pages:build
-      - name: Real empty, saved-toy, paging, fallback and 11-viewport geometry QA
-        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts
+      - name: Real browser layout, lifecycle, shadow and material review
+        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts tests/phaser-pages/library-hall-ground-shadow.spec.ts tests/phaser-pages/library-hall-material.spec.ts
       - name: Upload real browser screenshots and geometry
         if: always()
         uses: actions/upload-artifact@v4
@@ -54,7 +60,7 @@ jobs:
             test-results/**/library-hall-*.json
           if-no-files-found: ignore
           retention-days: 14
-      - name: Full existing Phaser Pages regression suite
+      - name: Full Phaser Pages regression suite
         run: npm run pages:qa
       - name: Upload failure traces
         if: failure()
