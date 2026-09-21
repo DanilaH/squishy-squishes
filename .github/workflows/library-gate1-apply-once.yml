@@ -2,7 +2,7 @@ name: One-time Library gate 1 shader patch
 on:
   push:
     branches: [feat/library-visual-recovery-sep21]
-    paths: ['.github/workflows/library-gate1-apply-once.yml']
+    paths: ['.github/workflows/library-gate1-apply-once.yml', 'scripts/library-gate1-apply-once.mjs']
 permissions:
   contents: write
 jobs:
