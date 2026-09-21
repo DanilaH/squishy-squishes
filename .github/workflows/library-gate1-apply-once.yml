@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - name: Verify source anchored patch and apply only intended files
+      - name: Verify all patch bytes, apply exact source and delete one-time transport
         shell: bash
         run: |
           node scripts/library-gate1-apply-once.mjs
@@ -24,6 +24,7 @@ jobs:
           git apply library-gate1-verified.patch
           git diff --check
           git add .github/workflows/library-hall-qa.yml src/sandbox/libraryStudioThumbnail.ts src/sandbox/libraryThumbnail.ts src/sandbox/SandboxLibraryApp.ts src/experiments/phaser/studioPagesPreview.ts tests/phaser-pages/library-hall-studio-shader.spec.ts
+          git rm -f .github/workflows/library-gate1-apply-once.yml scripts/library-gate1-apply-once.mjs scripts/.library-gate1-part-*.b64
           git diff --cached --check
           git diff --cached --quiet && exit 1
           git config user.name 'github-actions[bot]'
