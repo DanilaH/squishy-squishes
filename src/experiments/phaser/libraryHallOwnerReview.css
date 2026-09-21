@@ -39,7 +39,6 @@
 #app .library-hall-scene__plant {
   width: clamp(102px, 12vw, 170px);
   right: max(8px, calc(50% - 610px));
-  bottom: 18%;
 }
 @media (max-width: 430px) and (orientation: portrait) {
   #app .library-hall-scene__cabinet {
