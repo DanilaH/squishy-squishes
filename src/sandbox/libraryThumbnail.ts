@@ -41,11 +41,10 @@ const materialBase = (
   width: number,
   height: number,
 ): CanvasGradient | string => {
-  if (pagesMaterialLighting && materialId !== 'holo' && materialId !== 'pearl') {
-    // The actual Studio uses getPalette('milk') for every Sandbox material.
-    // A saved V3 toy stores its material, not a palette. The old thumbnail's
-    // aqua jelly, white marshmallow and silver chrome invented new base hues.
-    // Match the Studio's warm base BEFORE placing saved paint and decoration.
+  if (pagesMaterialLighting) {
+    // The Studio starts ALL six materials with the milk palette. Spectral and
+    // pearl responses are added by the shader, not baked into an unrelated
+    // blue/pink background; do the same in this static Canvas2D approximation.
     const milk = getPalette('milk');
     const rgb = (color: readonly number[]): string => `rgb(${color.map((channel) => Math.round(channel * 255)).join(',')})`;
     if (materialId === 'chrome') {
@@ -70,8 +69,7 @@ const materialBase = (
     body.addColorStop(1, rgb(milk.low));
     return body;
   }
-  // Exact pre-existing appearance for the ordinary/Yandex Library. Holo and
-  // pearl also stay on their previous specialized 2D gradients for now.
+  // Exact pre-existing appearance for the ordinary/Yandex Library.
   if (materialId === 'holo') {
     const gradient = context.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, '#f7b8e5');
@@ -168,6 +166,37 @@ const paintPreviewVolume = (context: CanvasRenderingContext2D, toy: SavedSquishy
     context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   }
 
+  // Studio holo/pearl are milk-coloured bodies with material-dependent
+  // spectral response, never full-bleed blue/pink base gradients. These soft
+  // lobes are bounded, clipped by the real shape and deliberately less vivid
+  // for pearl. No random offsets, extra canvas or WebGL context per toy.
+  if (toy.materialId === 'holo' || toy.materialId === 'pearl') {
+    const iridescent = toy.materialId === 'holo';
+    const spectralLobes: readonly { x: number; y: number; radius: number; rgb: string; strength: number }[] = [
+      { x: 67, y: 159, radius: 121, rgb: '116,213,161', strength: iridescent ? 0.54 : 0.15 },
+      { x: 127, y: 115, radius: 100, rgb: '255,241,148', strength: iridescent ? 0.40 : 0.18 },
+      { x: 198, y: 84, radius: 112, rgb: '245,132,176', strength: iridescent ? 0.52 : 0.055 },
+    ];
+    for (const lobe of spectralLobes) {
+      const light = context.createRadialGradient(lobe.x, lobe.y, 0, lobe.x, lobe.y, lobe.radius);
+      light.addColorStop(0, `rgba(${lobe.rgb},${lobe.strength})`);
+      light.addColorStop(0.52, `rgba(${lobe.rgb},${(lobe.strength * 0.48).toFixed(3)})`);
+      light.addColorStop(1, `rgba(${lobe.rgb},0)`);
+      context.fillStyle = light;
+      context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+    }
+    const spectralRim = context.createLinearGradient(40, 212, 213, 47);
+    spectralRim.addColorStop(0, iridescent ? 'rgba(80,184,138,0.62)' : 'rgba(136,162,112,0.16)');
+    spectralRim.addColorStop(0.50, iridescent ? 'rgba(246,227,122,0.51)' : 'rgba(232,216,158,0.18)');
+    spectralRim.addColorStop(1, iridescent ? 'rgba(215,102,153,0.61)' : 'rgba(219,170,166,0.11)');
+    context.save();
+    buildShapePath(context, toy, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+    context.strokeStyle = spectralRim;
+    context.lineWidth = iridescent ? 12 : 8;
+    context.stroke();
+    context.restore();
+  }
+
   // A narrow top-left glint and muted lower bounce; neither sweeps with time.
   context.save();
   buildShapePath(context, toy, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
@@ -262,14 +291,12 @@ export const renderLibraryThumbnail = (
   context.save();
   buildShapePath(context, toy, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   context.lineWidth = 4;
-  // The Pages preview uses the real Studio milk palette; a legacy aqua
-  // jelly outline would create a cyan halo around an otherwise warm toy.
-  // Ordinary/Yandex cards deliberately retain their pre-existing pixels.
-  context.strokeStyle = pagesMaterialLighting && toy.materialId === 'jelly'
-    ? 'rgba(184,158,125,0.30)'
-    : toy.materialId === 'jelly'
-      ? 'rgba(66,159,161,0.38)'
-      : 'rgba(118,80,141,0.22)';
+  // Keep the ordinary/Yandex thumbnails untouched; Pages uses the real milk
+  // palette rim rather than a legacy aqua jelly or violet pearlescent halo.
+  const milkRim = getPalette('milk').rim.map((channel) => Math.round(channel * 255)).join(',');
+  context.strokeStyle = pagesMaterialLighting
+    ? toy.materialId === 'chrome' ? 'rgba(66,60,53,0.40)' : `rgba(${milkRim},0.29)`
+    : toy.materialId === 'jelly' ? 'rgba(66,159,161,0.38)' : 'rgba(118,80,141,0.22)';
   context.stroke();
   context.restore();
 };
