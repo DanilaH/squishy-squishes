@@ -1,62 +1,38 @@
 {
-  "status": "Owner Library commit source restored in isolated Phaser Pages preview; composition/material/scale/feel NOT visually accepted. Source and commercial rights not independently established.",
+  "status": "Owner Library source restored in isolated Phaser Pages preview. Visual composition, size, material and motion are not accepted; commercial rights not independently established.",
   "ownerCommit": "223c84339c7700b0ae0d53749be86d13fb56f30f",
-  "sourceNote": "The owner commit contains seven PNGs. Six source-to-export mappings below are verified against the original files and scripts/build-library-hall.mjs. The seventh PNG, ChatGPT Image Sep 20, 2026, 04_03_59 PM.png, has no active runtime role and still needs an explicit visual/reference-role audit; never substitute it silently.",
+  "sourceNote": "Seven owner PNGs verified by Git blob SHA; six active source exports below plus one separate ground-shadow source. Full exact seven-file inventory: docs/LIBRARY_OWNER_ART_INVENTORY_2026-09-21.md.",
+  "shadowSource": {
+    "source": "ChatGPT Image Sep 20, 2026, 04_03_59 PM.png",
+    "sourceSha256": "51e28b36943b5dddcab002962ad1a70909054729a7c15485667813e007d33f65",
+    "gitBlobSha": "6717b101b29eb52b21ce1441f62ef2ccc713ce2b",
+    "role": "ground shadow beneath each pedestal; not yet optimized or integrated; needs measured layering"
+  },
   "active": [
     {
-      "name": "wall", "file": "src/experiments/phaser/library-assets/wall.webp",
-      "sha256": "d0c95be904ebb2283571c8eb271343542a28f01e7110ebee8aee5980c9b5f621",
-      "source": "ChatGPT Image Sep 20, 2026, 04_03_29 PM.png",
-      "sourceSha256": "22b10abdb34753cc72e96b2bef67182bb88858c58b77c630bfe840d05830929c",
-      "recipe": "scripts/build-library-hall.mjs, crop [16,90,992,740], flatten #f2c9ae, resize 768 wide, WebP quality 77",
-      "size": [768, 573]
+      "name": "wall", "file": "src/experiments/phaser/library-assets/wall.webp", "sha256": "d0c95be904ebb2283571c8eb271343542a28f01e7110ebee8aee5980c9b5f621", "source": "ChatGPT Image Sep 20, 2026, 04_03_29 PM.png", "sourceSha256": "22b10abdb34753cc72e96b2bef67182bb88858c58b77c630bfe840d05830929c", "recipe": "scripts/build-library-hall.mjs; crop [16,90,992,740]; flatten #f2c9ae; 768px; WebP 77", "size": [768, 573]
     },
     {
-      "name": "floor", "file": "src/experiments/phaser/library-assets/floor.webp",
-      "sha256": "ad477f366efbf06a465bbc8e3f640b2bd653de0dce3989fde77075f6d778ae6d",
-      "source": "ChatGPT Image Sep 20, 2026, 04_03_37 PM.png",
-      "sourceSha256": "42243f69e181d0eba6bdbd8ab820ac840fd758b765182f293f029e0c51992966",
-      "recipe": "scripts/build-library-hall.mjs, crop [0,780,1024,756], flatten #e4ad81, resize 768 wide, WebP quality 77",
-      "size": [768, 567]
+      "name": "floor", "file": "src/experiments/phaser/library-assets/floor.webp", "sha256": "ad477f366efbf06a465bbc8e3f640b2bd653de0dce3989fde77075f6d778ae6d", "source": "ChatGPT Image Sep 20, 2026, 04_03_37 PM.png", "sourceSha256": "42243f69e181d0eba6bdbd8ab820ac840fd758b765182f293f029e0c51992966", "recipe": "scripts/build-library-hall.mjs; crop [0,780,1024,756]; flatten #e4ad81; 768px; WebP 77", "size": [768, 567]
     },
     {
-      "name": "pedestal", "file": "src/experiments/phaser/library-assets/pedestal.webp",
-      "sha256": "60d21bf5781a5462dc836db080dfe820a96b6785612aa65dd1256708ca09ea6e",
-      "source": "ChatGPT Image Sep 20, 2026, 04_14_47 PM.png",
-      "sourceSha256": "e93f828502898a6d6219fbfeaf242858a03cca0f2252e1cc66d83f07c5362f5e",
-      "recipe": "scripts/build-library-hall.mjs, crop [120,226,1210,690], resize 460 wide, WebP quality 84",
-      "size": [460, 262]
+      "name": "pedestal", "file": "src/experiments/phaser/library-assets/pedestal.webp", "sha256": "60d21bf5781a5462dc836db080dfe820a96b6785612aa65dd1256708ca09ea6e", "source": "ChatGPT Image Sep 20, 2026, 04_14_47 PM.png", "sourceSha256": "e93f828502898a6d6219fbfeaf242858a03cca0f2252e1cc66d83f07c5362f5e", "recipe": "scripts/build-library-hall.mjs; crop [120,226,1210,690]; 460px; WebP 84", "size": [460, 262]
     },
     {
-      "name": "cabinet", "file": "src/experiments/phaser/library-assets/cabinet.webp",
-      "sha256": "2ecfbe7191c40c966ed367f68176f6aacb14f129e81ab3fab0e954d7fcf48958",
-      "source": "ChatGPT Image Sep 20, 2026, 04_01_55 PM (1).png",
-      "sourceSha256": "48ec94bbb3cd3a5100a52b462689c251bb22041b0b869f14edad2173ed33d788",
-      "recipe": "scripts/build-library-hall.mjs, crop [210,120,610,1244], resize 256 wide, WebP quality 84",
-      "size": [256, 522]
+      "name": "cabinet", "file": "src/experiments/phaser/library-assets/cabinet.webp", "sha256": "2ecfbe7191c40c966ed367f68176f6aacb14f129e81ab3fab0e954d7fcf48958", "source": "ChatGPT Image Sep 20, 2026, 04_01_55 PM (1).png", "sourceSha256": "48ec94bbb3cd3a5100a52b462689c251bb22041b0b869f14edad2173ed33d788", "recipe": "scripts/build-library-hall.mjs; crop [210,120,610,1244]; 256px; WebP 84", "size": [256, 522]
     },
     {
-      "name": "shelf", "file": "src/experiments/phaser/library-assets/shelf.webp",
-      "sha256": "c65674fb1d9b68bd34001900dc7b45c885d42038dd2d038e044f1b3e52438de4",
-      "source": "ChatGPT Image Sep 20, 2026, 04_01_55 PM (2).png",
-      "sourceSha256": "853231067ff88749b083eb15009f39003a9d70c0de8c43f017e5ce7d9e68ebbb",
-      "recipe": "scripts/build-library-hall.mjs, crop [200,275,1170,510], resize 440 wide, WebP quality 84",
-      "size": [440, 192]
+      "name": "shelf", "file": "src/experiments/phaser/library-assets/shelf.webp", "sha256": "c65674fb1d9b68bd34001900dc7b45c885d42038dd2d038e044f1b3e52438de4", "source": "ChatGPT Image Sep 20, 2026, 04_01_55 PM (2).png", "sourceSha256": "853231067ff88749b083eb15009f39003a9d70c0de8c43f017e5ce7d9e68ebbb", "recipe": "scripts/build-library-hall.mjs; crop [200,275,1170,510]; 440px; WebP 84", "size": [440, 192]
     },
     {
-      "name": "plant", "file": "src/experiments/phaser/library-assets/plant.webp",
-      "sha256": "2b30e7461267659d609b538f3154a79b1c7b83cbef00906632d24083061cf16b",
-      "source": "ChatGPT Image Sep 20, 2026, 04_01_56 PM (3).png",
-      "sourceSha256": "9a1dfd2f08746060ad1e8cf0ee9baaf281bec1cdba9998ad3c4e372d2b4ef76b",
-      "recipe": "scripts/build-library-hall.mjs, crop [195,178,775,1090], resize 244 wide, WebP quality 84",
-      "size": [244, 343]
+      "name": "plant", "file": "src/experiments/phaser/library-assets/plant.webp", "sha256": "2b30e7461267659d609b538f3154a79b1c7b83cbef00906632d24083061cf16b", "source": "ChatGPT Image Sep 20, 2026, 04_01_56 PM (3).png", "sourceSha256": "9a1dfd2f08746060ad1e8cf0ee9baaf281bec1cdba9998ad3c4e372d2b4ef76b", "recipe": "scripts/build-library-hall.mjs; crop [195,178,775,1090]; 244px; WebP 84", "size": [244, 343]
     }
   ],
   "supersededCandidates": [
-    { "file": "approved-master-wall.webp", "reason": "different flattened master, not owner Library commit" },
-    { "file": "approved-master-floor.webp", "reason": "different flattened master, not owner Library commit" },
-    { "file": "approved-flat-cabinet.svg", "reason": "independently drawn SVG" },
-    { "file": "approved-flat-shelf.svg", "reason": "independently drawn SVG" },
-    { "file": "approved-flat-plant.svg", "reason": "independently drawn SVG" }
+    { "file": "approved-master-wall.webp", "reason": "other flattened master" },
+    { "file": "approved-master-floor.webp", "reason": "other flattened master" },
+    { "file": "approved-flat-cabinet.svg", "reason": "separately authored SVG" },
+    { "file": "approved-flat-shelf.svg", "reason": "separately authored SVG" },
+    { "file": "approved-flat-plant.svg", "reason": "separately authored SVG" }
   ]
 }
