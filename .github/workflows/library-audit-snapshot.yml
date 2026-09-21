@@ -1,0 +1,22 @@
+name: Library independent source snapshot
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: ['.github/workflows/library-audit-snapshot.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Archive tracked code and configuration only
+        shell: bash
+        run: |
+          git ls-files -z '*.ts' '*.tsx' '*.js' '*.mjs' '*.css' '*.json' '*.md' '*.yml' '*.yaml' '*.html' | tar --null -czf library-audit-source.tar.gz --files-from=-
+          tar -tzf library-audit-source.tar.gz | wc -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: library-audit-source
+          path: library-audit-source.tar.gz
+          retention-days: 2
