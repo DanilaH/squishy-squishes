@@ -1,4 +1,4 @@
-import type { MaterialId } from '../game/content';
+import { getMaterial, type MaterialId } from '../game/content';
 import { getShape } from '../game/shapes';
 import {
   APPEARANCE_TEXTURE_SIZE,
@@ -9,6 +9,11 @@ import type { SavedSquishy } from './types';
 
 const THUMBNAIL_SIZE = 256;
 const SHAPE_PADDING = 30;
+
+// Only the isolated Pages entry opts in. Normal/Yandex thumbnails keep their
+// previous render path and save format; no per-card WebGL context is created.
+let pagesMaterialLighting = false;
+export const enablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = true; };
 
 const buildShapePath = (
   context: CanvasRenderingContext2D,
@@ -66,6 +71,44 @@ const materialBase = (
   return '#f2dcae';
 };
 
+/** Shape-clipped, material-specific light for the static Library preview.
+ * This is NOT a claim of WebGL shader parity: it is a bounded Canvas2D approximation
+ * which preserves the actual painted/sticker appearance and existing save schema. */
+const paintPreviewVolume = (context: CanvasRenderingContext2D, materialId: MaterialId): void => {
+  const material = getMaterial(materialId);
+  const edgeStrength = Math.min(0.38, 0.19 + material.translucency * 0.07 + material.metallic * 0.12 - material.cloudiness * 0.03);
+  const edge = context.createRadialGradient(101, 73, 20, 137, 125, 155);
+  edge.addColorStop(0, 'rgba(44,30,59,0)');
+  edge.addColorStop(0.54, 'rgba(44,30,59,0)');
+  edge.addColorStop(0.81, `rgba(44,30,59,${(edgeStrength * 0.35).toFixed(3)})`);
+  edge.addColorStop(1, `rgba(44,30,59,${edgeStrength.toFixed(3)})`);
+  context.fillStyle = edge;
+  context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+
+  // A broad off-centre reflection reads as a soft curved body, not a plastic spot.
+  // Rough marshmallow has a diffuse lift; jelly/pearl/chrome receive clearer light.
+  const highlightStrength = 0.12 + (1 - material.roughness) * 0.16 + material.pearlescence * 0.035;
+  context.save();
+  context.translate(94, 73);
+  context.rotate(-0.38);
+  context.scale(1.1, 0.62);
+  const highlight = context.createRadialGradient(0, 0, 3, 0, 0, 90);
+  highlight.addColorStop(0, `rgba(255,255,255,${highlightStrength.toFixed(3)})`);
+  highlight.addColorStop(0.45, `rgba(255,255,255,${(highlightStrength * 0.47).toFixed(3)})`);
+  highlight.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = highlight;
+  context.fillRect(-100, -100, 200, 200);
+  context.restore();
+
+  // Avoid black chrome and milky jelly: material profile controls the lower bounce.
+  const bounce = context.createLinearGradient(0, 115, 0, THUMBNAIL_SIZE);
+  bounce.addColorStop(0, 'rgba(255,255,255,0)');
+  bounce.addColorStop(0.74, 'rgba(255,255,255,0)');
+  bounce.addColorStop(1, `rgba(255,238,228,${(0.035 + material.translucency * 0.06).toFixed(3)})`);
+  context.fillStyle = bounce;
+  context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+};
+
 export const renderLibraryThumbnail = (
   canvas: HTMLCanvasElement,
   toy: SavedSquishy,
@@ -74,6 +117,7 @@ export const renderLibraryThumbnail = (
   canvas.height = THUMBNAIL_SIZE;
   const context = canvas.getContext('2d');
   if (!context) return;
+  if (pagesMaterialLighting) canvas.dataset.libraryMaterialProfile = toy.materialId;
 
   context.clearRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 
@@ -123,12 +167,16 @@ export const renderLibraryThumbnail = (
     context.drawImage(appearanceCanvas, 0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   }
 
-  const sheen = context.createLinearGradient(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-  sheen.addColorStop(0, 'rgba(255,255,255,0.42)');
-  sheen.addColorStop(0.42, 'rgba(255,255,255,0.05)');
-  sheen.addColorStop(1, 'rgba(79,55,98,0.08)');
-  context.fillStyle = sheen;
-  context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+  if (pagesMaterialLighting) {
+    paintPreviewVolume(context, toy.materialId);
+  } else {
+    const sheen = context.createLinearGradient(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+    sheen.addColorStop(0, 'rgba(255,255,255,0.42)');
+    sheen.addColorStop(0.42, 'rgba(255,255,255,0.05)');
+    sheen.addColorStop(1, 'rgba(79,55,98,0.08)');
+    context.fillStyle = sheen;
+    context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+  }
   context.restore();
 
   context.save();
