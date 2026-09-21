@@ -44,19 +44,29 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
   const before = await page.evaluate((storageKey) => localStorage.getItem(storageKey), key);
+  const firstRoomPixels = await page.locator('.sandbox-library-card:visible canvas').first()
+    .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   for (let index = 0; index < 4; index++) {
     const visible = page.locator('.sandbox-library-card:visible canvas');
     await expect(visible).toHaveCount(2);
     await expect(visible.first()).toHaveAttribute('data-library-renderer', 'studio-shader');
     expect(await visible.evaluateAll((canvases) => canvases.every((item) => item.getAttribute('data-library-renderer') === 'studio-shader'))).toBe(true);
-    await page.locator('[data-library-hall-next]').click();
+    if (index < 3) {
+      await expect(page.locator('[data-library-hall-next]')).toBeEnabled();
+      await page.locator('[data-library-hall-next]').click();
+    }
   }
+  await expect(page.locator('[data-library-hall-next]')).toBeDisabled();
   const stats = await page.evaluate(() => ({
     contexts: (window as unknown as { __libraryCreatedWebGL: number }).__libraryCreatedWebGL,
     canvases: document.querySelectorAll('canvas[data-library-renderer="studio-shader"]').length,
   }));
   expect(stats.contexts, 'one shared WebGL2 context across all saved exhibits').toBe(1);
   expect(stats.canvases).toBeGreaterThan(0);
+  for (let index = 0; index < 3; index++) await page.locator('[data-library-hall-previous]').click();
+  const firstRoomPixelsAgain = await page.locator('.sandbox-library-card:visible canvas').first()
+    .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
+  expect(firstRoomPixelsAgain, 'page turn must not mutate previously rendered Studio pixels').toBe(firstRoomPixels);
   expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(before);
 });
 
