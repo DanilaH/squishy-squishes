@@ -1,13 +1,7 @@
 {
   "status": "Owner Library source restored in isolated Phaser Pages preview. Visual composition, size, material and motion are not accepted; commercial rights not independently established.",
   "ownerCommit": "223c84339c7700b0ae0d53749be86d13fb56f30f",
-  "sourceNote": "Seven owner PNGs verified by Git blob SHA; six active source exports below plus one separate ground-shadow source. Full exact seven-file inventory: docs/LIBRARY_OWNER_ART_INVENTORY_2026-09-21.md.",
-  "shadowSource": {
-    "source": "ChatGPT Image Sep 20, 2026, 04_03_59 PM.png",
-    "sourceSha256": "51e28b36943b5dddcab002962ad1a70909054729a7c15485667813e007d33f65",
-    "gitBlobSha": "6717b101b29eb52b21ce1441f62ef2ccc713ce2b",
-    "role": "ground shadow beneath each pedestal; not yet optimized or integrated; needs measured layering"
-  },
+  "sourceNote": "All seven owner PNGs verified against their original Git blobs. This manifest pins active original-image exports; see docs/LIBRARY_OWNER_ART_INVENTORY_2026-09-21.md.",
   "active": [
     {
       "name": "wall", "file": "src/experiments/phaser/library-assets/wall.webp", "sha256": "d0c95be904ebb2283571c8eb271343542a28f01e7110ebee8aee5980c9b5f621", "source": "ChatGPT Image Sep 20, 2026, 04_03_29 PM.png", "sourceSha256": "22b10abdb34753cc72e96b2bef67182bb88858c58b77c630bfe840d05830929c", "recipe": "scripts/build-library-hall.mjs; crop [16,90,992,740]; flatten #f2c9ae; 768px; WebP 77", "size": [768, 573]
@@ -26,6 +20,9 @@
     },
     {
       "name": "plant", "file": "src/experiments/phaser/library-assets/plant.webp", "sha256": "2b30e7461267659d609b538f3154a79b1c7b83cbef00906632d24083061cf16b", "source": "ChatGPT Image Sep 20, 2026, 04_01_56 PM (3).png", "sourceSha256": "9a1dfd2f08746060ad1e8cf0ee9baaf281bec1cdba9998ad3c4e372d2b4ef76b", "recipe": "scripts/build-library-hall.mjs; crop [195,178,775,1090]; 244px; WebP 84", "size": [244, 343]
+    },
+    {
+      "name": "groundShadow", "file": "src/experiments/phaser/library-assets/ground-shadow.webp", "sha256": "0e51a59a14a1ecfcfb8a8e415f0af236507ec32b38592367840504a57ec6ff48", "source": "ChatGPT Image Sep 20, 2026, 04_03_59 PM.png", "sourceSha256": "51e28b36943b5dddcab002962ad1a70909054729a7c15485667813e007d33f65", "gitBlobSha": "6717b101b29eb52b21ce1441f62ef2ccc713ce2b", "recipe": "scripts/export-library-ground-shadow.mjs; crop [200,260,1760,280]; 680x108; WebP 84 alpha", "size": [680, 108]
     }
   ],
   "supersededCandidates": [
