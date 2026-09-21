@@ -63,7 +63,7 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
   }));
   expect(stats.contexts, 'one shared WebGL2 context across all saved exhibits').toBe(1);
   expect(stats.canvases).toBeGreaterThan(0);
-  for (let index = 0; index < 3; index++) await page.locator('[data-library-hall-previous]').click();
+  for (let index = 0; index < 3; index++) await page.locator('[data-library-hall-prev]').click();
   const firstRoomPixelsAgain = await page.locator('.sandbox-library-card:visible canvas').first()
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   expect(firstRoomPixelsAgain, 'page turn must not mutate previously rendered Studio pixels').toBe(firstRoomPixels);
