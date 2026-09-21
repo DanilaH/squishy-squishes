@@ -1,0 +1,34 @@
+name: Library owner ground-shadow export
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths:
+      - scripts/export-library-ground-shadow.mjs
+      - .github/workflows/library-shadow-export.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  export:
+    if: github.repository == 'DanilaH/squishy-squishes'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm install
+      - name: Verify owner PNG and export transparent oval ground shadow
+        run: node scripts/export-library-ground-shadow.mjs
+      - name: Commit only the generated image to the recovery branch
+        shell: bash
+        run: |
+          git add src/experiments/phaser/library-assets/ground-shadow.webp
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'art(library): include seventh owner ground-shadow sprite'
+            git push origin HEAD:feat/library-visual-recovery-sep21
+          fi
