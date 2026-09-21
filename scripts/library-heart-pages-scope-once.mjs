@@ -1,0 +1,14 @@
+import { execFileSync } from 'node:child_process';
+import { readFile, writeFile } from 'node:fs/promises';
+const path = 'src/sandbox/decor.ts';
+const expected = 'e4c867fb7a645facf029417c7b2c4ead6904d659';
+const currentBranch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8' }).trim();
+if (currentBranch !== 'feat/library-visual-recovery-sep21') throw new Error(`Wrong branch ${currentBranch}`);
+if (execFileSync('git', ['hash-object', path], { encoding: 'utf8' }).trim() !== expected) throw new Error('Changed source; refusing patch');
+let source = await readFile(path, 'utf8');
+const old = "  const headSeatY = shape.id === 'heart'\n    ? headSurfaceY + height * 0.035";
+const next = "  const headSeatY = pagesDecorArt && shape.id === 'heart'\n    ? headSurfaceY + height * 0.035";
+if (source.split(old).length !== 2) throw new Error('Expected unique heart rule');
+source = source.replace(old, next).replace('  // Preserve the established positions for the other five silhouettes.', '  // Pages opt-in only: ordinary/Yandex geometry remains byte-for-byte unchanged.');
+await writeFile(path, source);
+console.log('Heart attachment opt-in scoped to /phaser/ only; old entrance unchanged.');
