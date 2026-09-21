@@ -10,8 +10,8 @@ import type { SavedSquishy } from './types';
 const THUMBNAIL_SIZE = 256;
 const SHAPE_PADDING = 30;
 
-// Only the isolated Pages entry opts in. Normal/Yandex thumbnails keep their
-// previous render path and save format; no per-card WebGL context is created.
+// Opt-in only for the isolated Phaser Pages entry. Ordinary/Yandex cards
+// retain their existing pixels and the same saved V3 document representation.
 let pagesMaterialLighting = false;
 export const enablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = true; };
 
@@ -71,40 +71,61 @@ const materialBase = (
   return '#f2dcae';
 };
 
-/** Shape-clipped, material-specific light for the static Library preview.
- * This is NOT a claim of WebGL shader parity: it is a bounded Canvas2D approximation
- * which preserves the actual painted/sticker appearance and existing save schema. */
-const paintPreviewVolume = (context: CanvasRenderingContext2D, materialId: MaterialId): void => {
-  const material = getMaterial(materialId);
-  const edgeStrength = Math.min(0.38, 0.19 + material.translucency * 0.07 + material.metallic * 0.12 - material.cloudiness * 0.03);
-  const edge = context.createRadialGradient(101, 73, 20, 137, 125, 155);
-  edge.addColorStop(0, 'rgba(44,30,59,0)');
-  edge.addColorStop(0.54, 'rgba(44,30,59,0)');
-  edge.addColorStop(0.81, `rgba(44,30,59,${(edgeStrength * 0.35).toFixed(3)})`);
-  edge.addColorStop(1, `rgba(44,30,59,${edgeStrength.toFixed(3)})`);
-  context.fillStyle = edge;
+/** A single deterministic Canvas2D approximation of the Studio's material
+ * response. A broad off-axis light, shape-following soft rim and darkened
+ * bottom/right are drawn inside the existing silhouette: NO live per-toy GPU
+ * contexts, new saves or shader-parity claim. Lighting is material-specific. */
+const paintPreviewVolume = (context: CanvasRenderingContext2D, toy: SavedSquishy): void => {
+  const material = getMaterial(toy.materialId);
+  const isJelly = toy.materialId === 'jelly';
+  const dark = isJelly ? '35,119,127' : toy.materialId === 'marshmallow' ? '113,88,96' : '68,41,76';
+  const edgeStrength = Math.min(0.46, 0.36 + material.translucency * 0.07 + material.metallic * 0.035 - material.cloudiness * 0.11);
+
+  // Convex diffuse falloff: center stays close to the saved paint, edge and
+  // underside lose light. Unlike a diagonal opacity gradient, this follows
+  // curved silhouettes including the heart's lobes when clipped below.
+  const shade = context.createRadialGradient(96, 70, 3, 96, 70, 167);
+  shade.addColorStop(0, `rgba(${dark},0)`);
+  shade.addColorStop(0.37, `rgba(${dark},0)`);
+  shade.addColorStop(0.61, `rgba(${dark},${(edgeStrength * 0.21).toFixed(3)})`);
+  shade.addColorStop(0.80, `rgba(${dark},${(edgeStrength * 0.54).toFixed(3)})`);
+  shade.addColorStop(1, `rgba(${dark},${edgeStrength.toFixed(3)})`);
+  context.fillStyle = shade;
   context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 
-  // A broad off-centre reflection reads as a soft curved body, not a plastic spot.
-  // Rough marshmallow has a diffuse lift; jelly/pearl/chrome receive clearer light.
-  const highlightStrength = 0.12 + (1 - material.roughness) * 0.16 + material.pearlescence * 0.035;
+  // Diffuse curved reflection; high roughness softens rather than sharpening it.
+  const highlightStrength = 0.20 + (1 - material.roughness) * 0.21 + material.pearlescence * 0.035;
   context.save();
-  context.translate(94, 73);
-  context.rotate(-0.38);
-  context.scale(1.1, 0.62);
-  const highlight = context.createRadialGradient(0, 0, 3, 0, 0, 90);
+  context.translate(85, 65);
+  context.rotate(-0.34);
+  context.scale(1.10, 0.66);
+  const highlight = context.createRadialGradient(0, 0, 3, 0, 0, 95);
   highlight.addColorStop(0, `rgba(255,255,255,${highlightStrength.toFixed(3)})`);
-  highlight.addColorStop(0.45, `rgba(255,255,255,${(highlightStrength * 0.47).toFixed(3)})`);
+  highlight.addColorStop(0.49, `rgba(255,255,255,${(highlightStrength * 0.40).toFixed(3)})`);
   highlight.addColorStop(1, 'rgba(255,255,255,0)');
   context.fillStyle = highlight;
-  context.fillRect(-100, -100, 200, 200);
+  context.fillRect(-110, -110, 220, 220);
   context.restore();
 
-  // Avoid black chrome and milky jelly: material profile controls the lower bounce.
+  // A bounded edge reflection helps the body read as a rounded object.
+  // The pre-existing outer outline remains unchanged and masks the outer half.
+  context.save();
+  buildShapePath(context, toy, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+  const edgeLight = context.createLinearGradient(0, 24, 0, 165);
+  const rimStrength = 0.18 + material.translucency * 0.13 + material.pearlescence * 0.04 - material.roughness * 0.09;
+  edgeLight.addColorStop(0, `rgba(255,255,255,${rimStrength.toFixed(3)})`);
+  edgeLight.addColorStop(0.52, `rgba(255,255,255,${(rimStrength * 0.28).toFixed(3)})`);
+  edgeLight.addColorStop(1, 'rgba(255,255,255,0)');
+  context.strokeStyle = edgeLight;
+  context.lineWidth = 12;
+  context.stroke();
+  context.restore();
+
+  // Soft bounce under the body, so jelly stays luminous and chrome not muddy.
   const bounce = context.createLinearGradient(0, 115, 0, THUMBNAIL_SIZE);
   bounce.addColorStop(0, 'rgba(255,255,255,0)');
-  bounce.addColorStop(0.74, 'rgba(255,255,255,0)');
-  bounce.addColorStop(1, `rgba(255,238,228,${(0.035 + material.translucency * 0.06).toFixed(3)})`);
+  bounce.addColorStop(0.73, 'rgba(255,255,255,0)');
+  bounce.addColorStop(1, `rgba(255,238,228,${(0.05 + material.translucency * 0.07).toFixed(3)})`);
   context.fillStyle = bounce;
   context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 };
@@ -168,7 +189,7 @@ export const renderLibraryThumbnail = (
   }
 
   if (pagesMaterialLighting) {
-    paintPreviewVolume(context, toy.materialId);
+    paintPreviewVolume(context, toy);
   } else {
     const sheen = context.createLinearGradient(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
     sheen.addColorStop(0, 'rgba(255,255,255,0.42)');
