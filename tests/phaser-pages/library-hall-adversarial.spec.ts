@@ -40,6 +40,7 @@ const makeDecoratedPearl = async (page: Page): Promise<void> => {
   expect(saved?.library).toHaveLength(1);
   expect(saved.library[0].materialId).toBe('pearl');
   expect(saved.library[0].appearance.strokes.length).toBeGreaterThan(0);
+  // Persisted V3 uses compact decor keys; the in-memory object is decoded.
   expect(saved.library[0].decor).toMatchObject({ e: 'dot', m: 'smile', a: 'bow' });
 };
 
