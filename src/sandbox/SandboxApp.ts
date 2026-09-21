@@ -1117,7 +1117,7 @@ export class SandboxApp {
     }
     this.accessoryCanvas.hidden = false;
     this.accessoryCanvas.dataset.accessoryId = accessory;
-    drawAccessoryGraphic(this.accessoryContext, accessory, this.accessoryCanvas.width, this.accessoryCanvas.height);
+    drawAccessoryGraphic(this.accessoryContext, accessory, this.accessoryCanvas.width, this.accessoryCanvas.height, this.draft.shapeId);
     if (this.accessoryFrame === 0 && this.options.rendererBackend !== 'phaser') this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
   }
 
@@ -1126,7 +1126,7 @@ export class SandboxApp {
       this.accessoryFrame = 0;
       return;
     }
-    const frame = getDecorFrame(getShape(this.draft.shapeId));
+    const frame = getDecorFrame(getShape(this.draft.shapeId), this.draft.decor.accessory);
     const anchor = this.renderer.projectUvToCanvas(frame.headAnchor.u, frame.headAnchor.v);
     const right = this.renderer.projectUvToCanvas(frame.headAnchor.u + frame.headBasisU, frame.headAnchor.v);
     const down = this.renderer.projectUvToCanvas(frame.headAnchor.u, frame.headAnchor.v - frame.headBasisV);

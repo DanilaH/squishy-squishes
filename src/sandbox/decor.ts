@@ -1,4 +1,4 @@
-import type { ShapeDefinition } from '../game/shapes';
+import type { ShapeDefinition, ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
 
 export const MAX_DECOR_STICKERS = 12;
@@ -55,7 +55,7 @@ export interface DecorFrame {
 
 type PagesDecorArt = {
   render: (context: CanvasRenderingContext2D, decor: DecorDocumentV1, shape: ShapeDefinition, frame: DecorFrame) => void;
-  accessory: (context: CanvasRenderingContext2D, accessory: AccessoryId, width: number, height: number) => void;
+  accessory: (context: CanvasRenderingContext2D, accessory: AccessoryId, width: number, height: number, shapeId?: ShapeId) => void;
 };
 let pagesDecorArt: PagesDecorArt | null = null;
 /** Only the /phaser/ entrypoint opts into the new authored transparent art. */
@@ -216,7 +216,7 @@ export const estimateDecorBytes = (decor: DecorDocumentV1): number =>
 export const hasSurfaceDecor = (decor: DecorDocumentV1): boolean =>
   decor.eyes !== null || decor.mouth !== null || decor.blush || decor.stickers.length > 0;
 
-export const getDecorFrame = (shape: ShapeDefinition): DecorFrame => {
+export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | null = null): DecorFrame => {
   let minX = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
@@ -259,12 +259,13 @@ export const getDecorFrame = (shape: ShapeDefinition): DecorFrame => {
   // Keep the accessory's familiar visual seat near the top of the shape, but derive
   // deformation from a real surface point. The offset is replayed along the live
   // projected vertical basis, so concave shapes do not float or swallow accessories.
-  // A heart has a deep central cleft: the global tallest lobe is not the
-  // surface underneath a centered crown, bow or pair of ears. Seat the gear
-  // into the actual center contour so it cannot hover above empty air.
-  // Pages opt-in only: ordinary/Yandex geometry remains byte-for-byte unchanged.
-  const headSeatY = pagesDecorArt && shape.id === 'heart'
-    ? headSurfaceY + height * 0.035
+  // A heart needs DIFFERENT seats: two-ear/horn bases sit on the two upper
+  // lobes, while a centered bow/crown rests closer to the central cleft.
+  // Pages-only: preserve old geometry in ordinary/Yandex and every other shape.
+  const centeredHeartGear = pagesDecorArt && shape.id === 'heart'
+    && (accessory === 'bow' || accessory === 'crown');
+  const headSeatY = centeredHeartGear
+    ? headSurfaceY + height * 0.13
     : maxY - height * 0.055;
   const headSeatOffsetV = (headSeatY - headY) * 0.5;
   return {
@@ -454,8 +455,9 @@ export const drawAccessoryGraphic = (
   accessory: AccessoryId,
   width: number,
   height: number,
+  shapeId?: ShapeId,
 ): void => {
-  if (pagesDecorArt) { pagesDecorArt.accessory(context, accessory, width, height); return; }
+  if (pagesDecorArt) { pagesDecorArt.accessory(context, accessory, width, height, shapeId); return; }
   context.clearRect(0, 0, width, height);
   const cx = width * 0.5;
   const bottom = height * 0.92;

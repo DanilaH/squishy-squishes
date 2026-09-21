@@ -242,7 +242,7 @@ export const renderLibraryThumbnail = (
 
   const shape = getShape(toy.shapeId);
   if (toy.decor.accessory) {
-    const frame = getDecorFrame(shape);
+    const frame = getDecorFrame(shape, toy.decor.accessory);
     const localX = frame.headAnchor.u * 2 - 1;
     const localY = (frame.headAnchor.v + frame.headSeatOffsetV) * 2 - 1;
     const scale = Math.min(THUMBNAIL_SIZE, THUMBNAIL_SIZE) * 0.5 - SHAPE_PADDING;
@@ -253,7 +253,7 @@ export const renderLibraryThumbnail = (
     accessoryCanvas.height = 120;
     const accessoryContext = accessoryCanvas.getContext('2d');
     if (accessoryContext) {
-      drawAccessoryGraphic(accessoryContext, toy.decor.accessory, 180, 120);
+      drawAccessoryGraphic(accessoryContext, toy.decor.accessory, 180, 120, toy.shapeId);
       const drawWidth = 112;
       const drawHeight = 75;
       context.drawImage(accessoryCanvas, anchorX - drawWidth * 0.5, anchorY - drawHeight * 0.9, drawWidth, drawHeight);

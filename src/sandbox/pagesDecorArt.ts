@@ -1,4 +1,4 @@
-import type { ShapeDefinition } from '../game/shapes';
+import type { ShapeDefinition, ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE } from './appearance';
 import type { AccessoryId, DecorDocumentV1, DecorFrame, StickerId } from './decor';
 
@@ -131,7 +131,7 @@ export const renderPagesSurfaceDecor = (
   if (decor.mouth) mouth(ctx, decor.mouth, frame.mouth);
 };
 
-export const drawPagesAccessoryGraphic = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number): void => {
+export const drawPagesAccessoryGraphic = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, shapeId?: ShapeId): void => {
   ctx.clearRect(0, 0, width, height);
   ctx.save();
   ctx.translate(width * .5, height * .92);
@@ -164,6 +164,8 @@ export const drawPagesAccessoryGraphic = (ctx: CanvasRenderingContext2D, id: Acc
   } else if (id === 'cat-ears' || id === 'bunny-ears') {
     for (const dir of [-1, 1]) {
       ctx.save(); ctx.scale(dir, 1);
+      // Pair each root with its own heart lobe, not the empty center cleft.
+      if (shapeId === 'heart') ctx.translate(22, 0);
       if (id === 'cat-ears') {
         ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(55, -6); ctx.quadraticCurveTo(46, -44, 35, -68); ctx.quadraticCurveTo(12, -42, 10, 0);
         ctx.fillStyle = gradient(ctx, '#fff4ee', '#efd9e6', '#c6adc9', 73); ctx.fill(); ctx.stroke();
@@ -181,6 +183,7 @@ export const drawPagesAccessoryGraphic = (ctx: CanvasRenderingContext2D, id: Acc
   } else if (id === 'horns') {
     for (const dir of [-1, 1]) {
       ctx.save(); ctx.scale(dir, 1);
+      if (shapeId === 'heart') ctx.translate(22, 0);
       ctx.beginPath(); ctx.moveTo(13, 0); ctx.quadraticCurveTo(49, -10, 55, -61);
       ctx.quadraticCurveTo(21, -49, 13, 0);
       ctx.fillStyle = gradient(ctx, '#fffcea', '#e7d5a0', '#c7a870', 63); ctx.fill(); ctx.stroke();
