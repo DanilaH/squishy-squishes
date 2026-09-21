@@ -22,6 +22,9 @@ test('real saved jelly, marshmallow and chrome are materially distinct in the Ha
   await page.locator('[data-action="decor-continue"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+  // A real, completed Studio squishy is the single source for every comparison.
+  // Save and Gallery must not be substituted with an unrelated reference render.
+  await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath('library-hall-studio-soft-canvas-390.png'), animations: 'disabled' });
   await page.evaluate(() => {
     const key = 'squishy.phaser-pages-preview.squishy.save.v3';
     const save = JSON.parse(localStorage.getItem(key) ?? 'null');
@@ -46,9 +49,23 @@ test('real saved jelly, marshmallow and chrome are materially distinct in the Ha
   }));
   expect(pixels[0]).not.toEqual(pixels[1]);
   await page.screenshot({ path: info.outputPath('library-hall-material-phone-390.png'), animations: 'disabled' });
+  await page.locator('[data-library-play-id="material-fixture-jelly"]').click();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+  await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+  await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath('library-hall-studio-jelly-canvas-390.png'), animations: 'disabled' });
+  await page.locator('[data-action="home"]').click();
+  await page.locator('[data-library-play-id="material-fixture-marshmallow"]').click();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+  await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+  await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath('library-hall-studio-marshmallow-canvas-390.png'), animations: 'disabled' });
+  await page.locator('[data-action="home"]').click();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.screenshot({ path: info.outputPath('library-hall-material-desktop-1440.png'), animations: 'disabled' });
   await page.locator('[data-library-hall-next]').click();
   expect(await visibleProfiles()).toEqual(['chrome']);
   await page.screenshot({ path: info.outputPath('library-hall-material-chrome-1440.png'), animations: 'disabled' });
+  await page.locator('[data-library-play-id="material-fixture-chrome"]').click();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+  await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+  await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath('library-hall-studio-chrome-canvas-1440.png'), animations: 'disabled' });
 });
