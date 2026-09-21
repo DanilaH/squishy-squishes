@@ -8,6 +8,8 @@ on:
       - 'src/experiments/phaser/libraryHallGrounding.css'
       - 'src/experiments/phaser/libraryHallAccess.css'
       - 'src/experiments/phaser/libraryHallFeel.*'
+      - 'src/experiments/phaser/libraryHallOwnerReview.css'
+      - 'src/experiments/phaser/libraryHallPerspectiveFloor.css'
       - 'src/experiments/phaser/studioPagesPreview.ts'
       - 'src/sandbox/libraryThumbnail.ts'
       - 'src/sandbox/libraryStudioThumbnail.ts'
@@ -17,6 +19,7 @@ on:
       - 'src/experiments/phaser/library-assets/**'
       - 'scripts/build-library-hall.mjs'
       - 'scripts/export-library-ground-shadow.mjs'
+      - 'scripts/export-library-owner-floor.mjs'
       - 'scripts/verify-library-art.mjs'
       - 'tests/phaser-pages/library-hall-*.spec.ts'
       - '.github/workflows/library-hall-qa.yml'
@@ -28,6 +31,8 @@ on:
       - 'src/experiments/phaser/libraryHallGrounding.css'
       - 'src/experiments/phaser/libraryHallAccess.css'
       - 'src/experiments/phaser/libraryHallFeel.*'
+      - 'src/experiments/phaser/libraryHallOwnerReview.css'
+      - 'src/experiments/phaser/libraryHallPerspectiveFloor.css'
       - 'src/experiments/phaser/studioPagesPreview.ts'
       - 'src/sandbox/libraryThumbnail.ts'
       - 'src/sandbox/libraryStudioThumbnail.ts'
@@ -37,6 +42,7 @@ on:
       - 'src/experiments/phaser/library-assets/**'
       - 'scripts/build-library-hall.mjs'
       - 'scripts/export-library-ground-shadow.mjs'
+      - 'scripts/export-library-owner-floor.mjs'
       - 'scripts/verify-library-art.mjs'
       - 'tests/phaser-pages/library-hall-*.spec.ts'
       - '.github/workflows/library-hall-qa.yml'
@@ -56,8 +62,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Reproduce original Library source exports without overwriting manifest
         run: node scripts/build-library-hall.mjs && node scripts/export-library-ground-shadow.mjs
-      - name: Verify all seven owner Library art source and output hashes
-        run: node scripts/verify-library-art.mjs
+      - name: Verify original seven owner Library art hashes and new floor export
+        run: node scripts/verify-library-art.mjs && node scripts/export-library-owner-floor.mjs --check
       - name: Strict TS and staged Pages build
         run: npm run pages:build
       - name: Independent browser art, layout, lifecycle, shared shader, stress, feel and material review
