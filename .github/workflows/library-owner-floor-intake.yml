@@ -10,13 +10,8 @@ jobs:
   inspect-floor:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci
-      - name: Inspect exact owner file and create review artifact
+      - uses: actions/checkout@v5
+      - name: Verify exact owner file and create review artifact
         shell: bash
         run: |
           set -euo pipefail
@@ -24,7 +19,16 @@ jobs:
           cp 'biba/ChatGPT Image Sep 21, 2026, 11_08_56 PM.png' /tmp/floor-intake/owner-floor.png
           test "$(git hash-object /tmp/floor-intake/owner-floor.png)" = d9f287a0cfe28bb1a88bcffd03bacf24e5f5c38d
           sha256sum /tmp/floor-intake/owner-floor.png | tee /tmp/floor-intake/sha256.txt
-          node --input-type=module -e "import sharp from 'sharp'; import {writeFileSync} from 'node:fs'; const s=sharp('/tmp/floor-intake/owner-floor.png'); const m=await s.metadata(); console.log(JSON.stringify(m)); writeFileSync('/tmp/floor-intake/metadata.json',JSON.stringify({width:m.width,height:m.height,format:m.format,hasAlpha:m.hasAlpha,orientation:m.orientation},null,2)); await s.resize({width:600}).png().toFile('/tmp/floor-intake/owner-floor-review.png')"
+          python3 - <<'PY'
+          import json, struct
+          p='/tmp/floor-intake/owner-floor.png'
+          with open(p,'rb') as f:
+              header=f.read(26)
+          assert header[:8] == b'\x89PNG\r\n\x1a\n' and header[12:16] == b'IHDR'
+          w,h=struct.unpack('>II',header[16:24]); meta={'width':w,'height':h,'bitDepth':header[24],'colorType':header[25]}
+          print(meta)
+          with open('/tmp/floor-intake/metadata.json','w') as f:json.dump(meta,f,indent=2)
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: owner-floor-source-intake
