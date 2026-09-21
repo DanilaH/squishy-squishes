@@ -72,19 +72,25 @@ test('all six contours and all five existing accessory IDs render distinct authe
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await saveRealToy(page);
+  // Pin the one genuinely authored save. Later passes persist six variants;
+  // reading library[0] on each pass would silently compound the fixture.
+  const original = await page.evaluate((key) => {
+    const save = JSON.parse(localStorage.getItem(key) ?? 'null');
+    if (save?.version !== 3 || save.library.length !== 1) throw new Error('Missing genuine V3 seed');
+    return save.library[0];
+  }, KEY);
   const variants = new Map<string, Set<string>>();
   for (const accessory of ACCESSORIES) {
-    await page.evaluate(({ key, shapes, accessory }) => {
+    await page.evaluate(({ key, shapes, accessory, original }) => {
       const save = JSON.parse(localStorage.getItem(key) ?? 'null');
-      if (save?.version !== 3 || save.library.length !== 1) throw new Error('Missing genuine V3 seed');
-      const original = save.library[0];
+      if (save?.version !== 3 || !Array.isArray(save.library)) throw new Error('Missing genuine V3 save');
       save.library = shapes.map((shapeId: string) => ({
         ...original, id: `art-${shapeId}-${accessory}`, shapeId,
         decor: { ...original.decor, a: accessory, e: 'dot', m: 'smile', b: 1,
           s: [[0, 67, 175, 28, 0], [1, 190, 173, 26, 35]] },
       }));
       localStorage.setItem(key, JSON.stringify(save));
-    }, { key: KEY, shapes: SHAPES, accessory });
+    }, { key: KEY, shapes: SHAPES, accessory, original });
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
     const saved = await page.evaluate((key) => localStorage.getItem(key), KEY);
