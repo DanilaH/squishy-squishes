@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const key = 'squishy.phaser-pages-preview.squishy.save.v3';
 
-test('toy and contact shadow idle together; interaction, visibility and reduced motion pause both', async ({ page }) => {
+test('review: tiled floor, larger room props, no continuous canvas motion, fade-only paging', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/phaser/');
   await page.locator('[data-library-new]').first().click();
@@ -35,49 +35,60 @@ test('toy and contact shadow idle together; interaction, visibility and reduced 
   await page.reload();
   const card = page.locator('.sandbox-library-card:visible').first();
   await expect(card).toBeVisible();
-  const motion = async () => card.evaluate((element) => {
-    const canvas = element.querySelector<HTMLCanvasElement>('canvas')!;
-    const play = element.querySelector<HTMLElement>('.sandbox-library-card__play')!;
+  const state = await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>('.sandbox-library-card:not([hidden]) canvas')!;
+    const shadow = document.querySelector<HTMLElement>('.sandbox-library-card:not([hidden]) .sandbox-library-card__play')!;
+    const floor = document.querySelector<HTMLElement>('.library-hall-scene__floor')!;
+    const cabinet = document.querySelector<HTMLElement>('.library-hall-scene__cabinet')!;
+    const shelf = document.querySelector<HTMLElement>('.library-hall-scene__shelf')!;
     return {
-      toy: getComputedStyle(canvas).animationName,
-      shadow: getComputedStyle(play, '::before').animationName,
-      toyState: getComputedStyle(canvas).animationPlayState,
-      shadowState: getComputedStyle(play, '::before').animationPlayState,
+      toyAnimation: getComputedStyle(canvas).animationName,
+      toyFilter: getComputedStyle(canvas).filter,
+      shadowAnimation: getComputedStyle(shadow, '::before').animationName,
+      floorSize: getComputedStyle(floor).backgroundSize,
+      floorRepeat: getComputedStyle(floor).backgroundRepeat,
+      cabinetWidth: cabinet.getBoundingClientRect().width,
+      shelfWidth: shelf.getBoundingClientRect().width,
     };
   });
-  expect(await motion()).toMatchObject({ toy: 'library-toy-idle', shadow: 'library-shadow-idle', toyState: 'running', shadowState: 'running' });
-  await card.locator('canvas').dispatchEvent('pointerdown', { bubbles: true });
-  await expect(page.locator('[data-sandbox-library]')).toHaveClass(/library-hall-interacting/);
-  expect(await motion()).toMatchObject({ toyState: 'paused', shadowState: 'paused' });
-  await page.evaluate(() => window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })));
-  await expect(page.locator('[data-sandbox-library]')).not.toHaveClass(/library-hall-interacting/);
-  expect(await motion()).toMatchObject({ toyState: 'running', shadowState: 'running' });
+  expect(state.toyAnimation).toBe('none');
+  expect(state.toyFilter).toBe('none');
+  expect(state.shadowAnimation).toBe('none');
+  expect(state.floorSize).toBe('auto 100%');
+  expect(state.floorRepeat).toBe('repeat-x');
+  expect(state.cabinetWidth).toBeGreaterThanOrEqual(87);
+  expect(state.shelfWidth).toBeGreaterThanOrEqual(119);
+
   await page.evaluate(() => {
-    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
-    document.dispatchEvent(new Event('visibilitychange'));
-  });
-  await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hidden/);
-  expect(await motion()).toMatchObject({ toyState: 'paused', shadowState: 'paused' });
-  await page.evaluate(() => {
-    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
-    document.dispatchEvent(new Event('visibilitychange'));
-  });
-  await expect(page.locator('[data-sandbox-library]')).not.toHaveClass(/is-library-hidden/);
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  expect(await motion()).toMatchObject({ toy: 'none', shadow: 'none' });
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  expect(await motion()).toMatchObject({ toy: 'library-toy-idle', shadow: 'library-shadow-idle' });
-  await page.evaluate(() => {
-    (window as unknown as { __hallPageStarts: string[] }).__hallPageStarts = [];
+    (window as unknown as { __hallPageStarts: { name: string; translate: string; filter: string }[] }).__hallPageStarts = [];
     window.addEventListener('animationstart', (event) => {
-      if (event.animationName === 'library-toy-page-enter') {
-        (window as unknown as { __hallPageStarts: string[] }).__hallPageStarts.push(event.animationName);
+      if (event.animationName === 'library-toy-page-enter' && event.target instanceof Element) {
+        const style = getComputedStyle(event.target);
+        (window as unknown as { __hallPageStarts: { name: string; translate: string; filter: string }[] }).__hallPageStarts.push({
+          name: event.animationName, translate: style.translate, filter: style.filter,
+        });
       }
     });
   });
   await page.locator('[data-library-hall-next]').click();
   await expect(page.locator('[data-library-hall-page]')).toHaveText('2 / 2');
-  await expect.poll(() => page.evaluate(() => (window as unknown as { __hallPageStarts: string[] }).__hallPageStarts.length)).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __hallPageStarts: unknown[] }).__hallPageStarts.length)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => (window as unknown as { __hallPageStarts: { name: string; translate: string; filter: string }[] }).__hallPageStarts[0])).toMatchObject({
+    name: 'library-toy-page-enter', translate: 'none', filter: 'none',
+  });
   await page.locator('[data-library-hall-prev]').click();
   await expect(page.locator('[data-library-hall-page]')).toHaveText('1 / 2');
+  await expect.poll(() => card.evaluate((element) => getComputedStyle(element.querySelector('canvas')!).animationName)).toBe('none');
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const desktop = await page.evaluate(() => ({
+    cabinet: document.querySelector('.library-hall-scene__cabinet')!.getBoundingClientRect().width,
+    shelf: document.querySelector('.library-hall-scene__shelf')!.getBoundingClientRect().width,
+    plant: document.querySelector('.library-hall-scene__plant')!.getBoundingClientRect().width,
+    floorRepeat: getComputedStyle(document.querySelector('.library-hall-scene__floor')!).backgroundRepeat,
+  }));
+  expect(desktop.cabinet).toBeGreaterThanOrEqual(180);
+  expect(desktop.shelf).toBeGreaterThanOrEqual(240);
+  expect(desktop.plant).toBeGreaterThanOrEqual(169);
+  expect(desktop.floorRepeat).toBe('repeat-x');
 });
