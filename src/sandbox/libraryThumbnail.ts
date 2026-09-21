@@ -65,7 +65,7 @@ const materialBase = (
     }
     const body = context.createLinearGradient(0, 0, width * 0.10, height);
     body.addColorStop(0, rgb(milk.high));
-    body.addColorStop(0.57, materialId === 'jelly' ? '#efd8ae' : '#e9d5ae');
+    body.addColorStop(0.57, materialId === 'pearl' ? '#fcf0d4' : materialId === 'jelly' ? '#efd8ae' : '#e9d5ae');
     body.addColorStop(1, rgb(milk.low));
     return body;
   }
@@ -154,7 +154,9 @@ const paintPreviewVolume = (context: CanvasRenderingContext2D, toy: SavedSquishy
   // low-opacity dark flanks give the narrow highlight contrast while keeping
   // saved paint/decor visible. The light is static until feel gets its own gate.
   if (toy.materialId === 'chrome') {
-    const metalReflection = context.createLinearGradient(74, 49, 138, 210);
+    // Studio metalSharp reflects diagonally DOWN to the right; the previous
+    // Canvas reflection sloped the opposite way across every saved shape.
+    const metalReflection = context.createLinearGradient(156, 49, 83, 210);
     metalReflection.addColorStop(0, 'rgba(38,34,30,0)');
     metalReflection.addColorStop(0.25, 'rgba(38,34,30,0.22)');
     metalReflection.addColorStop(0.35, 'rgba(245,235,214,0.07)');
@@ -251,9 +253,11 @@ export const renderLibraryThumbnail = (
   }
 
   context.save();
-  context.shadowColor = 'rgba(69, 47, 89, 0.18)';
-  context.shadowBlur = 18;
-  context.shadowOffsetY = 10;
+  // The legacy purple drop shadow made a conspicuous violet halo around
+  // Pages chrome/pearl. Retain its pixels ONLY in the ordinary/Yandex path.
+  context.shadowColor = pagesMaterialLighting ? 'rgba(82, 63, 42, 0.13)' : 'rgba(69, 47, 89, 0.18)';
+  context.shadowBlur = pagesMaterialLighting ? 12 : 18;
+  context.shadowOffsetY = pagesMaterialLighting ? 7 : 10;
   buildShapePath(context, toy, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   context.fillStyle = materialBase(context, toy.materialId, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   context.fill();
