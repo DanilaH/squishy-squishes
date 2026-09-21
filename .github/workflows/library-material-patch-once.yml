@@ -1,0 +1,31 @@
+name: One-time Library material comparison patch
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths:
+      - .github/workflows/library-material-patch-once.yml
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.repository == 'DanilaH/squishy-squishes'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Verify exact source, then adjust Pages material only
+        run: node scripts/library-material-audit-patch.mjs
+      - name: Commit only verified thumbnail change to isolated draft branch
+        shell: bash
+        run: |
+          git add src/sandbox/libraryThumbnail.ts
+          git diff --cached --check
+          git diff --cached --quiet && exit 1
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(library): correct chrome reflection, pearl light and purple halo'
+          git push origin HEAD:feat/library-visual-recovery-sep21
