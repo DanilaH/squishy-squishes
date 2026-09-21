@@ -1,0 +1,32 @@
+name: Library owner floor source intake
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: [.github/workflows/library-owner-floor-intake.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-floor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Inspect exact owner file and create review artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/floor-intake
+          cp 'biba/ChatGPT Image Sep 21, 2026, 11_08_56 PM.png' /tmp/floor-intake/owner-floor.png
+          test "$(git hash-object /tmp/floor-intake/owner-floor.png)" = d9f287a0cfe28bb1a88bcffd03bacf24e5f5c38d
+          sha256sum /tmp/floor-intake/owner-floor.png | tee /tmp/floor-intake/sha256.txt
+          node --input-type=module -e "import sharp from 'sharp'; import {writeFileSync} from 'node:fs'; const s=sharp('/tmp/floor-intake/owner-floor.png'); const m=await s.metadata(); console.log(JSON.stringify(m)); writeFileSync('/tmp/floor-intake/metadata.json',JSON.stringify({width:m.width,height:m.height,format:m.format,hasAlpha:m.hasAlpha,orientation:m.orientation},null,2)); await s.resize({width:600}).png().toFile('/tmp/floor-intake/owner-floor-review.png')"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: owner-floor-source-intake
+          path: /tmp/floor-intake/
+          retention-days: 3
