@@ -55,7 +55,8 @@ test('record genuine browser Hall idle → new save → settle → page and retu
     await page.goto('/phaser/');
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '2');
     await expect(page.locator('.sandbox-library-card:visible')).toHaveCount(2);
-    await page.waitForTimeout(3200);
+    // One complete 6.2s ambient cycle before any UI interaction.
+    await page.waitForTimeout(6200);
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('button[data-shape="soft-square"]').click();
