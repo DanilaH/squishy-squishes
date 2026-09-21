@@ -25,7 +25,11 @@ test('toy and contact shadow idle together; interaction, visibility and reduced 
   await page.evaluate((storageKey) => {
     const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
     if (saved?.library?.length !== 1) throw new Error('No real V3 saved fixture');
-    saved.library = [saved.library[0], { ...saved.library[0], id: 'feel-second', materialId: 'holo' }];
+    saved.library = [
+      saved.library[0],
+      { ...saved.library[0], id: 'feel-second', materialId: 'holo' },
+      { ...saved.library[0], id: 'feel-third', materialId: 'chrome' },
+    ];
     localStorage.setItem(storageKey, JSON.stringify(saved));
   }, key);
   await page.reload();
@@ -72,5 +76,8 @@ test('toy and contact shadow idle together; interaction, visibility and reduced 
     });
   });
   await page.locator('[data-library-hall-next]').click();
-  await expect(page.locator('[data-library-hall-page]')).toHaveText('1 / 1');
+  await expect(page.locator('[data-library-hall-page]')).toHaveText('2 / 2');
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __hallPageStarts: string[] }).__hallPageStarts.length)).toBeGreaterThan(0);
+  await page.locator('[data-library-hall-prev]').click();
+  await expect(page.locator('[data-library-hall-page]')).toHaveText('1 / 2');
 });
