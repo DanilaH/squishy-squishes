@@ -58,7 +58,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
     await page.waitForTimeout(3200);
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-    await page.locator('[data-shape="soft-square"]').click();
+    await page.locator('button[data-shape="soft-square"]').click();
     await page.locator('[data-action="shape-continue"]').click();
     await page.locator('[data-action="paint-continue"]').click();
     await page.locator('[data-action="mixin-continue"]').click();
