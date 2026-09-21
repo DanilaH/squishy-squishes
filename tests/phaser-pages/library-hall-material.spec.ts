@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
 test('real saved materials have comparable Studio and Library captures', async ({ page }, info) => {
@@ -41,9 +42,12 @@ test('real saved materials have comparable Studio and Library captures', async (
   const visibleProfiles = async (): Promise<(string | null)[]> => page.locator('.sandbox-library-card:visible [data-library-material-profile]')
     .evaluateAll((canvases) => canvases.map((canvas) => canvas.getAttribute('data-library-material-profile')));
   const captureThumbnail = async (material: string): Promise<void> => {
-    await page.locator(`[data-library-play-id="material-fixture-${material}"]`).locator('canvas').screenshot({
-      path: info.outputPath(`library-hall-thumbnail-${material}-390.png`), animations: 'disabled',
-    });
+    // Element screenshots can crop a transformed/overflow-hidden canvas or
+    // capture the wrong viewport offset. Save its actual native 256px pixels.
+    const pngBase64 = await page.locator(`[data-library-play-id="material-fixture-${material}"] canvas`)
+      .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL('image/png').split(',')[1]);
+    if (!pngBase64) throw new Error(`Empty ${material} thumbnail`);
+    await writeFile(info.outputPath(`library-hall-thumbnail-${material}-390.png`), Buffer.from(pngBase64, 'base64'));
   };
   const captureStudio = async (material: string): Promise<void> => {
     await page.locator(`[data-library-play-id="material-fixture-${material}"]`).click();
