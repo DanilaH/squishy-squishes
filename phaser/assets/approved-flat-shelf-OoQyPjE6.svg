@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="572" height="257" viewBox="74 107 572 257">
+<g stroke-linecap="round" stroke-linejoin="round"><rect x="80" y="263" width="560" height="38" rx="9" fill="#F2C28D" stroke="#B67F52" stroke-width="3"/>
+<path d="M 108 301 L 147 301 L 138 358 L 112 358 Z" fill="#E9B178" stroke="#B67F52" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 570 301 L 610 301 L 603 358 L 577 358 Z" fill="#E9B178" stroke="#B67F52" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="340" y="127" width="137" height="135" rx="13" fill="#B99CCF" stroke="#8D739E" stroke-width="3"/>
+<rect x="335" y="115" width="147" height="39" rx="11" fill="#B99CCF" stroke="#8D739E" stroke-width="3"/>
+<rect x="395" y="143" width="24" height="21" rx="4" fill="#F2C28D"/>
+<rect x="500" y="164" width="100" height="97" rx="10" fill="#F6D8B4" stroke="#C6A283" stroke-width="2"/>
+<rect x="496" y="155" width="108" height="27" rx="9" fill="#F6D8B4" stroke="#C6A283" stroke-width="2"/>
+<rect x="543" y="172" width="18" height="17" rx="3" fill="#F2C28D"/>
+<path d="M 223 261 Q 181.5 141.0 140 150" fill="none" stroke="#4E7143" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 223 261 Q 222.5 106.0 222 115" fill="none" stroke="#4E7143" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 223 261 Q 257.5 165.0 292 174" fill="none" stroke="#4E7143" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 223 261 Q 204.5 206.0 186 215" fill="none" stroke="#4E7143" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 223 261 Q 214.39 184.37 140 150 Q 151.93 231.07 223 261 Z" fill="#64874D"/>
+<path d="M 223 261 Q 257.52 190.68 222 115 Q 187.52 191.16 223 261 Z" fill="#79964E"/>
+<path d="M 223 261 Q 287.46 244.10 292 174 Q 224.78 194.38 223 261 Z" fill="#64874D"/>
+<path d="M 223 261 Q 232.51 216.98 186 215 Q 177.97 260.86 223 261 Z" fill="#79964E"/>
+<path d="M 189 230 L 258 230 L 248 266 Q 223.5 274 199 266 Z" fill="#F6D8B4" stroke="#C6A283" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 195 254.84 L 252 254.84 L 248 266 Q 223.5 274 199 266 Z" fill="#B69BD1"/>
+<ellipse cx="223.5" cy="230" rx="36.5" ry="9" fill="#F6D8B4" stroke="#C6A283" stroke-width="2"/></g></svg>
