@@ -1,5 +1,16 @@
 name: Library Hall real-browser QA (preview)
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/experiments/phaser/libraryHallPreview.*'
+      - 'src/experiments/phaser/libraryHallPolish.css'
+      - 'src/experiments/phaser/studioPagesPreview.ts'
+      - 'src/experiments/phaser/library-assets/**'
+      - 'scripts/build-library-hall.mjs'
+      - 'scripts/verify-library-art.mjs'
+      - 'tests/phaser-pages/library-hall-*.spec.ts'
+      - '.github/workflows/library-hall-qa.yml'
   push:
     branches: [feat/library-hall-pages-preview]
     paths:
@@ -7,6 +18,7 @@ on:
       - 'src/experiments/phaser/libraryHallPolish.css'
       - 'src/experiments/phaser/studioPagesPreview.ts'
       - 'src/experiments/phaser/library-assets/**'
+      - 'scripts/build-library-hall.mjs'
       - 'scripts/verify-library-art.mjs'
       - 'tests/phaser-pages/library-hall-*.spec.ts'
       - '.github/workflows/library-hall-qa.yml'
@@ -24,7 +36,9 @@ jobs:
           node-version: 24
       - run: npm install
       - run: npx playwright install --with-deps chromium
-      - name: Verify approved Library art provenance and immutable hashes
+      - name: Reproduce owner Library source exports without overwriting manifest
+        run: node scripts/build-library-hall.mjs
+      - name: Verify owner Library art source and output hashes
         run: node scripts/verify-library-art.mjs
       - name: Strict TS and staged Pages build
         run: npm run pages:build
