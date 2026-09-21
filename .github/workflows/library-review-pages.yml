@@ -1,0 +1,64 @@
+name: Library PR 59 Pages review preview
+
+on:
+  push:
+    branches:
+      - feat/library-visual-recovery-sep21
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish-review-preview:
+    if: github.repository == 'DanilaH/squishy-squishes' && github.ref == 'refs/heads/feat/library-visual-recovery-sep21'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated review branch
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Build and verify isolated Phaser Pages preview
+        run: |
+          set -euo pipefail
+          npm run pages:build
+          test -s dist/phaser/index.html
+          test -d dist/phaser/assets
+
+      - name: Publish ONLY the review/pr-59 subdirectory, preserving the existing Pages site
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin gh-pages
+          git worktree add --detach /tmp/squishy-review-pages origin/gh-pages
+          mkdir -p /tmp/squishy-review-pages/review/pr-59
+          rm -rf /tmp/squishy-review-pages/review/pr-59
+          mkdir -p /tmp/squishy-review-pages/review/pr-59
+          cp -a dist/phaser/. /tmp/squishy-review-pages/review/pr-59/
+          git -C /tmp/squishy-review-pages add -- review/pr-59
+          if git -C /tmp/squishy-review-pages diff --cached --quiet; then
+            echo 'Review preview already matches this build.'
+          else
+            git -C /tmp/squishy-review-pages commit -m "Publish PR 59 review preview from ${GITHUB_SHA}"
+            git -C /tmp/squishy-review-pages push origin HEAD:gh-pages
+          fi
+          test -f /tmp/squishy-review-pages/index.html
+          test -f /tmp/squishy-review-pages/phaser/index.html
+          test -f /tmp/squishy-review-pages/review/pr-59/index.html
+          echo 'Preview path: /squishy-squishes/review/pr-59/'
