@@ -259,7 +259,13 @@ export const getDecorFrame = (shape: ShapeDefinition): DecorFrame => {
   // Keep the accessory's familiar visual seat near the top of the shape, but derive
   // deformation from a real surface point. The offset is replayed along the live
   // projected vertical basis, so concave shapes do not float or swallow accessories.
-  const headSeatY = maxY - height * 0.055;
+  // A heart has a deep central cleft: the global tallest lobe is not the
+  // surface underneath a centered crown, bow or pair of ears. Seat the gear
+  // into the actual center contour so it cannot hover above empty air.
+  // Preserve the established positions for the other five silhouettes.
+  const headSeatY = shape.id === 'heart'
+    ? headSurfaceY + height * 0.035
+    : maxY - height * 0.055;
   const headSeatOffsetV = (headSeatY - headY) * 0.5;
   return {
     eyesLeft: toUv(centerX - eyeDx, eyeY),
