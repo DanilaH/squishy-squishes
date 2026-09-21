@@ -53,6 +53,14 @@ export interface DecorFrame {
   readonly headSeatOffsetV: number;
 }
 
+type PagesDecorArt = {
+  render: (context: CanvasRenderingContext2D, decor: DecorDocumentV1, shape: ShapeDefinition, frame: DecorFrame) => void;
+  accessory: (context: CanvasRenderingContext2D, accessory: AccessoryId, width: number, height: number) => void;
+};
+let pagesDecorArt: PagesDecorArt | null = null;
+/** Only the /phaser/ entrypoint opts into the new authored transparent art. */
+export const registerPagesDecorArt = (renderer: PagesDecorArt): void => { pagesDecorArt = renderer; };
+
 const eyeIdSet = new Set<string>(EYE_STYLE_IDS);
 const mouthIdSet = new Set<string>(MOUTH_STYLE_IDS);
 const accessoryIdSet = new Set<string>(ACCESSORY_IDS);
@@ -415,6 +423,7 @@ export const renderSurfaceDecor = (
   shape: ShapeDefinition,
 ): void => {
   const frame = getDecorFrame(shape);
+  if (pagesDecorArt) { pagesDecorArt.render(context, decor, shape, frame); return; }
   if (decor.eyes) {
     drawEye(context, decor.eyes, frame.eyesLeft);
     drawEye(context, decor.eyes, frame.eyesRight);
@@ -440,6 +449,7 @@ export const drawAccessoryGraphic = (
   width: number,
   height: number,
 ): void => {
+  if (pagesDecorArt) { pagesDecorArt.accessory(context, accessory, width, height); return; }
   context.clearRect(0, 0, width, height);
   const cx = width * 0.5;
   const bottom = height * 0.92;
