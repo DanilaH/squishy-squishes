@@ -1,0 +1,39 @@
+/* Isolated Pages Hall accessibility corrections; leave ordinary Library/Yandex intact. */
+#app .is-library-hall .sandbox-library-topbar { min-height: 44px; }
+#app .is-library-hall .sandbox-library-topbar [data-library-mute],
+#app .is-library-hall .sandbox-library-heading [data-library-new],
+#app .is-library-hall .sandbox-library-heading [data-library-ideas] { min-height: 44px; }
+
+#app .is-library-hall .sandbox-library-card__footer {
+  min-height: 44px;
+  padding: 0 3px 0 7px;
+  gap: 2px;
+}
+#app .is-library-hall .sandbox-library-card__footer strong {
+  font-size: 12px;
+  line-height: 1.1;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+#app .is-library-hall .sandbox-library-delete {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  font-size: 23px;
+}
+#app .library-hall-nav { min-height: 48px; }
+#app .library-hall-nav button { width: 44px; height: 44px; }
+
+@media (max-height: 520px) and (orientation: landscape) {
+  /* The additional hit area is accommodated above, not over, room navigation. */
+  #app .is-library-hall .sandbox-library-card__footer {
+    inset: calc(100% - 6px) 3% auto;
+    min-height: 44px;
+  }
+  #app .library-hall-nav { min-height: 44px; }
+  #app .library-hall-nav button { width: 44px; height: 44px; font-size: 27px; }
+}
