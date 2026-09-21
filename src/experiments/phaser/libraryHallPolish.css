@@ -1,8 +1,8 @@
 /* Real Chromium review adjustments. This stylesheet loads after the isolated Hall rules. */
 /* Enlarge the actual 256px thumbnail, including its intrinsic transparent margin.
-   The paired upward shift is measured against the tabletop at phone size. */
+   The paired upward/downward offset is measured against the tabletop at phone size. */
 #app .is-library-hall .sandbox-library-card__canvas {
-  transform: translateY(clamp(-28px, -3dvh, -18px)) scale(1.45);
+  transform: translateY(clamp(-12px, calc(16px - 3dvh), -2px)) scale(1.45);
   transform-origin: center center;
 }
 #app .is-library-hall .sandbox-library-card__footer {
