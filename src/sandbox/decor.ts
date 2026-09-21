@@ -262,8 +262,8 @@ export const getDecorFrame = (shape: ShapeDefinition): DecorFrame => {
   // A heart has a deep central cleft: the global tallest lobe is not the
   // surface underneath a centered crown, bow or pair of ears. Seat the gear
   // into the actual center contour so it cannot hover above empty air.
-  // Preserve the established positions for the other five silhouettes.
-  const headSeatY = shape.id === 'heart'
+  // Pages opt-in only: ordinary/Yandex geometry remains byte-for-byte unchanged.
+  const headSeatY = pagesDecorArt && shape.id === 'heart'
     ? headSurfaceY + height * 0.035
     : maxY - height * 0.055;
   const headSeatOffsetV = (headSeatY - headY) * 0.5;
