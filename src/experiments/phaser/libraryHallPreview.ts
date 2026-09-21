@@ -1,10 +1,11 @@
 import './libraryHallPreview.css';
 
-// All seven active artwork exports originate from the owner's 223c843 "Library"
-// commit. Preserve source PNGs; do not substitute an unrelated art master.
+// The six room pieces and ground shadow are derived from owner's 223c843 PNGs.
+// Floor uses the independent pinned Sep 21 parquet PNG export. Keep both
+// sets of original sources and their verification manifests unchanged.
 const art = {
   wall: new URL('./library-assets/wall.webp', import.meta.url).href,
-  floor: new URL('./library-assets/floor.webp', import.meta.url).href,
+  floor: new URL('./library-assets/floor-tile.webp', import.meta.url).href,
   pedestal: new URL('./library-assets/pedestal.webp', import.meta.url).href,
   cabinet: new URL('./library-assets/cabinet.webp', import.meta.url).href,
   shelf: new URL('./library-assets/shelf.webp', import.meta.url).href,
