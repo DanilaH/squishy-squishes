@@ -11,6 +11,8 @@ on:
       - 'src/experiments/phaser/studioPagesPreview.ts'
       - 'src/sandbox/libraryThumbnail.ts'
       - 'src/sandbox/libraryStudioThumbnail.ts'
+      - 'src/sandbox/pagesDecorArt.ts'
+      - 'src/sandbox/decor.ts'
       - 'src/sandbox/SandboxLibraryApp.ts'
       - 'src/experiments/phaser/library-assets/**'
       - 'scripts/build-library-hall.mjs'
@@ -29,6 +31,8 @@ on:
       - 'src/experiments/phaser/studioPagesPreview.ts'
       - 'src/sandbox/libraryThumbnail.ts'
       - 'src/sandbox/libraryStudioThumbnail.ts'
+      - 'src/sandbox/pagesDecorArt.ts'
+      - 'src/sandbox/decor.ts'
       - 'src/sandbox/SandboxLibraryApp.ts'
       - 'src/experiments/phaser/library-assets/**'
       - 'scripts/build-library-hall.mjs'
@@ -56,8 +60,8 @@ jobs:
         run: node scripts/verify-library-art.mjs
       - name: Strict TS and staged Pages build
         run: npm run pages:build
-      - name: Independent browser layout, lifecycle, shared shader, 30-second stress, feel, materials and adversarial review
-        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts tests/phaser-pages/library-hall-ground-shadow.spec.ts tests/phaser-pages/library-hall-material.spec.ts tests/phaser-pages/library-hall-shapes.spec.ts tests/phaser-pages/library-hall-adversarial.spec.ts tests/phaser-pages/library-hall-studio-shader.spec.ts tests/phaser-pages/library-hall-feel.spec.ts tests/phaser-pages/library-hall-real-video.spec.ts tests/phaser-pages/library-hall-idle-stress.spec.ts
+      - name: Independent browser art, layout, lifecycle, shared shader, stress, feel and material review
+        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts tests/phaser-pages/library-hall-ground-shadow.spec.ts tests/phaser-pages/library-hall-material.spec.ts tests/phaser-pages/library-hall-shapes.spec.ts tests/phaser-pages/library-hall-adversarial.spec.ts tests/phaser-pages/library-hall-studio-shader.spec.ts tests/phaser-pages/library-hall-feel.spec.ts tests/phaser-pages/library-hall-real-video.spec.ts tests/phaser-pages/library-hall-idle-stress.spec.ts tests/phaser-pages/library-hall-decor-art.spec.ts
       - name: Upload real browser screenshots, geometry, idle metrics and uncut video
         if: always()
         uses: actions/upload-artifact@v4
