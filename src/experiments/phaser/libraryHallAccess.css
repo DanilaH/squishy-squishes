@@ -29,9 +29,9 @@
 #app .library-hall-nav button { width: 44px; height: 44px; }
 
 @media (max-height: 520px) and (orientation: landscape) {
-  /* The additional hit area is accommodated above, not over, room navigation. */
+  /* Lift captions above the 44px navigation row, retaining visible podium and hit areas. */
   #app .is-library-hall .sandbox-library-card__footer {
-    inset: calc(100% - 6px) 3% auto;
+    inset: calc(100% - 12px) 3% auto;
     min-height: 44px;
   }
   #app .library-hall-nav { min-height: 44px; }
