@@ -1,4 +1,4 @@
-import { getMaterial, type MaterialId } from '../game/content';
+import { getMaterial, getPalette, type MaterialId } from '../game/content';
 import { getShape } from '../game/shapes';
 import {
   APPEARANCE_TEXTURE_SIZE,
@@ -41,6 +41,37 @@ const materialBase = (
   width: number,
   height: number,
 ): CanvasGradient | string => {
+  if (pagesMaterialLighting && materialId !== 'holo' && materialId !== 'pearl') {
+    // The actual Studio uses getPalette('milk') for every Sandbox material.
+    // A saved V3 toy stores its material, not a palette. The old thumbnail's
+    // aqua jelly, white marshmallow and silver chrome invented new base hues.
+    // Match the Studio's warm base BEFORE placing saved paint and decoration.
+    const milk = getPalette('milk');
+    const rgb = (color: readonly number[]): string => `rgb(${color.map((channel) => Math.round(channel * 255)).join(',')})`;
+    if (materialId === 'chrome') {
+      const metal = context.createLinearGradient(width * 0.12, height * 0.07, width * 0.81, height * 0.95);
+      metal.addColorStop(0, '#fff8e8');
+      metal.addColorStop(0.29, '#c7bdab');
+      metal.addColorStop(0.48, '#847f74');
+      metal.addColorStop(0.70, '#aea898');
+      metal.addColorStop(1, '#565148');
+      return metal;
+    }
+    if (materialId === 'marshmallow') {
+      const foam = context.createLinearGradient(0, 0, width * 0.12, height);
+      foam.addColorStop(0, '#fff8e8');
+      foam.addColorStop(0.50, '#f9ebd0');
+      foam.addColorStop(1, '#d9c1a0');
+      return foam;
+    }
+    const body = context.createLinearGradient(0, 0, width * 0.10, height);
+    body.addColorStop(0, rgb(milk.high));
+    body.addColorStop(0.57, materialId === 'jelly' ? '#efd8ae' : '#e9d5ae');
+    body.addColorStop(1, rgb(milk.low));
+    return body;
+  }
+  // Exact pre-existing appearance for the ordinary/Yandex Library. Holo and
+  // pearl also stay on their previous specialized 2D gradients for now.
   if (materialId === 'holo') {
     const gradient = context.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, '#f7b8e5');
@@ -71,19 +102,17 @@ const materialBase = (
   return '#f2dcae';
 };
 
-/** A single deterministic Canvas2D approximation of the Studio's material
- * response. A broad off-axis light, shape-following soft rim and darkened
- * bottom/right are drawn inside the existing silhouette: NO live per-toy GPU
- * contexts, new saves or shader-parity claim. Lighting is material-specific. */
+/** A deterministic Canvas2D approximation, not shader parity or live WebGL.
+ * Use material properties from the Studio; apply light only inside the saved
+ * silhouette, preserving the user's paint and V3 appearance document. */
 const paintPreviewVolume = (context: CanvasRenderingContext2D, toy: SavedSquishy): void => {
   const material = getMaterial(toy.materialId);
   const isJelly = toy.materialId === 'jelly';
-  const dark = isJelly ? '35,119,127' : toy.materialId === 'marshmallow' ? '113,88,96' : '68,41,76';
+  const dark = isJelly ? '108,83,61' : toy.materialId === 'marshmallow' ? '120,91,75' : toy.materialId === 'chrome' ? '57,51,45' : '79,54,60';
   const edgeStrength = Math.min(0.46, 0.36 + material.translucency * 0.07 + material.metallic * 0.035 - material.cloudiness * 0.11);
 
-  // Convex diffuse falloff: center stays close to the saved paint, edge and
-  // underside lose light. Unlike a diagonal opacity gradient, this follows
-  // curved silhouettes including the heart's lobes when clipped below.
+  // Convex broad light falloff. Previous diagonal sheen was flat and the
+  // previous cool base made the same saved toy change color between scenes.
   const shade = context.createRadialGradient(96, 70, 3, 96, 70, 167);
   shade.addColorStop(0, `rgba(${dark},0)`);
   shade.addColorStop(0.37, `rgba(${dark},0)`);
@@ -93,35 +122,48 @@ const paintPreviewVolume = (context: CanvasRenderingContext2D, toy: SavedSquishy
   context.fillStyle = shade;
   context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 
-  // Diffuse curved reflection; high roughness softens rather than sharpening it.
-  const highlightStrength = 0.20 + (1 - material.roughness) * 0.21 + material.pearlescence * 0.035;
+  // Follow each actual contour, including the heart cleft and rounded lobes.
+  // The caller's shape clip restricts the 26px stroke to the inner bevel.
+  const bevel = context.createLinearGradient(29, 22, 223, 227);
+  const bevelLight = 0.17 + (1 - material.roughness) * 0.15;
+  bevel.addColorStop(0, `rgba(255,250,235,${bevelLight.toFixed(3)})`);
+  bevel.addColorStop(0.36, 'rgba(255,250,235,0.025)');
+  bevel.addColorStop(0.66, `rgba(${dark},${(edgeStrength * 0.20).toFixed(3)})`);
+  bevel.addColorStop(1, `rgba(${dark},${(edgeStrength * 0.76).toFixed(3)})`);
+  context.save();
+  buildShapePath(context, toy, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+  context.lineWidth = 26;
+  context.strokeStyle = bevel;
+  context.stroke();
+  context.restore();
+
+  // Roughness controls breadth rather than forcing white enamel on foam.
+  const highlightStrength = 0.13 + (1 - material.roughness) * 0.22 + material.pearlescence * 0.035;
   context.save();
   context.translate(85, 65);
   context.rotate(-0.34);
   context.scale(1.10, 0.66);
   const highlight = context.createRadialGradient(0, 0, 3, 0, 0, 95);
-  highlight.addColorStop(0, `rgba(255,255,255,${highlightStrength.toFixed(3)})`);
-  highlight.addColorStop(0.49, `rgba(255,255,255,${(highlightStrength * 0.40).toFixed(3)})`);
-  highlight.addColorStop(1, 'rgba(255,255,255,0)');
+  highlight.addColorStop(0, `rgba(255,250,235,${highlightStrength.toFixed(3)})`);
+  highlight.addColorStop(0.49, `rgba(255,250,235,${(highlightStrength * 0.40).toFixed(3)})`);
+  highlight.addColorStop(1, 'rgba(255,250,235,0)');
   context.fillStyle = highlight;
   context.fillRect(-110, -110, 220, 220);
   context.restore();
 
-  // A bounded edge reflection helps the body read as a rounded object.
-  // The pre-existing outer outline remains unchanged and masks the outer half.
+  // A narrow top-left glint and muted lower bounce; neither sweeps with time.
   context.save();
   buildShapePath(context, toy, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   const edgeLight = context.createLinearGradient(0, 24, 0, 165);
   const rimStrength = 0.18 + material.translucency * 0.13 + material.pearlescence * 0.04 - material.roughness * 0.09;
-  edgeLight.addColorStop(0, `rgba(255,255,255,${rimStrength.toFixed(3)})`);
-  edgeLight.addColorStop(0.52, `rgba(255,255,255,${(rimStrength * 0.28).toFixed(3)})`);
-  edgeLight.addColorStop(1, 'rgba(255,255,255,0)');
+  edgeLight.addColorStop(0, `rgba(255,250,235,${rimStrength.toFixed(3)})`);
+  edgeLight.addColorStop(0.52, `rgba(255,250,235,${(rimStrength * 0.28).toFixed(3)})`);
+  edgeLight.addColorStop(1, 'rgba(255,250,235,0)');
   context.strokeStyle = edgeLight;
-  context.lineWidth = 12;
+  context.lineWidth = 9;
   context.stroke();
   context.restore();
 
-  // Soft bounce under the body, so jelly stays luminous and chrome not muddy.
   const bounce = context.createLinearGradient(0, 115, 0, THUMBNAIL_SIZE);
   bounce.addColorStop(0, 'rgba(255,255,255,0)');
   bounce.addColorStop(0.73, 'rgba(255,255,255,0)');
