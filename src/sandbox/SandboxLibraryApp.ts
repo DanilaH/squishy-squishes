@@ -8,7 +8,7 @@ import {
   getIdeaShapeLabel,
   type SquishyIdea,
 } from './ideas';
-import { renderLibraryThumbnail } from './libraryThumbnail';
+import { renderLibraryThumbnail, releasePagesLibraryMaterialLighting } from './libraryThumbnail';
 import { getSquishyTitle } from './titles';
 import type { SandboxDraft, SavedSquishy } from './types';
 
@@ -234,6 +234,7 @@ export class SandboxLibraryApp {
     this.pendingReplacement = null;
     this.currentMaker?.dispose();
     this.currentMaker = null;
+    releasePagesLibraryMaterialLighting();
     this.abortController.abort();
     this.root.replaceChildren();
   }
@@ -302,6 +303,7 @@ export class SandboxLibraryApp {
   private renderIdeas(): void {
     this.currentMaker?.dispose();
     this.currentMaker = null;
+    releasePagesLibraryMaterialLighting();
     this.activeIdea = null;
     this.pendingDeleteId = null;
     const completed = new Set(this.completedRecipeIds);
@@ -396,6 +398,7 @@ export class SandboxLibraryApp {
   private startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): void {
     this.currentMaker?.dispose();
     this.currentMaker = null;
+    releasePagesLibraryMaterialLighting();
     this.activeIdea = toy ? null : idea;
     this.rewardMessage = null;
     this.root.innerHTML = `<div class="sandbox-maker-host" data-sandbox-maker-host></div>${idea ? this.renderIdeaGuideMarkup(idea) : ''}`;

@@ -14,6 +14,14 @@ const SHAPE_PADDING = 30;
 // retain their existing pixels and the same saved V3 document representation.
 let pagesMaterialLighting = false;
 export const enablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = true; };
+type PagesRenderer = (context: CanvasRenderingContext2D, toy: SavedSquishy) => boolean;
+let pagesRenderer: PagesRenderer | null = null;
+let pagesRelease: (() => void) | null = null;
+export const registerPagesLibraryMaterialRenderer = (render: PagesRenderer, release: () => void): void => {
+  pagesRenderer = render;
+  pagesRelease = release;
+};
+export const releasePagesLibraryMaterialLighting = (): void => { pagesRelease?.(); };
 
 const buildShapePath = (
   context: CanvasRenderingContext2D,
@@ -251,6 +259,14 @@ export const renderLibraryThumbnail = (
       context.drawImage(accessoryCanvas, anchorX - drawWidth * 0.5, anchorY - drawHeight * 0.9, drawWidth, drawHeight);
     }
   }
+
+  // One shared WebGL2 renderer snapshots the *actual* Studio material once per
+  // card. The Canvas2D approximation remains a functional lost-WebGL fallback.
+  if (pagesMaterialLighting && pagesRenderer?.(context, toy)) {
+    canvas.dataset.libraryRenderer = 'studio-shader';
+    return;
+  }
+  if (pagesMaterialLighting) canvas.dataset.libraryRenderer = 'canvas2d-fallback';
 
   context.save();
   // The legacy purple drop shadow made a conspicuous violet halo around

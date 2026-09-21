@@ -4,7 +4,8 @@ import './pagesPreview';
 import { normalizeLanguage } from '../../i18n';
 import { mountStudioEnvironmentPreview } from './studioEnvironmentPreview';
 import { mountLibraryHallPreview } from './libraryHallPreview';
-import { enablePagesLibraryMaterialLighting } from '../../sandbox/libraryThumbnail';
+import { enablePagesLibraryMaterialLighting, registerPagesLibraryMaterialRenderer } from '../../sandbox/libraryThumbnail';
+import { renderStudioLibraryThumbnail, releaseStudioLibraryThumbnail } from '../../sandbox/libraryStudioThumbnail';
 import './libraryHallPolish.css';
 import './libraryHallGrounding.css';
 import './libraryHallAccess.css';
@@ -16,6 +17,7 @@ document.documentElement.lang = normalizeLanguage(navigator.language);
 // pagesPreview boots asynchronously after image preload; configure the isolated
 // thumbnail appearance before it can synchronously paint its first Library cards.
 enablePagesLibraryMaterialLighting();
+registerPagesLibraryMaterialRenderer(renderStudioLibraryThumbnail, releaseStudioLibraryThumbnail);
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('Missing #app root.');
 mountStudioEnvironmentPreview(root);
