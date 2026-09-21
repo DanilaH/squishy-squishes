@@ -1,23 +1,21 @@
-/* Isolated Pages review: repeat the ORIGINAL owner's flat parquet derivative
-   on a large surface, THEN project the whole tiled surface into depth.
-   This is static CSS: no canvas redraw, extra WebGL contexts or animation. */
+/* Isolated Pages review: repeat the owner's pinned Sep 21 flat parquet WebP
+   on a large plane, THEN project the whole plane into depth. Static CSS:
+   no canvas redraw, extra WebGL context or animation. */
 #app .library-hall-scene__floor {
   overflow: hidden;
   background: #eab18a;
   perspective: 1250px;
   perspective-origin: 50% 0;
-  transform-style: flat;
 }
 #app .library-hall-scene__floor::before {
   content: '';
   position: absolute;
-  z-index: 0;
   top: 0;
   left: -115%;
   width: 330%;
   height: 200%;
   pointer-events: none;
-  background-image: url('./library-assets/floor-tile.webp');
+  background-image: var(--hall-floor);
   background-color: #eab18a;
   background-repeat: repeat;
   background-position: center top;
@@ -26,8 +24,8 @@
   transform: rotateX(64deg);
   backface-visibility: hidden;
 }
-/* The floor is only visible through the floor viewport. Keep the wall,
-   plinths and clickable content on their original independent layers. */
+/* The floor is clipped to the old floor viewport; wall, furniture, stands
+   and clickable controls retain their original independent stacking. */
 @media (max-height: 520px) and (orientation: landscape) {
   #app .library-hall-scene__floor::before {
     height: 250%;
