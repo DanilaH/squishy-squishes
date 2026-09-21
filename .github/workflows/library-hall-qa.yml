@@ -7,6 +7,7 @@ on:
       - 'src/experiments/phaser/libraryHallPolish.css'
       - 'src/experiments/phaser/libraryHallGrounding.css'
       - 'src/experiments/phaser/libraryHallAccess.css'
+      - 'src/experiments/phaser/libraryHallFeel.*'
       - 'src/experiments/phaser/studioPagesPreview.ts'
       - 'src/sandbox/libraryThumbnail.ts'
       - 'src/sandbox/libraryStudioThumbnail.ts'
@@ -24,6 +25,7 @@ on:
       - 'src/experiments/phaser/libraryHallPolish.css'
       - 'src/experiments/phaser/libraryHallGrounding.css'
       - 'src/experiments/phaser/libraryHallAccess.css'
+      - 'src/experiments/phaser/libraryHallFeel.*'
       - 'src/experiments/phaser/studioPagesPreview.ts'
       - 'src/sandbox/libraryThumbnail.ts'
       - 'src/sandbox/libraryStudioThumbnail.ts'
@@ -54,9 +56,9 @@ jobs:
         run: node scripts/verify-library-art.mjs
       - name: Strict TS and staged Pages build
         run: npm run pages:build
-      - name: Independent browser layout, lifecycle, shader/fallback, materials and adversarial review
-        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts tests/phaser-pages/library-hall-ground-shadow.spec.ts tests/phaser-pages/library-hall-material.spec.ts tests/phaser-pages/library-hall-shapes.spec.ts tests/phaser-pages/library-hall-adversarial.spec.ts tests/phaser-pages/library-hall-studio-shader.spec.ts
-      - name: Upload real browser screenshots and geometry
+      - name: Independent browser layout, lifecycle, shader/fallback, feel, materials and adversarial review
+        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts tests/phaser-pages/library-hall-ground-shadow.spec.ts tests/phaser-pages/library-hall-material.spec.ts tests/phaser-pages/library-hall-shapes.spec.ts tests/phaser-pages/library-hall-adversarial.spec.ts tests/phaser-pages/library-hall-studio-shader.spec.ts tests/phaser-pages/library-hall-feel.spec.ts tests/phaser-pages/library-hall-real-video.spec.ts
+      - name: Upload real browser screenshots, geometry and uncut video
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -64,6 +66,7 @@ jobs:
           path: |
             test-results/**/library-hall-*.png
             test-results/**/library-hall-*.json
+            test-results/**/library-hall-*.webm
           if-no-files-found: ignore
           retention-days: 14
       - name: Full Phaser Pages regression suite
