@@ -7,6 +7,7 @@ import { mountLibraryHallPreview } from './libraryHallPreview';
 import { enablePagesLibraryMaterialLighting } from '../../sandbox/libraryThumbnail';
 import './libraryHallPolish.css';
 import './libraryHallGrounding.css';
+import './libraryHallAccess.css';
 
 // The Pages HTML defaults to en, but the actual app follows navigator.language.
 // Set the document language before the asynchronous first Library paint so
