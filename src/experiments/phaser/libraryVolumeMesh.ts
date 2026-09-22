@@ -30,7 +30,9 @@ void main() {
   vNormal = normalize(n);
   vUv = aUv;
   vFront = aFront;
-  gl_Position = vec4(p.x * 0.80, p.y * 0.80, -p.z * 0.16, 1.0);
+  // Match the finished Studio mold and the existing neutral albedo UVs:
+  // +7.5% horizontal stretch, -9.5% vertical stretch, -1.8% seat.
+  gl_Position = vec4(p.x * 0.80 * 1.075, (p.y * 0.905 - 0.018) * 0.80, -p.z * 0.16, 1.0);
 }`;
 const FRAGMENT = `#version 300 es
 precision highp float;

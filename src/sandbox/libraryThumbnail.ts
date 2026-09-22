@@ -264,7 +264,7 @@ export const renderLibraryThumbnail = (
       const drawWidth = 112;
       const drawHeight = 75;
       // Seat the Pages-only crown above the inflated paw, not behind its tips.
-      const crownLift = pagesMaterialLighting && outputSize === 512 && toy.shapeId === 'paw' && toy.decor.accessory === 'crown' ? 27 : 0;
+      const crownLift = pagesMaterialLighting && outputSize === 512 && toy.shapeId === 'paw' && toy.decor.accessory === 'crown' ? 11 : 0;
       context.drawImage(accessoryCanvas, anchorX - drawWidth * 0.5, anchorY - drawHeight * 0.9 - crownLift, drawWidth, drawHeight);
     }
   }
