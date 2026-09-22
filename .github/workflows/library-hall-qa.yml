@@ -11,6 +11,10 @@ on:
       - 'src/experiments/phaser/libraryHallOwnerReview.css'
       - 'src/experiments/phaser/libraryHallPerspectiveFloor.css'
       - 'src/experiments/phaser/libraryVolumeProbe.ts'
+      - 'src/experiments/phaser/PhaserDeformableVolume.ts'
+      - 'src/experiments/phaser/PhaserSquishCandidate.ts'
+      - 'src/experiments/phaser/pagesPreview.ts'
+      - 'src/sandbox/PhaserSquishSurface.ts'
       - 'src/experiments/phaser/studioPagesPreview.ts'
       - 'src/sandbox/libraryThumbnail.ts'
       - 'src/sandbox/libraryStudioThumbnail.ts'
@@ -35,6 +39,10 @@ on:
       - 'src/experiments/phaser/libraryHallOwnerReview.css'
       - 'src/experiments/phaser/libraryHallPerspectiveFloor.css'
       - 'src/experiments/phaser/libraryVolumeProbe.ts'
+      - 'src/experiments/phaser/PhaserDeformableVolume.ts'
+      - 'src/experiments/phaser/PhaserSquishCandidate.ts'
+      - 'src/experiments/phaser/pagesPreview.ts'
+      - 'src/sandbox/PhaserSquishSurface.ts'
       - 'src/experiments/phaser/studioPagesPreview.ts'
       - 'src/sandbox/libraryThumbnail.ts'
       - 'src/sandbox/libraryStudioThumbnail.ts'
@@ -54,7 +62,7 @@ permissions:
 jobs:
   library-hall:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -68,9 +76,9 @@ jobs:
         run: node scripts/verify-library-art.mjs && node scripts/export-library-owner-floor.mjs --check
       - name: Strict TS and staged Pages build
         run: npm run pages:build
-      - name: Independent browser art, layout, lifecycle, shared shader, stress, feel, material and volume-probe review
-        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts tests/phaser-pages/library-hall-ground-shadow.spec.ts tests/phaser-pages/library-hall-material.spec.ts tests/phaser-pages/library-hall-shapes.spec.ts tests/phaser-pages/library-hall-adversarial.spec.ts tests/phaser-pages/library-hall-studio-shader.spec.ts tests/phaser-pages/library-hall-feel.spec.ts tests/phaser-pages/library-hall-real-video.spec.ts tests/phaser-pages/library-hall-idle-stress.spec.ts tests/phaser-pages/library-hall-decor-art.spec.ts tests/phaser-pages/library-hall-art-catalog.spec.ts tests/phaser-pages/library-hall-volume-probe.spec.ts
-      - name: Upload real browser screenshots, geometry, idle metrics and uncut video
+      - name: Independent browser art, layout, lifecycle, shader, stress, material, video, volume and saved-V3 cross-scene review
+        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts tests/phaser-pages/library-hall-ground-shadow.spec.ts tests/phaser-pages/library-hall-material.spec.ts tests/phaser-pages/library-hall-shapes.spec.ts tests/phaser-pages/library-hall-adversarial.spec.ts tests/phaser-pages/library-hall-studio-shader.spec.ts tests/phaser-pages/library-hall-feel.spec.ts tests/phaser-pages/library-hall-real-video.spec.ts tests/phaser-pages/library-hall-idle-stress.spec.ts tests/phaser-pages/library-hall-decor-art.spec.ts tests/phaser-pages/library-hall-art-catalog.spec.ts tests/phaser-pages/library-hall-volume-probe.spec.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
+      - name: Upload browser screenshots, geometry, idle metrics and uncut video
         if: always()
         uses: actions/upload-artifact@v4
         with:
