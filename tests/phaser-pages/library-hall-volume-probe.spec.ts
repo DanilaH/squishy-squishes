@@ -30,7 +30,15 @@ test('desktop: actual Hall and eight 512px candidates share toy and visible size
     await lab.locator(`[data-shape="${shape}"]`).click();
     await expect(lab.locator(`[data-shape="${shape}"]`)).toHaveAttribute('aria-pressed', 'true');
     await expect(lab.locator('[data-variant="mesh-field-flat"] canvas')).toHaveAttribute('data-volume-renderer', 'sdf-field-flat-mesh-512');
-    await expect(lab.locator('[data-variant="mesh-contour"] canvas')).toHaveAttribute('data-volume-renderer', 'contour-mesh-512');
+    const contour = lab.locator('[data-variant="mesh-contour"]');
+    await expect(contour.locator('canvas')).toHaveAttribute('data-volume-renderer', 'contour-mesh-512');
+    // The fixed scrolling overlay has more than two rows. fullPage on page
+    // captures only its initial viewport; capture each relevant card explicitly.
+    for (const variant of ['current', 'mesh-field-flat', 'mesh-contour'] as const) {
+      const card = lab.locator(`[data-variant="${variant}"]`);
+      await card.scrollIntoViewIfNeeded();
+      await card.screenshot({ path: testInfo.outputPath(`library-hall-volume-desktop-${shape}-${variant}.png`) });
+    }
     await page.screenshot({ path: testInfo.outputPath(`library-hall-volume-desktop-${shape}.png`), fullPage: true });
   }
   await lab.locator('[data-legacy]').click();
