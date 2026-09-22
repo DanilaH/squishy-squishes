@@ -2,9 +2,9 @@ import { createShapeField, getShape, type ShapeId } from '../../game/shapes';
 import { drawAccessoryGraphic, getDecorFrame } from '../../sandbox/decor';
 import type { SavedSquishy } from '../../sandbox/types';
 
-/** Pages-only visual experiment: the front is a regular 3D height-field mesh.
- * Unlike the earlier radial mesh, concave paw/heart valleys do not all converge
- * on a single centre vertex. No game/Studio renderer or V3 saves are changed. */
+/** Isolated Pages visual study: localized inflated 3D surface without the radial
+ * convergence that pinches the heart cleft and paw valleys. Never a Hall card
+ * renderer; a single disposable GPU context handles the open lab on demand. */
 const SIZE = 512;
 const FIELD_SIZE = 128;
 const DISTANCE_RANGE = 0.85;
@@ -23,8 +23,11 @@ out vec2 vUv;
 out float vFront;
 out vec2 vFieldUv;
 void main() {
-  const float yaw = -0.19;
-  const float pitch = -0.11;
+  // The former -0.19 yaw hid all but a hairline of the actual 3D side.
+  // The fixed three-quarter pose exposes thickness; this is NOT a perspective
+  // transform of a flat image. All specimens still occupy equal CSS bounds.
+  const float yaw = -0.36;
+  const float pitch = -0.14;
   float cy = cos(yaw), sy = sin(yaw), cp = cos(pitch), sp = sin(pitch);
   vec3 p = vec3(aPosition.x * cy + aPosition.z * sy,
                 aPosition.y, -aPosition.x * sy + aPosition.z * cy);
@@ -58,21 +61,20 @@ void main() {
     vec4 paint = texture(uPaint, vUv);
     float opacity = paint.a * coverage;
     if (opacity <= 0.015) discard;
-    // Input already contains the actual Studio lighting; add only restrained
-    // directional shape cues rather than washing out saved face and paint.
-    vec3 color = paint.rgb * (0.91 + 0.10 * diffuse);
+    // Studio has its own painted lighting; avoid double-lighting or losing eyes.
+    vec3 color = paint.rgb * (0.89 + 0.12 * diffuse);
     outColor = vec4(clamp(color, 0.0, 1.0), opacity);
   } else {
-    // Only the contour's physically visible side is drawn, not a brown slab.
-    vec3 color = vec3(0.96, 0.88, 0.76) * (0.81 + 0.18 * diffuse);
+    // Earlier side (#f5e0c2) escaped as a bright white outline. A warmer,
+    // slightly darker body side makes the silhouette's real depth legible.
+    vec3 color = vec3(0.84, 0.74, 0.63) * (0.79 + 0.18 * diffuse);
     outColor = vec4(color, 1.0);
   }
 }`;
 
-const clamp = (value: number, minimum = 0, maximum = 1): number =>
-  Math.max(minimum, Math.min(maximum, value));
+const clamp = (value: number, min = 0, max = 1): number => Math.max(min, Math.min(max, value));
 
-/** Bilinear field sampling avoids quantised vertices and jagged toe highlights. */
+/** A bilinear signed-distance sample, not a nearest-neighbour staircase. */
 const fieldAt = (field: Uint8Array, x: number, y: number): number => {
   const fx = clamp((x + 1) * 0.5) * FIELD_SIZE - 0.5;
   const fy = clamp((y + 1) * 0.5) * FIELD_SIZE - 0.5;
@@ -88,8 +90,9 @@ const fieldAt = (field: Uint8Array, x: number, y: number): number => {
 };
 
 const heightAt = (field: Uint8Array, x: number, y: number): number => {
-  const insideDistance = Math.max(0, (0.5 - fieldAt(field, x, y)) * DISTANCE_RANGE * 2);
-  return 0.09 + 0.30 * (1 - Math.exp(-4 * insideDistance));
+  const d = Math.max(0, (0.5 - fieldAt(field, x, y)) * DISTANCE_RANGE * 2);
+  // Local rather than radial inflation preserves four paw toes independently.
+  return 0.12 + 0.35 * (1 - Math.exp(-5 * d));
 };
 
 const createMesh = (toy: SavedSquishy, field: Uint8Array): {
@@ -98,8 +101,9 @@ const createMesh = (toy: SavedSquishy, field: Uint8Array): {
   const vertices: number[] = [];
   const indices: number[] = [];
   const vertex = (x: number, y: number, z: number, nx: number, ny: number, nz: number, front: number): void => {
-    vertices.push(x, y, z, nx, ny, nz, 0.5 + x * 0.43,
-      0.5 + y * 0.362 - 0.0072, front, 0.5 + x * 0.5, 0.5 + y * 0.5);
+    vertices.push(x, y, z, nx, ny, nz,
+      0.5 + x * 0.43, 0.5 + y * 0.362 - 0.0072, front,
+      0.5 + x * 0.5, 0.5 + y * 0.5);
   };
   const step = 2.08 / GRID;
   const normalStep = 2 / FIELD_SIZE;
@@ -130,12 +134,14 @@ const createMesh = (toy: SavedSquishy, field: Uint8Array): {
   }
   const orientation = signedArea >= 0 ? 1 : -1;
   const start = vertices.length / STRIDE;
+  // Shallow rounded sides, not a boxy extruded cutout. The front and side
+  // profiles meet at the same contour, height and projected coordinate.
   const sections = [
-    { r: 1.000, z: 0.090, nz: 0.20 },
-    { r: 1.025, z: 0.028, nz: 0.06 },
-    { r: 1.017, z: -0.042, nz: -0.08 },
-    { r: 0.990, z: -0.094, nz: -0.34 },
-    { r: 0.962, z: -0.116, nz: -0.62 },
+    { r: 1.000, z: 0.120, nz: 0.19 },
+    { r: 1.015, z: 0.052, nz: 0.055 },
+    { r: 1.014, z: -0.033, nz: -0.08 },
+    { r: 0.988, z: -0.097, nz: -0.34 },
+    { r: 0.965, z: -0.145, nz: -0.62 },
   ] as const;
   for (const section of sections) {
     for (let i = 0; i < count; i += 1) {
@@ -157,7 +163,9 @@ const createMesh = (toy: SavedSquishy, field: Uint8Array): {
       const a = start + ring * count + i;
       const b = start + ring * count + next;
       const c = start + (ring + 1) * count + i;
-      indices.push(a, c, b, b, c, c + (next - i + count) % count);
+      const d = start + (ring + 1) * count + next;
+      // Explicit wrapped d: c+1 crossed into the next ring at the seam.
+      indices.push(a, c, b, b, c, d);
     }
   }
   if (vertices.length / STRIDE >= 65536) throw new Error('Field mesh exceeds 16-bit index capacity');
