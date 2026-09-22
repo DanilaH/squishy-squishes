@@ -4,6 +4,7 @@ on:
     branches: [feat/library-visual-recovery-sep21]
     paths:
       - 'src/experiments/phaser/libraryVolumeMesh.ts'
+      - 'src/experiments/phaser/libraryVolumeAlbedo.ts'
       - 'src/sandbox/libraryThumbnail.ts'
       - 'src/experiments/phaser/libraryVolumeProduction.ts'
       - 'src/squish/shaders.ts'
@@ -15,7 +16,7 @@ permissions:
 jobs:
   visual-parity:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -23,10 +24,19 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Strict types, existing tests and production/Yandex builds (without deployment)
+        run: npm run release:check
       - run: npx playwright install --with-deps chromium
       - run: npm run pages:build
-      - name: Real V3 same-toy Studio → Squeeze → Hall comparison
-        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
+      - name: Real V3 same-toy parity and surrounding Library, WebGL fallback and mobile-input regressions
+        run: >-
+          npx playwright test --config=playwright.phaser-pages.config.ts
+          tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
+          tests/phaser-pages/library-hall-integration.spec.ts
+          tests/phaser-pages/library-hall-material.spec.ts
+          tests/phaser-pages/library-hall-shapes.spec.ts
+          tests/phaser-pages/no-webgl2.spec.ts
+          tests/phaser-pages/mobile-touch.spec.ts
       - name: Upload actual 512px Hall and live scene captures
         if: always()
         uses: actions/upload-artifact@v4
