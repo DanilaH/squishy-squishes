@@ -35,7 +35,7 @@ export const mountLibraryVolumeReview = (): void => {
 #library-volume-probe * {box-sizing:border-box}
 #library-volume-probe .probe-bar {display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;max-width:1420px;margin:0 auto 20px}
 #library-volume-probe h1 {font-size:clamp(20px,3vw,29px);margin:0}
-#library-volume-probe .probe-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;max-width:1420px;margin:auto}
+#library-volume-probe .probe-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:1420px;margin:auto}
 #library-volume-probe article {padding:12px;background:#fff5e9;border-radius:16px;box-shadow:0 5px 20px #92674626;min-width:0}
 #library-volume-probe article canvas {display:block;width:100%;max-width:330px;aspect-ratio:1;margin:auto}
 #library-volume-probe h2 {font-size:16px;margin:10px 0 5px}
@@ -46,7 +46,7 @@ export const mountLibraryVolumeReview = (): void => {
 #library-volume-probe .probe-note {max-width:1420px;margin:0 auto 14px;font-size:13px}
 @media (max-width:1100px) {#library-volume-probe .probe-grid {grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:630px) {#library-volume-probe .probe-grid {grid-template-columns:1fr}#library-volume-probe article canvas {width:min(100%,330px)}}
-</style><header class="probe-bar"><h1>Squishy volume · identical toy / identical size</h1><div class="probe-shapes"><button type="button" data-shape="soft-square">Square</button><button type="button" data-shape="heart">Heart</button><button type="button" data-shape="paw">Paw</button></div><button type="button" data-legacy aria-pressed="false">Compare old 256px</button><button type="button" data-close>Close lab</button></header><p class="probe-note">01 is the actual Pages Hall 512px shader; the 256px version is a diagnostic toggle. 02–04 are distinct Canvas2D materials. 05 is a true curved 3D mesh that maps the same saved art onto its front; it is not Studio shader parity.</p><main class="probe-grid"><article data-variant="current"><h2>01 · Actual Hall · Studio 512px</h2><p>Same static 512px WebGL snapshot used by the current Pages Library.</p></article><article data-variant="hires"><h2>02 · Flat Canvas · 512px</h2><p>Separate high-resolution silhouette and saved art, deliberately simplified light.</p></article><article data-variant="relief"><h2>03 · Relief · 512px</h2><p>Same Canvas art with SDF-derived surface normals and directional lighting.</p></article><article data-variant="extruded"><h2>04 · Contour thickness · 512px</h2><p>Same relief front with contour-facing 2.5D sidewalls. Not a 3D mesh.</p></article><article data-variant="mesh"><h2>05 · Inflated 3D mesh · 512px</h2><p>Actual curved front, rounded sides and rear, directional lighting, and saved face/paint. Lab-only GPU experiment.</p></article></main>`;
+</style><header class="probe-bar"><h1>Squishy volume · identical toy / identical size</h1><div class="probe-shapes"><button type="button" data-shape="soft-square">Square</button><button type="button" data-shape="heart">Heart</button><button type="button" data-shape="paw">Paw</button></div><button type="button" data-legacy aria-pressed="false">Compare old 256px</button><button type="button" data-close>Close lab</button></header><p class="probe-note">01 is the actual Pages Hall 512px Studio shader; 256px is only a diagnostic toggle. 02–04 are different Canvas2D lighting models. Both meshes use the same actual geometry and size: 05 uses the simplified flat control as a texture, 06 preserves the real Studio shader surface. None of these is yet approved for the Hall.</p><main class="probe-grid"><article data-variant="current"><h2>01 · Actual Hall · Studio 512px</h2><p>Same static 512px WebGL snapshot used by the current Pages Library.</p></article><article data-variant="hires"><h2>02 · Flat Canvas · 512px</h2><p>Separate high-resolution silhouette and saved art, deliberately simplified light.</p></article><article data-variant="relief"><h2>03 · Relief · 512px</h2><p>Same Canvas art with SDF-derived surface normals and directional lighting.</p></article><article data-variant="extruded"><h2>04 · Contour thickness · 512px</h2><p>Same relief front with contour-facing 2.5D sidewalls. Not a 3D mesh.</p></article><article data-variant="mesh"><h2>05 · 3D mesh · flat texture</h2><p>Real curved body and sidewalls with simplified flat paint mapped to its face.</p></article><article data-variant="mesh-studio"><h2>06 · 3D mesh · Studio texture</h2><p>Identical geometry with the real 512px Studio shader and saved decor mapped to the front; experimental double-lighting may still need correction.</p></article></main>`;
   document.body.append(overlay);
   let shape: ShapeId = 'soft-square';
   let showLegacy = false;
@@ -57,12 +57,19 @@ export const mountLibraryVolumeReview = (): void => {
     const current = document.createElement('canvas');
     renderLibraryThumbnail(current, toy, showLegacy ? 256 : 512);
     current.dataset.volumeRenderer = showLegacy ? 'studio-shader-256' : 'studio-shader-512';
+    // Always use the real 512px source for the 3D texture, even when the
+    // separate diagnostic toggle intentionally downsamples column 01.
+    const source = showLegacy ? document.createElement('canvas') : current;
+    if (showLegacy) renderLibraryThumbnail(source, toy, 512);
     const flat = renderVolumeControl(toy, false);
     const relief = renderVolumeControl(toy, true);
     const extruded = renderVolumeThickness(toy, relief);
     const mesh = renderVolumeMesh(toy, flat);
-    const variants = [current, flat, relief, extruded, mesh];
-    for (const [index, key] of ['current', 'hires', 'relief', 'extruded', 'mesh'].entries()) {
+    const meshStudio = renderVolumeMesh(toy, source);
+    meshStudio.dataset.volumeRenderer = meshStudio.dataset.volumeRenderer === 'mesh-unavailable'
+      ? 'mesh-unavailable' : 'studio-textured-mesh-512';
+    const variants = [current, flat, relief, extruded, mesh, meshStudio];
+    for (const [index, key] of ['current', 'hires', 'relief', 'extruded', 'mesh', 'mesh-studio'].entries()) {
       const article = overlay.querySelector<HTMLElement>(`[data-variant="${key}"]`);
       article?.querySelector('canvas')?.remove();
       article?.insertBefore(variants[index]!, article.querySelector('h2'));
@@ -70,9 +77,12 @@ export const mountLibraryVolumeReview = (): void => {
     const baseline = overlay.querySelector('[data-variant="current"]');
     const title = baseline?.querySelector('h2');
     if (title) title.textContent = showLegacy ? '01 · Diagnostic Studio 256px' : '01 · Actual Hall · Studio 512px';
-    const meshDescription = overlay.querySelector('[data-variant="mesh"] p');
-    if (meshDescription && mesh.dataset.volumeRenderer === 'mesh-unavailable') {
-      meshDescription.textContent = 'WebGL2 unavailable: displaying the flat control instead. No 3D result was rendered.';
+    for (const key of ['mesh', 'mesh-studio'] as const) {
+      const specimen = overlay.querySelector(`[data-variant="${key}"] canvas`);
+      const description = overlay.querySelector(`[data-variant="${key}"] p`);
+      if (description && specimen instanceof HTMLCanvasElement && specimen.dataset.volumeRenderer === 'mesh-unavailable') {
+        description.textContent = 'WebGL2 unavailable: this is the flat fallback, NOT a rendered 3D result.';
+      }
     }
     for (const button of overlay.querySelectorAll<HTMLButtonElement>('[data-shape]')) {
       button.setAttribute('aria-pressed', String(button.dataset.shape === shape));
