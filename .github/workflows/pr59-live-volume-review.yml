@@ -1,4 +1,4 @@
-name: PR 59 live volume seam trial
+name: PR 59 live volume draw-order trial
 on:
   push:
     branches: [feat/library-visual-recovery-sep21]
@@ -14,34 +14,34 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: true
-      - name: Overlap the deforming front and side without changing original renderer
-        run: python3 scripts/pr59-live-volume-seam.py && git diff --check && git diff --stat
+      - name: Trial the sidewall after the deformed front in the existing WebGL pass
+        run: python3 scripts/pr59-volume-layer-order.py && git diff --check && git diff --stat
       - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Strict TypeScript and Pages preview build
+      - name: Strict Pages build
         run: npm run pages:build
-      - name: Actual V3 paw, heart, jelly through studio, squeeze, Hall, reopen
+      - name: Same three V3 cross-scene browser scenarios
         run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
-      - name: Capture evidence for independent seam inspection
+      - name: Capture screenshots to judge the line, not just build success
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pr59-live-volume-seam-trial
+          name: pr59-volume-draw-order-trial
           path: |
             test-results/**/library-hall-parity-*.png
             test-results/**/trace.zip
           if-no-files-found: ignore
           retention-days: 7
-      - name: Commit tested Pages-only seam adjustment
+      - name: Commit Pages-only draw order after strict browser gates
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- src/experiments/phaser/PhaserDeformableVolume.ts
-          git commit -m 'fix(review): tuck deforming sidewall beneath front cap'
+          git add -- src/experiments/phaser/PhaserSquishCandidate.ts
+          git commit -m 'fix(review): cover front-side antialias seam with deforming sidewall'
           git push origin HEAD:feat/library-visual-recovery-sep21
