@@ -24,7 +24,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Strict TypeScript and Pages preview build
         run: npm run pages:build
-      - name: Same saved V3 specimens: studio, squeeze and static Hall
+      - name: Same saved V3 specimens through studio, squeeze and static Hall
         run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
       - name: Upload real-browser art for independent acceptance
         if: always()
