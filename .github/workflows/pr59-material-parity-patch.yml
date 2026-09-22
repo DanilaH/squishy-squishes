@@ -1,4 +1,4 @@
-name: PR 59 temporary material and crown parity patch
+name: PR 59 temporary material and crown parity patch (corrected crown probe)
 on:
   push:
     branches: [feat/library-visual-recovery-sep21]
@@ -40,8 +40,7 @@ jobs:
           data=test.read_text()
           before="    await expect(card).toHaveAttribute('data-library-renderer', 'volume-mesh');"
           after='''    await expect(card).toHaveAttribute('data-library-renderer', 'volume-mesh');
-            // The toy's base palette is milk in Studio even when its material is
-            // jelly; a separate cyan-green Library gradient changes identity.
+            // Studio uses a warm milk palette even for Jelly material.
             if (specimen.material === 'jelly') {
               const [red, green, blue] = await card.evaluate(node => {
                 const rgb = (node as HTMLCanvasElement).getContext('2d')!
@@ -52,12 +51,13 @@ jobs:
               expect(green).toBeGreaterThan(blue + 10);
             }
             if (specimen.accessory === 'crown') {
-              // Crown base should sit near the paw instead of visibly floating.
+              // Measure over the left finger, not the natural deep valley
+              // at the centre of the paw (which has no body under the crown).
               const longestClearGap = await card.evaluate(node => {
                 const data = (node as HTMLCanvasElement).getContext('2d')!
-                  .getImageData(256, 0, 1, 190).data;
+                  .getImageData(210, 0, 1, 150).data;
                 let seenInk = false, gap = 0, longest = 0;
-                for (let row = 0; row < 190; row += 1) {
+                for (let row = 0; row < 150; row += 1) {
                   if (data[row * 4 + 3]! > 150) {
                     if (seenInk) longest = Math.max(longest, gap);
                     seenInk = true;
@@ -80,13 +80,13 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run pages:build
-      - name: Verify three real V3 toys, warm jelly and crown contact
+      - name: Verify three real V3 toys, warm jelly and crown clearance
         run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
       - name: Upload actual screenshots and failure traces
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pr59-material-parity
+          name: pr59-material-parity-reviewed
           path: test-results
           if-no-files-found: ignore
           retention-days: 7
