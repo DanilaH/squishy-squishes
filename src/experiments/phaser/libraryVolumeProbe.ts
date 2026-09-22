@@ -8,8 +8,10 @@ import type { SavedSquishy } from '../../sandbox/types';
 
 const SIZE = 512;
 const FIELD_SIZE = 256;
-const FIELD_RANGE = 0.22;
-const MAX_SIDE_PX = 13;
+// The former .22 range saturated throughout the body's interior, producing a
+// hard fake bevel and a flat central decal. Preserve signed distance across it.
+const FIELD_RANGE = 0.85;
+const SIDE_DEPTH_PX = 7;
 const SHAPES: readonly ShapeId[] = ['soft-square', 'heart', 'paw'];
 const palette = getPalette('milk');
 const clamp = (n: number, a = 0, b = 1): number => Math.max(a, Math.min(b, n));
@@ -27,8 +29,8 @@ const sampleField = (field: Uint8Array, u: number, v: number): number => {
   const ty = clamp(fy - y0);
   const row0 = y0 * FIELD_SIZE;
   const row1 = y1 * FIELD_SIZE;
-  const top = (field[row0 + x0]! * (1 - tx) + field[row0 + x1]! * tx);
-  const bottom = (field[row1 + x0]! * (1 - tx) + field[row1 + x1]! * tx);
+  const top = field[row0 + x0]! * (1 - tx) + field[row0 + x1]! * tx;
+  const bottom = field[row1 + x0]! * (1 - tx) + field[row1 + x1]! * tx;
   return (top * (1 - ty) + bottom * ty) / 255;
 };
 
@@ -79,11 +81,12 @@ export const renderVolumeControl = (toy: SavedSquishy, relief: boolean): HTMLCan
   const halfX = SIZE * 0.5 * 0.80 * 1.075;
   const halfY = SIZE * 0.5 * 0.80 * 0.905;
   const cy = SIZE * 0.5 + SIZE * 0.5 * 0.80 * 0.018;
-  const delta = 1 / FIELD_SIZE;
-  const lightX = -0.54, lightY = -0.50, lightZ = 0.675;
+  // A wider derivative baseline damps 8-bit field quantization without blurring paint.
+  const delta = 4 / FIELD_SIZE;
+  const lightX = -0.44, lightY = -0.40, lightZ = 0.81;
   const lightLen = Math.hypot(lightX, lightY, lightZ);
   const light = [lightX / lightLen, lightY / lightLen, lightZ / lightLen] as const;
-  const half = [-0.30, -0.28, 0.91] as const;
+  const half = [-0.25, -0.23, 0.94] as const;
   const color = image.data;
 
   for (let y = 0; y < SIZE; y += 1) {
@@ -102,22 +105,24 @@ export const renderVolumeControl = (toy: SavedSquishy, relief: boolean): HTMLCan
       let shading = 1;
       let gloss = 0;
       if (relief) {
-        // Field derivatives face OUTWARD; v decreases down screen, so invert y.
+        // A broad rounded front surface: the earlier SDF saturated at 0.22 and
+        // switched abruptly from a dark bevel to a white flat square.
         const dx = sampleField(field, u + delta, v) - sampleField(field, u - delta, v);
         const dy = sampleField(field, u, v + delta) - sampleField(field, u, v - delta);
         const length = Math.hypot(dx, dy);
-        const radius = clamp(distance / 0.23);
-        const side = length > 1e-5 ? 0.94 * Math.sqrt(Math.max(0, 1 - radius * radius)) : 0;
+        const radius = clamp(distance / 0.54);
+        const side = length > 1e-5 ? 0.66 * Math.pow(1 - radius, 0.73) : 0;
         const nx = length > 1e-5 ? dx / length * side : 0;
         const ny = length > 1e-5 ? -dy / length * side : 0;
         const nz = Math.sqrt(Math.max(0, 1 - side * side));
         const diffuse = Math.max(0, nx * light[0] + ny * light[1] + nz * light[2]);
-        shading = 0.57 + 0.69 * diffuse;
-        gloss = Math.pow(Math.max(0, nx * half[0] + ny * half[1] + nz * half[2]), 18 + material.roughness * 27) * (0.23 - material.roughness * 0.10);
-        shading *= 1 - 0.12 * (1 - radius) * (1 - diffuse);
+        shading = 0.65 + 0.44 * diffuse;
+        // Soft matte gel: specular adds a highlight, not a white clipped border.
+        gloss = Math.pow(Math.max(0, nx * half[0] + ny * half[1] + nz * half[2]),
+          12 + material.roughness * 14) * 0.055;
       } else {
         // Sharper raster CONTROL, intentionally not a claimed shader-parity render.
-        shading = 0.92 + 0.09 * highMix - 0.09 * clamp((0.5 - signed) / 0.095, 0, 1) * 0.14;
+        shading = 0.92 + 0.09 * highMix - 0.09 * clamp(distance / 0.095, 0, 1) * 0.14;
       }
       for (let channel = 0; channel < 3; channel += 1) {
         const base = (palette.low[channel]! * (1 - highMix) + palette.high[channel]! * highMix) * 255;
@@ -141,13 +146,13 @@ export const renderVolumeControl = (toy: SavedSquishy, relief: boolean): HTMLCan
     });
     bodyPath.closePath();
     context.save();
-    context.shadowColor = 'rgba(87, 52, 34, 0.35)';
-    context.shadowBlur = 13;
-    context.shadowOffsetY = 10;
-    context.translate(4, MAX_SIDE_PX);
-    const side = context.createLinearGradient(0, 70, 0, 470);
-    side.addColorStop(0, '#e1c6a1');
-    side.addColorStop(1, '#9f8065');
+    context.shadowColor = 'rgba(87, 52, 34, 0.19)';
+    context.shadowBlur = 10;
+    context.shadowOffsetY = 5;
+    context.translate(2, SIDE_DEPTH_PX);
+    const side = context.createLinearGradient(0, 100, 0, 480);
+    side.addColorStop(0, '#e2cba9');
+    side.addColorStop(1, '#a98d72');
     context.fillStyle = side;
     context.fill(bodyPath);
     context.restore();
