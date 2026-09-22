@@ -17,7 +17,7 @@ for (const specimen of specimens) {
     await page.goto('/phaser/');
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-    await page.locator(`[data-shape="${specimen.shape}"]`).click();
+    await page.locator(`button[data-shape="${specimen.shape}"]`).click();
     await page.locator('[data-action="shape-continue"]').click();
     await page.locator('[data-paint-color]').nth(2).click();
     const paint = await page.locator('[data-sandbox-canvas]').boundingBox();
@@ -45,7 +45,7 @@ for (const specimen of specimens) {
       await page.locator(`[data-decor-accessory="${specimen.accessory}"]`).click();
     }
     await page.locator('[data-action="decor-continue"]').click();
-    await page.locator(`[data-material="${specimen.material}"]`).click();
+    await page.locator(`button[data-material="${specimen.material}"]`).click();
     const prefix = `library-hall-parity-${specimen.shape}-${specimen.material}`;
     await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath(`${prefix}-studio-idle.png`) });
     await page.screenshot({ path: info.outputPath(`${prefix}-studio-stage.png`) });
