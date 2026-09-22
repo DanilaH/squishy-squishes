@@ -29,6 +29,9 @@ jobs:
           old = '    gl.useProgram(this.program);\n  gl.drawElements'
           assert old in script, 'Expected exact migration indentation is missing'
           script = script.replace(old, '    gl.useProgram(this.program);\n    gl.drawElements')
+          old = "    const studioSource = showLegacy ? document.createElement('canvas') : current;\n  if (showLegacy) renderLibraryThumbnail(studioSource, toy, 512);"
+          assert old in script, 'Expected exact lab source indentation is missing'
+          script = script.replace(old, "    const studioSource = showLegacy ? document.createElement('canvas') : current;\n    if (showLegacy) renderLibraryThumbnail(studioSource, toy, 512);")
           old_assert = "assert text.count(old) == 1, f'{name}: expected exactly one match for {old[:65]!r}'"
           assert old_assert in script
           script = script.replace(old_assert, "assert text.count(old) >= 1, f'{name}: missing {old[:65]!r}'")
