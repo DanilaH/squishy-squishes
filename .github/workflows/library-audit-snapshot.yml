@@ -24,3 +24,4 @@ jobs:
             library-audit-source.tar.gz
             library-audit-head.txt
           retention-days: 2
+# Integration snapshot: preserve exact current feature code before changing the Hall renderer.
