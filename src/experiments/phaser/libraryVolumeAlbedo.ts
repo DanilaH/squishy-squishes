@@ -4,10 +4,11 @@ import { replayAppearanceDocument } from '../../sandbox/appearance';
 import { renderSurfaceDecor } from '../../sandbox/decor';
 import type { SavedSquishy } from '../../sandbox/types';
 
-/** A genuinely unlit colour source for the isolated volume lab. It preserves
- * authored strokes and decor but bakes in no gradient, rim or Studio light.
- * The Pages Hall now accepts all six saved materials; the mesh provides light
- * exactly once. This does not change the V3 save format. */
+/** Unlit pigment texture for the Pages Hall and its isolated volume comparison.
+ * The 3D mesh owns the visible silhouette. Extending plain body pigment outside
+ * the authored 2D path prevents concave toe/heart UVs from sampling transparent
+ * black and creating dark wedges; authored strokes and decor stay shape-clipped.
+ * No baked lighting or changes to V3 saves. */
 export const renderNeutralVolumeAlbedo = (toy: SavedSquishy): HTMLCanvasElement => {
   const size = 512;
   const output = document.createElement('canvas');
@@ -49,7 +50,10 @@ export const renderNeutralVolumeAlbedo = (toy: SavedSquishy): HTMLCanvasElement 
     stops.forEach((color, index) => gradient.addColorStop(index / (stops.length - 1), color));
     context.fillStyle = gradient;
   }
-  context.fill(path);
+  // Radial rings fold across the narrow valleys of concave silhouettes. The
+  // visible geometry, not this texture, clips the body: retain an opaque base
+  // wherever a triangle needs to sample just outside the 2D silhouette.
+  context.fillRect(0, 0, size, size);
   const authored = document.createElement('canvas');
   authored.width = size;
   authored.height = size;
