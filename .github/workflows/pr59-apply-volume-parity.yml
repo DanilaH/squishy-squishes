@@ -1,4 +1,4 @@
-name: PR 59 one-shot volume parity patch
+name: PR 59 one-shot volume parity patch, selector retry
 on:
   push:
     branches: [feat/library-visual-recovery-sep21]
