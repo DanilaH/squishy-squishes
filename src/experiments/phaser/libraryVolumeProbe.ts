@@ -5,6 +5,7 @@ import { encodeAppearancePoints, replayAppearanceDocument } from '../../sandbox/
 import { drawAccessoryGraphic, getDecorFrame, renderSurfaceDecor } from '../../sandbox/decor';
 import { renderLibraryThumbnail } from '../../sandbox/libraryThumbnail';
 import type { SavedSquishy } from '../../sandbox/types';
+import { renderVolumeThickness } from './libraryVolumeThickness';
 
 const SIZE = 512;
 const FIELD_SIZE = 256;
@@ -199,15 +200,18 @@ export const mountLibraryVolumeProbe = (): void => {
 #library-volume-probe button[aria-pressed=true] {background:#5d3b60;color:white}
 #library-volume-probe .probe-shapes {display:flex;gap:6px;flex-wrap:wrap}
 @media (max-width:720px) {#library-volume-probe .probe-grid {grid-template-columns:1fr}#library-volume-probe article canvas {width:min(100%,340px)}}
-</style><header class="probe-bar"><h1>Squishy volume · same toy / same size</h1><div class="probe-shapes"><button type="button" data-shape="soft-square">Square</button><button type="button" data-shape="heart">Heart</button><button type="button" data-shape="paw">Paw</button></div><button type="button" data-close>Close lab</button></header><main class="probe-grid"><article data-variant="current"><h2>01 · Current Hall</h2><p>Real Studio WebGL shader; 256px source enlarged in CSS.</p></article><article data-variant="hires"><h2>02 · 512px flat control</h2><p>Fresh 512px silhouette, face and paint; simplified flat light, not shader parity.</p></article><article data-variant="relief"><h2>03 · 512px relief + sidewall</h2><p>Same high-res art, signed-distance normals, directional light and a thin sidewall.</p></article></main>`;
+</style><header class="probe-bar"><h1>Squishy volume · same toy / same size</h1><div class="probe-shapes"><button type="button" data-shape="soft-square">Square</button><button type="button" data-shape="heart">Heart</button><button type="button" data-shape="paw">Paw</button></div><button type="button" data-close>Close lab</button></header><main class="probe-grid"><article data-variant="current"><h2>01 · Current Hall</h2><p>Real Studio WebGL shader; 256px source enlarged in CSS.</p></article><article data-variant="hires"><h2>02 · 512px flat control</h2><p>Fresh 512px silhouette, face and paint; simplified flat light, not shader parity.</p></article><article data-variant="relief"><h2>03 · 512px relief + thin sidewall</h2><p>Same high-res art, signed-distance normals and restrained directional light.</p></article><article data-variant="extruded"><h2>04 · 512px pseudo-extrusion</h2><p>Same high-res relief and saved art with visible side thickness. Static 2D prototype, not a 3D mesh.</p></article></main>`;
   document.body.append(overlay);
   const draw = (shapeId: ShapeId): void => {
     const toy = createToy(shapeId);
     const current = document.createElement('canvas');
     renderLibraryThumbnail(current, toy);
     current.dataset.volumeRenderer = 'studio-shader-256';
-    const variants = [current, renderVolumeControl(toy, false), renderVolumeControl(toy, true)];
-    for (const [index, key] of ['current', 'hires', 'relief'].entries()) {
+    const flat = renderVolumeControl(toy, false);
+    const relief = renderVolumeControl(toy, true);
+    const extruded = renderVolumeThickness(toy, relief);
+    const variants = [current, flat, relief, extruded];
+    for (const [index, key] of ['current', 'hires', 'relief', 'extruded'].entries()) {
       const article = overlay.querySelector<HTMLElement>(`[data-variant="${key}"]`);
       article?.querySelector('canvas')?.remove();
       article?.insertBefore(variants[index]!, article.querySelector('h2'));
