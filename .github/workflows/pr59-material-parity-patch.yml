@@ -1,0 +1,101 @@
+name: PR 59 temporary material and crown parity patch
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: [.github/workflows/pr59-material-parity-patch.yml]
+permissions:
+  contents: write
+jobs:
+  material-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - name: Align Pages-only albedo with Studio milk and verify attachments
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          edits = {
+            'src/experiments/phaser/libraryVolumeAlbedo.ts': [
+              ("jelly: ['#f6f3d7', '#dcefcf', '#a9d3c9']", "jelly: ['#fff4de', '#e8d8bd', '#cbb79b']"),
+              ("marshmallow: ['#fff8eb', '#f5e8d9', '#e6d4c6']", "marshmallow: ['#fff2dc', '#efdec3', '#d4bda0']"),
+            ],
+            'src/experiments/phaser/libraryVolumeMesh.ts': [
+              ('color = paint.rgb * (0.83 + 0.20 * diffuse);', 'color = paint.rgb * (0.78 + 0.18 * diffuse);'),
+            ],
+            'src/sandbox/libraryThumbnail.ts': [
+              ("toy.decor.accessory === 'crown' ? 11 : 0;", "toy.decor.accessory === 'crown' ? 7 : 0;"),
+            ],
+          }
+          for name, pairs in edits.items():
+            path=Path(name); data=path.read_text()
+            for before,after in pairs:
+              if data.count(before)!=1:raise RuntimeError(f'Expected unique match {name}: {before}')
+              data=data.replace(before,after)
+            path.write_text(data)
+          test=Path('tests/phaser-pages/library-hall-cross-scene-parity.spec.ts')
+          data=test.read_text()
+          before="    await expect(card).toHaveAttribute('data-library-renderer', 'volume-mesh');"
+          after='''    await expect(card).toHaveAttribute('data-library-renderer', 'volume-mesh');
+            // The toy's base palette is milk in Studio even when its material is
+            // jelly; a separate cyan-green Library gradient changes identity.
+            if (specimen.material === 'jelly') {
+              const [red, green, blue] = await card.evaluate(node => {
+                const rgb = (node as HTMLCanvasElement).getContext('2d')!
+                  .getImageData(110, 225, 1, 1).data;
+                return [rgb[0]!, rgb[1]!, rgb[2]!];
+              });
+              expect(red).toBeGreaterThanOrEqual(green - 3);
+              expect(green).toBeGreaterThan(blue + 10);
+            }
+            if (specimen.accessory === 'crown') {
+              // Crown base should sit near the paw instead of visibly floating.
+              const longestClearGap = await card.evaluate(node => {
+                const data = (node as HTMLCanvasElement).getContext('2d')!
+                  .getImageData(256, 0, 1, 190).data;
+                let seenInk = false, gap = 0, longest = 0;
+                for (let row = 0; row < 190; row += 1) {
+                  if (data[row * 4 + 3]! > 150) {
+                    if (seenInk) longest = Math.max(longest, gap);
+                    seenInk = true;
+                    gap = 0;
+                  } else if (seenInk) gap += 1;
+                }
+                return longest;
+              });
+              expect(longestClearGap).toBeLessThanOrEqual(12);
+            }'''
+          if data.count(before)!=1:raise RuntimeError('Missing thumbnail assertion in parity test')
+          test.write_text(data.replace(before,after))
+          PY
+          git diff --check
+          git diff --stat
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run pages:build
+      - name: Verify three real V3 toys, warm jelly and crown contact
+        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
+      - name: Upload actual screenshots and failure traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr59-material-parity
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Commit only validated Pages appearance and parity assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- src/experiments/phaser/libraryVolumeAlbedo.ts src/experiments/phaser/libraryVolumeMesh.ts src/sandbox/libraryThumbnail.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
+          git commit -m 'fix(pages): preserve warm Studio palette across Hall materials and seat crown'
+          git push origin HEAD:feat/library-visual-recovery-sep21
