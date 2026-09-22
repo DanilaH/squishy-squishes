@@ -69,16 +69,17 @@ test('all face and sticker styles remain legible on six saved contours without c
         if (!ctx) throw new Error('Missing Canvas2D snapshot');
         return { png: target.toDataURL('image/png').split(',')[1],
           width: target.width, height: target.height,
-          center: ctx.getImageData(128, 128, 1, 1).data[3], corner: ctx.getImageData(0, 0, 1, 1).data[3] };
+          center: ctx.getImageData(target.width / 2, target.height / 2, 1, 1).data[3],
+          corner: ctx.getImageData(0, 0, 1, 1).data[3] };
       });
-      expect([data.width, data.height]).toEqual([256, 256]);
+      expect([data.width, data.height]).toEqual([512, 512]);
       expect(data.center, `${look.id}/${shape} body missing`).toBeGreaterThan(0);
       expect(data.corner, `${look.id}/${shape} rectangular matte`).toBe(0);
       const png = Buffer.from(data.png, 'base64');
       const hash = createHash('sha256').update(png).digest('hex');
       hashes.add(hash);
       (hashesByShape.get(shape) ?? hashesByShape.set(shape, new Set()).get(shape)!).add(hash);
-      await writeFile(info.outputPath(`library-hall-catalog-${look.id}-${shape}-256.png`), png);
+      await writeFile(info.outputPath(`library-hall-catalog-${look.id}-${shape}-512.png`), png);
     }
     expect(hashes.size, `shape images duplicated for ${look.id}`).toBe(SHAPES.length);
     for (let room = 1; room <= 3; room++) {
