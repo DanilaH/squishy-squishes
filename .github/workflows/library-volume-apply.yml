@@ -1,0 +1,114 @@
+name: Apply accepted Library volume to isolated Pages Hall
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: ['.github/workflows/library-volume-apply.yml']
+permissions:
+  contents: write
+jobs:
+  integrate:
+    if: github.repository == 'DanilaH/squishy-squishes' && github.ref == 'refs/heads/feat/library-visual-recovery-sep21'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Integrate mesh, materials, lifecycle and exact-head regression expectations
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          def edit(name, old, new):
+              path = Path(name)
+              text = path.read_text()
+              assert text.count(old) == 1, f'{name}: expected exactly one match for {old[:65]!r}'
+              path.write_text(text.replace(old, new))
+          albedo = 'src/experiments/phaser/libraryVolumeAlbedo.ts'
+          edit(albedo, 'The fixed lab specimen uses the milk palette; this is NOT a general Hall\n * renderer or a proposed change to the V3 save format.', 'The Pages Hall now accepts all six saved materials; the mesh provides light\n * exactly once. This does not change the V3 save format.')
+          edit(albedo, '''  context.fillStyle = `rgb(${base.join(',')})`;
+            context.fill(path);''', '''  const material = toy.materialId;
+            const gradients = {
+              jelly: ['#f6f3d7', '#dcefcf', '#a9d3c9'],
+              holo: ['#f8dce8', '#f1eab9', '#d3eddf', '#ead4f2'],
+              pearl: ['#f9efdf', '#e9e1e1', '#d7eae0', '#f6e3e2'],
+              chrome: ['#eee8dc', '#8d908e', '#f2efdf', '#767b78', '#dbdad3'],
+              marshmallow: ['#fff8eb', '#f5e8d9', '#e6d4c6'],
+            } as const;
+            if (material === 'soft') {
+              context.fillStyle = `rgb(${base.join(',')})`;
+            } else {
+              const stops = gradients[material];
+              const gradient = context.createLinearGradient(0, 12, size, size - 12);
+              stops.forEach((color, index) => gradient.addColorStop(index / (stops.length - 1), color));
+              context.fillStyle = gradient;
+            }
+            context.fill(path);''')
+          mesh = 'src/experiments/phaser/libraryVolumeMesh.ts'
+          edit(mesh, "import { getShape } from '../../game/shapes';", "import { getShape } from '../../game/shapes';\nimport { getMaterial } from '../../game/content';")
+          edit(mesh, 'uniform sampler2D uFront;', 'uniform sampler2D uFront;\nuniform vec3 uSideColor;\nuniform float uMetallic;')
+          edit(mesh, 'pow(max(dot(n, halfDirection), 0.0), 21.0) * 0.055;', 'pow(max(dot(n, halfDirection), 0.0), 21.0) * mix(0.055, 0.15, uMetallic);')
+          edit(mesh, 'color = vec3(0.89, 0.79, 0.67) * (0.82 + 0.20 * diffuse);', 'color = uSideColor * (0.82 + 0.20 * diffuse);')
+          edit(mesh, '''    gl.useProgram(this.program);
+            gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);''', '''    gl.useProgram(this.program);
+            const sides = {
+              soft: [0.89, 0.79, 0.67], jelly: [0.75, 0.84, 0.75],
+              holo: [0.86, 0.78, 0.75], marshmallow: [0.89, 0.84, 0.78],
+              pearl: [0.87, 0.82, 0.81], chrome: [0.58, 0.59, 0.57],
+            } as const;
+            gl.uniform3f(gl.getUniformLocation(this.program, 'uSideColor'), ...sides[toy.materialId]);
+            gl.uniform1f(gl.getUniformLocation(this.program, 'uMetallic'), getMaterial(toy.materialId).metallic);
+            gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);''')
+          edit('src/experiments/phaser/studioPagesPreview.ts', "import { renderStudioLibraryThumbnail, releaseStudioLibraryThumbnail } from '../../sandbox/libraryStudioThumbnail';", "import { renderPagesVolumeThumbnail, releasePagesVolumeThumbnail } from './libraryVolumeProduction';")
+          edit('src/experiments/phaser/studioPagesPreview.ts', 'registerPagesLibraryMaterialRenderer(renderStudioLibraryThumbnail, releaseStudioLibraryThumbnail);', 'registerPagesLibraryMaterialRenderer(renderPagesVolumeThumbnail, releasePagesVolumeThumbnail);')
+          edit('src/sandbox/libraryThumbnail.ts', "    canvas.dataset.libraryRenderer = 'studio-shader';\n    return;", "    if (canvas.dataset.libraryRenderer !== 'volume-mesh') canvas.dataset.libraryRenderer = 'studio-shader';\n    return;")
+          review = 'src/experiments/phaser/libraryVolumeReview.ts'
+          edit(review, "import { renderLibraryThumbnail } from '../../sandbox/libraryThumbnail';", "import { renderLibraryThumbnail } from '../../sandbox/libraryThumbnail';\nimport { renderStudioLibraryThumbnail } from '../../sandbox/libraryStudioThumbnail';")
+          edit(review, 'None is installed in the Hall.', '07 is now the Pages Hall renderer; the other paths remain experimental.')
+          edit(review, '01 is the actual 512px Hall; old 256px is diagnostic.', '01 is the actual 512px Hall volume render; old 256px is diagnostic.')
+          edit(review, "'studio-shader-256' : 'studio-shader-512'", "'studio-shader-256' : 'volume-mesh-512'")
+          edit(review, '01 · Actual Hall · Studio 512px', '01 · Actual Hall · Volume mesh 512px')
+          edit(review, 'Same static WebGL snapshot used by the current Pages Library.', 'The static volume snapshot used by saved toys in the Pages Hall.')
+          edit(review, '''    const studioSource = showLegacy ? document.createElement('canvas') : current;
+            if (showLegacy) renderLibraryThumbnail(studioSource, toy, 512);''', '''    const studioSource = document.createElement('canvas');
+            studioSource.width = 512;
+            studioSource.height = 512;
+            const studioContext = studioSource.getContext('2d');
+            if (studioContext) {
+              studioContext.setTransform(2, 0, 0, 2, 0, 0);
+              renderStudioLibraryThumbnail(studioContext, toy, 512);
+            }''')
+          for name in ['library-hall-decor-expressions', 'library-hall-art-catalog', 'library-hall-decor-art', 'library-hall-studio-shader']:
+              path = Path(f'tests/phaser-pages/{name}.spec.ts')
+              text = path.read_text().replace("'studio-shader'", "'volume-mesh'").replace('canvas[data-library-renderer="studio-shader"]', 'canvas[data-library-renderer="volume-mesh"]')
+              path.write_text(text)
+          edit('tests/phaser-pages/library-hall-volume-probe.spec.ts', "'studio-shader-512', 'flat-control-512'", "'volume-mesh-512', 'flat-control-512'")
+          edit('tests/phaser-pages/library-hall-volume-probe.spec.ts', "toBe('studio-shader');", "toBe('volume-mesh');")
+          doc = 'docs/LIBRARY_VISUAL_RECOVERY_2026-09-21.md'
+          edit(doc, '**Status:** working plan and evidence, **not** aesthetic acceptance.', '**Status:** owner approved a trial of the screenshot volume look in the isolated Pages Hall; browser validation remains a separate gate.')
+          edit(doc, 'Owner must approve visual replacement; green tests do not grant approval.', 'The owner approved a Pages trial, not merging or publishing the original/Yandex site.')
+          edit(doc, 'actual Studio WebGL shader is snapshotted on demand through one shared WebGL2 context with Canvas2D fallback.', 'the adopted 512px unlit radial mesh is snapshotted through one shared WebGL2 context, with Studio shader then Canvas2D fallback.')
+          edit(doc, '512×512 Studio snapshots and 2× decor', '512×512 mesh snapshots and 2× decor')
+          edit(doc, 'Neutral albedo is a lab-only milk-palette control, not Studio parity or a new general material system.', 'Neutral albedo is now Pages-only for all six materials; material parity with Studio requires actual screenshot review.')
+          edit(doc, 'No change to Hall/Studio/Yandex while comparison is unresolved.', 'The Hall trial is approved; Studio and Yandex remain unchanged.')
+          edit(doc, '**Current decision:** none of the volume experiments is approved for the default Hall. Only the query-gated comparison changes: `/review/pr-59/?volume-probe=1` (local `/phaser-pages.html?volume-probe=1`). Closing it must not alter player saves. No PR merge or Yandex publication based on a compiling experiment.', '**Current decision (September 22):** use the unlit radial mesh in the ordinary isolated Pages review Hall, with the ten-way `?volume-probe=1` lab preserved for comparison. The owner accepted a trial of the screenshot look, not a main/Yandex merge. Validate V3 saves, all six shapes/materials, decor, one-context idle and loss-of-WebGL fallbacks on the integrated renderer.')
+          edit(doc, 'Keep current Hall renderer intact until accepted.', 'Keep Studio shader as the explicit fallback and preserve Yandex pixels.')
+          print('Applied accepted mesh to the actual Pages Hall; non-Pages untouched.')
+          PY
+      - run: npm ci
+      - name: Strict TS and real Pages build
+        run: npm run pages:build
+      - name: Commit only reviewed integration files (no workflow edits)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/experiments/phaser/libraryVolumeAlbedo.ts src/experiments/phaser/libraryVolumeMesh.ts src/experiments/phaser/libraryVolumeReview.ts src/experiments/phaser/studioPagesPreview.ts src/sandbox/libraryThumbnail.ts tests/phaser-pages/library-hall-*.spec.ts docs/LIBRARY_VISUAL_RECOVERY_2026-09-21.md
+          git diff --cached --check
+          git commit -m 'feat(library): render accepted shared 3D volume in ordinary Pages Hall'
+          git push origin HEAD:feat/library-visual-recovery-sep21
