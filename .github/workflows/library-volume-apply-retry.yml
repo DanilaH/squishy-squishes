@@ -1,4 +1,4 @@
-name: Apply accepted Library volume (fixed migration)
+name: Finish accepted Library volume surface integrity
 on:
   push:
     branches: [feat/library-visual-recovery-sep21]
@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 jobs:
-  integrate:
+  integrity:
     if: github.repository == 'DanilaH/squishy-squishes' && github.ref == 'refs/heads/feat/library-visual-recovery-sep21'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -18,38 +18,39 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Apply exact-source integration with corrected geometry and typed uniforms
+      - name: Fill missing mesh front texels and reset renderer provenance on repaint
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          original = Path('.github/workflows/library-volume-apply.yml').read_text()
-          script = original.split("          python3 - <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
-          script = '\n'.join(line[10:] if line.startswith('          ') else line for line in script.splitlines())
-          old = '    gl.useProgram(this.program);\n  gl.drawElements'
-          assert old in script, 'Expected exact migration indentation is missing'
-          script = script.replace(old, '    gl.useProgram(this.program);\n    gl.drawElements')
-          old = "    const studioSource = showLegacy ? document.createElement('canvas') : current;\n  if (showLegacy) renderLibraryThumbnail(studioSource, toy, 512);"
-          assert old in script, 'Expected exact lab source indentation is missing'
-          script = script.replace(old, "    const studioSource = showLegacy ? document.createElement('canvas') : current;\n    if (showLegacy) renderLibraryThumbnail(studioSource, toy, 512);")
-          old = '...sides[toy.materialId]'
-          assert old in script, 'Expected spread of non-tuple uniform color is missing'
-          script = script.replace(old, 'sides[toy.materialId][0], sides[toy.materialId][1], sides[toy.materialId][2]')
-          old_assert = "assert text.count(old) == 1, f'{name}: expected exactly one match for {old[:65]!r}'"
-          assert old_assert in script
-          script = script.replace(old_assert, "assert text.count(old) >= 1, f'{name}: missing {old[:65]!r}'")
-          exec(compile(script, 'reviewed-hall-migration', 'exec'), {'__name__': '__main__'})
+          mesh = Path('src/experiments/phaser/libraryVolumeMesh.ts')
+          content = mesh.read_text()
+          old = '''    if (paint.a < 0.025) discard;
+              alpha = paint.a;'''
+          # The silhouette is already geometrically clipped. Sampling beyond the
+          # albedo at deep concavities must not reveal black/transparent seams.
+          assert content.count(old) == 1, 'Mesh texel guard no longer matches source'
+          content = content.replace(old, '''    if (paint.a < 0.025) paint = vec4(uSideColor, 1.0);
+              alpha = paint.a;''')
+          mesh.write_text(content)
+          thumbnail = Path('src/sandbox/libraryThumbnail.ts')
+          content = thumbnail.read_text()
+          old = '  if (pagesMaterialLighting && pagesRenderer?.(context, toy, THUMBNAIL_SIZE * rasterScale as 256 | 512)) {'
+          assert content.count(old) == 1
+          content = content.replace(old, '  if (pagesMaterialLighting) delete canvas.dataset.libraryRenderer;\n' + old)
+          thumbnail.write_text(content)
           PY
       - run: npm ci
-      - name: Typecheck and build Pages
+      - name: Strict typecheck and Pages build
         run: npm run pages:build
-      - name: Commit only integrated code, tests and docs
+      - name: Commit implementation and remove disposable migration runners
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/experiments/phaser/libraryVolumeAlbedo.ts src/experiments/phaser/libraryVolumeMesh.ts src/experiments/phaser/libraryVolumeReview.ts src/experiments/phaser/studioPagesPreview.ts src/sandbox/libraryThumbnail.ts tests/phaser-pages/library-hall-*.spec.ts docs/LIBRARY_VISUAL_RECOVERY_2026-09-21.md
+          git add src/experiments/phaser/libraryVolumeMesh.ts src/sandbox/libraryThumbnail.ts
+          git rm .github/workflows/library-volume-apply.yml .github/workflows/library-volume-apply-retry.yml
           git diff --cached --check
-          git commit -m 'feat(library): integrate owner-accepted volume mesh into ordinary Pages Hall'
+          git commit -m 'fix(library): seal mesh alpha seams and clear stale renderer labels'
           git push origin HEAD:feat/library-visual-recovery-sep21
