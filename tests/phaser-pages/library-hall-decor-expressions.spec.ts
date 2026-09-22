@@ -55,18 +55,21 @@ test('all face and sticker styles remain visible and distinct on each saved cont
     for (const shape of SHAPES) {
       const thumbnail = page.locator(`[data-library-thumbnail="expression-${shape}-${profile.name}"]`);
       await expect(thumbnail).toHaveAttribute('data-library-renderer', 'studio-shader');
-      const png = await thumbnail.evaluate((node) => {
+      const result = await thumbnail.evaluate((node) => {
         const canvas = node as HTMLCanvasElement;
         const ctx = canvas.getContext('2d');
         if (!ctx) throw new Error('Missing real thumbnail');
-        if (ctx.getImageData(128, 128, 1, 1).data[3] < 64) throw new Error('Blank contour');
+        const centerX = Math.floor(canvas.width / 2);
+        const centerY = Math.floor(canvas.height / 2);
+        if (ctx.getImageData(centerX, centerY, 1, 1).data[3] < 64) throw new Error('Blank contour');
         if (ctx.getImageData(0, 0, 1, 1).data[3] !== 0) throw new Error('Rectangular background leak');
-        return canvas.toDataURL('image/png').split(',')[1];
+        return { png: canvas.toDataURL('image/png').split(',')[1], width: canvas.width, height: canvas.height };
       });
-      const bytes = Buffer.from(png, 'base64');
+      expect([result.width, result.height]).toEqual([512, 512]);
+      const bytes = Buffer.from(result.png, 'base64');
       const hash = createHash('sha256').update(bytes).digest('hex');
       (byShape.get(shape) ?? byShape.set(shape, new Set()).get(shape)!).add(hash);
-      await writeFile(info.outputPath(`library-hall-expression-${shape}-${profile.name}-256.png`), bytes);
+      await writeFile(info.outputPath(`library-hall-expression-${shape}-${profile.name}-512.png`), bytes);
     }
     for (let room = 1; room <= 3; room++) {
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(room));
