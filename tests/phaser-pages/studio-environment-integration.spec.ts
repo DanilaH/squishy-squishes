@@ -81,10 +81,10 @@ const check = async (page: Page, label: string): Promise<void> => {
     expect(facts.deskVisible, `${label}: compact desktop must retain the tabletop`).toBe('true');
     expect(facts.artOverflow, `${label}: desk cannot be clipped at the stage edge`).toBe('visible');
     expect(facts.deskClip, `${label}: only tabletop/front should extend below the stage`).toContain('59%');
-    // Verify a *substantial* tabletop extends past the former clipping edge;
-    // the previous 20px strip incorrectly passed a Boolean visibility test.
-    expect(facts.desk.y + facts.desk.height * 0.41 - facts.stage.bottom,
-      `${label}: real tabletop/front must extend beyond stage by >=70px`).toBeGreaterThanOrEqual(70);
+    // Fixed tracks make the desk visible inside the stage rather than forcing
+    // it to protrude beyond its bottom. Still reject a 20px token strip.
+    expect(Math.min(facts.desk.y + facts.desk.height * 0.41, facts.stage.bottom) - facts.desk.y,
+      `${label}: >=70px of real tabletop/front stays visible`).toBeGreaterThanOrEqual(70);
   }
   if (facts.viewport.width <= 390 && facts.viewport.height > facts.viewport.width) {
     expect(facts.decorRects).toHaveLength(2);
@@ -132,8 +132,8 @@ for (const view of views) {
       await page.mouse.up();
       await page.locator('[data-action="paint-continue"]').click();
       await expect(shell).toHaveAttribute('data-stage', 'mixins');
-      await expect(shell).not.toHaveClass(/studio-env-active/);
-      await expect(shell.locator('.studio-env-floor, .studio-env-stage-art')).toHaveCount(0);
+      await expect(shell).toHaveClass(/studio-env-active/);
+      await expect(shell.locator('.studio-env-floor, .studio-env-stage-art')).toHaveCount(2);
       expect(pageErrors).toEqual([]);
     } finally {
       await context.close();

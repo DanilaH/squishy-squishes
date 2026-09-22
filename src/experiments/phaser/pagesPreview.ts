@@ -14,6 +14,7 @@ import './candyStudioPreview.css';
 import './jellyUiPreview.css';
 import './jellyTypographyPreview.css';
 import { preloadJellyUi } from './jellyUiPreload';
+import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
@@ -56,8 +57,9 @@ const canStartPhaser = (): boolean => {
 
 // Session-reachable UI images decode before the first playable Library frame.
 root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
-void preloadJellyUi().then((ready) => {
+void Promise.all([preloadJellyUi(), preloadStudioEnvironmentAssets()]).then(([ready, desk]) => {
   if (ready) root.dataset.jellyUiReady = '';
+  if (desk) root.dataset.studioEnvReady = '';
   return bootstrapSquishyApp(root, {
     createRuntime: createPagesRuntime,
     makerRendererOptions: {

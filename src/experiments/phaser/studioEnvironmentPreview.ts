@@ -39,6 +39,22 @@ const composeDesk = (left: HTMLImageElement, middle: HTMLImageElement, right: HT
   return canvas.toDataURL('image/png');
 };
 
+// Shared decode before first playable frame; no late background/desk pop-in.
+let preparedDesk: Promise<string | null> | null = null;
+export const preloadStudioEnvironmentAssets = (): Promise<string | null> => {
+  preparedDesk ??= Promise.all(Object.values(assets).map(loadImage))
+    .then((images) => {
+      const left = images[2], middle = images[3], right = images[4];
+      if (!left || !middle || !right) throw new Error('Missing Studio desk slices');
+      return composeDesk(left, middle, right);
+    })
+    .catch((error: unknown) => {
+      console.warn('[squishy:studio-preview] Environment assets failed to decode or compose; original UI retained.', error);
+      return null;
+    });
+  return preparedDesk;
+};
+
 const element = (tag: 'div' | 'img', className: string): HTMLDivElement | HTMLImageElement => {
   const node = document.createElement(tag);
   node.className = className;
@@ -47,7 +63,7 @@ const element = (tag: 'div' | 'img', className: string): HTMLDivElement | HTMLIm
   return node;
 };
 
-/** Returns cleanup; never mutates non-Shape/Paint gameplay, storage, or main/Yandex entrypoints. */
+/** Pages-only visual layer for the entire maker and Squeeze; no gameplay mutation. */
 export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) => {
   let disposed = false;
   let decoded = false;
@@ -55,8 +71,8 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
   let frame = 0;
   const abort = new AbortController();
   const observer = new MutationObserver(() => schedule());
-  // The real stage changes height AFTER its data-stage mutation (notably on wide Paint).
-  // Observing layout keeps the floor and desk aligned without moving gameplay/UI.
+  // Observe viewport geometry, not step-panel heights: Pages CSS reserves one
+  // stable workbench and controls track for every maker stage.
   const geometryObserver = new ResizeObserver(() => schedule());
   let observedStage: HTMLElement | null = null;
   let observedCanvas: HTMLElement | null = null;
@@ -67,7 +83,7 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     if (disposed || !decoded || !deskTexture) return;
     const shell = root.querySelector<HTMLElement>('.sandbox-shell');
     if (!shell) return;
-    const supported = shell.dataset.stage === 'shape' || shell.dataset.stage === 'paint';
+    const supported = ['shape', 'paint', 'mixins', 'mix', 'decor', 'finish', 'squeeze', 'home'].includes(shell.dataset.stage ?? '');
     if (!supported) {
       geometryObserver.disconnect();
       observedStage = observedCanvas = observedControls = observedHeading = null;
@@ -149,18 +165,12 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
 
   observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-stage'] });
   window.addEventListener('resize', schedule, { signal: abort.signal });
-  void Promise.all(Object.values(assets).map(loadImage)).then((images) => {
-    if (disposed) return;
-    const left = images[2];
-    const middle = images[3];
-    const right = images[4];
-    if (!left || !middle || !right) throw new Error('Missing Studio desk slices');
-    deskTexture = composeDesk(left, middle, right);
+  void preloadStudioEnvironmentAssets().then((texture) => {
+    if (disposed || !texture) return;
+    deskTexture = texture;
     decoded = true;
     root.dataset.studioEnvReady = '';
     schedule();
-  }).catch((error: unknown) => {
-    console.warn('[squishy:studio-preview] Environment assets failed to decode or compose; original UI retained.', error);
   });
 
   return () => {

@@ -1,7 +1,7 @@
 /* Pages-only environment. All artwork is noninteractive and remains behind the real canvas/UI. */
 /* The jelly UI stylesheet uses #app[data-jelly-ui-ready] .sandbox-shell[data-stage],
    so the environment selector must outrank its background shorthand. */
-#app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='shape'], [data-stage='paint']) {
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active {
   position: relative;
   isolation: isolate;
   background-color: #ffeadb;
@@ -90,4 +90,104 @@
 }
 @media (max-height: 520px) and (orientation: landscape) {
   .studio-env-decor, .studio-env-desk { display: none !important; }
+}
+
+/* One workshop at every step: reserve the same heading, playfield and control
+   tracks so changing panels never shifts the toy, tabletop or floor. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active {
+  --studio-controls-height: clamp(202px, 31dvh, 276px);
+  grid-template-rows: 38px 88px minmax(0, 1fr) var(--studio-controls-height) 20px;
+  gap: 4px;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-stage {
+  min-height: 0;
+  padding: 0;
+  container-type: size;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-canvas {
+  width: min(82vw, 430px, 100cqh);
+  height: auto;
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-glow {
+  width: min(88vw, 470px, 110cqh);
+  max-height: 110cqh;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-controls {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-panel {
+  min-height: 0;
+  flex-shrink: 0;
+  margin-top: auto;
+}
+@media (max-height: 740px) and (orientation: portrait) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
+    --studio-controls-height: clamp(198px, 33dvh, 242px);
+    grid-template-rows: 36px 76px minmax(0, 1fr) var(--studio-controls-height) 18px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='shape'] .sandbox-shape {
+    min-height: 56px !important;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='shape'] .sandbox-shape__icon {
+    width: 26px; height: 26px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active [data-action='shape-continue'] {
+    min-height: 52px !important;
+  }
+}
+/* Preserve the existing compact-landscape two-column layout and absolute
+   heading; every step gets identical stage padding, including Decor. */
+@media (max-height: 520px) and (orientation: landscape) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
+    grid-template-columns: minmax(280px, .9fr) minmax(390px, 1.1fr);
+    grid-template-rows: 38px minmax(0, 1fr) 18px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy {
+    position: absolute;
+    left: 14px; top: 48px;
+    width: calc(42% - 20px);
+    height: auto;
+    display: block;
+    text-align: left;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-stage {
+    padding-top: 45px;
+    padding-bottom: 0;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-canvas {
+    width: min(64vh, 280px, calc(100cqh - 45px));
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-controls {
+    justify-content: flex-start;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-panel {
+    margin-bottom: auto;
+  }
+}
+
+/* Desktop: the whole Decor panel including its CTA remains in the shared tray. */
+@media (min-width: 901px) and (min-height: 640px) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
+    --studio-controls-height: clamp(290px, 40dvh, 356px);
+  }
 }

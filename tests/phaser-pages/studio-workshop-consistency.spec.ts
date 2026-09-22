@@ -52,7 +52,7 @@ for (const device of devices) {
             propsLoaded: [...stage.querySelectorAll<HTMLImageElement>('.studio-env-decor')].map(p => p.complete && p.naturalWidth > 0),
             floorCount: shell.querySelectorAll('.studio-env-floor').length,
             artCount: stage.querySelectorAll('.studio-env-stage-art').length,
-            canvasHit: !!hit && canvas.contains(hit),
+            canvasHit: !!hit && canvas.contains(hit), canvasDisabled: canvas.classList.contains('is-disabled'),
             pageWidth: document.documentElement.scrollWidth, viewportWidth: innerWidth,
             controlsHeight: controls.clientHeight, controlsScrollHeight: controls.scrollHeight,
           };
@@ -64,7 +64,12 @@ for (const device of devices) {
         expect(result.deskLoaded).toBe(true);
         expect(result.floorCount).toBe(1);
         expect(result.artCount).toBe(1);
-        expect(result.canvasHit, `${device.name}/${name} keeps Phaser input`).toBe(true);
+        // Finish is a material-selection preview: interaction belongs to its
+        // selectable material buttons, not a guaranteed canvas hit target.
+        // The following stage transitions click a real material and save.
+        if (actualStage !== 'finish') {
+          expect(result.canvasHit, `${device.name}/${name} keeps Phaser input`).toBe(true);
+        }
         expect(result.pageWidth).toBeLessThanOrEqual(result.viewportWidth + 2);
         expect(Math.abs(result.canvas.width - result.canvas.height), 'toy canvas stays square').toBeLessThan(2);
         if (device.name !== 'landscape-ru') expect(result.deskVisible, `${device.name}/${name} has a visible desk`).toBe(true);
@@ -113,6 +118,9 @@ for (const device of devices) {
       await page.locator('[data-decor-accessory="crown"]').click();
       await page.locator('[data-action="decor-continue"]').click();
       await sample('finish');
+      // Prove the actual Finish controls remain clickable after the layout
+      // change instead of inferring canvas interactivity from a CSS class.
+      await page.locator('button[data-material="soft"]').click();
       await page.locator('[data-action="save"]').click();
       await sample('squeeze');
       const pressed = await page.locator('[data-sandbox-canvas]').boundingBox();
