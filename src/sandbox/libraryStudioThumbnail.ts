@@ -9,8 +9,9 @@ import type { SavedSquishy } from './types';
 /** An on-demand, single-context static snapshot of the actual Studio shader.
  * This is Pages-only; the original Canvas2D thumbnail remains the fallback.
  * Never create a WebGL context per saved toy, and never schedule a frame here. */
-const SIZE = 256;
-const FIELD_SIZE = 128;
+const SIZE = 512;
+const LOGICAL_SIZE = 256;
+const FIELD_SIZE = 256;
 const UNIFORMS = [
   'uScale', 'uMoldProgress', 'uShapeField', 'uAppearanceTexture', 'uAppearanceEnabled',
   'uPointerUv', 'uStrainDirection', 'uColorLow', 'uColorHigh', 'uSheenColor', 'uRimColor',
@@ -120,15 +121,24 @@ class StudioThumbnailRenderer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     }
-    this.appearance.width = APPEARANCE_TEXTURE_SIZE;
-    this.appearance.height = APPEARANCE_TEXTURE_SIZE;
+    this.appearance.width = APPEARANCE_TEXTURE_SIZE * 2;
+    this.appearance.height = APPEARANCE_TEXTURE_SIZE * 2;
     const context = this.appearance.getContext('2d');
     if (!context) throw new Error('Library Studio appearance canvas unavailable');
+    // The V3 authoring coordinates stay in the original 256px domain.
+    // Rasterize their actual strokes, expressions and stickers at 2x.
+    context.setTransform(2, 0, 0, 2, 0, 0);
     this.appearanceContext = context;
   }
 
-  public render(destination: CanvasRenderingContext2D, toy: SavedSquishy): void {
+  public render(destination: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512 = SIZE): void {
     const gl = this.gl;
+    // A single context switches drawing-buffer size for the 256px benchmark;
+    // production Pages exhibits always use 512px. No extra context is made.
+    if (this.canvas.width !== snapshotSize || this.canvas.height !== snapshotSize) {
+      this.canvas.width = snapshotSize;
+      this.canvas.height = snapshotSize;
+    }
     if (gl.isContextLost()) throw new Error('Library Studio context lost');
     gl.useProgram(this.program);
     const u = (name: Uniform): WebGLUniformLocation => this.uniforms.get(name)!;
@@ -165,7 +175,7 @@ class StudioThumbnailRenderer {
     }
     const palette = getPalette('milk');
     const material = getMaterial(toy.materialId);
-    gl.viewport(0, 0, SIZE, SIZE);
+    gl.viewport(0, 0, snapshotSize, snapshotSize);
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.STENCIL_TEST);
     gl.disable(gl.CULL_FACE);
@@ -206,7 +216,8 @@ class StudioThumbnailRenderer {
     gl.bindVertexArray(null);
     // The real Studio shader pixels are copied into each ordinary Canvas2D card.
     // Nothing animated or WebGL-backed remains attached to an exhibit.
-    destination.drawImage(this.canvas, 0, 0, SIZE, SIZE);
+    // The destination has a 1x or 2x transform; draw in 256 logical units.
+    destination.drawImage(this.canvas, 0, 0, LOGICAL_SIZE, LOGICAL_SIZE);
   }
 
   public dispose(): void {
@@ -227,11 +238,13 @@ class StudioThumbnailRenderer {
 let shared: StudioThumbnailRenderer | null = null;
 let unavailable = false;
 /** Return false without changing destination on absence or loss of WebGL2. */
-export const renderStudioLibraryThumbnail = (context: CanvasRenderingContext2D, toy: SavedSquishy): boolean => {
+export const renderStudioLibraryThumbnail = (
+  context: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512 = SIZE,
+): boolean => {
   if (unavailable) return false;
   try {
     shared ??= new StudioThumbnailRenderer();
-    shared.render(context, toy);
+    shared.render(context, toy, snapshotSize);
     return true;
   } catch (error) {
     console.warn('Pages Library static Studio shader unavailable; using Canvas2D fallback.', error);

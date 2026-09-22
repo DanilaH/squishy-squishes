@@ -50,6 +50,8 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
     const visible = page.locator('.sandbox-library-card:visible canvas');
     await expect(visible).toHaveCount(2);
     await expect(visible.first()).toHaveAttribute('data-library-renderer', 'studio-shader');
+    expect(await visible.evaluateAll(canvases => canvases.every(item => (item as HTMLCanvasElement).width === 512 && (item as HTMLCanvasElement).height === 512)),
+      'Pages only: 512px backing for each genuine Studio shader thumbnail').toBe(true);
     expect(await visible.evaluateAll((canvases) => canvases.every((item) => item.getAttribute('data-library-renderer') === 'studio-shader'))).toBe(true);
     if (index < 3) {
       await expect(page.locator('[data-library-hall-next]')).toBeEnabled();
@@ -102,5 +104,6 @@ test('missing WebGL2 uses Canvas2D without discarding a genuinely saved V3 toy',
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
   await expect(page.locator('[data-library-thumbnail]')).toHaveAttribute('data-library-renderer', 'canvas2d-fallback');
+  expect(await page.locator('[data-library-thumbnail]').evaluate(canvas => (canvas as HTMLCanvasElement).width)).toBe(512);
   expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(before);
 });

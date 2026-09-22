@@ -14,7 +14,7 @@ const SHAPE_PADDING = 30;
 // retain their existing pixels and the same saved V3 document representation.
 let pagesMaterialLighting = false;
 export const enablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = true; };
-type PagesRenderer = (context: CanvasRenderingContext2D, toy: SavedSquishy) => boolean;
+type PagesRenderer = (context: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512) => boolean;
 let pagesRenderer: PagesRenderer | null = null;
 let pagesRelease: (() => void) | null = null;
 export const registerPagesLibraryMaterialRenderer = (render: PagesRenderer, release: () => void): void => {
@@ -231,11 +231,17 @@ const paintPreviewVolume = (context: CanvasRenderingContext2D, toy: SavedSquishy
 export const renderLibraryThumbnail = (
   canvas: HTMLCanvasElement,
   toy: SavedSquishy,
+  outputSize: 256 | 512 = pagesMaterialLighting ? 512 : 256,
 ): void => {
-  canvas.width = THUMBNAIL_SIZE;
-  canvas.height = THUMBNAIL_SIZE;
+  // Only the isolated Pages Hall opts into 2x backing resolution. A 256px
+  // override keeps the benchmark control real, while Yandex stays byte-for-byte
+  // on its original 256px rendering path.
+  const rasterScale = pagesMaterialLighting && outputSize === 512 ? 2 : 1;
+  canvas.width = THUMBNAIL_SIZE * rasterScale;
+  canvas.height = THUMBNAIL_SIZE * rasterScale;
   const context = canvas.getContext('2d');
   if (!context) return;
+  context.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
   if (pagesMaterialLighting) canvas.dataset.libraryMaterialProfile = toy.materialId;
 
   context.clearRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
@@ -249,10 +255,11 @@ export const renderLibraryThumbnail = (
     const anchorX = THUMBNAIL_SIZE * 0.5 + localX * scale;
     const anchorY = THUMBNAIL_SIZE * 0.5 - localY * scale;
     const accessoryCanvas = document.createElement('canvas');
-    accessoryCanvas.width = 180;
-    accessoryCanvas.height = 120;
+    accessoryCanvas.width = 180 * rasterScale;
+    accessoryCanvas.height = 120 * rasterScale;
     const accessoryContext = accessoryCanvas.getContext('2d');
     if (accessoryContext) {
+      accessoryContext.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
       drawAccessoryGraphic(accessoryContext, toy.decor.accessory, 180, 120, toy.shapeId);
       const drawWidth = 112;
       const drawHeight = 75;
@@ -262,7 +269,7 @@ export const renderLibraryThumbnail = (
 
   // One shared WebGL2 renderer snapshots the *actual* Studio material once per
   // card. The Canvas2D approximation remains a functional lost-WebGL fallback.
-  if (pagesMaterialLighting && pagesRenderer?.(context, toy)) {
+  if (pagesMaterialLighting && pagesRenderer?.(context, toy, THUMBNAIL_SIZE * rasterScale as 256 | 512)) {
     canvas.dataset.libraryRenderer = 'studio-shader';
     return;
   }
@@ -287,10 +294,11 @@ export const renderLibraryThumbnail = (
   context.fillRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 
   const appearanceCanvas = document.createElement('canvas');
-  appearanceCanvas.width = APPEARANCE_TEXTURE_SIZE;
-  appearanceCanvas.height = APPEARANCE_TEXTURE_SIZE;
+  appearanceCanvas.width = APPEARANCE_TEXTURE_SIZE * rasterScale;
+  appearanceCanvas.height = APPEARANCE_TEXTURE_SIZE * rasterScale;
   const appearanceContext = appearanceCanvas.getContext('2d');
   if (appearanceContext) {
+    appearanceContext.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
     replayAppearanceDocument(appearanceContext, toy.appearance);
     renderSurfaceDecor(appearanceContext, toy.decor, shape);
     context.drawImage(appearanceCanvas, 0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);

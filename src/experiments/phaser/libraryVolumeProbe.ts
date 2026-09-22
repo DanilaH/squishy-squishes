@@ -205,7 +205,7 @@ export const mountLibraryVolumeProbe = (): void => {
   const draw = (shapeId: ShapeId): void => {
     const toy = createToy(shapeId);
     const current = document.createElement('canvas');
-    renderLibraryThumbnail(current, toy);
+    renderLibraryThumbnail(current, toy, 256);
     current.dataset.volumeRenderer = 'studio-shader-256';
     const flat = renderVolumeControl(toy, false);
     const relief = renderVolumeControl(toy, true);
