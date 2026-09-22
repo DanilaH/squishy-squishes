@@ -176,7 +176,9 @@ export class PhaserDeformableVolume {
       const a = i * 4;
       const b = (n + i) * 4;
       this.packed[a] = inset.x;
-      this.packed[a + 1] = inset.y;
+      // Raise the side's inner rim into the opaque front, covering the
+      // subpixel antialias transition without changing the outer silhouette.
+      this.packed[a + 1] = inset.y + 0.025;
       this.packed[b] = deformed.x + thickness * 0.31;
       this.packed[b + 1] = deformed.y - thickness;
       this.packed[a + 2] = this.packed[b + 2] = u;
