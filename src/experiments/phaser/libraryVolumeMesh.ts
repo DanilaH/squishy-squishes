@@ -2,12 +2,10 @@ import { getShape } from '../../game/shapes';
 import { drawAccessoryGraphic, getDecorFrame } from '../../sandbox/decor';
 import type { SavedSquishy } from '../../sandbox/types';
 
-/** Lab-only real 3D geometry: an inflated front, smoothly rounded rim and rear.
- * A single reusable offscreen WebGL2 context belongs to the open review lab,
- * never to an individual Hall card. Player saves, Studio and ordinary Hall are
- * untouched. Painted frontal pixels come from the same saved V3-format toy. */
+/** Lab-only curved geometry. Exactly one disposable offscreen WebGL2 context
+ * renders all five-way comparison specimens on demand, never per Hall card. */
 const SIZE = 512;
-const FRONT_RINGS = 22;
+const FRONT_RINGS = 26;
 const STRIDE = 9;
 const VERTEX = `#version 300 es
 layout(location=0) in vec3 aPosition;
@@ -18,15 +16,14 @@ out vec3 vNormal;
 out vec2 vUv;
 out float vFront;
 void main() {
-  const float yaw = -0.30;
-  const float pitch = -0.18;
+  // Subtle three-quarter angle shows thickness without distorting saved art.
+  const float yaw = -0.19;
+  const float pitch = -0.11;
   float cy = cos(yaw), sy = sin(yaw), cp = cos(pitch), sp = sin(pitch);
   vec3 p = vec3(aPosition.x * cy + aPosition.z * sy,
-                aPosition.y,
-                -aPosition.x * sy + aPosition.z * cy);
+                aPosition.y, -aPosition.x * sy + aPosition.z * cy);
   vec3 n = vec3(aNormal.x * cy + aNormal.z * sy,
-                aNormal.y,
-                -aNormal.x * sy + aNormal.z * cy);
+                aNormal.y, -aNormal.x * sy + aNormal.z * cy);
   p = vec3(p.x, p.y * cp - p.z * sp, p.y * sp + p.z * cp);
   n = vec3(n.x, n.y * cp - n.z * sp, n.y * sp + n.z * cp);
   vNormal = normalize(n);
@@ -43,7 +40,7 @@ uniform sampler2D uFront;
 out vec4 outColor;
 void main() {
   vec3 n = normalize(vNormal);
-  vec3 light = normalize(vec3(-0.44, 0.56, 0.70));
+  vec3 light = normalize(vec3(-0.42, 0.51, 0.75));
   float diffuse = max(dot(n, light), 0.0);
   vec3 color;
   float alpha = 1.0;
@@ -51,104 +48,103 @@ void main() {
     vec4 paint = texture(uFront, vUv);
     if (paint.a < 0.025) discard;
     alpha = paint.a;
-    // Preserve saved paint/eyes; directional light only modifies the surface.
-    color = paint.rgb * (0.70 + 0.33 * diffuse);
+    // Preserve saved brush, stickers, face and material tone. Soft matte light
+    // should round the geometry, not turn the lower half into muddy cardboard.
+    color = paint.rgb * (0.83 + 0.20 * diffuse);
     vec3 halfDirection = normalize(light + vec3(0.0, 0.0, 1.0));
-    color += vec3(1.0, 0.97, 0.88) * pow(max(dot(n, halfDirection), 0.0), 30.0) * 0.085;
+    color += vec3(1.0, 0.97, 0.88) * pow(max(dot(n, halfDirection), 0.0), 21.0) * 0.055;
   } else {
-    // Real side geometry is deliberately darker and less reflective than the face.
-    color = vec3(0.73, 0.60, 0.46) * (0.63 + 0.40 * diffuse);
+    // Match warm milk body, not the previous dark brown cut-out side.
+    color = vec3(0.89, 0.79, 0.67) * (0.82 + 0.20 * diffuse);
   }
   outColor = vec4(clamp(color, 0.0, 1.0), alpha);
 }`;
 
 const addVertex = (vertices: number[], x: number, y: number, z: number,
   nx: number, ny: number, nz: number, front: number): void => {
-  // The flat 512px control was authored in the same logical 256px domain.
-  // UNPACK_FLIP_Y_WEBGL maps its top edge to v=1 after upload.
+  // Inverse of the 512px control's logical 256px silhouette transform. The
+  // uploaded texture has UNPACK_FLIP_Y_WEBGL set for bottom-origin UVs.
   vertices.push(x, y, z, nx, ny, nz,
     0.5 + x * 0.43, 0.5 + y * 0.362 - 0.0072, front);
 };
 
 const createMesh = (toy: SavedSquishy): { vertices: Float32Array; indices: Uint16Array } => {
   const boundary = getShape(toy.shapeId).boundary;
-  const n = boundary.length;
+  const count = boundary.length;
   const vertices: number[] = [];
   const indices: number[] = [];
-  let signedArea = 0;
-  for (let i = 0; i < n; i += 1) {
-    const a = boundary[i]!, b = boundary[(i + 1) % n]!;
-    signedArea += a.x * b.y - b.x * a.y;
+  let area = 0;
+  for (let i = 0; i < count; i += 1) {
+    const a = boundary[i]!, b = boundary[(i + 1) % count]!;
+    area += a.x * b.y - b.x * a.y;
   }
-  const orientation = signedArea >= 0 ? 1 : -1;
+  const orientation = area >= 0 ? 1 : -1;
   const outward = boundary.map((_, i) => {
-    const prev = boundary[(i + n - 1) % n]!, next = boundary[(i + 1) % n]!;
-    const tx = next.x - prev.x, ty = next.y - prev.y;
+    const previous = boundary[(i + count - 1) % count]!;
+    const next = boundary[(i + 1) % count]!;
+    const tx = next.x - previous.x, ty = next.y - previous.y;
     const length = Math.hypot(tx, ty) || 1;
     return { x: orientation * ty / length, y: -orientation * tx / length };
   });
-  const connect = (start: number, count: number): void => {
-    for (let ring = 0; ring < count - 1; ring += 1) {
-      for (let i = 0; i < n; i += 1) {
-        const next = (i + 1) % n;
-        const a = start + ring * n + i;
-        const b = start + ring * n + next;
-        const c = start + (ring + 1) * n + i;
-        const d = start + (ring + 1) * n + next;
+  const joinRings = (start: number, rings: number): void => {
+    for (let ring = 0; ring < rings - 1; ring += 1) {
+      for (let i = 0; i < count; i += 1) {
+        const next = (i + 1) % count;
+        const a = start + ring * count + i;
+        const b = start + ring * count + next;
+        const c = start + (ring + 1) * count + i;
+        const d = start + (ring + 1) * count + next;
         indices.push(a, c, b, b, c, d);
       }
     }
   };
 
-  // Front is a true curved surface: its silhouette and texture are mapped on
-  // 23 concentric rings, not one flat image translated in screen space.
   const frontStart = vertices.length / STRIDE;
   for (let ring = 0; ring <= FRONT_RINGS; ring += 1) {
-    const r = ring / FRONT_RINGS;
-    const z = 0.095 + 0.24 * Math.sqrt(Math.max(0, 1 - r * r));
-    for (let i = 0; i < n; i += 1) {
+    const radius = ring / FRONT_RINGS;
+    const z = 0.09 + 0.30 * Math.sqrt(Math.max(0, 1 - radius * radius));
+    for (let i = 0; i < count; i += 1) {
       const point = boundary[i]!, normal = outward[i]!;
-      const outwardStrength = 1.6 * Math.pow(r, 1.7);
-      const forwardStrength = 1.15 - 0.92 * Math.pow(r, 1.9);
-      const length = Math.hypot(normal.x * outwardStrength, normal.y * outwardStrength, forwardStrength);
-      addVertex(vertices, point.x * r, point.y * r, z,
-        normal.x * outwardStrength / length, normal.y * outwardStrength / length,
-        forwardStrength / length, 1);
+      const rim = 1.25 * Math.pow(radius, 1.6);
+      const front = 1.25 - 1.02 * Math.pow(radius, 1.8);
+      const length = Math.hypot(normal.x * rim, normal.y * rim, front);
+      addVertex(vertices, point.x * radius, point.y * radius, z,
+        normal.x * rim / length, normal.y * rim / length, front / length, 1);
     }
   }
-  connect(frontStart, FRONT_RINGS + 1);
+  joinRings(frontStart, FRONT_RINGS + 1);
 
-  // Side profile flares slightly before rounding underneath the front; normals
-  // flow from the front tangent to the rear. This is real surface thickness.
+  // The maximum side radius is just 1.025, not a rigid 1.04 lip. Multiple
+  // cross-sections give smooth side normals and an actual shallow back roll.
   const sideStart = vertices.length / STRIDE;
   const sections = [
-    { radius: 1.0, z: 0.095, nz: 0.15 },
-    { radius: 1.040, z: 0.005, nz: 0.02 },
-    { radius: 1.018, z: -0.105, nz: -0.10 },
-    { radius: 0.970, z: -0.160, nz: -0.52 },
+    { r: 1.000, z: 0.090, nz: 0.21 },
+    { r: 1.025, z: 0.028, nz: 0.08 },
+    { r: 1.017, z: -0.042, nz: -0.08 },
+    { r: 0.990, z: -0.094, nz: -0.33 },
+    { r: 0.962, z: -0.116, nz: -0.62 },
   ] as const;
   for (const section of sections) {
-    for (let i = 0; i < n; i += 1) {
+    for (let i = 0; i < count; i += 1) {
       const point = boundary[i]!, normal = outward[i]!;
       const length = Math.hypot(normal.x, normal.y, section.nz);
-      addVertex(vertices, point.x * section.radius, point.y * section.radius, section.z,
+      addVertex(vertices, point.x * section.r, point.y * section.r, section.z,
         normal.x / length, normal.y / length, section.nz / length, 0);
     }
   }
-  connect(sideStart, sections.length);
+  joinRings(sideStart, sections.length);
 
-  // A rear cap closes the mesh, including concave heart and paw silhouettes.
   const backStart = vertices.length / STRIDE;
   for (let ring = 0; ring <= 2; ring += 1) {
-    const r = ring / 2;
-    const z = -0.160 - 0.035 * Math.sqrt(Math.max(0, 1 - r * r));
-    for (let i = 0; i < n; i += 1) {
+    const radius = ring / 2;
+    const z = -0.116 - 0.025 * Math.sqrt(Math.max(0, 1 - radius * radius));
+    for (let i = 0; i < count; i += 1) {
       const point = boundary[i]!, normal = outward[i]!;
-      addVertex(vertices, point.x * r * 0.97, point.y * r * 0.97, z,
-        normal.x * r * 0.25, normal.y * r * 0.25, -1, 0);
+      addVertex(vertices, point.x * radius * 0.962, point.y * radius * 0.962,
+        z, normal.x * radius * 0.20, normal.y * radius * 0.20, -1, 0);
     }
   }
-  connect(backStart, 3);
+  joinRings(backStart, 3);
   return { vertices: new Float32Array(vertices), indices: new Uint16Array(indices) };
 };
 
