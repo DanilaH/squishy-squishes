@@ -5,7 +5,7 @@ test('desktop same-toy 256px / 512px flat / 512px relief comparison across three
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/phaser-pages.html?volume-probe=1');
+  await page.goto('/phaser/?volume-probe=1');
   const lab = page.locator('#library-volume-probe');
   await expect(lab).toBeVisible();
   await expect(lab.locator('article canvas')).toHaveCount(3);
@@ -30,7 +30,7 @@ test('desktop same-toy 256px / 512px flat / 512px relief comparison across three
 
 test('phone volume comparison stays inspectable without mutating saved Hall', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser-pages.html?volume-probe=1');
+  await page.goto('/phaser/?volume-probe=1');
   const lab = page.locator('#library-volume-probe');
   await expect(lab.locator('article canvas')).toHaveCount(3);
   await lab.locator('[data-shape="heart"]').click();
