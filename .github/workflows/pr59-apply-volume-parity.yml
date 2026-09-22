@@ -1,0 +1,91 @@
+name: PR 59 one-shot volume parity patch
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: [.github/workflows/pr59-apply-volume-parity.yml]
+permissions:
+  contents: write
+jobs:
+  parity-patch:
+    if: github.repository == 'DanilaH/squishy-squishes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - name: Apply narrow Pages-only mesh and crown adjustments
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          mesh = Path('src/experiments/phaser/libraryVolumeMesh.ts')
+          text = mesh.read_text()
+          changes = [
+            ('const float yaw = -0.19;', 'const float yaw = -0.12;'),
+            ('const float pitch = -0.11;', 'const float pitch = -0.07;'),
+            ('color = uSideColor * (0.82 + 0.20 * diffuse);', 'color = mix(uSideColor, texture(uFront, vUv).rgb, 0.92) * (0.82 + 0.20 * diffuse);'),
+            ('nx: number, ny: number, nz: number, front: number): void => {', 'nx: number, ny: number, nz: number, front: number, uvRadius = 1): void => {'),
+            ('0.5 + x * 0.43, 0.5 + y * 0.362 - 0.0072, front);', '0.5 + x * 0.43 * uvRadius, 0.5 + y * 0.362 * uvRadius - 0.0072, front);'),
+            ('''      const rim = 1.25 * Math.pow(radius, 1.6);
+              const front = 1.25 - 1.02 * Math.pow(radius, 1.8);
+              const length = Math.hypot(normal.x * rim, normal.y * rim, front);
+              addVertex(vertices, point.x * radius, point.y * radius, z,
+                normal.x * rim / length, normal.y * rim / length, front / length, 1);''', '''      // Smooth convex front normals are radial. Contour-only normals create
+              // false triangular wedges across the concave gaps of the paw.
+              const slope = 0.30 * radius / Math.sqrt(Math.max(0.045, 1 - radius * radius));
+              const contourBlend = 0.18 * Math.pow(radius, 5);
+              const nx = point.x * slope * 0.85 + normal.x * contourBlend;
+              const ny = point.y * slope * 0.85 + normal.y * contourBlend;
+              const length = Math.hypot(nx, ny, 1);
+              addVertex(vertices, point.x * radius, point.y * radius, z,
+                nx / length, ny / length, 1 / length, 1);'''),
+            ('normal.x / length, normal.y / length, section.nz / length, 0);', 'normal.x / length, normal.y / length, section.nz / length, 0, 0.91 / section.r);'),
+          ]
+          for before, after in changes:
+              if text.count(before) != 1:
+                  raise RuntimeError(f'Expected exactly one mesh edit match, saw {text.count(before)}: {before[:100]}')
+              text = text.replace(before, after)
+          mesh.write_text(text)
+          card = Path('src/sandbox/libraryThumbnail.ts')
+          text = card.read_text()
+          before = 'context.drawImage(accessoryCanvas, anchorX - drawWidth * 0.5, anchorY - drawHeight * 0.9, drawWidth, drawHeight);'
+          after = '''// The Pages mesh sits farther forward than the live flat surface. Seat
+                    // the crown visibly above its tips, not buried inside the paw.
+                    // The original and Yandex renderer retain their exact placement.
+                    const crownLift = pagesMaterialLighting && outputSize === 512 && toy.decor.accessory === 'crown' ? 27 : 0;
+                    context.drawImage(accessoryCanvas, anchorX - drawWidth * 0.5, anchorY - drawHeight * 0.9 - crownLift, drawWidth, drawHeight);'''
+          if text.count(before) != 1: raise RuntimeError('Unexpected Library crown drawing code')
+          card.write_text(text.replace(before, after))
+          PY
+          git diff --check
+          git diff --stat
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify exact adjusted Pages build
+        run: npm run pages:build
+      - name: Exercise genuinely saved specimens across all three scenes
+        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
+      - name: Upload visual evidence even on test failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr59-parity-first-pass
+          path: |
+            test-results/**/library-hall-parity-*.png
+            test-results/**/library-hall-parity-*.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Commit only the reviewed renderer changes on the existing draft branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- src/experiments/phaser/libraryVolumeMesh.ts src/sandbox/libraryThumbnail.ts
+          git commit -m 'fix(pages): soften radial volume shading, tint sides from paint, lift paw crown'
+          git push origin HEAD:feat/library-visual-recovery-sep21
