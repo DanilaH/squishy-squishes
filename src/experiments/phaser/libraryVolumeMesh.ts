@@ -18,8 +18,8 @@ out vec2 vUv;
 out float vFront;
 void main() {
   // Subtle three-quarter angle shows thickness without distorting saved art.
-  const float yaw = -0.19;
-  const float pitch = -0.11;
+  const float yaw = -0.12;
+  const float pitch = -0.07;
   float cy = cos(yaw), sy = sin(yaw), cp = cos(pitch), sp = sin(pitch);
   vec3 p = vec3(aPosition.x * cy + aPosition.z * sy,
                 aPosition.y, -aPosition.x * sy + aPosition.z * cy);
@@ -58,17 +58,17 @@ void main() {
     color += vec3(1.0, 0.97, 0.88) * pow(max(dot(n, halfDirection), 0.0), 21.0) * mix(0.055, 0.15, uMetallic);
   } else {
     // Match warm milk body, not the previous dark brown cut-out side.
-    color = uSideColor * (0.82 + 0.20 * diffuse);
+    color = mix(uSideColor, texture(uFront, vUv).rgb, 0.92) * (0.82 + 0.20 * diffuse);
   }
   outColor = vec4(clamp(color, 0.0, 1.0), alpha);
 }`;
 
 const addVertex = (vertices: number[], x: number, y: number, z: number,
-  nx: number, ny: number, nz: number, front: number): void => {
+  nx: number, ny: number, nz: number, front: number, uvRadius = 1): void => {
   // Inverse of the 512px control's logical 256px silhouette transform. The
   // uploaded texture has UNPACK_FLIP_Y_WEBGL set for bottom-origin UVs.
   vertices.push(x, y, z, nx, ny, nz,
-    0.5 + x * 0.43, 0.5 + y * 0.362 - 0.0072, front);
+    0.5 + x * 0.43 * uvRadius, 0.5 + y * 0.362 * uvRadius - 0.0072, front);
 };
 
 const createMesh = (toy: SavedSquishy): { vertices: Float32Array; indices: Uint16Array } => {
@@ -108,11 +108,14 @@ const createMesh = (toy: SavedSquishy): { vertices: Float32Array; indices: Uint1
     const z = 0.09 + 0.30 * Math.sqrt(Math.max(0, 1 - radius * radius));
     for (let i = 0; i < count; i += 1) {
       const point = boundary[i]!, normal = outward[i]!;
-      const rim = 1.25 * Math.pow(radius, 1.6);
-      const front = 1.25 - 1.02 * Math.pow(radius, 1.8);
-      const length = Math.hypot(normal.x * rim, normal.y * rim, front);
+      // Smooth radial normals avoid diagonal wedges across concave paw tips.
+      const slope = 0.30 * radius / Math.sqrt(Math.max(0.045, 1 - radius * radius));
+      const contourBlend = 0.18 * Math.pow(radius, 5);
+      const nx = point.x * slope * 0.85 + normal.x * contourBlend;
+      const ny = point.y * slope * 0.85 + normal.y * contourBlend;
+      const length = Math.hypot(nx, ny, 1);
       addVertex(vertices, point.x * radius, point.y * radius, z,
-        normal.x * rim / length, normal.y * rim / length, front / length, 1);
+        nx / length, ny / length, 1 / length, 1);
     }
   }
   joinRings(frontStart, FRONT_RINGS + 1);
@@ -132,7 +135,7 @@ const createMesh = (toy: SavedSquishy): { vertices: Float32Array; indices: Uint1
       const point = boundary[i]!, normal = outward[i]!;
       const length = Math.hypot(normal.x, normal.y, section.nz);
       addVertex(vertices, point.x * section.r, point.y * section.r, section.z,
-        normal.x / length, normal.y / length, section.nz / length, 0);
+        normal.x / length, normal.y / length, section.nz / length, 0, 0.91 / section.r);
     }
   }
   joinRings(sideStart, sections.length);
