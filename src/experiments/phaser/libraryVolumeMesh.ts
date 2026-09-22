@@ -49,7 +49,7 @@ void main() {
   float alpha = 1.0;
   if (vFront > 0.5) {
     vec4 paint = texture(uFront, vUv);
-    if (paint.a < 0.025) discard;
+    if (paint.a < 0.025) paint = vec4(uSideColor, 1.0);
     alpha = paint.a;
     // Preserve saved brush, stickers, face and material tone. Soft matte light
     // should round the geometry, not turn the lower half into muddy cardboard.

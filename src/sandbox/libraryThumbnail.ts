@@ -269,6 +269,7 @@ export const renderLibraryThumbnail = (
 
   // One shared WebGL2 renderer snapshots the *actual* Studio material once per
   // card. The Canvas2D approximation remains a functional lost-WebGL fallback.
+  if (pagesMaterialLighting) delete canvas.dataset.libraryRenderer;
   if (pagesMaterialLighting && pagesRenderer?.(context, toy, THUMBNAIL_SIZE * rasterScale as 256 | 512)) {
     if (canvas.dataset.libraryRenderer !== 'volume-mesh') canvas.dataset.libraryRenderer = 'studio-shader';
     return;
