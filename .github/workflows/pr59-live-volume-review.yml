@@ -1,0 +1,91 @@
+name: PR 59 isolated live volume integration
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: [.github/workflows/pr59-live-volume-review.yml]
+permissions:
+  contents: write
+jobs:
+  live-volume:
+    if: github.repository == 'DanilaH/squishy-squishes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - name: Opt in only the Pages Phaser surface, preserving original raw and standalone candidate
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          def patch(path, substitutions):
+              file = Path(path)
+              content = file.read_text()
+              for old, new in substitutions:
+                  n = content.count(old)
+                  if n != 1: raise RuntimeError(f'{path}: expected one patch site, found {n}: {old[:110]}')
+                  content = content.replace(old, new)
+              file.write_text(content)
+          patch('src/experiments/phaser/PhaserSquishCandidate.ts', [
+              ("import { fragmentShaderSource, vertexShaderSource } from '../../squish/shaders';", "import { fragmentShaderSource, vertexShaderSource } from '../../squish/shaders';\nimport { PhaserDeformableVolume, pagesVolumeFrontShader } from './PhaserDeformableVolume';"),
+              ('  private gpu: GpuResources | null = null;', '  private gpu: GpuResources | null = null;\n  private volume: PhaserDeformableVolume | null = null;'),
+              ('public constructor(scene: Phaser.Scene, private readonly gl: WebGL2RenderingContext) {', 'public constructor(scene: Phaser.Scene, private readonly gl: WebGL2RenderingContext, private readonly pagesVolume = false) {'),
+              ('const fragmentShader = compile(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);', 'const fragmentShader = compile(gl, gl.FRAGMENT_SHADER, this.pagesVolume ? pagesVolumeFrontShader : fragmentShaderSource);'),
+              ('    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);\n    gl.bindBuffer(gl.ARRAY_BUFFER, gpu.vertices);', '''    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    if (this.pagesVolume && !this.wireframe && this.fillProgress >= 0.999 && this.moldProgress > 0.85) {
+      this.volume ??= new PhaserDeformableVolume(gl);
+      const radius = Math.min(this.scene.scale.width, this.scene.scale.height) * 0.34;
+      this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
+        this.appearanceEnabled, radius * 2 / this.scene.scale.width,
+        radius * 2 / this.scene.scale.height, this.moldProgress, sample.compression);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, gpu.vertices);'''),
+              ('  public forgetLostContext(): void {\n    this.gpu = null;', '  public forgetLostContext(): void {\n    this.volume?.dispose();\n    this.volume = null;\n    this.gpu = null;'),
+              ('    const gpu = this.gpu;\n    this.gpu = null;\n    if (!gpu || this.gl.isContextLost()) return;', '    const gpu = this.gpu;\n    this.volume?.dispose();\n    this.volume = null;\n    this.gpu = null;\n    if (!gpu || this.gl.isContextLost()) return;'),
+          ])
+          patch('src/sandbox/PhaserSquishSurface.ts', [
+              ('    private readonly callbacks: PhaserSandboxCallbacks,\n', '    private readonly callbacks: PhaserSandboxCallbacks,\n    private readonly volumeProfile = false,\n'),
+              ('new PhaserSquishCandidate(this, gl!);', 'new PhaserSquishCandidate(this, gl!, owner.volumeProfile);'),
+              ("        canvas.dataset.phaserReady = 'true';", "        canvas.dataset.phaserReady = 'true';\n        if (owner.volumeProfile) canvas.dataset.phaserVolume = 'deformable';"),
+              ('    delete this.canvas.dataset.phaserReady;', '    delete this.canvas.dataset.phaserReady;\n    delete this.canvas.dataset.phaserVolume;'),
+          ])
+          patch('src/experiments/phaser/pagesPreview.ts', [
+              ('new PhaserSquishSurface(canvas, onMetrics, audio, callbacks),', 'new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),'),
+          ])
+          patch('tests/phaser-pages/library-hall-cross-scene-parity.spec.ts', [
+              ("    await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');", "    await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');\n    await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-volume', 'deformable');"),
+          ])
+          PY
+          git diff --check
+          git diff --stat
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Strict TS and Pages preview build
+        run: npm run pages:build
+      - name: Real saved V3 paw, heart, and jelly: craft, squeeze, Hall, reopen
+        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
+      - name: Upload honest browser evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr59-live-volume-first-pass
+          path: |
+            test-results/**/library-hall-parity-*.png
+            test-results/**/library-hall-parity-*.json
+            test-results/**/trace.zip
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Commit the isolated live renderer only after the browser gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- src/experiments/phaser/PhaserSquishCandidate.ts src/sandbox/PhaserSquishSurface.ts src/experiments/phaser/pagesPreview.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts
+          git commit -m 'feat(review): render deforming volume sidewall in Pages craft and squeeze'
+          git push origin HEAD:feat/library-visual-recovery-sep21
