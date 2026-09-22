@@ -341,13 +341,6 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.disable(gl.CULL_FACE);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    if (this.pagesVolume && !this.wireframe && this.fillProgress >= 0.999 && this.moldProgress > 0.85) {
-      this.volume ??= new PhaserDeformableVolume(gl);
-      const radius = Math.min(this.scene.scale.width, this.scene.scale.height) * 0.34;
-      this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
-        this.appearanceEnabled, radius * 2 / this.scene.scale.width,
-        radius * 2 / this.scene.scale.height, this.moldProgress, sample.compression);
-    }
     gl.bindBuffer(gl.ARRAY_BUFFER, gpu.vertices);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.packed);
     gl.useProgram(gpu.program);
@@ -385,6 +378,13 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.bindVertexArray(gpu.vao);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gpu.indices);
     gl.drawElements(gl.TRIANGLES, this.simulation.triangleIndices.length, gl.UNSIGNED_SHORT, 0);
+    if (this.pagesVolume && !this.wireframe && this.fillProgress >= 0.999 && this.moldProgress > 0.85) {
+      this.volume ??= new PhaserDeformableVolume(gl);
+      const radius = Math.min(this.scene.scale.width, this.scene.scale.height) * 0.34;
+      this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
+        this.appearanceEnabled, radius * 2 / this.scene.scale.width,
+        radius * 2 / this.scene.scale.height, this.moldProgress, sample.compression);
+    }
     if (this.wireframe) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gpu.lines);
       gl.uniform1i(u('uWireframePass'), 1);
