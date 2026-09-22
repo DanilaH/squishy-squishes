@@ -36,11 +36,11 @@ export const renderNeutralVolumeAlbedo = (toy: SavedSquishy): HTMLCanvasElement 
   );
   const material = toy.materialId;
   const gradients = {
-    jelly: ['#f6f3d7', '#dcefcf', '#a9d3c9'],
+    jelly: ['#fff4de', '#e8d8bd', '#cbb79b'],
     holo: ['#f8dce8', '#f1eab9', '#d3eddf', '#ead4f2'],
     pearl: ['#f9efdf', '#e9e1e1', '#d7eae0', '#f6e3e2'],
     chrome: ['#eee8dc', '#8d908e', '#f2efdf', '#767b78', '#dbdad3'],
-    marshmallow: ['#fff8eb', '#f5e8d9', '#e6d4c6'],
+    marshmallow: ['#fff2dc', '#efdec3', '#d4bda0'],
   } as const;
   if (material === 'soft') {
     context.fillStyle = `rgb(${base.join(',')})`;

@@ -75,6 +75,34 @@ for (const specimen of specimens) {
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
     const card = page.locator('[data-library-thumbnail]').first();
     await expect(card).toHaveAttribute('data-library-renderer', 'volume-mesh');
+  // Studio uses a warm milk palette even for Jelly material.
+  if (specimen.material === 'jelly') {
+    const [red, green, blue] = await card.evaluate(node => {
+      const rgb = (node as HTMLCanvasElement).getContext('2d')!
+        .getImageData(110, 225, 1, 1).data;
+      return [rgb[0]!, rgb[1]!, rgb[2]!];
+    });
+    expect(red).toBeGreaterThanOrEqual(green - 3);
+    expect(green).toBeGreaterThan(blue + 10);
+  }
+  if (specimen.accessory === 'crown') {
+    // Measure over the left finger, not the natural deep valley
+    // at the centre of the paw (which has no body under the crown).
+    const longestClearGap = await card.evaluate(node => {
+      const data = (node as HTMLCanvasElement).getContext('2d')!
+        .getImageData(210, 0, 1, 150).data;
+      let seenInk = false, gap = 0, longest = 0;
+      for (let row = 0; row < 150; row += 1) {
+        if (data[row * 4 + 3]! > 150) {
+          if (seenInk) longest = Math.max(longest, gap);
+          seenInk = true;
+          gap = 0;
+        } else if (seenInk) gap += 1;
+      }
+      return longest;
+    });
+    expect(longestClearGap).toBeLessThanOrEqual(12);
+  }
     const png = await card.evaluate(node => (node as HTMLCanvasElement).toDataURL('image/png').split(',')[1]);
     await writeFile(info.outputPath(`${prefix}-hall-512.png`), Buffer.from(png, 'base64'));
     await page.screenshot({ path: info.outputPath(`${prefix}-hall-room.png`) });

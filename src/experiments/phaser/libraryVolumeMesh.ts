@@ -55,7 +55,7 @@ void main() {
     alpha = paint.a;
     // Preserve saved brush, stickers, face and material tone. Soft matte light
     // should round the geometry, not turn the lower half into muddy cardboard.
-    color = paint.rgb * (0.83 + 0.20 * diffuse);
+    color = paint.rgb * (0.78 + 0.18 * diffuse);
     vec3 halfDirection = normalize(light + vec3(0.0, 0.0, 1.0));
     color += vec3(1.0, 0.97, 0.88) * pow(max(dot(n, halfDirection), 0.0), 21.0) * mix(0.055, 0.15, uMetallic);
   } else {
