@@ -63,7 +63,7 @@ void preloadJellyUi().then((ready) => {
     makerRendererOptions: {
       rendererBackend: 'phaser',
       makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
-        new PhaserSquishSurface(canvas, onMetrics, audio, callbacks),
+        new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
     },
   });
 }).then((handle) => {

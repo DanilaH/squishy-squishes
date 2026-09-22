@@ -17,6 +17,7 @@ for (const specimen of specimens) {
     await page.goto('/phaser/');
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+    await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-volume', 'deformable');
     await page.locator(`button[data-shape="${specimen.shape}"]`).click();
     await page.locator('[data-action="shape-continue"]').click();
     await page.locator('[data-paint-color]').nth(2).click();

@@ -13,6 +13,7 @@ import { renderSurfaceDecor, type DecorDocumentV1 } from '../../sandbox/decor';
 import type { SquishFillingStyle, SquishMaterialStyle } from '../../squish/SquishSurface';
 import { SquishSimulation, type SquishSimulationSample } from '../../squish/SquishSimulation';
 import { fragmentShaderSource, vertexShaderSource } from '../../squish/shaders';
+import { PhaserDeformableVolume, pagesVolumeFrontShader } from './PhaserDeformableVolume';
 
 interface GpuResources {
   readonly program: WebGLProgram;
@@ -79,6 +80,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private appearanceRevision = 0;
   private uploadedAppearanceRevision = -1;
   private gpu: GpuResources | null = null;
+  private volume: PhaserDeformableVolume | null = null;
   private shapeId: ShapeId = 'soft-square';
   private paletteId: PaletteId = 'milk';
   private materialId: MaterialId = 'soft';
@@ -93,7 +95,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private disposed = false;
   private lastReleaseEnergy = 0;
 
-  public constructor(scene: Phaser.Scene, private readonly gl: WebGL2RenderingContext) {
+  public constructor(scene: Phaser.Scene, private readonly gl: WebGL2RenderingContext, private readonly pagesVolume = false) {
     super(scene);
     this.appearanceCanvas.width = APPEARANCE_TEXTURE_SIZE;
     this.appearanceCanvas.height = APPEARANCE_TEXTURE_SIZE;
@@ -254,7 +256,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private createGpu(): GpuResources {
     const gl = this.gl;
     const vertexShader = compile(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = compile(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const fragmentShader = compile(gl, gl.FRAGMENT_SHADER, this.pagesVolume ? pagesVolumeFrontShader : fragmentShaderSource);
     const program = gl.createProgram();
     if (!program) throw new Error('Cannot allocate Phaser candidate program');
     gl.attachShader(program, vertexShader);
@@ -339,6 +341,13 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.disable(gl.CULL_FACE);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    if (this.pagesVolume && !this.wireframe && this.fillProgress >= 0.999 && this.moldProgress > 0.85) {
+      this.volume ??= new PhaserDeformableVolume(gl);
+      const radius = Math.min(this.scene.scale.width, this.scene.scale.height) * 0.34;
+      this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
+        this.appearanceEnabled, radius * 2 / this.scene.scale.width,
+        radius * 2 / this.scene.scale.height, this.moldProgress, sample.compression);
+    }
     gl.bindBuffer(gl.ARRAY_BUFFER, gpu.vertices);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.packed);
     gl.useProgram(gpu.program);
@@ -406,6 +415,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public metricsSample(): SquishSimulationSample { return this.simulation.snapshot(); }
 
   public forgetLostContext(): void {
+    this.volume?.dispose();
+    this.volume = null;
     this.gpu = null;
     this.uploadedAppearanceRevision = -1;
     this.cancel();
@@ -416,6 +427,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.disposed = true;
     this.cancel();
     const gpu = this.gpu;
+    this.volume?.dispose();
+    this.volume = null;
     this.gpu = null;
     if (!gpu || this.gl.isContextLost()) return;
     this.gl.deleteBuffer(gpu.vertices);

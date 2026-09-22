@@ -49,6 +49,7 @@ export class PhaserSquishSurface {
     private readonly onMetrics: (metrics: SquishMetrics) => void,
     private readonly audio: SquishyAudio,
     private readonly callbacks: PhaserSandboxCallbacks,
+    private readonly volumeProfile = false,
   ) {
     this.appearanceSnapshot.width = 256;
     this.appearanceSnapshot.height = 256;
@@ -66,7 +67,7 @@ export class PhaserSquishSurface {
       create(): void {
         if (owner.disposed) return;
         owner.scene = this;
-        const squish = new PhaserSquishCandidate(this, gl!);
+        const squish = new PhaserSquishCandidate(this, gl!, owner.volumeProfile);
         owner.squish = squish;
         this.add.existing(squish);
         owner.bridge = new PhaserStudioGestureBridge(this, canvas, {
@@ -92,6 +93,7 @@ export class PhaserSquishSurface {
         owner.syncCanvasSize();
         owner.applyPending();
         canvas.dataset.phaserReady = 'true';
+        if (owner.volumeProfile) canvas.dataset.phaserVolume = 'deformable';
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => owner.cleanupScene());
         this.events.once(Phaser.Scenes.Events.DESTROY, () => owner.cleanupScene());
       }
@@ -246,5 +248,6 @@ export class PhaserSquishSurface {
     this.cleanupScene();
     this.game.destroy(true);
     delete this.canvas.dataset.phaserReady;
+    delete this.canvas.dataset.phaserVolume;
   }
 }
