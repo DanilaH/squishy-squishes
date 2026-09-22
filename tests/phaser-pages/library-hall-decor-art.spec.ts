@@ -56,7 +56,7 @@ test('one fully decorated Studio → Squeeze → Hall exemplar keeps its exact c
   await page.screenshot({ path: info.outputPath('library-hall-art-exemplar-room-320.png'), animations: 'disabled' });
   const png = await page.locator('[data-library-thumbnail]').first().evaluate((node) => (node as HTMLCanvasElement).toDataURL('image/png').split(',')[1]);
   expect(png?.length).toBeGreaterThan(1000);
-  await writeFile(info.outputPath('library-hall-art-exemplar-native-256.png'), Buffer.from(png, 'base64'));
+  await writeFile(info.outputPath('library-hall-art-exemplar-native-512.png'), Buffer.from(png, 'base64'));
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
   expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe(before);
@@ -103,12 +103,14 @@ test('all six contours and all five existing accessory IDs render distinct authe
         const context = image.getContext('2d');
         if (!context) throw new Error('Missing thumbnail Canvas2D');
         return {
+          width: image.width, height: image.height,
           png: image.toDataURL('image/png').split(',')[1],
-          centerAlpha: context.getImageData(128, 128, 1, 1).data[3],
+          centerAlpha: context.getImageData(image.width / 2, image.height / 2, 1, 1).data[3],
           cornerAlpha: context.getImageData(0, 0, 1, 1).data[3],
-          upperAlpha: context.getImageData(128, 40, 1, 1).data[3],
+          upperAlpha: context.getImageData(image.width / 2, Math.round(image.height * 0.15625), 1, 1).data[3],
         };
       });
+      expect([pixels.width, pixels.height]).toEqual([512, 512]);
       expect(pixels.centerAlpha, `blank ${shape}/${accessory}`).toBeGreaterThan(0);
       expect(pixels.cornerAlpha, `rectangular leak ${shape}/${accessory}`).toBe(0);
       expect(pixels.png).toBeTruthy();
@@ -116,7 +118,7 @@ test('all six contours and all five existing accessory IDs render distinct authe
       const hash = createHash('sha256').update(bytes).digest('hex');
       seen.add(hash);
       (variants.get(shape) ?? variants.set(shape, new Set()).get(shape)!).add(hash);
-      await writeFile(info.outputPath(`library-hall-art-${shape}-${accessory}-256.png`), bytes);
+      await writeFile(info.outputPath(`library-hall-art-${shape}-${accessory}-512.png`), bytes);
     }
     expect(seen.size, `some shape images identical for ${accessory}`).toBe(SHAPES.length);
     for (let room = 1; room <= 3; room++) {
