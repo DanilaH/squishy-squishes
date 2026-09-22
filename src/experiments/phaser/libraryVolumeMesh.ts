@@ -1,9 +1,9 @@
-import { getShape, type ShapeId, type ShapePoint } from '../../game/shapes';
+import { getShape } from '../../game/shapes';
 import { drawAccessoryGraphic, getDecorFrame } from '../../sandbox/decor';
 import type { SavedSquishy } from '../../sandbox/types';
 
-/** Query-gated comparison only. One disposable WebGL2 context and cached shape
- * meshes; the saved game, Studio physics and regular Hall never use this path. */
+/** Lab-only curved geometry. Exactly one disposable offscreen WebGL2 context
+ * renders all five-way comparison specimens on demand, never per Hall card. */
 const SIZE = 512;
 const FRONT_RINGS = 26;
 const STRIDE = 9;
@@ -16,6 +16,7 @@ out vec3 vNormal;
 out vec2 vUv;
 out float vFront;
 void main() {
+  // Subtle three-quarter angle shows thickness without distorting saved art.
   const float yaw = -0.19;
   const float pitch = -0.11;
   float cy = cos(yaw), sy = sin(yaw), cp = cos(pitch), sp = sin(pitch);
@@ -42,85 +43,46 @@ void main() {
   vec3 light = normalize(vec3(-0.42, 0.51, 0.75));
   float diffuse = max(dot(n, light), 0.0);
   vec3 color;
+  float alpha = 1.0;
   if (vFront > 0.5) {
     vec4 paint = texture(uFront, vUv);
-    // An actual curved contour can extend beyond the 2D shader's alpha mask,
-    // especially inside heart/paw valleys. Geometry owns the silhouette: do
-    // not discard those triangles and create holes through the inflated body.
-    if (paint.a < 0.95) {
-      vec4 inward = texture(uFront, 0.5 + (vUv - 0.5) * 0.91);
-      paint = mix(inward, paint, smoothstep(0.05, 0.95, paint.a));
-    }
-    color = mix(vec3(0.91, 0.83, 0.73), paint.rgb, paint.a);
-    color *= 0.92 + 0.10 * diffuse;
-    vec3 halfway = normalize(light + vec3(0.0, 0.0, 1.0));
-    color += vec3(1.0, 0.97, 0.91)
-      * pow(max(dot(n, halfway), 0.0), 22.0) * 0.035;
+    if (paint.a < 0.025) discard;
+    alpha = paint.a;
+    // Preserve saved brush, stickers, face and material tone. Soft matte light
+    // should round the geometry, not turn the lower half into muddy cardboard.
+    color = paint.rgb * (0.83 + 0.20 * diffuse);
+    vec3 halfDirection = normalize(light + vec3(0.0, 0.0, 1.0));
+    color += vec3(1.0, 0.97, 0.88) * pow(max(dot(n, halfDirection), 0.0), 21.0) * 0.055;
   } else {
-    // Carry the same saved frontal pigment onto the side rather than drawing
-    // one unrelated brown cardboard slab around every shape and material.
-    vec4 pigment = texture(uFront, 0.5 + (vUv - 0.5) * 0.84);
-    color = mix(vec3(0.88, 0.80, 0.70), pigment.rgb, pigment.a * 0.78);
-    color *= 0.86 + 0.15 * diffuse;
+    // Match warm milk body, not the previous dark brown cut-out side.
+    color = vec3(0.89, 0.79, 0.67) * (0.82 + 0.20 * diffuse);
   }
-  outColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+  outColor = vec4(clamp(color, 0.0, 1.0), alpha);
 }`;
 
 const addVertex = (vertices: number[], x: number, y: number, z: number,
   nx: number, ny: number, nz: number, front: number): void => {
-  // Inverse mapping of the lab's authored 512px/256-logical-domain art.
+  // Inverse of the 512px control's logical 256px silhouette transform. The
+  // uploaded texture has UNPACK_FLIP_Y_WEBGL set for bottom-origin UVs.
   vertices.push(x, y, z, nx, ny, nz,
     0.5 + x * 0.43, 0.5 + y * 0.362 - 0.0072, front);
 };
 
-/** Closest contour position, not distance to the centre. Deep paw valleys and
- * the heart cleft should inflate locally instead of receiving a centre-to-tip
- * triangular fold. Evaluate once per cached shape mesh, never every frame. */
-const nearestBoundary = (x: number, y: number, boundary: readonly ShapePoint[]): {
-  distance: number; outwardX: number; outwardY: number;
-} => {
-  let best = Number.POSITIVE_INFINITY;
-  let nearestX = x;
-  let nearestY = y;
-  for (let i = 0; i < boundary.length; i += 1) {
-    const a = boundary[i]!;
-    const b = boundary[(i + 1) % boundary.length]!;
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const length2 = dx * dx + dy * dy;
-    const t = length2 < 1e-12 ? 0
-      : Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / length2));
-    const px = a.x + t * dx;
-    const py = a.y + t * dy;
-    const distance2 = (px - x) ** 2 + (py - y) ** 2;
-    if (distance2 < best) { best = distance2; nearestX = px; nearestY = py; }
-  }
-  const distance = Math.sqrt(best);
-  return { distance, outwardX: distance > 1e-6 ? (nearestX - x) / distance : 0,
-    outwardY: distance > 1e-6 ? (nearestY - y) / distance : 0 };
-};
-
-type ShapeMesh = { vertices: Float32Array; indices: Uint16Array };
-const meshes = new Map<ShapeId, ShapeMesh>();
-const createMesh = (shapeId: ShapeId): ShapeMesh => {
-  const cached = meshes.get(shapeId);
-  if (cached) return cached;
-  const boundary = getShape(shapeId).boundary;
+const createMesh = (toy: SavedSquishy): { vertices: Float32Array; indices: Uint16Array } => {
+  const boundary = getShape(toy.shapeId).boundary;
   const count = boundary.length;
   const vertices: number[] = [];
   const indices: number[] = [];
   let area = 0;
   for (let i = 0; i < count; i += 1) {
-    const a = boundary[i]!;
-    const b = boundary[(i + 1) % count]!;
+    const a = boundary[i]!, b = boundary[(i + 1) % count]!;
     area += a.x * b.y - b.x * a.y;
   }
   const orientation = area >= 0 ? 1 : -1;
   const outward = boundary.map((_, i) => {
     const previous = boundary[(i + count - 1) % count]!;
     const next = boundary[(i + 1) % count]!;
-    const tx = next.x - previous.x;
-    const ty = next.y - previous.y;
+    const tx = next.x - previous.x, ty = next.y - previous.y;
     const length = Math.hypot(tx, ty) || 1;
     return { x: orientation * ty / length, y: -orientation * tx / length };
   });
@@ -140,37 +102,31 @@ const createMesh = (shapeId: ShapeId): ShapeMesh => {
   const frontStart = vertices.length / STRIDE;
   for (let ring = 0; ring <= FRONT_RINGS; ring += 1) {
     const radius = ring / FRONT_RINGS;
+    const z = 0.09 + 0.30 * Math.sqrt(Math.max(0, 1 - radius * radius));
     for (let i = 0; i < count; i += 1) {
-      const point = boundary[i]!;
-      const x = point.x * radius;
-      const y = point.y * radius;
-      const nearest = nearestBoundary(x, y, boundary);
-      // A smooth dome on each local lobe. The old sqrt(1-radius²) created
-      // hard radial streaks toward the single shared centre of concave shapes.
-      const rise = Math.min(1, nearest.distance / 0.41);
-      const angle = rise * Math.PI * 0.5;
-      const z = 0.09 + 0.29 * Math.sin(angle);
-      const slope = nearest.distance < 0.41
-        ? (0.29 * Math.PI / (2 * 0.41)) * Math.cos(angle) : 0;
-      const length = Math.hypot(nearest.outwardX * slope, nearest.outwardY * slope, 1);
-      addVertex(vertices, x, y, z,
-        nearest.outwardX * slope / length, nearest.outwardY * slope / length, 1 / length, 1);
+      const point = boundary[i]!, normal = outward[i]!;
+      const rim = 1.25 * Math.pow(radius, 1.6);
+      const front = 1.25 - 1.02 * Math.pow(radius, 1.8);
+      const length = Math.hypot(normal.x * rim, normal.y * rim, front);
+      addVertex(vertices, point.x * radius, point.y * radius, z,
+        normal.x * rim / length, normal.y * rim / length, front / length, 1);
     }
   }
   joinRings(frontStart, FRONT_RINGS + 1);
 
+  // The maximum side radius is just 1.025, not a rigid 1.04 lip. Multiple
+  // cross-sections give smooth side normals and an actual shallow back roll.
   const sideStart = vertices.length / STRIDE;
   const sections = [
     { r: 1.000, z: 0.090, nz: 0.21 },
-    { r: 1.020, z: 0.025, nz: 0.06 },
-    { r: 1.012, z: -0.043, nz: -0.12 },
-    { r: 0.987, z: -0.092, nz: -0.34 },
-    { r: 0.958, z: -0.111, nz: -0.65 },
+    { r: 1.025, z: 0.028, nz: 0.08 },
+    { r: 1.017, z: -0.042, nz: -0.08 },
+    { r: 0.990, z: -0.094, nz: -0.33 },
+    { r: 0.962, z: -0.116, nz: -0.62 },
   ] as const;
   for (const section of sections) {
     for (let i = 0; i < count; i += 1) {
-      const point = boundary[i]!;
-      const normal = outward[i]!;
+      const point = boundary[i]!, normal = outward[i]!;
       const length = Math.hypot(normal.x, normal.y, section.nz);
       addVertex(vertices, point.x * section.r, point.y * section.r, section.z,
         normal.x / length, normal.y / length, section.nz / length, 0);
@@ -181,18 +137,15 @@ const createMesh = (shapeId: ShapeId): ShapeMesh => {
   const backStart = vertices.length / STRIDE;
   for (let ring = 0; ring <= 2; ring += 1) {
     const radius = ring / 2;
-    const z = -0.111 - 0.025 * Math.sqrt(Math.max(0, 1 - radius * radius));
+    const z = -0.116 - 0.025 * Math.sqrt(Math.max(0, 1 - radius * radius));
     for (let i = 0; i < count; i += 1) {
-      const point = boundary[i]!;
-      const normal = outward[i]!;
-      addVertex(vertices, point.x * radius * 0.958, point.y * radius * 0.958,
+      const point = boundary[i]!, normal = outward[i]!;
+      addVertex(vertices, point.x * radius * 0.962, point.y * radius * 0.962,
         z, normal.x * radius * 0.20, normal.y * radius * 0.20, -1, 0);
     }
   }
   joinRings(backStart, 3);
-  const mesh = { vertices: new Float32Array(vertices), indices: new Uint16Array(indices) };
-  meshes.set(shapeId, mesh);
-  return mesh;
+  return { vertices: new Float32Array(vertices), indices: new Uint16Array(indices) };
 };
 
 class VolumeMeshRenderer {
@@ -270,7 +223,7 @@ class VolumeMeshRenderer {
   render(toy: SavedSquishy, flat: HTMLCanvasElement): HTMLCanvasElement {
     const gl = this.gl;
     if (gl.isContextLost()) throw new Error('3D review WebGL context lost');
-    const mesh = createMesh(toy.shapeId);
+    const mesh = createMesh(toy);
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, mesh.vertices, gl.DYNAMIC_DRAW);
@@ -310,6 +263,7 @@ class VolumeMeshRenderer {
       if (accessoryContext) {
         accessoryContext.setTransform(2, 0, 0, 2, 0, 0);
         drawAccessoryGraphic(accessoryContext, toy.decor.accessory, 180, 120, toy.shapeId);
+        // Front projects slightly up and left; the bow is behind the body.
         context.drawImage(accessory, (x - 56) * 2 - 10, (y - 67.5) * 2 - 7, 224, 150);
       }
     }
