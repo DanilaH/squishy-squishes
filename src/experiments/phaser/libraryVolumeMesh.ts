@@ -56,6 +56,11 @@ void main() {
     // Preserve saved brush, stickers, face and material tone. Soft matte light
     // should round the geometry, not turn the lower half into muddy cardboard.
     color = paint.rgb * (0.78 + 0.18 * diffuse);
+    // Studio has a softly shaded edge. Give the 3D front the same
+    // readable rounded rim from its normal, without baking highlights
+    // into saved paint or flattening the actual side geometry.
+    float frontRim = 1.0 - smoothstep(0.58, 0.91, n.z);
+    color *= 1.0 - 0.17 * frontRim;
     vec3 halfDirection = normalize(light + vec3(0.0, 0.0, 1.0));
     color += vec3(1.0, 0.97, 0.88) * pow(max(dot(n, halfDirection), 0.0), 21.0) * mix(0.055, 0.15, uMetallic);
   } else {
