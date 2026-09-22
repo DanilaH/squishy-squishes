@@ -7,7 +7,7 @@ import { mountLibraryHallPreview } from './libraryHallPreview';
 import { mountLibraryHallFeel } from './libraryHallFeel';
 import { mountLibraryVolumeReview } from './libraryVolumeReview';
 import { enablePagesLibraryMaterialLighting, registerPagesLibraryMaterialRenderer } from '../../sandbox/libraryThumbnail';
-import { renderStudioLibraryThumbnail, releaseStudioLibraryThumbnail } from '../../sandbox/libraryStudioThumbnail';
+import { renderPagesVolumeThumbnail, releasePagesVolumeThumbnail } from './libraryVolumeProduction';
 import { registerPagesDecorArt } from '../../sandbox/decor';
 import { drawPagesAccessoryGraphic, renderPagesSurfaceDecor } from '../../sandbox/pagesDecorArt';
 import './libraryHallPolish.css';
@@ -23,7 +23,7 @@ document.documentElement.lang = normalizeLanguage(navigator.language);
 // pagesPreview boots asynchronously after image preload; configure the isolated
 // thumbnail appearance before it can synchronously paint its first Library cards.
 enablePagesLibraryMaterialLighting();
-registerPagesLibraryMaterialRenderer(renderStudioLibraryThumbnail, releaseStudioLibraryThumbnail);
+registerPagesLibraryMaterialRenderer(renderPagesVolumeThumbnail, releasePagesVolumeThumbnail);
 registerPagesDecorArt({ render: renderPagesSurfaceDecor, accessory: drawPagesAccessoryGraphic });
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('Missing #app root.');

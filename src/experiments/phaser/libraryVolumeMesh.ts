@@ -1,4 +1,5 @@
 import { getShape } from '../../game/shapes';
+import { getMaterial } from '../../game/content';
 import { drawAccessoryGraphic, getDecorFrame } from '../../sandbox/decor';
 import type { SavedSquishy } from '../../sandbox/types';
 
@@ -37,6 +38,8 @@ in vec3 vNormal;
 in vec2 vUv;
 in float vFront;
 uniform sampler2D uFront;
+uniform vec3 uSideColor;
+uniform float uMetallic;
 out vec4 outColor;
 void main() {
   vec3 n = normalize(vNormal);
@@ -52,10 +55,10 @@ void main() {
     // should round the geometry, not turn the lower half into muddy cardboard.
     color = paint.rgb * (0.83 + 0.20 * diffuse);
     vec3 halfDirection = normalize(light + vec3(0.0, 0.0, 1.0));
-    color += vec3(1.0, 0.97, 0.88) * pow(max(dot(n, halfDirection), 0.0), 21.0) * 0.055;
+    color += vec3(1.0, 0.97, 0.88) * pow(max(dot(n, halfDirection), 0.0), 21.0) * mix(0.055, 0.15, uMetallic);
   } else {
     // Match warm milk body, not the previous dark brown cut-out side.
-    color = vec3(0.89, 0.79, 0.67) * (0.82 + 0.20 * diffuse);
+    color = uSideColor * (0.82 + 0.20 * diffuse);
   }
   outColor = vec4(clamp(color, 0.0, 1.0), alpha);
 }`;
@@ -244,7 +247,14 @@ class VolumeMeshRenderer {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(this.program);
-    gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
+  const sides = {
+    soft: [0.89, 0.79, 0.67], jelly: [0.75, 0.84, 0.75],
+    holo: [0.86, 0.78, 0.75], marshmallow: [0.89, 0.84, 0.78],
+    pearl: [0.87, 0.82, 0.81], chrome: [0.58, 0.59, 0.57],
+  } as const;
+  gl.uniform3f(gl.getUniformLocation(this.program, 'uSideColor'), sides[toy.materialId][0], sides[toy.materialId][1], sides[toy.materialId][2]);
+  gl.uniform1f(gl.getUniformLocation(this.program, 'uMetallic'), getMaterial(toy.materialId).metallic);
+  gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
     gl.bindVertexArray(null);
 
     const output = document.createElement('canvas');

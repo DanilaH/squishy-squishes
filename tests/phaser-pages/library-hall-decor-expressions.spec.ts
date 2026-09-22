@@ -54,7 +54,7 @@ test('all face and sticker styles remain visible and distinct on each saved cont
     const saved = await page.evaluate((key) => localStorage.getItem(key), KEY);
     for (const shape of SHAPES) {
       const thumbnail = page.locator(`[data-library-thumbnail="expression-${shape}-${profile.name}"]`);
-      await expect(thumbnail).toHaveAttribute('data-library-renderer', 'studio-shader');
+      await expect(thumbnail).toHaveAttribute('data-library-renderer', 'volume-mesh');
       const result = await thumbnail.evaluate((node) => {
         const canvas = node as HTMLCanvasElement;
         const ctx = canvas.getContext('2d');

@@ -19,11 +19,11 @@ test('desktop: actual Hall and nine 512px candidates share toy and visible size'
   const dimensions = await inspect();
   expect(dimensions.map(entry => entry.size)).toEqual(Array.from({ length: 10 }, () => [512, 512]));
   expect(dimensions.map(entry => entry.profile)).toEqual([
-    'studio-shader-512', 'flat-control-512', 'sdf-relief-512', 'pseudo-extruded-512',
+    'volume-mesh-512', 'flat-control-512', 'sdf-relief-512', 'pseudo-extruded-512',
     'inflated-mesh-512', 'studio-textured-mesh-512', 'unlit-albedo-mesh-512',
     'sdf-field-mesh-512', 'sdf-field-flat-mesh-512', 'contour-mesh-512',
   ]);
-  expect(dimensions[0]?.materialRenderer).toBe('studio-shader');
+  expect(dimensions[0]?.materialRenderer).toBe('volume-mesh');
   expect(dimensions.every(entry => entry.cssWidth > 200 && entry.populated)).toBe(true);
   expect(new Set(dimensions.map(entry => entry.cssWidth)).size).toBe(1);
   for (const shape of ['soft-square', 'heart', 'paw'] as const) {

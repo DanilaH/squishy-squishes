@@ -62,7 +62,7 @@ test('all face and sticker styles remain legible on six saved contours without c
     const hashes = new Set<string>();
     for (const shape of SHAPES) {
       const canvas = page.locator(`[data-library-thumbnail="catalog-${look.id}-${shape}"]`);
-      await expect(canvas).toHaveAttribute('data-library-renderer', 'studio-shader');
+      await expect(canvas).toHaveAttribute('data-library-renderer', 'volume-mesh');
       const data = await canvas.evaluate((node) => {
         const target = node as HTMLCanvasElement;
         const ctx = target.getContext('2d');

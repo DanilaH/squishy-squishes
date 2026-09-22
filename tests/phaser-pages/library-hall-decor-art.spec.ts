@@ -97,7 +97,7 @@ test('all six contours and all five existing accessory IDs render distinct authe
     const seen = new Set<string>();
     for (const shape of SHAPES) {
       const thumbnail = page.locator(`[data-library-thumbnail="art-${shape}-${accessory}"]`);
-      await expect(thumbnail).toHaveAttribute('data-library-renderer', 'studio-shader');
+      await expect(thumbnail).toHaveAttribute('data-library-renderer', 'volume-mesh');
       const pixels = await thumbnail.evaluate((node) => {
         const image = node as HTMLCanvasElement;
         const context = image.getContext('2d');
