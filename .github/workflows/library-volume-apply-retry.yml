@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Apply exact-source integration with corrected indentation and duplicate-title handling
+      - name: Apply exact-source integration with corrected geometry and typed uniforms
         shell: bash
         run: |
           python3 - <<'PY'
@@ -32,6 +32,9 @@ jobs:
           old = "    const studioSource = showLegacy ? document.createElement('canvas') : current;\n  if (showLegacy) renderLibraryThumbnail(studioSource, toy, 512);"
           assert old in script, 'Expected exact lab source indentation is missing'
           script = script.replace(old, "    const studioSource = showLegacy ? document.createElement('canvas') : current;\n    if (showLegacy) renderLibraryThumbnail(studioSource, toy, 512);")
+          old = '...sides[toy.materialId]'
+          assert old in script, 'Expected spread of non-tuple uniform color is missing'
+          script = script.replace(old, 'sides[toy.materialId][0], sides[toy.materialId][1], sides[toy.materialId][2]')
           old_assert = "assert text.count(old) == 1, f'{name}: expected exactly one match for {old[:65]!r}'"
           assert old_assert in script
           script = script.replace(old_assert, "assert text.count(old) >= 1, f'{name}: missing {old[:65]!r}'")
