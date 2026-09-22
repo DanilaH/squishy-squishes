@@ -1,0 +1,1 @@
+Isolated review preview for PR #59. The ordinary Library now uses the accepted 512px volume mesh; laboratory remains available via ?volume-probe=1. No change to repository main, root Pages or existing /phaser/. Browser QA is tracked separately on the exact feature commit 4dfd06357baee64dae8454d694b0f5b062f58273.
