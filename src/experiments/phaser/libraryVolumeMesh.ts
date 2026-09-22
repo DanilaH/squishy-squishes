@@ -1,4 +1,3 @@
-import { getPalette } from '../../game/content';
 import { getShape } from '../../game/shapes';
 import { drawAccessoryGraphic, getDecorFrame } from '../../sandbox/decor';
 import type { SavedSquishy } from '../../sandbox/types';
