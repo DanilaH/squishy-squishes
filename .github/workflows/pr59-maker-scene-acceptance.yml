@@ -14,8 +14,8 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: true
-      - name: Apply exact-source scoped workshop geometry and asset lifecycle patch
-        run: python3 scripts/pr59-unify-maker-scenes.py && git diff --check && git diff --stat
+      - name: Apply strict original source workshop patch and independent corrections
+        run: python3 scripts/pr59-unify-maker-scenes.py && python3 scripts/pr59-maker-scenes-refine.py && git diff --check && git diff --stat
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -30,7 +30,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pr59-maker-scene-first-independent-pass
+          name: pr59-maker-scene-refined-review
           path: |
             test-results/**/workshop-*.png
             test-results/**/workshop-*.json
@@ -38,12 +38,12 @@ jobs:
             test-results/**/trace.zip
           if-no-files-found: ignore
           retention-days: 7
-      - name: Commit only passing preview and retained test sources
+      - name: Commit only passing preview and permanent scene regression sources
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- src/experiments/phaser/studioEnvironmentPreview.ts src/experiments/phaser/studioEnvironmentPreview.css src/experiments/phaser/pagesPreview.ts tests/phaser-pages/studio-environment-integration.spec.ts
-          git commit -m 'feat(review): keep studio art and toy geometry consistent through Squeeze'
+          git add -- src/experiments/phaser/studioEnvironmentPreview.ts src/experiments/phaser/studioEnvironmentPreview.css src/experiments/phaser/pagesPreview.ts tests/phaser-pages/studio-environment-integration.spec.ts tests/phaser-pages/studio-workshop-consistency.spec.ts
+          git commit -m 'feat(review): retain real workshop art and stable toy/desk across maker and Squeeze'
           git push origin HEAD:feat/library-visual-recovery-sep21
