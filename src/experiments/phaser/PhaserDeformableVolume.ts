@@ -8,7 +8,7 @@ const BODY_ALPHA_LINE = '  float bodyAlpha = mix(0.985, 0.86 + edge * 0.09, tran
 if (fragmentShaderSource.split(BODY_ALPHA_LINE).length !== 2) {
   throw new Error('Pages volume needs the reviewed Studio fragment shader.');
 }
-export const pagesVolumeFrontShader = fragmentShaderSource.replace(BODY_ALPHA_LINE, `
+export const pagesVolumeFrontShader = fragmentShaderSource.replace('  base *= 1.0 - edge * 0.26;', '  base *= 1.0 - edge * 0.17;').replace(BODY_ALPHA_LINE, `
   // Smooth radial cap normals avoid the concave paw/heart wedge artifacts.
   // UVs and 2D deformation still belong to the one canonical simulation.
   float capSlope = smoothstep(0.10, 0.48, shapeField);
@@ -35,7 +35,7 @@ void main() {
     body = mix(body, paint.rgb, paint.a * 0.78);
   }
   // Sidewall has its own soft material lighting; never duplicate face/eyes.
-  body *= 0.77 + vUv.y * 0.08 + uCompression * 0.025;
+  body *= 0.86 + vUv.y * 0.06 + uCompression * 0.020;
   body += uSheenColor * uMetallic * 0.035;
   outColor = vec4(body, 0.97);
 }`;
@@ -164,16 +164,19 @@ export class PhaserDeformableVolume {
     this.setShape(shape);
     const n = shape.boundary.length;
     // A shallow back roll that grows as the soft body finishes molding.
-    const thickness = 0.026 + 0.064 * Math.min(1, Math.max(0, moldProgress));
+    const thickness = 0.014 + 0.038 * Math.min(1, Math.max(0, moldProgress));
     for (let i = 0; i < n; i += 1) {
       const point = shape.boundary[i]!;
       const u = point.x * 0.5 + 0.5;
       const v = point.y * 0.5 + 0.5;
       const deformed = simulation.projectUvToLocal(u, v);
+      // Overlap the antialiased 2D edge by a few pixels. Without this the
+      // alpha falloff exposes a dotted background seam between the two meshes.
+      const inset = simulation.projectUvToLocal(0.5 + (u - 0.5) * 0.962, 0.5 + (v - 0.5) * 0.962);
       const a = i * 4;
       const b = (n + i) * 4;
-      this.packed[a] = deformed.x;
-      this.packed[a + 1] = deformed.y;
+      this.packed[a] = inset.x;
+      this.packed[a + 1] = inset.y;
       this.packed[b] = deformed.x + thickness * 0.31;
       this.packed[b + 1] = deformed.y - thickness;
       this.packed[a + 2] = this.packed[b + 2] = u;
