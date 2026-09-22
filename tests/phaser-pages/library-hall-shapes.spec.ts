@@ -48,14 +48,16 @@ test('chrome and holo volume follow all six saved shape boundaries', async ({ pa
         const image = node as HTMLCanvasElement;
         const ctx = image.getContext('2d');
         if (!ctx) throw new Error('Missing thumbnail context');
-        const center = ctx.getImageData(128, 128, 1, 1).data;
+        const center = ctx.getImageData(image.width / 2, image.height / 2, 1, 1).data;
         const corner = ctx.getImageData(0, 0, 1, 1).data;
-        return { png: image.toDataURL('image/png').split(',')[1], centerAlpha: center[3], cornerAlpha: corner[3] };
+        return { width: image.width, height: image.height,
+          png: image.toDataURL('image/png').split(',')[1], centerAlpha: center[3], cornerAlpha: corner[3] };
       });
+      expect([output.width, output.height]).toEqual([512, 512]);
       expect(output.centerAlpha, `blank ${material}/${shape}`).toBeGreaterThan(0);
       expect(output.cornerAlpha, `rectangle leaked for ${material}/${shape}`).toBe(0);
       if (!output.png) throw new Error(`Empty ${material}/${shape} thumbnail`);
-      await writeFile(info.outputPath(`library-hall-shape-${material}-${shape}-256.png`), Buffer.from(output.png, 'base64'));
+      await writeFile(info.outputPath(`library-hall-shape-${material}-${shape}-512.png`), Buffer.from(output.png, 'base64'));
     }
     for (let pageNumber = 1; pageNumber <= 3; pageNumber += 1) {
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(pageNumber));
