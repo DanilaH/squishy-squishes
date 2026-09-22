@@ -1,0 +1,49 @@
+name: PR 59 maker scene independent acceptance
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: [.github/workflows/pr59-maker-scene-acceptance.yml]
+permissions:
+  contents: write
+jobs:
+  maker-scenes:
+    if: github.repository == 'DanilaH/squishy-squishes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - name: Apply exact-source scoped workshop geometry and asset lifecycle patch
+        run: python3 scripts/pr59-unify-maker-scenes.py && git diff --check && git diff --stat
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Strict Pages TypeScript and build
+        run: npm run pages:build
+      - name: Independent stage-by-stage phone tablet desktop and EN/RU geometry QA
+        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/studio-workshop-consistency.spec.ts tests/phaser-pages/studio-environment-integration.spec.ts tests/phaser-pages/studio-environment-resilience.spec.ts tests/phaser-pages/studio-environment-landscape-regression.spec.ts tests/phaser-pages/studio-navigation.spec.ts
+      - name: Upload actual screens and failure traces even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr59-maker-scene-first-independent-pass
+          path: |
+            test-results/**/workshop-*.png
+            test-results/**/workshop-*.json
+            test-results/**/studio-v8-*.png
+            test-results/**/trace.zip
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Commit only passing preview and retained test sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- src/experiments/phaser/studioEnvironmentPreview.ts src/experiments/phaser/studioEnvironmentPreview.css src/experiments/phaser/pagesPreview.ts tests/phaser-pages/studio-environment-integration.spec.ts
+          git commit -m 'feat(review): keep studio art and toy geometry consistent through Squeeze'
+          git push origin HEAD:feat/library-visual-recovery-sep21
