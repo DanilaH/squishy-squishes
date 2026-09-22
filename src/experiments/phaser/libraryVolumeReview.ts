@@ -6,10 +6,11 @@ import { renderVolumeControl } from './libraryVolumeProbe';
 import { renderVolumeThickness } from './libraryVolumeThickness';
 import { releaseVolumeMesh, renderVolumeMesh } from './libraryVolumeMesh';
 import { releaseVolumeFieldMesh, renderVolumeFieldMesh } from './libraryVolumeFieldMesh';
+import { releaseVolumeContourMesh, renderVolumeContourMesh } from './libraryVolumeContourMesh';
 
 /** Only an isolated, disposable same-toy comparison: never read/write player saves. */
 const SHAPES: readonly ShapeId[] = ['soft-square', 'heart', 'paw'];
-const VARIANTS = ['current', 'hires', 'relief', 'extruded', 'mesh', 'mesh-studio', 'mesh-field', 'mesh-field-flat'] as const;
+const VARIANTS = ['current', 'hires', 'relief', 'extruded', 'mesh', 'mesh-studio', 'mesh-field', 'mesh-field-flat', 'mesh-contour'] as const;
 const makeToy = (shapeId: ShapeId): SavedSquishy => ({
   id: 'review-only-same-toy', createdAt: 0, shapeId, materialId: 'soft',
   appearance: {
@@ -47,11 +48,11 @@ export const mountLibraryVolumeReview = (): void => {
 #library-volume-probe .probe-note {max-width:1420px;margin:0 auto 14px;font-size:13px}
 @media (max-width:1100px) {#library-volume-probe .probe-grid {grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:630px) {#library-volume-probe .probe-grid {grid-template-columns:1fr}#library-volume-probe article canvas {width:min(100%,330px)}}
-</style><header class="probe-bar"><h1>Squishy volume · identical toy / identical size</h1><div class="probe-shapes"><button type="button" data-shape="soft-square">Square</button><button type="button" data-shape="heart">Heart</button><button type="button" data-shape="paw">Paw</button></div><button type="button" data-legacy aria-pressed="false">Compare old 256px</button><button type="button" data-close>Close lab</button></header><p class="probe-note">01 is the real 512px Hall; old 256px is diagnostic only. 02–04 are Canvas2D controls; 05–06 use radial geometry. 07 and 08 are the EXACT SAME height-field mesh, light and saved toy, differing ONLY in front texture: baked Studio shading versus simplified flat Canvas art. Neither is installed in Hall.</p><main class="probe-grid"><article data-variant="current"><h2>01 · Actual Hall · Studio 512px</h2><p>Same static 512px WebGL snapshot as the current Pages Library.</p></article><article data-variant="hires"><h2>02 · Flat Canvas · 512px</h2><p>Saved art with simplified light; not Studio shader parity.</p></article><article data-variant="relief"><h2>03 · Relief · 512px</h2><p>Same Canvas art with SDF normals and directional lighting.</p></article><article data-variant="extruded"><h2>04 · Contour thickness · 512px</h2><p>Contour-facing 2.5D sidewalls, not 3D geometry.</p></article><article data-variant="mesh"><h2>05 · Radial mesh · flat texture</h2><p>3D radial geometry; concave shapes may pinch.</p></article><article data-variant="mesh-studio"><h2>06 · Radial mesh · Studio texture</h2><p>Same radial geometry with baked Studio shading.</p></article><article data-variant="mesh-field"><h2>07 · Height-field mesh · Studio</h2><p>Actual 3D height-field, baked Studio front material.</p></article><article data-variant="mesh-field-flat"><h2>08 · Same height-field mesh · flat</h2><p>Exactly the same 3D geometry and shader as 07, but the front uses simplified Canvas art. Isolate double lighting.</p></article></main>`;
+</style><header class="probe-bar"><h1>Squishy volume · identical toy / identical size</h1><div class="probe-shapes"><button type="button" data-shape="soft-square">Square</button><button type="button" data-shape="heart">Heart</button><button type="button" data-shape="paw">Paw</button></div><button type="button" data-legacy aria-pressed="false">Compare old 256px</button><button type="button" data-close>Close lab</button></header><p class="probe-note">01 is the actual 512px Hall; old 256px is diagnostic. 02–04 are Canvas2D controls, 05–06 radial geometry. 07/08 use exactly the same grid mesh with baked Studio versus flat front color: changing texture did NOT cure concave edge gaps. 09 triangulates the actual contour so front and sides share a boundary, with the same flat saved-art source as 08. No candidate is installed in Hall.</p><main class="probe-grid"><article data-variant="current"><h2>01 · Actual Hall · Studio 512px</h2><p>Same static WebGL snapshot used by the current Pages Library.</p></article><article data-variant="hires"><h2>02 · Flat Canvas · 512px</h2><p>Saved art with simplified light; not Studio parity.</p></article><article data-variant="relief"><h2>03 · Relief · 512px</h2><p>Canvas art with SDF normals and directional lighting.</p></article><article data-variant="extruded"><h2>04 · Contour thickness · 512px</h2><p>Contour-facing 2.5D sidewall, not geometry.</p></article><article data-variant="mesh"><h2>05 · Radial mesh · flat texture</h2><p>3D radial shape, may pinch concave lobes.</p></article><article data-variant="mesh-studio"><h2>06 · Radial mesh · Studio texture</h2><p>Same radial geometry with baked Studio shading.</p></article><article data-variant="mesh-field"><h2>07 · Grid height-field · Studio</h2><p>3D masked grid with baked Studio front.</p></article><article data-variant="mesh-field-flat"><h2>08 · Same grid height-field · flat</h2><p>Exactly the same grid geometry and shader as 07; flat saved-art source.</p></article><article data-variant="mesh-contour"><h2>09 · Exact contour mesh · flat</h2><p>Ear-clipped actual silhouette, subdivided inflated front, shared side boundary. No raster alpha cutout. Experimental.</p></article></main>`;
   document.body.append(overlay);
   let shape: ShapeId = 'soft-square';
   let showLegacy = false;
-  const cleanup = (): void => { releaseVolumeMesh(); releaseVolumeFieldMesh(); };
+  const cleanup = (): void => { releaseVolumeMesh(); releaseVolumeFieldMesh(); releaseVolumeContourMesh(); };
   const onPageHide = (): void => cleanup();
   window.addEventListener('pagehide', onPageHide, { once: true });
   const draw = (): void => {
@@ -59,7 +60,7 @@ export const mountLibraryVolumeReview = (): void => {
     const current = document.createElement('canvas');
     renderLibraryThumbnail(current, toy, showLegacy ? 256 : 512);
     current.dataset.volumeRenderer = showLegacy ? 'studio-shader-256' : 'studio-shader-512';
-    // Neither 3D candidate receives an enlarged 256px diagnostic source.
+    // Every mesh gets an independently genuine 512px source even in 256px mode.
     const studioSource = showLegacy ? document.createElement('canvas') : current;
     if (showLegacy) renderLibraryThumbnail(studioSource, toy, 512);
     const flat = renderVolumeControl(toy, false);
@@ -71,7 +72,8 @@ export const mountLibraryVolumeReview = (): void => {
     const meshField = renderVolumeFieldMesh(toy, studioSource);
     const meshFieldFlat = renderVolumeFieldMesh(toy, flat);
     if (meshFieldFlat.dataset.volumeRenderer !== 'field-mesh-unavailable') meshFieldFlat.dataset.volumeRenderer = 'sdf-field-flat-mesh-512';
-    const canvases = [current, flat, relief, extruded, mesh, meshStudio, meshField, meshFieldFlat];
+    const contour = renderVolumeContourMesh(toy, flat);
+    const canvases = [current, flat, relief, extruded, mesh, meshStudio, meshField, meshFieldFlat, contour];
     for (const [index, key] of VARIANTS.entries()) {
       const article = overlay.querySelector<HTMLElement>(`[data-variant="${key}"]`);
       article?.querySelector('canvas')?.remove();
@@ -79,11 +81,11 @@ export const mountLibraryVolumeReview = (): void => {
     }
     const title = overlay.querySelector('[data-variant="current"] h2');
     if (title) title.textContent = showLegacy ? '01 · Diagnostic Studio 256px' : '01 · Actual Hall · Studio 512px';
-    for (const key of ['mesh', 'mesh-studio', 'mesh-field', 'mesh-field-flat'] as const) {
+    for (const key of ['mesh', 'mesh-studio', 'mesh-field', 'mesh-field-flat', 'mesh-contour'] as const) {
       const specimen = overlay.querySelector(`[data-variant="${key}"] canvas`);
       const description = overlay.querySelector(`[data-variant="${key}"] p`);
       if (description && specimen instanceof HTMLCanvasElement && specimen.dataset.volumeRenderer?.includes('unavailable')) {
-        description.textContent = 'WebGL2 unavailable: flat fallback only. This is NOT a 3D result.';
+        description.textContent = 'WebGL2 unavailable or invalid geometry: fallback only. This is NOT a 3D result.';
       }
     }
     for (const button of overlay.querySelectorAll<HTMLButtonElement>('[data-shape]')) {
