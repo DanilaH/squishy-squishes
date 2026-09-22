@@ -6,6 +6,7 @@ import { mountStudioEnvironmentPreview } from './studioEnvironmentPreview';
 import { mountLibraryHallPreview } from './libraryHallPreview';
 import { mountLibraryHallFeel } from './libraryHallFeel';
 import { mountLibraryVolumeProbe } from './libraryVolumeProbe';
+import { mountTrueShaderComparison } from './libraryTrueShaderProbe';
 import { enablePagesLibraryMaterialLighting, registerPagesLibraryMaterialRenderer } from '../../sandbox/libraryThumbnail';
 import { renderStudioLibraryThumbnail, releaseStudioLibraryThumbnail } from '../../sandbox/libraryStudioThumbnail';
 import { registerPagesDecorArt } from '../../sandbox/decor';
@@ -32,3 +33,4 @@ mountLibraryHallPreview(root);
 mountLibraryHallFeel(root);
 // Query-gated, disposable visual benchmark; normal Hall remains unchanged.
 mountLibraryVolumeProbe();
+mountTrueShaderComparison();
