@@ -1,5 +1,0 @@
-Isolated visual review for draft PR #59
-Source feature commit: 9ad20c158d17f6ff682a305897de1d11c857549b
-Equivalent build (docs-only follow-up): 1405136f03350f2be1d26526856291542bd14e2c
-Preview includes the actual 512px Hall baseline and nine experimental candidates, including neutral-albedo control.
-No change to existing root or /phaser/ Pages routes. Not a production approval.
