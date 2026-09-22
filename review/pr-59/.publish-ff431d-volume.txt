@@ -1,3 +1,0 @@
-Review preview: isolated PR #59 only.
-Source branch feat/library-visual-recovery-sep21 at ff431d5515a93470a1cbd59c606d2ef4722fc489.
-Volume mesh is now used by the ordinary Pages Hall; pigment padding closes concave paw UV gaps. Does not publish main, /phaser/, or Yandex.
