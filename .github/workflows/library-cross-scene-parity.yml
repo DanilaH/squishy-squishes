@@ -5,6 +5,10 @@ on:
     paths:
       - 'src/experiments/phaser/libraryVolumeMesh.ts'
       - 'src/experiments/phaser/libraryVolumeAlbedo.ts'
+      - 'src/experiments/phaser/PhaserDeformableVolume.ts'
+      - 'src/experiments/phaser/PhaserSquishCandidate.ts'
+      - 'src/experiments/phaser/pagesPreview.ts'
+      - 'src/sandbox/PhaserSquishSurface.ts'
       - 'src/sandbox/libraryThumbnail.ts'
       - 'src/experiments/phaser/libraryVolumeProduction.ts'
       - 'src/squish/shaders.ts'
