@@ -45,7 +45,8 @@ for (const device of devices) {
           const panel = controls.querySelector<HTMLElement>('.sandbox-panel:not([hidden])');
           const panelRect = panel?.getBoundingClientRect();
           const controlsRect = controls.getBoundingClientRect();
-          const step = shell.querySelector<HTMLElement>('[data-sandbox-step]')?.getBoundingClientRect();
+          const stepElement = shell.querySelector<HTMLElement>('[data-sandbox-step]');
+          const step = stepElement?.getBoundingClientRect();
           const hit = document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2);
           return {
             stage: label, canvas: { x: c.left, y: c.top, width: c.width, height: c.height },
@@ -62,7 +63,7 @@ for (const device of devices) {
             controlsOverflowY: getComputedStyle(controls).overflowY,
             controlsBottom: controlsRect.bottom, panelBottom: panelRect?.bottom ?? controlsRect.top,
             stepWidth: step?.width ?? 0,
-            stepVisible: !!step && getComputedStyle(step).display !== 'none' && step.width > 0,
+            stepVisible: !!stepElement && getComputedStyle(stepElement).display !== 'none' && (step?.width ?? 0) > 0,
           };
         }, name);
         expect(result.wall, `${device.name}/${name} uses actual wall PNG`).toContain('studio-wall');
