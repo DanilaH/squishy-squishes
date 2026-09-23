@@ -1155,8 +1155,15 @@ export class SandboxApp {
       const anchorY = canvasRect.top - stageRect.top + anchor.y - normVy * seatOffsetPx;
       const width = this.accessoryCanvas.offsetWidth || 160;
       const height = this.accessoryCanvas.offsetHeight || 107;
+      // Pages' live overlay previously left the broad crown/bow visibly hovering
+      // even after the shared surface anchor was correct in Hall. Seat only these
+      // Phaser preview assets a few pixels deeper; ordinary/Yandex keeps the
+      // established overlay position.
+      const liveSeatFactor = this.options.rendererBackend === 'phaser'
+        ? (this.draft.decor.accessory === 'crown' ? 0.80 : this.draft.decor.accessory === 'bow' ? 0.87 : 0.92)
+        : 0.92;
       this.accessoryCanvas.style.left = (anchorX - width * 0.5).toFixed(2) + 'px';
-      this.accessoryCanvas.style.top = (anchorY - height * 0.92).toFixed(2) + 'px';
+      this.accessoryCanvas.style.top = (anchorY - height * liveSeatFactor).toFixed(2) + 'px';
       this.accessoryCanvas.style.transform = 'matrix(' + [a, b, c, d].map((value) => value.toFixed(4)).join(',') + ',0,0)';
       this.accessoryCanvas.dataset.accessoryAnchorX = anchorX.toFixed(2);
       this.accessoryCanvas.dataset.accessoryAnchorY = anchorY.toFixed(2);
