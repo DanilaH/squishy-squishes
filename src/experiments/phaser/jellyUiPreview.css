@@ -3,6 +3,7 @@
 #app[data-jelly-ui-ready] {
   --jelly-ink: #492c1e;
   --jelly-honey: #c97b17;
+  --jelly-honey-filter: saturate(.78) contrast(.94) brightness(1.035);
 }
 #app[data-jelly-ui-ready] .sandbox-shell,
 #app[data-jelly-ui-ready] .sandbox-library-shell {
@@ -48,6 +49,7 @@
   color: #4a2a17;
   text-shadow: 0 1px 0 rgba(255,249,224,.62);
   font-weight: 950;
+  filter: var(--jelly-honey-filter);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: transform 115ms ease, filter 115ms ease, opacity 115ms ease;
@@ -61,6 +63,7 @@
   color: #4a2a17;
   font-weight: 900;
   text-shadow: 0 1px 0 rgba(255,249,224,.6);
+  filter: var(--jelly-honey-filter);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: transform 115ms ease, filter 115ms ease, opacity 115ms ease;
@@ -87,6 +90,7 @@
   color: #503018;
   box-shadow: none;
   text-shadow: 0 1px rgba(255,249,224,.6);
+  filter: var(--jelly-honey-filter);
   -webkit-tap-highlight-color: transparent;
   transition: transform 115ms ease, filter 115ms ease, opacity 115ms ease;
 }
@@ -116,7 +120,7 @@
   .sandbox-library-reward > button, .sandbox-library-modal__cancel, .sandbox-library-modal__danger,
   .sandbox-panel button, .sandbox-sound):active:not(:disabled) {
   transform: translateY(2px) scale(.97);
-  filter: brightness(.89);
+  filter: saturate(.72) contrast(.93) brightness(.92);
 }
 #app[data-jelly-ui-ready] :is(.sandbox-library-new, .sandbox-library-ideas,
   .sandbox-library-reward > button, .sandbox-library-modal__cancel, .sandbox-library-modal__danger,

@@ -264,9 +264,12 @@ export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | n
   // Pages-only: preserve old geometry in ordinary/Yandex and every other shape.
   const centeredHeartGear = pagesDecorArt && shape.id === 'heart'
     && (accessory === 'bow' || accessory === 'crown');
-  const headSeatY = centeredHeartGear
+  const accessorySeatBias = accessory === 'crown'
+    ? -height * 0.026
+    : accessory === 'bow' ? -height * 0.012 : 0;
+  const headSeatY = (centeredHeartGear
     ? headSurfaceY + height * 0.13
-    : maxY - height * 0.055;
+    : maxY - height * 0.055) + accessorySeatBias;
   const headSeatOffsetV = (headSeatY - headY) * 0.5;
   return {
     eyesLeft: toUv(centerX - eyeDx, eyeY),

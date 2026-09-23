@@ -65,10 +65,10 @@ vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
   base *= 1.0 - translucency * (0.020 + interior * 0.040);
   base = mix(base, base * 0.965 + uSheenColor * 0.035, translucency * 0.14);
   float jellyIdentity = translucency * (1.0 - uIridescence) * (1.0 - uPearlescence) * (1.0 - uMetallic);
-  base = mix(base, vec3(0.50, 0.91, 0.86), jellyIdentity * 0.38);
+  base = mix(base, vec3(0.40, 0.90, 0.84), jellyIdentity * 0.45);
   float gelWave = 0.5 + 0.5 * sin((uv.x * 1.72 + uv.y * 1.08 + uMaterialSeed * 2.31) * 6.2831853);
-  base += uSheenColor * pow(gelWave, 5.0) * interior * translucency * 0.036;
-  base += uRimColor * edge * translucency * 0.18;
+  base += uSheenColor * pow(gelWave, 5.0) * interior * translucency * 0.050;
+  base += uRimColor * edge * translucency * 0.23;
 
   float cloudA = 0.5 + 0.5 * sin((uv.x * 2.2 + uv.y * 1.45 + uMaterialSeed * 1.7) * 6.2831853);
   float cloudB = 0.5 + 0.5 * sin((uv.x * 4.7 - uv.y * 3.1 + uMaterialSeed * 2.9) * 6.2831853);
@@ -77,6 +77,13 @@ vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
   vec3 milkyTint = mix(uSheenColor, vec3(1.0), 0.42 + cloudField * 0.10);
   vec3 cloudyBase = mix(base * (0.98 + cloudField * 0.025), milkyTint, 0.24 + cloudField * 0.10);
   base = mix(base, cloudyBase, clamp(milkyWeight, 0.0, 0.86));
+  float marshmallowIdentity = cloudiness * roughness
+    * (1.0 - clamp(uIridescence, 0.0, 1.0))
+    * (1.0 - clamp(uPearlescence, 0.0, 1.0))
+    * (1.0 - clamp(uMetallic, 0.0, 1.0));
+  vec3 marshmallowTint = vec3(1.0, 0.965, 0.915);
+  base = mix(base, marshmallowTint, marshmallowIdentity * 0.13);
+  base += marshmallowTint * edge * marshmallowIdentity * 0.035;
 
   float iridescence = clamp(uIridescence, 0.0, 1.0);
   float spectralPhase = uv.x * 0.72 + uv.y * 0.48 + uMaterialSeed * 0.61;
@@ -315,7 +322,7 @@ class VolumeMeshRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(this.program);
     const sides = {
-      soft: [0.89, 0.79, 0.67], jelly: [0.75, 0.84, 0.75],
+      soft: [0.89, 0.79, 0.67], jelly: [0.62, 0.86, 0.80],
       holo: [0.86, 0.78, 0.75], marshmallow: [0.89, 0.84, 0.78],
       pearl: [0.87, 0.82, 0.81], chrome: [0.58, 0.59, 0.57],
     } as const;

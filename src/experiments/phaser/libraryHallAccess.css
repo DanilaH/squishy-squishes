@@ -34,13 +34,13 @@
   content: '';
   position: absolute;
   z-index: 0;
-  top: 80%;
-  left: 33%;
-  width: 34%;
-  height: 8px;
+  top: 79%;
+  left: 32%;
+  width: 36%;
+  height: 9px;
   border-radius: 50%;
-  background: rgba(91, 54, 31, 0.24);
-  filter: blur(5px);
+  background: rgba(91, 54, 31, 0.30);
+  filter: blur(4px);
   pointer-events: none;
 }
 #app .is-library-hall .sandbox-library-card__canvas { position: relative; z-index: 1; }

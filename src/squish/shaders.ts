@@ -150,13 +150,13 @@ void main() {
     * (1.0 - clamp(uIridescence, 0.0, 1.0))
     * (1.0 - clamp(uPearlescence, 0.0, 1.0))
     * (1.0 - clamp(uMetallic, 0.0, 1.0));
-  base = mix(base, vec3(0.50, 0.91, 0.86), jellyIdentity * 0.38);
+  base = mix(base, vec3(0.40, 0.90, 0.84), jellyIdentity * 0.45);
   float gelWave = 0.5 + 0.5 * sin(
     (vUv.x * 1.72 + vUv.y * 1.08 + uMaterialSeed * 2.31 + uCompression * 0.12) * 6.2831853
   );
   float gelCaustic = pow(gelWave, 5.0) * interior * translucency;
-  base += uSheenColor * gelCaustic * 0.036;
-  base += uRimColor * edge * translucency * 0.18;
+  base += uSheenColor * gelCaustic * 0.050;
+  base += uRimColor * edge * translucency * 0.23;
 
   float roughness = clamp(uRoughness, 0.0, 1.0);
   float cloudiness = clamp(uCloudiness, 0.0, 1.0);
@@ -167,6 +167,13 @@ void main() {
   vec3 milkyTint = mix(uSheenColor, vec3(1.0), 0.42 + cloudField * 0.10);
   vec3 cloudyBase = mix(base * (0.98 + cloudField * 0.025), milkyTint, 0.24 + cloudField * 0.10);
   base = mix(base, cloudyBase, clamp(milkyWeight, 0.0, 0.86));
+  float marshmallowIdentity = cloudiness * roughness
+    * (1.0 - clamp(uIridescence, 0.0, 1.0))
+    * (1.0 - clamp(uPearlescence, 0.0, 1.0))
+    * (1.0 - clamp(uMetallic, 0.0, 1.0));
+  vec3 marshmallowTint = vec3(1.0, 0.965, 0.915);
+  base = mix(base, marshmallowTint, marshmallowIdentity * 0.13);
+  base += marshmallowTint * edge * marshmallowIdentity * 0.035;
 
   float iridescence = clamp(uIridescence, 0.0, 1.0);
   float spectralPhase = vUv.x * 0.72 + vUv.y * 0.48 + uMaterialSeed * 0.61 + uCompression * 0.18;

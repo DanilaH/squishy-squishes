@@ -152,6 +152,26 @@
   width: min(88vw, 470px, 110cqh);
   max-height: 110cqh;
 }
+/* A small contact shadow does the grounding job; the broad canvas drop-shadow is
+   still the soft body shadow. Keep this under the WebGL toy and above room art. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-stage::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 84%;
+  width: min(46vw, 220px, 54cqh);
+  height: min(8vw, 28px, 9cqh);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse,
+    rgba(86, 48, 31, .24) 0 18%,
+    rgba(86, 48, 31, .11) 46%,
+    transparent 74%);
+  filter: blur(2.5px);
+  opacity: .82;
+  pointer-events: none;
+}
 #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-controls {
   min-height: 0;
   height: 100%;
@@ -278,6 +298,11 @@
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-glow {
     width: min(54vw, 660px, 170cqh);
     max-height: none;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-stage::after {
+    top: 95%;
+    width: min(30vw, 285px, 76cqh);
+    height: min(5vw, 32px, 11cqh);
   }
 }
 @media (max-height: 520px) and (orientation: landscape) {
