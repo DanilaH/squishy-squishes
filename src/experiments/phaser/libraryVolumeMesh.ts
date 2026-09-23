@@ -1,5 +1,5 @@
 import { getShape } from '../../game/shapes';
-import { getMaterial } from '../../game/content';
+import { getMaterial, getPalette } from '../../game/content';
 import { drawAccessoryGraphic, getDecorFrame } from '../../sandbox/decor';
 import type { SavedSquishy } from '../../sandbox/types';
 
@@ -41,33 +41,88 @@ in vec2 vUv;
 in float vFront;
 uniform sampler2D uFront;
 uniform vec3 uSideColor;
+uniform vec3 uSheenColor;
+uniform vec3 uRimColor;
+uniform float uMaterialSeed;
+uniform float uTranslucency;
+uniform float uIridescence;
+uniform float uRoughness;
 uniform float uMetallic;
+uniform float uPearlescence;
+uniform float uCloudiness;
 out vec4 outColor;
+
+vec3 spectralColor(float phase) {
+  return 0.52 + 0.48 * cos(6.2831853 * (phase + vec3(0.00, 0.33, 0.67)));
+}
+
+vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
+  float translucency = clamp(uTranslucency, 0.0, 1.0);
+  float roughness = clamp(uRoughness, 0.0, 1.0);
+  float cloudiness = clamp(uCloudiness, 0.0, 1.0);
+  float interior = 1.0 - edge;
+
+  base *= 1.0 - translucency * (0.035 + interior * 0.055);
+  base = mix(base, base * 0.94 + uSheenColor * 0.06, translucency * 0.18);
+  float gelWave = 0.5 + 0.5 * sin((uv.x * 1.72 + uv.y * 1.08 + uMaterialSeed * 2.31) * 6.2831853);
+  base += uSheenColor * pow(gelWave, 5.0) * interior * translucency * 0.045;
+  base += uRimColor * edge * translucency * 0.22;
+
+  float cloudA = 0.5 + 0.5 * sin((uv.x * 2.2 + uv.y * 1.45 + uMaterialSeed * 1.7) * 6.2831853);
+  float cloudB = 0.5 + 0.5 * sin((uv.x * 4.7 - uv.y * 3.1 + uMaterialSeed * 2.9) * 6.2831853);
+  float cloudField = cloudA * 0.62 + cloudB * 0.38;
+  float milkyWeight = cloudiness * (0.72 + cloudField * 0.18);
+  vec3 milkyTint = mix(uSheenColor, vec3(1.0), 0.42 + cloudField * 0.10);
+  vec3 cloudyBase = mix(base * (0.98 + cloudField * 0.025), milkyTint, 0.24 + cloudField * 0.10);
+  base = mix(base, cloudyBase, clamp(milkyWeight, 0.0, 0.86));
+
+  float iridescence = clamp(uIridescence, 0.0, 1.0);
+  float spectralPhase = uv.x * 0.72 + uv.y * 0.48 + uMaterialSeed * 0.61;
+  vec3 spectral = spectralColor(spectralPhase);
+  float spectralBand = 0.5 + 0.5 * sin((uv.x * 1.35 - uv.y * 0.82 + uMaterialSeed) * 6.2831853);
+  base = mix(base, spectral, iridescence * (0.12 + spectralBand * 0.24 + edge * 0.12));
+
+  float pearlescence = clamp(uPearlescence, 0.0, 1.0);
+  float pearlBand = 0.5 + 0.5 * sin((uv.x * 0.78 + uv.y * 0.55 + uMaterialSeed * 0.71) * 6.2831853);
+  float pearlCross = 0.5 + 0.5 * sin((uv.x * 0.44 - uv.y * 0.67 + uMaterialSeed * 0.33) * 6.2831853);
+  vec3 pearlSpectrum = mix(vec3(1.0), spectralColor(spectralPhase * 0.46 + pearlCross * 0.14 + 0.12), 0.52);
+  vec3 pearlSurface = base * (0.92 + pearlBand * 0.035) + pearlSpectrum * (0.10 + pearlBand * 0.13);
+  base = mix(base, pearlSurface, pearlescence * (0.72 + edge * 0.14));
+
+  float metallic = clamp(uMetallic, 0.0, 1.0);
+  float metalBand = 0.5 + 0.5 * sin((uv.y * 1.18 + uv.x * 0.34 + uMaterialSeed * 0.53) * 6.2831853);
+  float metalSharp = pow(metalBand, mix(9.0, 2.2, roughness));
+  vec3 metalDark = base * 0.30;
+  vec3 metalLight = mix(uSheenColor, vec3(1.0), 0.48);
+  vec3 metalSurface = mix(metalDark, metalLight, 0.10 + metalSharp * 0.90);
+  return mix(base, metalSurface, metallic * 0.88);
+}
+
 void main() {
   vec3 n = normalize(vNormal);
   vec3 light = normalize(vec3(-0.42, 0.51, 0.75));
   float diffuse = max(dot(n, light), 0.0);
-  vec3 color;
-  float alpha = 1.0;
-  if (vFront > 0.5) {
-    vec4 paint = texture(uFront, vUv);
-    if (paint.a < 0.025) paint = vec4(uSideColor, 1.0);
-    alpha = paint.a;
-    // Preserve saved brush, stickers, face and material tone. Soft matte light
-    // should round the geometry, not turn the lower half into muddy cardboard.
-    color = paint.rgb * (0.78 + 0.18 * diffuse);
-    // Studio has a softly shaded edge. Give the 3D front the same
-    // readable rounded rim from its normal, without baking highlights
-    // into saved paint or flattening the actual side geometry.
-    float frontRim = 1.0 - smoothstep(0.58, 0.91, n.z);
-    color *= 1.0 - 0.17 * frontRim;
-    vec3 halfDirection = normalize(light + vec3(0.0, 0.0, 1.0));
-    color += vec3(1.0, 0.97, 0.88) * pow(max(dot(n, halfDirection), 0.0), 21.0) * mix(0.055, 0.15, uMetallic);
-  } else {
-    // Match warm milk body, not the previous dark brown cut-out side.
-    color = mix(uSideColor, texture(uFront, vUv).rgb, 0.92) * (0.82 + 0.20 * diffuse);
-  }
-  outColor = vec4(clamp(color, 0.0, 1.0), alpha);
+  vec4 paint = texture(uFront, vUv);
+  if (paint.a < 0.025) paint = vec4(uSideColor, 1.0);
+
+  float frontRim = 1.0 - smoothstep(0.58, 0.91, n.z);
+  float materialEdge = vFront > 0.5 ? frontRim : 0.82;
+  vec3 color = vFront > 0.5
+    ? paint.rgb
+    : mix(uSideColor, paint.rgb, 0.90);
+  color = applyMaterial(color, vUv, materialEdge);
+  color *= vFront > 0.5
+    ? (0.80 + 0.18 * diffuse) * (1.0 - 0.14 * frontRim)
+    : (0.78 + 0.20 * diffuse);
+
+  vec3 halfDirection = normalize(light + vec3(0.0, 0.0, 1.0));
+  float roughness = clamp(uRoughness, 0.0, 1.0);
+  float specPower = mix(34.0, 8.0, roughness);
+  float specStrength = mix(0.12, 0.035, roughness) * (1.0 + uMetallic * 0.9 + uPearlescence * 0.22);
+  color += uSheenColor * pow(max(dot(n, halfDirection), 0.0), specPower) * specStrength;
+
+  float bodyAlpha = mix(0.995, 0.90 + materialEdge * 0.06, clamp(uTranslucency, 0.0, 1.0));
+  outColor = vec4(clamp(color, 0.0, 1.0), paint.a * bodyAlpha);
 }`;
 
 const addVertex = (vertices: number[], x: number, y: number, z: number,
@@ -257,14 +312,25 @@ class VolumeMeshRenderer {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(this.program);
-  const sides = {
-    soft: [0.89, 0.79, 0.67], jelly: [0.75, 0.84, 0.75],
-    holo: [0.86, 0.78, 0.75], marshmallow: [0.89, 0.84, 0.78],
-    pearl: [0.87, 0.82, 0.81], chrome: [0.58, 0.59, 0.57],
-  } as const;
-  gl.uniform3f(gl.getUniformLocation(this.program, 'uSideColor'), sides[toy.materialId][0], sides[toy.materialId][1], sides[toy.materialId][2]);
-  gl.uniform1f(gl.getUniformLocation(this.program, 'uMetallic'), getMaterial(toy.materialId).metallic);
-  gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
+    const sides = {
+      soft: [0.89, 0.79, 0.67], jelly: [0.75, 0.84, 0.75],
+      holo: [0.86, 0.78, 0.75], marshmallow: [0.89, 0.84, 0.78],
+      pearl: [0.87, 0.82, 0.81], chrome: [0.58, 0.59, 0.57],
+    } as const;
+    const material = getMaterial(toy.materialId);
+    const palette = getPalette('milk');
+    const side = sides[toy.materialId];
+    gl.uniform3f(gl.getUniformLocation(this.program, 'uSideColor'), side[0], side[1], side[2]);
+    gl.uniform3f(gl.getUniformLocation(this.program, 'uSheenColor'), ...palette.sheen);
+    gl.uniform3f(gl.getUniformLocation(this.program, 'uRimColor'), ...palette.rim);
+    gl.uniform1f(gl.getUniformLocation(this.program, 'uMaterialSeed'), palette.seed);
+    gl.uniform1f(gl.getUniformLocation(this.program, 'uTranslucency'), material.translucency);
+    gl.uniform1f(gl.getUniformLocation(this.program, 'uIridescence'), material.iridescence);
+    gl.uniform1f(gl.getUniformLocation(this.program, 'uRoughness'), material.roughness);
+    gl.uniform1f(gl.getUniformLocation(this.program, 'uMetallic'), material.metallic);
+    gl.uniform1f(gl.getUniformLocation(this.program, 'uPearlescence'), material.pearlescence);
+    gl.uniform1f(gl.getUniformLocation(this.program, 'uCloudiness'), material.cloudiness);
+    gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
     gl.bindVertexArray(null);
 
     const output = document.createElement('canvas');

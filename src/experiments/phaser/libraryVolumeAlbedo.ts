@@ -31,25 +31,16 @@ export const renderNeutralVolumeAlbedo = (toy: SavedSquishy): HTMLCanvasElement 
   });
   path.closePath();
   const milk = getPalette('milk');
-  const base = milk.high.map((high, index) =>
-    Math.round(255 * (high * 0.82 + milk.low[index]! * 0.18)),
-  );
-  const material = toy.materialId;
-  const gradients = {
-    jelly: ['#fff4de', '#e8d8bd', '#cbb79b'],
-    holo: ['#f8dce8', '#f1eab9', '#d3eddf', '#ead4f2'],
-    pearl: ['#f9efdf', '#e9e1e1', '#d7eae0', '#f6e3e2'],
-    chrome: ['#eee8dc', '#8d908e', '#f2efdf', '#767b78', '#dbdad3'],
-    marshmallow: ['#fff2dc', '#efdec3', '#d4bda0'],
-  } as const;
-  if (material === 'soft') {
-    context.fillStyle = `rgb(${base.join(',')})`;
-  } else {
-    const stops = gradients[material];
-    const gradient = context.createLinearGradient(0, 12, size, size - 12);
-    stops.forEach((color, index) => gradient.addColorStop(index / (stops.length - 1), color));
-    context.fillStyle = gradient;
-  }
+  const rgb = (color: readonly number[]): string =>
+    `rgb(${color.map((channel) => Math.round(channel * 255)).join(',')})`;
+  // Keep the texture as pigment only. Material response belongs to the mesh
+  // shader, exactly as it does in the live Studio/Squeeze surface; pre-baking
+  // Jelly/Holo/Pearl/Chrome here made the Hall lose the selected material once
+  // the same texture was lit as generic Soft.
+  const pigment = context.createLinearGradient(0, 0, 0, size);
+  pigment.addColorStop(0, rgb(milk.high));
+  pigment.addColorStop(1, rgb(milk.low));
+  context.fillStyle = pigment;
   // Radial rings fold across the narrow valleys of concave silhouettes. The
   // visible geometry, not this texture, clips the body: retain an opaque base
   // wherever a triangle needs to sample just outside the 2D silhouette.
