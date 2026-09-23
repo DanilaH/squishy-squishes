@@ -64,6 +64,8 @@ vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
 
   base *= 1.0 - translucency * (0.020 + interior * 0.040);
   base = mix(base, base * 0.965 + uSheenColor * 0.035, translucency * 0.14);
+  float jellyIdentity = translucency * (1.0 - uIridescence) * (1.0 - uPearlescence) * (1.0 - uMetallic);
+  base = mix(base, vec3(0.56, 0.91, 0.86), jellyIdentity * 0.28);
   float gelWave = 0.5 + 0.5 * sin((uv.x * 1.72 + uv.y * 1.08 + uMaterialSeed * 2.31) * 6.2831853);
   base += uSheenColor * pow(gelWave, 5.0) * interior * translucency * 0.036;
   base += uRimColor * edge * translucency * 0.18;

@@ -55,3 +55,8 @@ The owner rejected the near-white stage halo because it overexposed the toy and 
 The owner also asked for Jelly to justify the bead/pearl filling as actual **internal content**. Jelly is therefore intentionally the strongest translucent material: lower roughness/cloudiness, higher translucency, a lower final body alpha, and stronger inclusion reveal through the interior while retaining a denser edge/rim. Holo/Pearl/Chrome were separated slightly further at the same time so Finish choices read as materially different rather than mild colour variants. The Pages deformable sidewall and Hall volume mesh were updated in the same pass so a Jelly toy does not become opaque when moving between Squeeze and Library.
 
 This request intentionally changes the shared material response used by the game renderer; it is no longer a Pages-only shader tweak. V3 schema/IDs are unchanged. Candidate, Pages, release-browser and Yandex DRAFT regressions must therefore all pass before owner review. The retained cross-scene QA now creates a real Jelly specimen with Pearl mix-ins through the UI and asserts those placements survive the V3 save/reopen path.
+
+
+### Jelly visual follow-up
+
+The first see-through pass succeeded technically (Pearl mix-ins became clearly visible through the body) but the Warm Milk base made Jelly read as grey/smoky glass in both Squeeze and Hall. That pass was rejected visually. A second correction applies a restrained aqua gummy tint only to the material component that is simultaneously translucent and non-iridescent/non-pearlescent/non-metallic. Holo/Pearl/Chrome therefore keep their own identities. The stage halo was reduced again so it cannot visually substitute for the Jelly highlight.

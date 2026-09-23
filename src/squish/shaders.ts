@@ -144,6 +144,10 @@ void main() {
   float opticalDepth = smoothstep(0.0, 1.0, interior);
   base *= 1.0 - translucency * (0.020 + opticalDepth * 0.040);
   base = mix(base, base * 0.965 + uSheenColor * 0.035, translucency * 0.14);
+  // Give the genuinely see-through Jelly material a cool gummy tint without
+  // washing Holo/Pearl/Chrome, which identify themselves through other lobes.
+  float jellyIdentity = translucency * (1.0 - iridescence) * (1.0 - pearlescence) * (1.0 - metallic);
+  base = mix(base, vec3(0.56, 0.91, 0.86), jellyIdentity * 0.28);
   float gelWave = 0.5 + 0.5 * sin(
     (vUv.x * 1.72 + vUv.y * 1.08 + uMaterialSeed * 2.31 + uCompression * 0.12) * 6.2831853
   );
