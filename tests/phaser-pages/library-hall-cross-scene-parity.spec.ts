@@ -86,15 +86,16 @@ for (const specimen of specimens) {
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
     const card = page.locator('[data-library-thumbnail]').first();
     await expect(card).toHaveAttribute('data-library-renderer', 'volume-mesh');
-  // Studio uses a warm milk palette even for Jelly material.
+  // Jelly now intentionally carries a restrained aqua-gel identity while
+  // keeping the warm authored appearance and visible Pearl inclusions.
   if (specimen.material === 'jelly') {
     const [red, green, blue] = await card.evaluate(node => {
       const rgb = (node as HTMLCanvasElement).getContext('2d')!
         .getImageData(110, 225, 1, 1).data;
       return [rgb[0]!, rgb[1]!, rgb[2]!];
     });
-    expect(red).toBeGreaterThanOrEqual(green - 3);
-    expect(green).toBeGreaterThan(blue + 10);
+    expect(green).toBeGreaterThan(red + 5);
+    expect(green).toBeGreaterThan(blue + 8);
   }
   if (specimen.accessory === 'crown') {
     // Measure over the left finger, not the natural deep valley
