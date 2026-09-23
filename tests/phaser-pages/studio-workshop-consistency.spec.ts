@@ -136,7 +136,7 @@ for (const device of devices) {
       await sample('finish');
       // Prove the actual Finish controls remain clickable after the layout
       // change instead of inferring canvas interactivity from a CSS class.
-      await page.locator('button[data-material="soft"]').click();
+      await page.locator('button[data-material="holo"]').click();
       await page.locator('[data-action="save"]').click();
       await sample('squeeze');
       const pressed = await page.locator('[data-sandbox-canvas]').boundingBox();
@@ -148,6 +148,13 @@ for (const device of devices) {
       await page.mouse.up();
       await page.locator('[data-action="home"]').click();
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
+      await expect(page.locator('.sandbox-library-card:visible [data-library-material-profile]').first()).toHaveAttribute('data-library-material-profile', 'holo');
+      const savedMaterial = await page.evaluate(() => {
+        const raw = localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3');
+        const save = raw ? JSON.parse(raw) : null;
+        return save?.library?.[0]?.materialId ?? null;
+      });
+      expect(savedMaterial, `${device.name}: Finish material survives V3 save`).toBe('holo');
       await page.locator('.sandbox-library-card:visible [data-library-play-id]').first().click();
       await sample('squeeze-reopened', 'squeeze');
       expect(errors).toEqual([]);
