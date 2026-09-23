@@ -98,21 +98,23 @@ test('real saved materials have comparable Studio and Library captures', async (
   await captureThumbnail('soft');
   await captureStudio('soft');
   await captureThumbnail('jelly');
-  await captureThumbnail('marshmallow');
   await captureStudio('jelly');
-  await captureStudio('marshmallow');
+
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.screenshot({ path: info.outputPath('library-hall-material-desktop-1440.png'), animations: 'disabled' });
   await page.locator('[data-library-hall-next]').click();
   expect(await visibleProfiles()).toEqual(['marshmallow', 'chrome']);
   await page.screenshot({ path: info.outputPath('library-hall-material-marshmallow-chrome-1440.png'), animations: 'disabled' });
+  await captureThumbnail('marshmallow');
+  await captureStudio('marshmallow');
   await captureThumbnail('chrome');
   await captureStudio('chrome');
+
   await page.locator('[data-library-hall-next]').click();
   expect(await visibleProfiles()).toEqual(['holo', 'pearl']);
+  await page.screenshot({ path: info.outputPath('library-hall-material-holo-pearl-1440.png'), animations: 'disabled' });
   await captureThumbnail('holo');
   await captureStudio('holo');
-  await page.screenshot({ path: info.outputPath('library-hall-material-holo-pearl-1440.png'), animations: 'disabled' });
   await captureThumbnail('pearl');
   await captureStudio('pearl');
 });
