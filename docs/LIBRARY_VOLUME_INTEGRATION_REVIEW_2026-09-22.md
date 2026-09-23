@@ -60,3 +60,8 @@ This request intentionally changes the shared material response used by the game
 ### Jelly visual follow-up
 
 The first see-through pass succeeded technically (Pearl mix-ins became clearly visible through the body) but the Warm Milk base made Jelly read as grey/smoky glass in both Squeeze and Hall. That pass was rejected visually. A second correction applies a restrained aqua gummy tint only to the material component that is simultaneously translucent and non-iridescent/non-pearlescent/non-metallic. Holo/Pearl/Chrome therefore keep their own identities. The stage halo was reduced again so it cannot visually substitute for the Jelly highlight.
+
+
+### Material contrast follow-up
+
+A six-material screenshot matrix on the reviewed aqua-Jelly pass showed Chrome/Holo already separated strongly, while Jelly, Marshmallow and Pearl were still too close in overall lightness. The accepted contrast pass therefore gives Jelly a slightly stronger aqua gel identity, makes Marshmallow distinctly rougher/cloudier, and strengthens Pearl's opalescent lobe. Soft stays the neutral warm-milk reference. This deliberately changes material appearance only; IDs, V3 data and gameplay remain unchanged.

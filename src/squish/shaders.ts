@@ -150,7 +150,7 @@ void main() {
     * (1.0 - clamp(uIridescence, 0.0, 1.0))
     * (1.0 - clamp(uPearlescence, 0.0, 1.0))
     * (1.0 - clamp(uMetallic, 0.0, 1.0));
-  base = mix(base, vec3(0.56, 0.91, 0.86), jellyIdentity * 0.28);
+  base = mix(base, vec3(0.50, 0.91, 0.86), jellyIdentity * 0.38);
   float gelWave = 0.5 + 0.5 * sin(
     (vUv.x * 1.72 + vUv.y * 1.08 + uMaterialSeed * 2.31 + uCompression * 0.12) * 6.2831853
   );
@@ -179,8 +179,8 @@ void main() {
   float pearlBand = 0.5 + 0.5 * sin((vUv.x * 0.78 + vUv.y * 0.55 + uMaterialSeed * 0.71 + uCompression * 0.06) * 6.2831853);
   float pearlCross = 0.5 + 0.5 * sin((vUv.x * 0.44 - vUv.y * 0.67 + uMaterialSeed * 0.33) * 6.2831853);
   vec3 pearlSpectrum = mix(vec3(1.0), spectralColor(spectralPhase * 0.46 + pearlCross * 0.14 + 0.12), 0.52);
-  vec3 pearlSurface = base * (0.92 + pearlBand * 0.035) + pearlSpectrum * (0.10 + pearlBand * 0.13);
-  base = mix(base, pearlSurface, pearlescence * (0.72 + edge * 0.14));
+  vec3 pearlSurface = base * (0.90 + pearlBand * 0.035) + pearlSpectrum * (0.14 + pearlBand * 0.16);
+  base = mix(base, pearlSurface, pearlescence * (0.84 + edge * 0.12));
 
   float metallic = clamp(uMetallic, 0.0, 1.0);
   float metalBand = 0.5 + 0.5 * sin((vUv.y * 1.18 + vUv.x * 0.34 + uMaterialSeed * 0.53 + uCompression * 0.12) * 6.2831853);
