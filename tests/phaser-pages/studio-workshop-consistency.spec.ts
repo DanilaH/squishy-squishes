@@ -65,6 +65,10 @@ for (const device of devices) {
             controlsBottom: controlsRect.bottom, panelBottom: panelRect?.bottom ?? controlsRect.top,
             stepWidth: step?.width ?? 0,
             stepVisible: !!stepElement && getComputedStyle(stepElement).display !== 'none' && (step?.width ?? 0) > 0,
+            contactShadowTop: s.top + Number.parseFloat(getComputedStyle(stage, '::after').top || 'NaN'),
+            contactShadowZ: Number.parseInt(getComputedStyle(stage, '::after').zIndex || '0', 10),
+            deskZ: Number.parseInt(getComputedStyle(desk).zIndex || '0', 10),
+            canvasZ: Number.parseInt(getComputedStyle(canvas).zIndex || '0', 10),
           };
         }, name);
         expect(result.wall, `${device.name}/${name} uses actual wall PNG`).toContain('studio-wall');
@@ -86,7 +90,13 @@ for (const device of devices) {
         if (actualStage !== 'squeeze') expect(result.stepWidth, `${device.name}/${name} step label is not a placeholder strip`).toBeLessThan(170);
         else expect(result.stepVisible, `${device.name}/${name} Squeeze has no empty step placeholder`).toBe(false);
         expect(Math.abs(result.canvas.width - result.canvas.height), 'toy canvas stays square').toBeLessThan(2);
-        if (result.deskVisible) expect(result.deskBottom, `${device.name}/${name} desk draws over the floor instead of being clipped under it`).toBeGreaterThan(result.floorTop + 18);
+        if (result.deskVisible) {
+          expect(result.deskBottom, `${device.name}/${name} desk draws over the floor instead of being clipped under it`).toBeGreaterThan(result.floorTop + 18);
+          expect(result.contactShadowTop, `${device.name}/${name} contact shadow stays on the tabletop`).toBeGreaterThanOrEqual(result.deskTop - 12);
+          expect(result.contactShadowTop, `${device.name}/${name} contact shadow does not fall through the tabletop`).toBeLessThanOrEqual(result.deskTop + 38);
+          expect(result.contactShadowZ, `${device.name}/${name} contact shadow renders over desk art`).toBeGreaterThan(result.deskZ);
+          expect(result.canvasZ, `${device.name}/${name} toy renders over contact shadow`).toBeGreaterThan(result.contactShadowZ);
+        }
         if (device.name !== 'landscape-ru') expect(result.deskVisible, `${device.name}/${name} has a visible desk`).toBe(true);
         const first = history[0];
         if (first && actualStage !== 'squeeze') {
