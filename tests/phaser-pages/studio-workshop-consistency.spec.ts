@@ -18,7 +18,7 @@ for (const device of devices) {
     const page = await context.newPage();
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    const history: Array<{ stage: string; canvas: { x: number; y: number; width: number; height: number }; deskTop: number; floorTop: number; stageTop: number; stageHeight: number }> = [];
+    const history: Array<{ stage: string; canvas: { x: number; y: number; width: number; height: number }; deskTop: number; deskBottom: number; floorTop: number; stageTop: number; stageHeight: number }> = [];
     try {
       await page.goto('/phaser/');
       await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '');
@@ -42,10 +42,14 @@ for (const device of devices) {
           const desk = stage.querySelector<HTMLImageElement>('[data-studio-desk]')!;
           const controls = shell.querySelector<HTMLElement>('.sandbox-controls')!;
           const c = canvas.getBoundingClientRect(), s = stage.getBoundingClientRect(), d = desk.getBoundingClientRect();
+          const panel = controls.querySelector<HTMLElement>('.sandbox-panel:not([hidden])');
+          const panelRect = panel?.getBoundingClientRect();
+          const controlsRect = controls.getBoundingClientRect();
+          const step = shell.querySelector<HTMLElement>('[data-sandbox-step]')?.getBoundingClientRect();
           const hit = document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2);
           return {
             stage: label, canvas: { x: c.left, y: c.top, width: c.width, height: c.height },
-            stageTop: s.top, stageHeight: s.height, deskTop: d.top, floorTop: floor.getBoundingClientRect().top,
+            stageTop: s.top, stageHeight: s.height, deskTop: d.top, deskBottom: d.bottom, floorTop: floor.getBoundingClientRect().top,
             wall: getComputedStyle(shell).backgroundImage, ground: getComputedStyle(floor).backgroundImage,
             groundHeight: floor.getBoundingClientRect().height,
             deskVisible: getComputedStyle(desk).display !== 'none', deskLoaded: desk.complete && desk.naturalWidth === 1237,
@@ -55,6 +59,9 @@ for (const device of devices) {
             canvasHit: !!hit && canvas.contains(hit), canvasDisabled: canvas.classList.contains('is-disabled'),
             pageWidth: document.documentElement.scrollWidth, viewportWidth: innerWidth,
             controlsHeight: controls.clientHeight, controlsScrollHeight: controls.scrollHeight,
+            controlsOverflowY: getComputedStyle(controls).overflowY,
+            controlsBottom: controlsRect.bottom, panelBottom: panelRect?.bottom ?? controlsRect.top,
+            stepWidth: step?.width ?? 0,
           };
         }, name);
         expect(result.wall, `${device.name}/${name} uses actual wall PNG`).toContain('studio-wall');
@@ -71,10 +78,14 @@ for (const device of devices) {
           expect(result.canvasHit, `${device.name}/${name} keeps Phaser input`).toBe(true);
         }
         expect(result.pageWidth).toBeLessThanOrEqual(result.viewportWidth + 2);
+        expect(['auto', 'scroll']).not.toContain(result.controlsOverflowY);
+        expect(result.panelBottom, `${device.name}/${name} edit tray stays in viewport`).toBeLessThanOrEqual(result.controlsBottom + 2);
+        if (actualStage !== 'squeeze') expect(result.stepWidth, `${device.name}/${name} step label is not a placeholder strip`).toBeLessThan(170);
         expect(Math.abs(result.canvas.width - result.canvas.height), 'toy canvas stays square').toBeLessThan(2);
+        if (result.deskVisible) expect(result.deskBottom, `${device.name}/${name} desk draws over the floor instead of being clipped under it`).toBeGreaterThan(result.floorTop + 18);
         if (device.name !== 'landscape-ru') expect(result.deskVisible, `${device.name}/${name} has a visible desk`).toBe(true);
         const first = history[0];
-        if (first) {
+        if (first && actualStage !== 'squeeze') {
           for (const axis of ['x', 'y', 'width', 'height'] as const) {
             expect(Math.abs(result.canvas[axis] - first.canvas[axis]), `${device.name}/${name}: ${axis} never jumps`).toBeLessThan(2);
           }
@@ -83,8 +94,11 @@ for (const device of devices) {
           expect(Math.abs(result.deskTop - first.deskTop), `${device.name}/${name}: desk never jumps`).toBeLessThan(2);
           expect(Math.abs(result.floorTop - first.floorTop), `${device.name}/${name}: floor never jumps`).toBeLessThan(2);
         }
+        if (first && actualStage === 'squeeze' && device.name === 'desktop-en') {
+          expect(result.canvas.width, 'desktop Squeeze is intentionally hero-sized').toBeGreaterThan(first.canvas.width * 1.15);
+        }
         history.push({ stage: name, canvas: result.canvas, stageTop: result.stageTop,
-          stageHeight: result.stageHeight, deskTop: result.deskTop, floorTop: result.floorTop });
+          stageHeight: result.stageHeight, deskTop: result.deskTop, deskBottom: result.deskBottom, floorTop: result.floorTop });
         await page.screenshot({ path: info.outputPath(`workshop-${device.name}-${name}.png`), animations: 'disabled' });
         return result;
       };

@@ -69,10 +69,11 @@ async function audit(page: Page, label: string, saved: boolean): Promise<unknown
       viewport: { width: innerWidth, height: innerHeight },
       scroll: { width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight, shell: shell.scrollHeight, shellClient: shell.clientHeight },
       nav: rect(nav), heading: rect(shell.querySelector('.sandbox-library-heading')!),
+      floor: rect(shell.querySelector('.library-hall-scene__floor')!),
       stands: footprint, props, hitIssues,
     };
   });
-  const facts = result as { viewport: { width: number; height: number }; scroll: { width: number; height: number; shell: number; shellClient: number }; nav: { top: number; bottom: number }; heading: { bottom: number }; stands: Array<{ box: { left: number; right: number; top: number; bottom: number }; pedestal: { top: number; bottom: number; width: number }; toyTop: number | null; toyBottom: number | null; footer: { top: number; bottom: number } | null }>; props: Array<{ name: string; visible: boolean; rect: { left: number; right: number; top: number; bottom: number } }>; hitIssues: string[] };
+  const facts = result as { viewport: { width: number; height: number }; scroll: { width: number; height: number; shell: number; shellClient: number }; nav: { top: number; bottom: number }; heading: { bottom: number }; floor: { top: number }; stands: Array<{ box: { left: number; right: number; top: number; bottom: number }; pedestal: { top: number; bottom: number; width: number }; toyTop: number | null; toyBottom: number | null; footer: { top: number; bottom: number } | null }>; props: Array<{ name: string; visible: boolean; rect: { left: number; right: number; top: number; bottom: number } }>; hitIssues: string[] };
   expect(facts.scroll.width, `${label}: horizontal scroll`).toBeLessThanOrEqual(facts.viewport.width + 2);
   expect(facts.scroll.height, `${label}: vertical scroll`).toBeLessThanOrEqual(facts.viewport.height + 2);
   expect(facts.scroll.shell, `${label}: shell must not clip content vertically`).toBeLessThanOrEqual(facts.scroll.shellClient + 3);
@@ -97,6 +98,11 @@ async function audit(page: Page, label: string, saved: boolean): Promise<unknown
     }
   }
   const visibleProps = facts.props.filter(p => p.visible);
+  if (facts.viewport.width <= 430 && facts.viewport.height > facts.viewport.width) {
+    const cabinet = visibleProps.find(prop => prop.name === 'cabinet');
+    expect(cabinet, `${label}: phone cabinet visible`).toBeTruthy();
+    if (cabinet) expect(Math.abs(cabinet.rect.bottom - facts.floor.top), `${label}: phone cabinet grounded at floor seam`).toBeLessThanOrEqual(3);
+  }
   for (const prop of visibleProps) {
     expect(prop.rect.left, `${label}: ${prop.name} left`).toBeGreaterThanOrEqual(-1);
     expect(prop.rect.right, `${label}: ${prop.name} right`).toBeLessThanOrEqual(facts.viewport.width + 1);

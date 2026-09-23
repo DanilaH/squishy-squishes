@@ -57,3 +57,14 @@
     top: 27%;
   }
 }
+
+
+/* Phone Hall: ground the cabinet against the fixed wall/floor seam instead of
+   a viewport-relative top percentage. This prevents the night-review floating
+   cabinet while leaving the accepted desktop composition unchanged. */
+@media (max-width: 430px) and (orientation: portrait) {
+  #app .library-hall-scene__cabinet {
+    top: auto;
+    bottom: 45%;
+  }
+}
