@@ -3,9 +3,9 @@ import { expect, test } from '@playwright/test';
 
 const SAVE_KEY = 'squishy.phaser-pages-preview.squishy.save.v3';
 const specimens = [
-  { shape: 'paw', material: 'soft', accessory: 'crown' },
-  { shape: 'heart', material: 'marshmallow', accessory: 'none' },
-  { shape: 'soft-square', material: 'jelly', accessory: 'none' },
+  { shape: 'paw', material: 'soft', accessory: 'crown', mixin: 'none' },
+  { shape: 'heart', material: 'marshmallow', accessory: 'none', mixin: 'none' },
+  { shape: 'soft-square', material: 'jelly', accessory: 'none', mixin: 'pearls' },
 ] as const;
 
 for (const specimen of specimens) {
@@ -28,6 +28,15 @@ for (const specimen of specimens) {
     await page.mouse.move(paint.x + paint.width * .59, paint.y + paint.height * .64, { steps: 12 });
     await page.mouse.up();
     await page.locator('[data-action="paint-continue"]').click();
+    if (specimen.mixin !== 'none') {
+      await page.locator(`[data-mixin="${specimen.mixin}"]`).click();
+      const mixinSurface = await page.locator('[data-sandbox-canvas]').boundingBox();
+      if (!mixinSurface) throw new Error('No mix-in surface');
+      await page.mouse.move(mixinSurface.x + mixinSurface.width * .40, mixinSurface.y + mixinSurface.height * .48);
+      await page.mouse.down();
+      await page.mouse.move(mixinSurface.x + mixinSurface.width * .62, mixinSurface.y + mixinSurface.height * .56, { steps: 6 });
+      await page.mouse.up();
+    }
     await page.locator('[data-action="mixin-continue"]').click();
     const mix = await page.locator('[data-sandbox-canvas]').boundingBox();
     if (!mix) throw new Error('No mix surface');
@@ -60,6 +69,7 @@ for (const specimen of specimens) {
     expect(saved.library[0].shapeId).toBe(specimen.shape);
     expect(saved.library[0].materialId).toBe(specimen.material);
     expect(saved.library[0].appearance.strokes.length).toBeGreaterThan(0);
+    if (specimen.mixin !== 'none') expect(saved.library[0].appearance.mixins.length).toBeGreaterThan(0);
     if (specimen.accessory !== 'none') expect(saved.library[0].decor.a).toBe(specimen.accessory);
     const squeeze = await page.locator('[data-sandbox-canvas]').boundingBox();
     if (!squeeze) throw new Error('No squeeze surface');

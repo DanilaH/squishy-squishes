@@ -62,11 +62,11 @@ vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
   float cloudiness = clamp(uCloudiness, 0.0, 1.0);
   float interior = 1.0 - edge;
 
-  base *= 1.0 - translucency * (0.035 + interior * 0.055);
-  base = mix(base, base * 0.94 + uSheenColor * 0.06, translucency * 0.18);
+  base *= 1.0 - translucency * (0.020 + interior * 0.040);
+  base = mix(base, base * 0.965 + uSheenColor * 0.035, translucency * 0.14);
   float gelWave = 0.5 + 0.5 * sin((uv.x * 1.72 + uv.y * 1.08 + uMaterialSeed * 2.31) * 6.2831853);
-  base += uSheenColor * pow(gelWave, 5.0) * interior * translucency * 0.045;
-  base += uRimColor * edge * translucency * 0.22;
+  base += uSheenColor * pow(gelWave, 5.0) * interior * translucency * 0.036;
+  base += uRimColor * edge * translucency * 0.18;
 
   float cloudA = 0.5 + 0.5 * sin((uv.x * 2.2 + uv.y * 1.45 + uMaterialSeed * 1.7) * 6.2831853);
   float cloudB = 0.5 + 0.5 * sin((uv.x * 4.7 - uv.y * 3.1 + uMaterialSeed * 2.9) * 6.2831853);
@@ -121,7 +121,7 @@ void main() {
   float specStrength = mix(0.12, 0.035, roughness) * (1.0 + uMetallic * 0.9 + uPearlescence * 0.22);
   color += uSheenColor * pow(max(dot(n, halfDirection), 0.0), specPower) * specStrength;
 
-  float bodyAlpha = mix(0.995, 0.90 + materialEdge * 0.06, clamp(uTranslucency, 0.0, 1.0));
+  float bodyAlpha = mix(0.995, 0.78 + materialEdge * 0.14, clamp(uTranslucency, 0.0, 1.0));
   outColor = vec4(clamp(color, 0.0, 1.0), paint.a * bodyAlpha);
 }`;
 

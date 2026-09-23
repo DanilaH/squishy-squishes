@@ -68,11 +68,16 @@
 
 .sandbox-glow {
   position: absolute;
-  width: min(88vw, 470px);
+  width: min(84vw, 430px);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,.95) 0 35%, rgba(211,191,242,.24) 56%, transparent 72%);
-  filter: blur(1px);
+  /* Keep a soft stage halo without bleaching translucent materials. */
+  background: radial-gradient(circle,
+    rgba(255, 248, 242, .34) 0 26%,
+    rgba(246, 226, 235, .16) 42%,
+    rgba(211, 191, 242, .08) 58%,
+    transparent 74%);
+  filter: blur(5px);
   pointer-events: none;
 }
 

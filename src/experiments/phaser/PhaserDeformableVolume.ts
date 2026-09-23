@@ -3,8 +3,8 @@ import type { SquishMaterialStyle } from '../../squish/SquishSurface';
 import type { SquishSimulation } from '../../squish/SquishSimulation';
 import { fragmentShaderSource, vertexShaderSource } from '../../squish/shaders';
 
-/** Isolated Pages shading; the canonical raw/Yandex shader is never modified. */
-const BODY_ALPHA_LINE = '  float bodyAlpha = mix(0.985, 0.86 + edge * 0.09, translucency);';
+/** Pages adds cap/side geometry on top of the shared material shader. */
+const BODY_ALPHA_LINE = '  float bodyAlpha = mix(0.985, 0.76 + edge * 0.15, translucency);';
 if (fragmentShaderSource.split(BODY_ALPHA_LINE).length !== 2) {
   throw new Error('Pages volume needs the reviewed Studio fragment shader.');
 }
@@ -26,6 +26,7 @@ uniform vec3 uColorLow;
 uniform vec3 uColorHigh;
 uniform vec3 uSheenColor;
 uniform float uMetallic;
+uniform float uTranslucency;
 uniform float uCompression;
 out vec4 outColor;
 void main() {
@@ -37,7 +38,8 @@ void main() {
   // Sidewall has its own soft material lighting; never duplicate face/eyes.
   body *= 0.86 + vUv.y * 0.06 + uCompression * 0.020;
   body += uSheenColor * uMetallic * 0.035;
-  outColor = vec4(body, 0.97);
+  float sideAlpha = mix(0.97, 0.78, clamp(uTranslucency, 0.0, 1.0));
+  outColor = vec4(body, sideAlpha);
 }`;
 
 const compile = (gl: WebGL2RenderingContext, type: number, source: string): WebGLShader => {
@@ -65,6 +67,7 @@ interface SideGpu {
   readonly uColorHigh: WebGLUniformLocation;
   readonly uSheenColor: WebGLUniformLocation;
   readonly uMetallic: WebGLUniformLocation;
+  readonly uTranslucency: WebGLUniformLocation;
   readonly uCompression: WebGLUniformLocation;
 }
 
@@ -124,6 +127,7 @@ export class PhaserDeformableVolume {
       uColorHigh: uniform('uColorHigh'),
       uSheenColor: uniform('uSheenColor'),
       uMetallic: uniform('uMetallic'),
+      uTranslucency: uniform('uTranslucency'),
       uCompression: uniform('uCompression'),
     };
   }
@@ -195,6 +199,7 @@ export class PhaserDeformableVolume {
     gl.uniform3f(gpu.uColorHigh, ...material.high);
     gl.uniform3f(gpu.uSheenColor, ...material.sheen);
     gl.uniform1f(gpu.uMetallic, material.metallic);
+    gl.uniform1f(gpu.uTranslucency, material.translucency);
     gl.uniform1f(gpu.uCompression, compression);
     gl.bindVertexArray(gpu.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, gpu.positions);

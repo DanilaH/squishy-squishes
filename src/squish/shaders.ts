@@ -142,14 +142,14 @@ void main() {
   float translucency = clamp(uTranslucency, 0.0, 1.0);
   float interior = 1.0 - edge;
   float opticalDepth = smoothstep(0.0, 1.0, interior);
-  base *= 1.0 - translucency * (0.035 + opticalDepth * 0.055);
-  base = mix(base, base * 0.94 + uSheenColor * 0.06, translucency * 0.18);
+  base *= 1.0 - translucency * (0.020 + opticalDepth * 0.040);
+  base = mix(base, base * 0.965 + uSheenColor * 0.035, translucency * 0.14);
   float gelWave = 0.5 + 0.5 * sin(
     (vUv.x * 1.72 + vUv.y * 1.08 + uMaterialSeed * 2.31 + uCompression * 0.12) * 6.2831853
   );
   float gelCaustic = pow(gelWave, 5.0) * interior * translucency;
-  base += uSheenColor * gelCaustic * 0.045;
-  base += uRimColor * edge * translucency * 0.22;
+  base += uSheenColor * gelCaustic * 0.036;
+  base += uRimColor * edge * translucency * 0.18;
 
   float roughness = clamp(uRoughness, 0.0, 1.0);
   float cloudiness = clamp(uCloudiness, 0.0, 1.0);
@@ -191,8 +191,10 @@ void main() {
   vec3 foamColor = mix(vec3(0.89, 0.92, 0.96), uSheenColor, 0.28) * beadShade;
   vec3 pearlTint = mix(vec3(0.94, 0.96, 1.0), spectralColor(hash21(fillCell) + uMaterialSeed), 0.28);
   vec3 beadColor = mix(foamColor, pearlTint * (0.90 + beadShade * 0.16), pearl);
-  base = mix(base, beadColor, bead * mix(0.72, 0.84, pearl));
-  base += uSheenColor * bead * pearl * 0.08;
+  float fillReveal = 1.0 + translucency * (0.28 + interior * 0.40);
+  float beadStrength = clamp(bead * mix(0.72, 0.84, pearl) * fillReveal, 0.0, 0.96);
+  base = mix(base, beadColor, beadStrength);
+  base += uSheenColor * bead * pearl * (0.08 + translucency * 0.04);
   base -= vec3(0.045) * bead * edge * (1.0 - pearl * 0.45);
 
   vec2 sheenDelta = vUv - uPointerUv;
@@ -226,7 +228,7 @@ void main() {
   meniscusBand *= 1.0 - step(0.995, fillProgress);
   base += uSheenColor * meniscusBand * 0.12;
 
-  float bodyAlpha = mix(0.985, 0.86 + edge * 0.09, translucency);
+  float bodyAlpha = mix(0.985, 0.76 + edge * 0.15, translucency);
   outColor = vec4(base, bodyAlpha * shapeAlpha);
 }
 `;
