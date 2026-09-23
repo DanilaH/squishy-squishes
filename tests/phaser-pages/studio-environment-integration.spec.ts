@@ -51,6 +51,8 @@ const check = async (page: Page, label: string): Promise<void> => {
       deskChildren: desk.childElementCount,
       artOverflow: getComputedStyle(art).overflow,
       decorOverflow: getComputedStyle(decorClip).overflow,
+      decorZ: getComputedStyle(decorClip).zIndex,
+      floorZ: getComputedStyle(floor).zIndex,
       deskClip: getComputedStyle(desk).clipPath,
       decorRects: Array.from(decorClip.querySelectorAll('img')).map(rect),
       backgrounds: [getComputedStyle(shell).backgroundImage, getComputedStyle(floor).backgroundImage],
@@ -66,9 +68,12 @@ const check = async (page: Page, label: string): Promise<void> => {
   expect(facts.deskComposed, `${label}: a single raster, not separately scaled slices`).toBe(true);
   expect(facts.deskSize).toEqual({ width: 1237, height: 435 });
   expect(facts.deskChildren).toBe(0);
-  expect(facts.decorOverflow, `${label}: shelf and plant props stay clipped`).toBe('hidden');
+  expect(facts.decorOverflow, `${label}: side furniture can cross the floor seam instead of being clipped underneath it`).toBe('visible');
+  expect(Number(facts.decorZ), `${label}: side furniture is explicitly above the floor`).toBeGreaterThan(Number(facts.floorZ));
   expect(facts.backgrounds[0]).toContain('studio-wall');
-  expect(facts.backgrounds[1]).toContain('studio-floor');
+  expect(facts.backgrounds[1], `${label}: Craft/Squeeze use Library floor asset`).not.toContain('studio-floor');
+  const floorImage = await page.evaluate(() => getComputedStyle(document.querySelector<HTMLElement>('.studio-env-floor')!, '::before').backgroundImage);
+  expect(floorImage, `${label}: exact Library parquet tile`).toContain('floor-tile');
   expect(facts.passiveArt).toBe(true);
   expect(facts.canvasAcceptsPointer, `${label}: the real Phaser canvas stays interactive`).toBe(true);
   expect(facts.hitIssues, `${label}: all controls must remain clickable`).toEqual([]);

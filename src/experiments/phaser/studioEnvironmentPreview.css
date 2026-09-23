@@ -23,13 +23,31 @@
   z-index: 0;
   inset-inline: 0;
   bottom: 0;
-  background-color: #da9d74;
-  background-image: url('./studio-assets/studio-floor.png');
-  background-position: left top;
-  background-repeat: repeat-x;
-  /* Preserve the source aspect ratio and stop one 348px-tall tile from
-     making the parquet read like giant blocks on phone/desktop. */
-  background-size: auto min(300px, 92%);
+  overflow: hidden;
+  background: #eab18a;
+  perspective: 1250px;
+  perspective-origin: 50% 0;
+  pointer-events: none;
+}
+
+/* Use the exact Library parquet source and projection in Craft/Squeeze too.
+   The plane is repeated before projection, so large desktop floors never
+   stretch one bitmap and mobile/desktop keep the same room language. */
+.studio-env-floor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -115%;
+  width: 330%;
+  height: 200%;
+  background-image: url('./library-assets/floor-tile.webp');
+  background-color: #eab18a;
+  background-repeat: repeat;
+  background-position: center top;
+  background-size: clamp(270px, 28vw, 390px) auto;
+  transform-origin: 50% 0;
+  transform: rotateX(64deg);
+  backface-visibility: hidden;
   pointer-events: none;
 }
 
@@ -43,13 +61,15 @@
 
 .studio-env-decor-clip {
   position: absolute;
+  z-index: 1;
   inset: 0;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
 }
 
 .studio-env-decor {
   position: absolute;
+  z-index: 1;
   top: 62px;
   width: 356px;
   height: auto;
@@ -93,6 +113,11 @@
 }
 @media (max-height: 520px) and (orientation: landscape) {
   .studio-env-decor, .studio-env-desk { display: none !important; }
+  .studio-env-floor::before {
+    height: 250%;
+    background-size: 285px auto;
+    transform: rotateX(59deg);
+  }
 }
 
 /* One workshop at every step: reserve the same heading, playfield and control

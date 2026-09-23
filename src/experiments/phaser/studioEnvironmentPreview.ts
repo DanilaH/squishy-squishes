@@ -3,7 +3,7 @@ import './studioEnvironmentPreview.css';
 // Isolated Pages-only visual experiment. The gameplay canvas and hit targets are untouched.
 const assets = {
   wall: new URL('./studio-assets/studio-wall.png', import.meta.url).href,
-  floor: new URL('./studio-assets/studio-floor.png', import.meta.url).href,
+  floor: new URL('./library-assets/floor-tile.webp', import.meta.url).href,
   left: new URL('./studio-assets/studio-desk-left.png', import.meta.url).href,
   middle: new URL('./studio-assets/studio-desk-middle.png', import.meta.url).href,
   right: new URL('./studio-assets/studio-desk-right.png', import.meta.url).href,

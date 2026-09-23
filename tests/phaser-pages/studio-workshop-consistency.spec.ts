@@ -51,7 +51,8 @@ for (const device of devices) {
           return {
             stage: label, canvas: { x: c.left, y: c.top, width: c.width, height: c.height },
             stageTop: s.top, stageHeight: s.height, deskTop: d.top, deskBottom: d.bottom, floorTop: floor.getBoundingClientRect().top,
-            wall: getComputedStyle(shell).backgroundImage, ground: getComputedStyle(floor).backgroundImage,
+            wall: getComputedStyle(shell).backgroundImage,
+            ground: getComputedStyle(floor, '::before').backgroundImage,
             groundHeight: floor.getBoundingClientRect().height,
             deskVisible: getComputedStyle(desk).display !== 'none', deskLoaded: desk.complete && desk.naturalWidth === 1237,
             propsLoaded: [...stage.querySelectorAll<HTMLImageElement>('.studio-env-decor')].map(p => p.complete && p.naturalWidth > 0),
@@ -67,7 +68,7 @@ for (const device of devices) {
           };
         }, name);
         expect(result.wall, `${device.name}/${name} uses actual wall PNG`).toContain('studio-wall');
-        expect(result.ground, `${device.name}/${name} uses actual floor PNG`).toContain('studio-floor');
+        expect(result.ground, `${device.name}/${name} uses the shared Library floor tile`).toContain('floor-tile');
         expect(result.groundHeight).toBeGreaterThan(20);
         expect(result.propsLoaded).toEqual([true, true]);
         expect(result.deskLoaded).toBe(true);
