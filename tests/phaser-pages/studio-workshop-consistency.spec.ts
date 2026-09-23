@@ -62,6 +62,7 @@ for (const device of devices) {
             controlsOverflowY: getComputedStyle(controls).overflowY,
             controlsBottom: controlsRect.bottom, panelBottom: panelRect?.bottom ?? controlsRect.top,
             stepWidth: step?.width ?? 0,
+            stepVisible: !!step && getComputedStyle(step).display !== 'none' && step.width > 0,
           };
         }, name);
         expect(result.wall, `${device.name}/${name} uses actual wall PNG`).toContain('studio-wall');
@@ -81,6 +82,7 @@ for (const device of devices) {
         expect(['auto', 'scroll']).not.toContain(result.controlsOverflowY);
         expect(result.panelBottom, `${device.name}/${name} edit tray stays in viewport`).toBeLessThanOrEqual(result.controlsBottom + 2);
         if (actualStage !== 'squeeze') expect(result.stepWidth, `${device.name}/${name} step label is not a placeholder strip`).toBeLessThan(170);
+        else expect(result.stepVisible, `${device.name}/${name} Squeeze has no empty step placeholder`).toBe(false);
         expect(Math.abs(result.canvas.width - result.canvas.height), 'toy canvas stays square').toBeLessThan(2);
         if (result.deskVisible) expect(result.deskBottom, `${device.name}/${name} desk draws over the floor instead of being clipped under it`).toBeGreaterThan(result.floorTop + 18);
         if (device.name !== 'landscape-ru') expect(result.deskVisible, `${device.name}/${name} has a visible desk`).toBe(true);

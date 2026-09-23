@@ -80,11 +80,8 @@ const check = async (page: Page, label: string): Promise<void> => {
   if (facts.viewport.width === 1280 && facts.viewport.height === 800 && facts.stageName === 'shape') {
     expect(facts.deskVisible, `${label}: compact desktop must retain the tabletop`).toBe('true');
     expect(facts.artOverflow, `${label}: desk cannot be clipped at the stage edge`).toBe('visible');
-    expect(facts.deskClip, `${label}: only tabletop/front should extend below the stage`).toContain('59%');
-    // Fixed tracks make the desk visible inside the stage rather than forcing
-    // it to protrude beyond its bottom. Still reject a 20px token strip.
-    expect(Math.min(facts.desk.y + facts.desk.height * 0.41, facts.stage.bottom) - facts.desk.y,
-      `${label}: >=70px of real tabletop/front stays visible`).toBeGreaterThanOrEqual(70);
+    expect(facts.deskClip, `${label}: full workbench must not be clipped back under the floor`).toBe('none');
+    expect(facts.desk.bottom, `${label}: full workbench crosses the floor seam as foreground art`).toBeGreaterThan(facts.floor.y + 18);
   }
   if (facts.viewport.width <= 390 && facts.viewport.height > facts.viewport.width) {
     expect(facts.decorRects).toHaveLength(2);

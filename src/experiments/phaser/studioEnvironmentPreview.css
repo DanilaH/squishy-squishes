@@ -27,7 +27,9 @@
   background-image: url('./studio-assets/studio-floor.png');
   background-position: left top;
   background-repeat: repeat-x;
-  background-size: clamp(210px, 18vw, 250px) 348px;
+  /* Preserve the source aspect ratio and stop one 348px-tall tile from
+     making the parquet read like giant blocks on phone/desktop. */
+  background-size: auto min(300px, 92%);
   pointer-events: none;
 }
 
@@ -202,6 +204,9 @@
   border: 1px solid rgba(176,111,41,.16);
   background: rgba(255,249,237,.72);
 }
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy > span:empty {
+  display: none;
+}
 
 /* Edit trays are viewport-contained. Do not turn the maker into a nested
    scroller; compact devices tighten the decor controls instead. */
@@ -241,12 +246,12 @@
    while keeping craft-step geometry unchanged. */
 @media (min-width: 901px) and (min-height: 640px) and (orientation: landscape) {
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-canvas {
-    width: min(46vw, 560px, 126cqh);
+    width: min(50vw, 620px, 158cqh);
     max-width: none;
     max-height: none;
   }
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-glow {
-    width: min(50vw, 600px, 136cqh);
+    width: min(54vw, 660px, 170cqh);
     max-height: none;
   }
 }
