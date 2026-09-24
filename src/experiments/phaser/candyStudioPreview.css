@@ -181,8 +181,9 @@
    and reserve one readable line for the material name. */
 @media (max-width: 360px) and (orientation: portrait) {
   .sandbox-shell[data-stage="finish"] .sandbox-material {
-    gap: 5px;
-    padding-inline: 5px;
+    flex-direction: column;
+    gap: 3px;
+    padding: 5px 4px;
     font-size: 10px;
   }
   .sandbox-shell[data-stage="finish"] .sandbox-material__orb {
@@ -191,6 +192,7 @@
   }
   .sandbox-shell[data-stage="finish"] .sandbox-material > span:last-child {
     min-width: 0;
+    max-width: 100%;
     white-space: nowrap;
     font-size: 10px;
     line-height: 1;
