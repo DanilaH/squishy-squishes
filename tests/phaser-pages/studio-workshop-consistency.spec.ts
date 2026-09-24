@@ -146,6 +146,22 @@ for (const device of devices) {
       await page.locator('[data-decor-accessory="crown"]').click();
       await page.locator('[data-action="decor-continue"]').click();
       await sample('finish');
+      const materialLabels = await page.locator('button[data-material] > span:last-child').evaluateAll((labels) =>
+        labels.map((label) => {
+          const range = document.createRange();
+          range.selectNodeContents(label);
+          return {
+            text: label.textContent ?? '',
+            lines: range.getClientRects().length,
+            width: label.getBoundingClientRect().width,
+            buttonWidth: label.parentElement?.getBoundingClientRect().width ?? 0,
+          };
+        }),
+      );
+      for (const label of materialLabels) {
+        expect(label.lines, `${device.name}: material label "${label.text}" stays on one line`).toBe(1);
+        expect(label.width, `${device.name}: material label "${label.text}" stays inside its tile`).toBeLessThan(label.buttonWidth);
+      }
       // Prove the actual Finish controls remain clickable after the layout
       // change instead of inferring canvas interactivity from a CSS class.
       await page.locator('button[data-material="holo"]').click();
