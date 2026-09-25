@@ -150,7 +150,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     holo: 'Holo',
     marshmallow: 'Marshmallow',
     pearl: 'Pearl',
-    chrome: 'Chrome',
+    chrome: 'Metallic',
     face: 'Face',
     stickers: 'Stickers',
     head: 'Head',
@@ -198,7 +198,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     holo: 'Голографик',
     marshmallow: 'Маршмеллоу',
     pearl: 'Перламутр',
-    chrome: 'Хром',
+    chrome: 'Металлик',
     face: 'Мордочка',
     stickers: 'Наклейки',
     head: 'Макушка',
@@ -1094,11 +1094,14 @@ export class SandboxApp {
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.clearRect(0, 0, canvasRect.width, canvasRect.height);
       const appearanceScale = Math.min(canvasRect.width, canvasRect.height) * 0.68 / APPEARANCE_TEXTURE_SIZE;
+      context.save();
+      context.globalAlpha = this.draft.materialId === 'chrome' ? 0.42 : 1;
       for (const placement of rigidPlacements) {
         const center = this.renderer.projectUvToCanvas(placement.x / 255, placement.y / 255);
         const radius = Math.max(3.5, placement.s * appearanceScale * 0.5);
         context.drawImage(this.pearlSprite, center.x - radius, center.y - radius, radius * 2, radius * 2);
       }
+      context.restore();
     }
 
     if (this.options.rendererBackend !== 'phaser') this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);

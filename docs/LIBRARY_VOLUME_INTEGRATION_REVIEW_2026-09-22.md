@@ -65,3 +65,18 @@ The first see-through pass succeeded technically (Pearl mix-ins became clearly v
 ### Material contrast follow-up
 
 A six-material screenshot matrix on the reviewed aqua-Jelly pass showed Chrome/Holo already separated strongly, while Jelly, Marshmallow and Pearl were still too close in overall lightness. The accepted contrast pass therefore gives Jelly a slightly stronger aqua gel identity, makes Marshmallow distinctly rougher/cloudier, and strengthens Pearl's opalescent lobe. Soft stays the neutral warm-milk reference. This deliberately changes material appearance only; IDs, V3 data and gameplay remain unchanged.
+
+
+## Owner interaction/material polish follow-up (2026-09-25)
+
+The next owner-review pass is deliberately split from the earlier material/layout recovery:
+
+1. keep persisted `materialId: "chrome"` but present it as **Metallic**, preserving authored colour and using narrower light bands plus darker reflection bands;
+2. remove the Pages-authored white line highlights from non-dot eyes and line mouths after owner screenshots showed them as stray white artifacts;
+3. expand Squeeze render/input headroom without reducing the accepted resting hero size;
+4. separate Paint authoring UV from shape hit-testing so a brush footprint can feather across the silhouette edge while squeeze/sticker/mix-in hit-testing stays canonical;
+5. add a craft exit with unsaved confirmation;
+6. add a whole-body Fill tool without changing the SaveState V3 root or material IDs;
+7. make appearance-budget exhaustion explicit and disable only additive customization actions.
+
+Physically localized appendage grabbing remains deferred. Final acceptance still requires exact-HEAD release/browser/Pages/Hall/candidate/Yandex-DRAFT gates plus screenshot/video inspection; PR #59 remains draft and unmerged.

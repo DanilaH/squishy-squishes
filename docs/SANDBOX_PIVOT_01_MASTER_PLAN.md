@@ -113,6 +113,7 @@ V1 tools:
 - color palette;
 - color blending through alpha compositing;
 - eraser that softly reduces paint alpha / rubs paint back toward the base;
+- one-tap whole-body Fill tool using the selected paint color;
 - undo last stroke;
 - clear paint as a secondary action;
 - `Continue` available immediately.
@@ -122,6 +123,7 @@ Rules:
 - zero minimum coverage;
 - player can paint one dot, a smiley, stripes, a gradient or fully cover the toy;
 - paint is clipped by the selected shape;
+- Brush/Eraser authoring may begin slightly outside the silhouette so the brush footprint can feather across the edge; squeeze/sticker/mix-in hit-testing remains shape-bound;
 - strokes use normalized UV-space so the design follows deformation later;
 - no scoring.
 
@@ -290,6 +292,8 @@ Before implementation lock concrete budgets, but V1 should include:
 - hard maximum mix-in placements;
 - hard maximum decal placements;
 - schema versioning.
+
+When a hard appearance/decor budget is reached, the player must get an explicit visible limit notice. Only actions that would add more persisted detail become unavailable; Undo/Clear and every Continue/exit action remain usable.
 
 If actual save payloads become excessive, optimize the procedural representation before switching to image blobs.
 
@@ -880,3 +884,15 @@ Stop and reassess if:
 8. Add rewarded monetization only after the free product loop is already satisfying.
 
 The critical dependency is not ads, ranks or recipe copy. It is proving that a freely painted custom squishy can be created, saved, reloaded and still look/feel good while deforming.
+
+
+## 15. Owner polish follow-up — 25 September 2026
+
+This follow-up refines the already accepted freeform maker; it does not reintroduce recipe/XP gating.
+
+- The durable material ID `chrome` remains unchanged for SaveState V3/backward compatibility, but its player-facing identity becomes **Metallic**: authored colour remains visible under denser, darker reflective bands rather than being replaced by neutral mirror chrome.
+- Pages face art must not add unexplained white stripe highlights over line eyes/mouths. Expression ink should stay legible across Soft, Jelly, Pearl, Holo and Metallic.
+- Squeeze/play needs deformation headroom beyond the visible resting body. Expand the transparent interactive/render playfield while preserving approximately the accepted resting toy size; do not solve clipping by shrinking the hero.
+- Craft has an explicit exit-to-Library action. Unsaved work requires confirmation; already-saved Squeeze may return directly.
+- Fill is a whole-body paint operation, not Photoshop flood-fill. Prefer encoding it through the existing replayable Appearance V1 stroke representation so V3/rollback compatibility remains intact.
+- Localized draggable ears/appendage physics remain deferred expressive polish.

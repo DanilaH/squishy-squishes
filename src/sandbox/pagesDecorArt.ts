@@ -39,8 +39,6 @@ const eye = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['
   if (style === 'happy') ctx.arc(x, y + 3, 10, Math.PI * 1.10, Math.PI * 1.90);
   else { ctx.moveTo(x - 9, y); ctx.quadraticCurveTo(x, y + 6, x + 9, y); }
   ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,255,255,.56)'; ctx.lineWidth = 1.45;
-  ctx.beginPath(); ctx.moveTo(x - 7, y - 3); ctx.quadraticCurveTo(x, y + 2, x + 7, y - 3); ctx.stroke();
   ctx.restore();
 };
 const mouth = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['mouth']>, p: { u: number; v: number }): void => {
@@ -56,8 +54,6 @@ const mouth = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1
     if (style === 'smile') { ctx.moveTo(x - 13, y - 2); ctx.quadraticCurveTo(x, y + 18, x + 13, y - 2); }
     else { ctx.moveTo(x - 12, y - 2); ctx.quadraticCurveTo(x - 7, y + 9, x, y + 2); ctx.quadraticCurveTo(x + 7, y + 9, x + 12, y - 2); }
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.15;
-    ctx.beginPath(); ctx.moveTo(x - 7, y + 7); ctx.lineTo(x + 7, y + 7); ctx.stroke();
   }
   ctx.restore();
 };

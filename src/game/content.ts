@@ -139,7 +139,7 @@ export const MATERIALS: readonly MaterialSpec[] = [
   { id: 'holo', label: 'Holographic', translucency: 0.28, iridescence: 1.0, roughness: 0.14, metallic: 0.10, pearlescence: 0.22, cloudiness: 0 },
   { id: 'marshmallow', label: 'Marshmallow', translucency: 0.03, iridescence: 0, roughness: 1.0, metallic: 0, pearlescence: 0.02, cloudiness: 0.92 },
   { id: 'pearl', label: 'Pearl', translucency: 0.12, iridescence: 0.32, roughness: 0.18, metallic: 0.10, pearlescence: 1.0, cloudiness: 0.03 },
-  { id: 'chrome', label: 'Chrome', translucency: 0.02, iridescence: 0.08, roughness: 0.04, metallic: 1.0, pearlescence: 0.08, cloudiness: 0 },
+  { id: 'chrome', label: 'Metallic', translucency: 0.01, iridescence: 0.03, roughness: 0.12, metallic: 0.92, pearlescence: 0.03, cloudiness: 0 },
 ] as const;
 
 export const FILLINGS: readonly FillingSpec[] = [

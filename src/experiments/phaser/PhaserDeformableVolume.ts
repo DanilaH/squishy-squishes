@@ -38,7 +38,9 @@ void main() {
   // Sidewall has its own soft material lighting; never duplicate face/eyes.
   body *= 0.86 + vUv.y * 0.06 + uCompression * 0.020;
   body = mix(body, vec3(0.40, 0.90, 0.84), clamp(uTranslucency, 0.0, 1.0) * 0.30);
-  body += uSheenColor * uMetallic * 0.035;
+  float sideMetalBand = 0.5 + 0.5 * sin((vUv.y * 2.35 - vUv.x * 0.22) * 6.2831853);
+  vec3 sideMetal = mix(body * 0.38, mix(body * 1.08, uSheenColor, 0.20), pow(sideMetalBand, 7.0));
+  body = mix(body, sideMetal, clamp(uMetallic, 0.0, 1.0) * 0.76);
   float sideAlpha = mix(0.97, 0.78, clamp(uTranslucency, 0.0, 1.0));
   outColor = vec4(body, sideAlpha);
 }`;

@@ -99,12 +99,16 @@ vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
   base = mix(base, pearlSurface, pearlescence * (0.84 + edge * 0.12));
 
   float metallic = clamp(uMetallic, 0.0, 1.0);
-  float metalBand = 0.5 + 0.5 * sin((uv.y * 1.18 + uv.x * 0.34 + uMaterialSeed * 0.53) * 6.2831853);
-  float metalSharp = pow(metalBand, mix(9.0, 2.2, roughness));
-  vec3 metalDark = base * 0.30;
-  vec3 metalLight = mix(uSheenColor, vec3(1.0), 0.48);
-  vec3 metalSurface = mix(metalDark, metalLight, 0.10 + metalSharp * 0.90);
-  return mix(base, metalSurface, metallic * 0.88);
+  float metalBandA = 0.5 + 0.5 * sin((uv.y * 1.22 + uv.x * 0.28 + uMaterialSeed * 0.53) * 6.2831853);
+  float metalBandB = 0.5 + 0.5 * sin((uv.y * 2.72 - uv.x * 0.19 + uMaterialSeed * 0.91) * 6.2831853);
+  float metalHighlight = pow(metalBandA, mix(14.0, 4.6, roughness));
+  float metalDarkBand = pow(1.0 - metalBandB, 3.4);
+  vec3 metalDark = base * mix(0.46, 0.22, metalDarkBand);
+  vec3 metalMid = base * (0.74 + metalBandA * 0.10);
+  vec3 metalLight = mix(base * 1.10, uSheenColor, 0.24);
+  vec3 metalSurface = mix(metalMid, metalDark, 0.22 + metalDarkBand * 0.50);
+  metalSurface = mix(metalSurface, metalLight, metalHighlight * 0.86);
+  return mix(base, metalSurface, metallic * 0.84);
 }
 
 void main() {
