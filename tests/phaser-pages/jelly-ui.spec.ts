@@ -71,3 +71,45 @@ test('A missing jelly asset leaves all original CSS controls usable', async ({ p
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
   await expect(page.locator('[data-panel="shape"] .sandbox-shape')).toHaveCount(6);
 });
+
+
+test('dirty craft exit confirms, and appearance limit stays explicit without blocking Continue', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/phaser/');
+  await page.locator('[data-library-new]').first().click();
+  const shell = page.locator('[data-sandbox-app]');
+  await page.locator('[data-shape="heart"]').click();
+  await page.locator('[data-action="shape-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'paint');
+
+  await page.locator('[data-action="exit-craft"]').click();
+  await expect(page.locator('[data-exit-overlay]')).toBeVisible();
+  await page.locator('[data-action="exit-cancel"]').click();
+  await expect(page.locator('[data-exit-overlay]')).toBeHidden();
+  await expect(shell).toHaveAttribute('data-stage', 'paint');
+
+  await page.locator('[data-paint-tool="fill"]').click();
+  const box = await page.locator('[data-sandbox-canvas]').boundingBox();
+  if (!box) throw new Error('Missing paint canvas');
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  for (let index = 0; index < 110; index += 1) {
+    await page.mouse.click(x, y);
+    if (index % 20 === 19) await page.waitForTimeout(20);
+  }
+
+  await expect(shell).toHaveAttribute('data-appearance-full', 'true');
+  await expect(page.locator('[data-sandbox-status]')).toHaveAttribute('data-limit', '');
+  await expect(page.locator('[data-sandbox-status]')).toContainText(/Detail limit|Лимит деталей/);
+  await expect(page.locator('[data-paint-tool="fill"]')).toBeDisabled();
+  await expect(page.locator('[data-action="paint-continue"]')).toBeEnabled();
+
+  await page.locator('[data-action="paint-clear"]').click();
+  await expect(shell).toHaveAttribute('data-appearance-full', 'false');
+  await expect(page.locator('[data-paint-tool="fill"]')).toBeEnabled();
+
+  await page.locator('[data-action="exit-craft"]').click();
+  await expect(page.locator('[data-exit-overlay]')).toBeVisible();
+  await page.locator('[data-action="exit-confirm"]').click();
+  await expect(page.locator('[data-sandbox-library]')).toBeVisible();
+});

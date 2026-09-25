@@ -22,7 +22,15 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('[data-shape="heart"]').tap();
     await page.locator('[data-action="shape-continue"]').tap();
-    await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
+    const shell = page.locator('[data-sandbox-app]');
+    await expect(shell).toHaveAttribute('data-stage', 'paint');
+
+    // Dirty craft can always be exited, but requires an explicit confirmation.
+    await page.locator('[data-action="exit-craft"]').tap();
+    await expect(page.locator('[data-exit-overlay]')).toBeVisible();
+    await page.locator('[data-action="exit-cancel"]').tap();
+    await expect(page.locator('[data-exit-overlay]')).toBeHidden();
+    await expect(shell).toHaveAttribute('data-stage', 'paint');
 
     const cdp = await context.newCDPSession(page);
     const touch = async (type: 'touchStart' | 'touchMove' | 'touchEnd', x = 0, y = 0): Promise<void> => {
@@ -40,6 +48,11 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     };
 
     const paint = await bounds();
+    await page.locator('[data-paint-tool="fill"]').tap();
+    await page.touchscreen.tap(paint.x, paint.y);
+    await expect(shell).toHaveAttribute('data-paint-strokes', '1');
+    await page.locator('[data-paint-tool="paint"]').tap();
+
     // Begin outside the canonical heart but cross the appearance-texture edge
     // exactly. The first authored UV must exist before the pointer center enters
     // the silhouette, so a soft brush can feather paint across the body edge.
@@ -48,7 +61,7 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
       await touch('touchMove', paint.x - paint.radius * 1.20 + paint.radius * 1.6 * n / 24, paint.y);
     }
     await touch('touchEnd');
-    await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-paint-strokes', '1');
+    await expect(shell).toHaveAttribute('data-paint-strokes', '2');
     await page.locator('[data-action="paint-continue"]').tap();
 
     await page.locator('[data-mixin="pearls"]').tap();
@@ -81,8 +94,9 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     expect(stored.original).toBe('keep-original-save');
     const saved = JSON.parse(stored.preview ?? 'null');
     expect(saved).toMatchObject({ version: 3, library: [{ shapeId: 'heart', materialId: 'holo' }] });
-    expect(saved.library[0].appearance.strokes).toHaveLength(1);
-    const firstPaintBytes = Buffer.from(saved.library[0].appearance.strokes[0].p, 'base64');
+    expect(saved.library[0].appearance.strokes).toHaveLength(2);
+    expect(saved.library[0].appearance.strokes[0].s, 'Fill remains an ordinary replayable Appearance V1 paint stroke').toBe(112);
+    const firstPaintBytes = Buffer.from(saved.library[0].appearance.strokes[1].p, 'base64');
     expect(firstPaintBytes[0], 'Paint authors at the texture edge before the brush center enters the shape').toBeLessThanOrEqual(3);
     expect(saved.library[0].appearance.mixins).toHaveLength(1);
     // V3 serializes decor as a compact document: `s` stores sticker tuples.

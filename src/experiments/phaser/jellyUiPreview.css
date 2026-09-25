@@ -55,7 +55,7 @@
   transition: transform 115ms ease, filter 115ms ease, opacity 115ms ease;
 }
 #app[data-jelly-ui-ready] :is(.sandbox-library-ideas, .sandbox-panel .sandbox-secondary,
-  .sandbox-library-modal__cancel, .sandbox-decor-tabs > button) {
+  .sandbox-library-modal__cancel, .sandbox-exit-dialog .sandbox-secondary, .sandbox-decor-tabs > button) {
   border: 0;
   border-radius: 18px;
   background: transparent url('./ui-assets/honey-pill.webp') center / 100% 100% no-repeat;
@@ -68,7 +68,7 @@
   -webkit-tap-highlight-color: transparent;
   transition: transform 115ms ease, filter 115ms ease, opacity 115ms ease;
 }
-#app[data-jelly-ui-ready] :is(.sandbox-library-modal__danger,
+#app[data-jelly-ui-ready] :is(.sandbox-library-modal__danger, .sandbox-exit-dialog .sandbox-exit-danger,
   .sandbox-panel [data-action="paint-clear"], .sandbox-panel [data-action="mixin-clear"],
   .sandbox-panel [data-action="decor-clear"]) {
   background: transparent url('./ui-assets/red-wide.webp') center / 100% 100% no-repeat;
