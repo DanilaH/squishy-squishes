@@ -243,11 +243,12 @@
 @media (max-width: 620px) {
   .sandbox-shell { padding-inline: 10px; }
   .sandbox-paint-tools button {
-    flex: 1 1 0;
     min-width: 0;
     padding-inline: 4px;
     font-size: 10px;
   }
+  .sandbox-paint-tools [data-paint-tool] { flex: 1.45 1 0; }
+  .sandbox-paint-tools [data-brush-size] { flex: .70 1 0; }
   .sandbox-panel { gap: 6px; }
   .sandbox-shape { min-height: 68px !important; }
   .sandbox-shape__icon { width: 30px; height: 30px; }

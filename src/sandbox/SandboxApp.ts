@@ -1,6 +1,6 @@
 import { MATERIALS, getMaterial, getPalette, type MaterialId } from '../game/content';
 import { SquishyAudio } from '../game/SquishyAudio';
-import { SHAPES, getShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
+import { SHAPES, getShape, isPointInsideShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { SquishSurface, type SquishMaterialStyle, type SquishMetrics } from '../squish/SquishSurface';
 import type { PhaserSquishSurface, PhaserSandboxCallbacks } from './PhaserSquishSurface';
 import {
@@ -417,7 +417,7 @@ export class SandboxApp {
           paintStamp: (point) => {
             if (this.appearanceLimitReached) return;
             if (this.paintTool === 'fill') {
-              this.applyPaintFill();
+              this.applyPaintFill(point);
               return;
             }
             this.authoredStrokeMode = this.paintTool === 'erase' ? 1 : 0;
@@ -670,9 +670,11 @@ export class SandboxApp {
     const paintColor = target.dataset.paintColor;
     if (paintColor) {
       this.paintColor = Number(paintColor);
-      this.paintTool = 'paint';
+      // Colour selection exits Eraser, but keeps Fill selected so choosing a new
+      // bucket colour does not silently switch tools underneath the player.
+      if (this.paintTool === 'erase') this.paintTool = 'paint';
       this.updatePressed('[data-paint-color]', 'paintColor', paintColor);
-      this.updatePressed('[data-paint-tool]', 'paintTool', 'paint');
+      this.updatePressed('[data-paint-tool]', 'paintTool', this.paintTool);
       return;
     }
 
@@ -785,7 +787,7 @@ export class SandboxApp {
       if (this.authoredPointerId !== null || this.appearanceLimitReached) return;
       const point = this.renderer.clientPointToAppearanceUv(event.clientX, event.clientY);
       if (this.paintTool === 'fill') {
-        if (point) this.applyPaintFill();
+        if (point) this.applyPaintFill(point);
         event.preventDefault();
         return;
       }
@@ -924,8 +926,11 @@ export class SandboxApp {
     this.updateAppearanceDataset();
   }
 
-  private applyPaintFill(): void {
+  private applyPaintFill(point: AppearancePoint): void {
     if (this.appearanceLimitReached) return;
+    const localX = point.u * 2 - 1;
+    const localY = point.v * 2 - 1;
+    if (!isPointInsideShape(getShape(this.draft.shapeId), localX, localY)) return;
     if (this.draft.appearance.strokes.length >= MAX_APPEARANCE_STROKES) {
       this.setAppearanceLimitReached(true);
       return;
@@ -1225,7 +1230,9 @@ export class SandboxApp {
       const context = this.rigidMixinContext;
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.clearRect(0, 0, canvasRect.width, canvasRect.height);
-      const appearanceScale = Math.min(canvasRect.width, canvasRect.height) * 0.68 / APPEARANCE_TEXTURE_SIZE;
+      const cssRadiusRatio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio'));
+      const radiusRatio = Number.isFinite(cssRadiusRatio) ? cssRadiusRatio : 0.34;
+      const appearanceScale = Math.min(canvasRect.width, canvasRect.height) * radiusRatio * 2 / APPEARANCE_TEXTURE_SIZE;
       context.save();
       context.globalAlpha = this.draft.materialId === 'chrome' ? 0.42 : 1;
       for (const placement of rigidPlacements) {

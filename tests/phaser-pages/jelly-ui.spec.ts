@@ -93,7 +93,11 @@ test('dirty craft exit confirms, and appearance limit stays explicit without blo
   if (!box) throw new Error('Missing paint canvas');
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
-  for (let index = 0; index < 110; index += 1) {
+  await page.mouse.click(box.x + 8, box.y + 8);
+  await expect(shell, 'Fill ignores transparent playfield outside the canonical shape').toHaveAttribute('data-paint-strokes', '0');
+  await page.mouse.click(x, y);
+  await expect(shell).toHaveAttribute('data-paint-strokes', '1');
+  for (let index = 1; index < 110; index += 1) {
     await page.mouse.click(x, y);
     if (index % 20 === 19) await page.waitForTimeout(20);
   }
