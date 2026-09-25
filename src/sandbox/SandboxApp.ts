@@ -135,7 +135,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     mixinsHint: 'Tap or drag to scatter. Skip it if you want.',
     mixHint: 'Grab the squishy and really move it around.',
     decorHint: 'Give it a face, stickers or a little something on top.',
-    finishHint: 'Choose how the material feels, then keep your squishy.',
+    finishHint: 'Choose a material, then pull the squishy to feel it before you keep it.',
     homeHint: 'Your saved squishy is here whenever you want to play.',
     squeezeHint: 'Pull, press and let go.',
     next: 'CONTINUE',
@@ -189,7 +189,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     mixinsHint: 'Тапай или веди пальцем. Можно вообще пропустить.',
     mixHint: 'Хватай сквиш и хорошенько потяни его.',
     decorHint: 'Добавь мордочку, наклейки или что-нибудь на макушку.',
-    finishHint: 'Выбери материал и сохрани свой сквиш.',
+    finishHint: 'Выбери материал, потяни сквиша и почувствуй его перед сохранением.',
     homeHint: 'Твой сквиш сохранён и всегда ждёт тебя.',
     squeezeHint: 'Тяни, дави и отпускай.',
     next: 'ДАЛЬШЕ',
@@ -1371,7 +1371,7 @@ export class SandboxApp {
       (this.renderer as PhaserSquishSurface).setActivityBlocked(blocked);
       return;
     }
-    const shouldRenderInteract = !blocked && (this.stage === 'mix' || this.stage === 'squeeze');
+    const shouldRenderInteract = !blocked && (this.stage === 'mix' || this.stage === 'finish' || this.stage === 'squeeze');
     this.renderer.setInteractive(shouldRenderInteract);
   }
 

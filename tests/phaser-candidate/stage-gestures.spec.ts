@@ -145,9 +145,13 @@ test('M4 input: squeeze requires hit; cancellation, blocking and stage change ne
   s.router.setStage('finish');
   expect(s.squeezeCount).toBe(0);
   expect(s.router.snapshot().owner).toBeNull();
-  expect(s.router.down(pointer(2, 0))).toBe(false);
+  // Finish is a live tactile material preview and uses the same squish owner.
+  expect(s.router.down(pointer(2, 0))).toBe(true);
+  s.router.move(pointer(2, 0.35));
+  s.router.up(2);
+  expect(s.squeezeCount).toBe(1);
   s.router.setStage('squeeze');
   expect(s.router.down(pointer(2, 0))).toBe(true);
   s.router.up(2);
-  expect(s.squeezeCount).toBe(1);
+  expect(s.squeezeCount).toBe(2);
 });

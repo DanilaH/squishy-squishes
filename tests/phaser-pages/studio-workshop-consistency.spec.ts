@@ -79,12 +79,7 @@ for (const device of devices) {
         expect(result.deskLoaded).toBe(true);
         expect(result.floorCount).toBe(1);
         expect(result.artCount).toBe(1);
-        // Finish is a material-selection preview: interaction belongs to its
-        // selectable material buttons, not a guaranteed canvas hit target.
-        // The following stage transitions click a real material and save.
-        if (actualStage !== 'finish') {
-          expect(result.canvasHit, `${device.name}/${name} keeps Phaser input`).toBe(true);
-        }
+        expect(result.canvasHit, `${device.name}/${name} keeps Phaser input`).toBe(true);
         expect(result.pageWidth).toBeLessThanOrEqual(result.viewportWidth + 2);
         expect(['auto', 'scroll']).not.toContain(result.controlsOverflowY);
         expect(result.panelBottom, `${device.name}/${name} edit tray stays in viewport`).toBeLessThanOrEqual(result.controlsBottom + 2);
@@ -151,6 +146,17 @@ for (const device of devices) {
       await page.locator('[data-decor-accessory="crown"]').click();
       await page.locator('[data-action="decor-continue"]').click();
       await sample('finish');
+      const finishSurface = await page.locator('[data-sandbox-canvas]').boundingBox();
+      if (!finishSurface) throw new Error('Missing Finish squish surface');
+      await page.mouse.move(finishSurface.x + finishSurface.width / 2, finishSurface.y + finishSurface.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(
+        finishSurface.x + finishSurface.width / 2 + Math.min(42, finishSurface.width * .12),
+        finishSurface.y + finishSurface.height / 2 + Math.min(24, finishSurface.height * .08),
+        { steps: 8 },
+      );
+      await page.screenshot({ path: info.outputPath(`workshop-${device.name}-finish-pulled.png`), animations: 'disabled' });
+      await page.mouse.up();
       const materialLabels = await page.locator('button[data-material] > span:last-child').evaluateAll((labels) =>
         labels.map((label) => {
           const range = document.createRange();
@@ -167,8 +173,7 @@ for (const device of devices) {
         expect(label.lines, `${device.name}: material label "${label.text}" stays on one line`).toBe(1);
         expect(label.width, `${device.name}: material label "${label.text}" stays inside its tile`).toBeLessThan(label.buttonWidth);
       }
-      // Prove the actual Finish controls remain clickable after the layout
-      // change instead of inferring canvas interactivity from a CSS class.
+      // Material controls must remain clickable after a live Finish drag.
       await page.locator('button[data-material="holo"]').click();
       await page.locator('[data-action="save"]').click();
       await sample('squeeze');

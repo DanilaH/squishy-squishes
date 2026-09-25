@@ -103,13 +103,13 @@ export class StageGestureRouter {
       if (this.host.beginSquish(pointer)) this.squishOwner = pointer.id;
       return true;
     }
-    if (this.stage === 'squeeze') {
+    if (this.stage === 'finish' || this.stage === 'squeeze') {
       if (!this.host.beginSquish(pointer)) return false; // Invalid hits cannot squeeze.
       this.owner = pointer.id;
       this.squishOwner = pointer.id;
       return true;
     }
-    // Shape/Home/Finish and non-sticker Decor never claim the playfield.
+    // Shape/Home and non-sticker Decor never claim the playfield.
     return false;
   }
 
@@ -148,7 +148,7 @@ export class StageGestureRouter {
       this.host.mixProgress(this.mixDistance, Math.min(1, this.mixDistance / MIX_DISTANCE_FOR_COMPLETE_PX));
       return;
     }
-    if (this.stage === 'squeeze' && this.squishOwner === pointer.id) this.host.moveSquish(pointer);
+    if ((this.stage === 'finish' || this.stage === 'squeeze') && this.squishOwner === pointer.id) this.host.moveSquish(pointer);
   }
 
   /** Native pointercancel, focus loss and activity blockers must never credit a squeeze. */
