@@ -1,0 +1,35 @@
+name: Export owner parquet for isolated Pages review
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: [.github/workflows/library-owner-floor-export.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: owner-floor-export
+  cancel-in-progress: false
+jobs:
+  export:
+    if: github.repository == 'DanilaH/squishy-squishes' && github.ref == 'refs/heads/feat/library-visual-recovery-sep21'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm install
+      - name: Export and verify pinned owner parquet source
+        run: node scripts/export-library-owner-floor.mjs && node scripts/export-library-owner-floor.mjs --check
+      - name: Commit only reproducible floor WebP and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- src/experiments/phaser/library-assets/floor-tile.webp src/experiments/phaser/library-assets/floor-tile.source.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'art(library): export owner parquet as pinned WebP tile'
+          git fetch origin feat/library-visual-recovery-sep21
+          git rebase origin/feat/library-visual-recovery-sep21
+          git push origin HEAD:feat/library-visual-recovery-sep21

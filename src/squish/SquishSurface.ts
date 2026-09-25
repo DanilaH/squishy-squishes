@@ -268,6 +268,12 @@ export class SquishSurface {
     return this.simulation.pointToUv(local.x, local.y);
   }
 
+  public clientPointToAppearanceUv(clientX: number, clientY: number): { u: number; v: number } | null {
+    const local = this.clientPointToLocal(clientX, clientY);
+    if (Math.abs(local.x) > 1 || Math.abs(local.y) > 1) return null;
+    return { u: clamp01(local.x * 0.5 + 0.5), v: clamp01(local.y * 0.5 + 0.5) };
+  }
+
   public projectUvToCanvas(u: number, v: number): { x: number; y: number } {
     const local = this.simulation.projectUvToLocal(u, v);
     const rect = this.canvas.getBoundingClientRect();
@@ -305,7 +311,9 @@ export class SquishSurface {
       this.canvas.width = width;
       this.canvas.height = height;
     }
-    const radiusPx = Math.min(rect.width, rect.height) * 0.34;
+    const cssRatio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio'));
+    const radiusRatio = Number.isFinite(cssRatio) ? cssRatio : 0.34;
+    const radiusPx = Math.min(rect.width, rect.height) * radiusRatio;
     this.scaleX = (radiusPx * 2) / Math.max(1, rect.width);
     this.scaleY = (radiusPx * 2) / Math.max(1, rect.height);
     this.gl.viewport(0, 0, width, height);

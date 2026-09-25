@@ -1,15 +1,16 @@
 import './libraryHallPreview.css';
 
-// Two actual split exports from the approved room master + three isolated
-// editable SVG objects from the subsequently accepted flat-decor preview.
-// Do not revert the flat leaves to the more detailed foliage in the old master.
+// The six room pieces and ground shadow are derived from owner's 223c843 PNGs.
+// Floor uses the independent pinned Sep 21 parquet PNG export. Keep both
+// sets of original sources and their verification manifests unchanged.
 const art = {
-  wall: new URL('./library-assets/approved-master-wall.webp', import.meta.url).href,
-  floor: new URL('./library-assets/approved-master-floor.webp', import.meta.url).href,
+  wall: new URL('./library-assets/wall.webp', import.meta.url).href,
+  floor: new URL('./library-assets/floor-tile.webp', import.meta.url).href,
   pedestal: new URL('./library-assets/pedestal.webp', import.meta.url).href,
-  cabinet: new URL('./library-assets/approved-flat-cabinet.svg', import.meta.url).href,
-  shelf: new URL('./library-assets/approved-flat-shelf.svg', import.meta.url).href,
-  plant: new URL('./library-assets/approved-flat-plant.svg', import.meta.url).href,
+  cabinet: new URL('./library-assets/cabinet.webp', import.meta.url).href,
+  shelf: new URL('./library-assets/shelf.webp', import.meta.url).href,
+  plant: new URL('./library-assets/plant.webp', import.meta.url).href,
+  groundShadow: new URL('./library-assets/ground-shadow.webp', import.meta.url).href,
 } as const;
 
 const PER_ROOM = 2;
@@ -20,7 +21,7 @@ const decode = async (url: string): Promise<void> => {
   if (!image.naturalWidth || !image.naturalHeight) throw new Error(`Empty Library image: ${url}`);
 };
 
-/** Only decorate the isolated /phaser/ Pages app; main and Yandex keep their existing Library. */
+/** Only decorate the isolated /phaser/ Pages app; main / and Yandex keep their existing Library. */
 export const mountLibraryHallPreview = (root: HTMLElement): void => {
   let ready = false;
   let room = 0;
@@ -34,9 +35,7 @@ export const mountLibraryHallPreview = (root: HTMLElement): void => {
     const count = cards.length;
     const pages = Math.max(1, Math.ceil(count / PER_ROOM));
     room = Math.max(0, Math.min(room, pages - 1));
-    cards.forEach((card, index) => {
-      card.hidden = Math.floor(index / PER_ROOM) !== room;
-    });
+    cards.forEach((card, index) => { card.hidden = Math.floor(index / PER_ROOM) !== room; });
     const grid = shell.querySelector<HTMLElement>('.library-hall-stage .sandbox-library-grid');
     if (!grid) return;
     grid.querySelectorAll('.library-hall-vacant').forEach((item) => item.remove());
@@ -65,20 +64,20 @@ export const mountLibraryHallPreview = (root: HTMLElement): void => {
     lastCount = count;
     shell.dataset.libraryHallMounted = 'true';
     shell.classList.add('is-library-hall');
-    shell.dataset.libraryHallArt = 'approved-master-flat-decor';
+    shell.dataset.libraryHallArt = 'owner-library-223c843';
     currentShell = shell;
 
     const scene = document.createElement('div');
     scene.className = 'library-hall-scene';
     scene.setAttribute('aria-hidden', 'true');
     scene.innerHTML = `<div class="library-hall-scene__wall"></div><div class="library-hall-scene__floor"></div><div class="library-hall-scene__cabinet"></div><div class="library-hall-scene__shelf"></div><div class="library-hall-scene__plant"></div>`;
-    const images = [art.wall, art.floor, art.pedestal, art.cabinet, art.shelf, art.plant];
-    scene.style.setProperty('--hall-wall', `url("${images[0]}")`);
-    scene.style.setProperty('--hall-floor', `url("${images[1]}")`);
-    scene.style.setProperty('--hall-cabinet', `url("${images[3]}")`);
-    scene.style.setProperty('--hall-shelf', `url("${images[4]}")`);
-    scene.style.setProperty('--hall-plant', `url("${images[5]}")`);
-    shell.style.setProperty('--hall-pedestal', `url("${images[2]}")`);
+    scene.style.setProperty('--hall-wall', `url("${art.wall}")`);
+    scene.style.setProperty('--hall-floor', `url("${art.floor}")`);
+    scene.style.setProperty('--hall-cabinet', `url("${art.cabinet}")`);
+    scene.style.setProperty('--hall-shelf', `url("${art.shelf}")`);
+    scene.style.setProperty('--hall-plant', `url("${art.plant}")`);
+    shell.style.setProperty('--hall-pedestal', `url("${art.pedestal}")`);
+    shell.style.setProperty('--hall-ground-shadow', `url("${art.groundShadow}")`);
     shell.prepend(scene);
 
     const grid = shell.querySelector<HTMLElement>('.sandbox-library-grid') ?? document.createElement('section');

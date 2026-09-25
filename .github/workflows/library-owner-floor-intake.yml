@@ -1,0 +1,36 @@
+name: Library owner floor source intake
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: [.github/workflows/library-owner-floor-intake.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-floor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify exact owner file and create review artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/floor-intake
+          cp 'biba/ChatGPT Image Sep 21, 2026, 11_08_56 PM.png' /tmp/floor-intake/owner-floor.png
+          test "$(git hash-object /tmp/floor-intake/owner-floor.png)" = d9f287a0cfe28bb1a88bcffd03bacf24e5f5c38d
+          sha256sum /tmp/floor-intake/owner-floor.png | tee /tmp/floor-intake/sha256.txt
+          python3 - <<'PY'
+          import json, struct
+          p='/tmp/floor-intake/owner-floor.png'
+          with open(p,'rb') as f:
+              header=f.read(26)
+          assert header[:8] == b'\x89PNG\r\n\x1a\n' and header[12:16] == b'IHDR'
+          w,h=struct.unpack('>II',header[16:24]); meta={'width':w,'height':h,'bitDepth':header[24],'colorType':header[25]}
+          print(meta)
+          with open('/tmp/floor-intake/metadata.json','w') as f:json.dump(meta,f,indent=2)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: owner-floor-source-intake
+          path: /tmp/floor-intake/
+          retention-days: 3

@@ -1,14 +1,66 @@
 name: Library Hall real-browser QA (preview)
 on:
-  push:
-    branches: [feat/library-hall-pages-preview]
+  pull_request:
+    branches: [main]
     paths:
       - 'src/experiments/phaser/libraryHallPreview.*'
       - 'src/experiments/phaser/libraryHallPolish.css'
+      - 'src/experiments/phaser/libraryHallGrounding.css'
+      - 'src/experiments/phaser/libraryHallAccess.css'
+      - 'src/experiments/phaser/libraryHallFeel.*'
+      - 'src/experiments/phaser/libraryHallOwnerReview.css'
+      - 'src/experiments/phaser/libraryHallPerspectiveFloor.css'
+      - 'src/experiments/phaser/libraryVolumeProbe.ts'
+      - 'src/experiments/phaser/PhaserDeformableVolume.ts'
+      - 'src/experiments/phaser/PhaserSquishCandidate.ts'
+      - 'src/experiments/phaser/pagesPreview.ts'
+      - 'src/experiments/phaser/studioEnvironmentPreview.ts'
+      - 'src/experiments/phaser/studioEnvironmentPreview.css'
+      - 'src/sandbox/PhaserSquishSurface.ts'
       - 'src/experiments/phaser/studioPagesPreview.ts'
+      - 'src/sandbox/libraryThumbnail.ts'
+      - 'src/sandbox/libraryStudioThumbnail.ts'
+      - 'src/sandbox/pagesDecorArt.ts'
+      - 'src/sandbox/decor.ts'
+      - 'src/sandbox/SandboxLibraryApp.ts'
       - 'src/experiments/phaser/library-assets/**'
+      - 'scripts/build-library-hall.mjs'
+      - 'scripts/export-library-ground-shadow.mjs'
+      - 'scripts/export-library-owner-floor.mjs'
       - 'scripts/verify-library-art.mjs'
       - 'tests/phaser-pages/library-hall-*.spec.ts'
+      - 'tests/phaser-pages/studio-workshop-consistency.spec.ts'
+      - '.github/workflows/library-hall-qa.yml'
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths:
+      - 'src/experiments/phaser/libraryHallPreview.*'
+      - 'src/experiments/phaser/libraryHallPolish.css'
+      - 'src/experiments/phaser/libraryHallGrounding.css'
+      - 'src/experiments/phaser/libraryHallAccess.css'
+      - 'src/experiments/phaser/libraryHallFeel.*'
+      - 'src/experiments/phaser/libraryHallOwnerReview.css'
+      - 'src/experiments/phaser/libraryHallPerspectiveFloor.css'
+      - 'src/experiments/phaser/libraryVolumeProbe.ts'
+      - 'src/experiments/phaser/PhaserDeformableVolume.ts'
+      - 'src/experiments/phaser/PhaserSquishCandidate.ts'
+      - 'src/experiments/phaser/pagesPreview.ts'
+      - 'src/experiments/phaser/studioEnvironmentPreview.ts'
+      - 'src/experiments/phaser/studioEnvironmentPreview.css'
+      - 'src/sandbox/PhaserSquishSurface.ts'
+      - 'src/experiments/phaser/studioPagesPreview.ts'
+      - 'src/sandbox/libraryThumbnail.ts'
+      - 'src/sandbox/libraryStudioThumbnail.ts'
+      - 'src/sandbox/pagesDecorArt.ts'
+      - 'src/sandbox/decor.ts'
+      - 'src/sandbox/SandboxLibraryApp.ts'
+      - 'src/experiments/phaser/library-assets/**'
+      - 'scripts/build-library-hall.mjs'
+      - 'scripts/export-library-ground-shadow.mjs'
+      - 'scripts/export-library-owner-floor.mjs'
+      - 'scripts/verify-library-art.mjs'
+      - 'tests/phaser-pages/library-hall-*.spec.ts'
+      - 'tests/phaser-pages/studio-workshop-consistency.spec.ts'
       - '.github/workflows/library-hall-qa.yml'
   workflow_dispatch:
 permissions:
@@ -16,7 +68,7 @@ permissions:
 jobs:
   library-hall:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -24,13 +76,15 @@ jobs:
           node-version: 24
       - run: npm install
       - run: npx playwright install --with-deps chromium
-      - name: Verify approved Library art provenance and immutable hashes
-        run: node scripts/verify-library-art.mjs
+      - name: Reproduce original Library source exports without overwriting manifest
+        run: node scripts/build-library-hall.mjs && node scripts/export-library-ground-shadow.mjs
+      - name: Verify original seven owner Library art hashes and new floor export
+        run: node scripts/verify-library-art.mjs && node scripts/export-library-owner-floor.mjs --check
       - name: Strict TS and staged Pages build
         run: npm run pages:build
-      - name: Real empty, saved-toy, paging, fallback and 11-viewport geometry QA
-        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts
-      - name: Upload real browser screenshots and geometry
+      - name: Independent browser art, layout, lifecycle, shader, stress, material, video, volume and cross-stage V3/scene geometry
+        run: npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts tests/phaser-pages/library-hall-ground-shadow.spec.ts tests/phaser-pages/library-hall-material.spec.ts tests/phaser-pages/library-hall-shapes.spec.ts tests/phaser-pages/library-hall-adversarial.spec.ts tests/phaser-pages/library-hall-studio-shader.spec.ts tests/phaser-pages/library-hall-feel.spec.ts tests/phaser-pages/library-hall-real-video.spec.ts tests/phaser-pages/library-hall-idle-stress.spec.ts tests/phaser-pages/library-hall-decor-art.spec.ts tests/phaser-pages/library-hall-art-catalog.spec.ts tests/phaser-pages/library-hall-volume-probe.spec.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts tests/phaser-pages/studio-workshop-consistency.spec.ts
+      - name: Upload real-browser screenshots, geometry, idle metrics and uncut video
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -38,9 +92,12 @@ jobs:
           path: |
             test-results/**/library-hall-*.png
             test-results/**/library-hall-*.json
+            test-results/**/library-hall-*.webm
+            test-results/**/workshop-*.png
+            test-results/**/workshop-*.json
           if-no-files-found: ignore
           retention-days: 14
-      - name: Full existing Phaser Pages regression suite
+      - name: Full Phaser Pages regression suite
         run: npm run pages:qa
       - name: Upload failure traces
         if: failure()

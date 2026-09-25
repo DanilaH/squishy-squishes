@@ -51,6 +51,8 @@ const check = async (page: Page, label: string): Promise<void> => {
       deskChildren: desk.childElementCount,
       artOverflow: getComputedStyle(art).overflow,
       decorOverflow: getComputedStyle(decorClip).overflow,
+      decorZ: getComputedStyle(decorClip).zIndex,
+      floorZ: getComputedStyle(floor).zIndex,
       deskClip: getComputedStyle(desk).clipPath,
       decorRects: Array.from(decorClip.querySelectorAll('img')).map(rect),
       backgrounds: [getComputedStyle(shell).backgroundImage, getComputedStyle(floor).backgroundImage],
@@ -66,9 +68,12 @@ const check = async (page: Page, label: string): Promise<void> => {
   expect(facts.deskComposed, `${label}: a single raster, not separately scaled slices`).toBe(true);
   expect(facts.deskSize).toEqual({ width: 1237, height: 435 });
   expect(facts.deskChildren).toBe(0);
-  expect(facts.decorOverflow, `${label}: shelf and plant props stay clipped`).toBe('hidden');
+  expect(facts.decorOverflow, `${label}: side furniture can cross the floor seam instead of being clipped underneath it`).toBe('visible');
+  expect(Number(facts.decorZ), `${label}: side furniture is explicitly above the floor`).toBeGreaterThan(Number(facts.floorZ));
   expect(facts.backgrounds[0]).toContain('studio-wall');
-  expect(facts.backgrounds[1]).toContain('studio-floor');
+  expect(facts.backgrounds[1], `${label}: Craft/Squeeze use Library floor asset`).not.toContain('studio-floor');
+  const floorImage = await page.evaluate(() => getComputedStyle(document.querySelector<HTMLElement>('.studio-env-floor')!, '::before').backgroundImage);
+  expect(floorImage, `${label}: exact Library parquet tile`).toContain('floor-tile');
   expect(facts.passiveArt).toBe(true);
   expect(facts.canvasAcceptsPointer, `${label}: the real Phaser canvas stays interactive`).toBe(true);
   expect(facts.hitIssues, `${label}: all controls must remain clickable`).toEqual([]);
@@ -80,11 +85,8 @@ const check = async (page: Page, label: string): Promise<void> => {
   if (facts.viewport.width === 1280 && facts.viewport.height === 800 && facts.stageName === 'shape') {
     expect(facts.deskVisible, `${label}: compact desktop must retain the tabletop`).toBe('true');
     expect(facts.artOverflow, `${label}: desk cannot be clipped at the stage edge`).toBe('visible');
-    expect(facts.deskClip, `${label}: only tabletop/front should extend below the stage`).toContain('59%');
-    // Verify a *substantial* tabletop extends past the former clipping edge;
-    // the previous 20px strip incorrectly passed a Boolean visibility test.
-    expect(facts.desk.y + facts.desk.height * 0.41 - facts.stage.bottom,
-      `${label}: real tabletop/front must extend beyond stage by >=70px`).toBeGreaterThanOrEqual(70);
+    expect(facts.deskClip, `${label}: full workbench must not be clipped back under the floor`).toBe('none');
+    expect(facts.desk.bottom, `${label}: full workbench crosses the floor seam as foreground art`).toBeGreaterThan(facts.floor.y + 18);
   }
   if (facts.viewport.width <= 390 && facts.viewport.height > facts.viewport.width) {
     expect(facts.decorRects).toHaveLength(2);
@@ -132,8 +134,8 @@ for (const view of views) {
       await page.mouse.up();
       await page.locator('[data-action="paint-continue"]').click();
       await expect(shell).toHaveAttribute('data-stage', 'mixins');
-      await expect(shell).not.toHaveClass(/studio-env-active/);
-      await expect(shell.locator('.studio-env-floor, .studio-env-stage-art')).toHaveCount(0);
+      await expect(shell).toHaveClass(/studio-env-active/);
+      await expect(shell.locator('.studio-env-floor, .studio-env-stage-art')).toHaveCount(2);
       expect(pageErrors).toEqual([]);
     } finally {
       await context.close();

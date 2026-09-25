@@ -1,0 +1,30 @@
+/* Owner commit 223c843's seventh PNG is a ground contact shadow, not a decal.
+   Keep it BELOW the wooden podium, above the room floor and behind controls. */
+#app .is-library-hall .sandbox-library-card,
+#app .is-library-hall .library-hall-vacant {
+  isolation: isolate;
+}
+#app .is-library-hall .sandbox-library-card::after,
+#app .is-library-hall .library-hall-vacant::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: -3%;
+  width: 106%;
+  top: 85%;
+  height: 15%;
+  background: var(--hall-ground-shadow) center / contain no-repeat;
+  pointer-events: none;
+}
+#app .is-library-hall .sandbox-library-card::before,
+#app .is-library-hall .library-hall-vacant::before { z-index: 1; }
+#app .is-library-hall .sandbox-library-card__play { z-index: 2; }
+#app .is-library-hall .sandbox-library-card__footer { z-index: 3; }
+@media (min-width: 600px) and (min-height: 600px) {
+  #app .is-library-hall .sandbox-library-card::after,
+  #app .is-library-hall .library-hall-vacant::after { top: 91%; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  #app .is-library-hall .sandbox-library-card::after,
+  #app .is-library-hall .library-hall-vacant::after { top: 94%; }
+}

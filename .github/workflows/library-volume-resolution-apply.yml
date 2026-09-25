@@ -1,0 +1,44 @@
+name: Apply isolated Library snapshot resolution migration
+
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths:
+      - '.github/workflows/library-volume-resolution-apply.yml'
+      - 'scripts/apply-library-volume-resolution.py'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-resolution:
+    if: github.repository == 'DanilaH/squishy-squishes' && github.ref == 'refs/heads/feat/library-visual-recovery-sep21'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Guardedly patch ONLY Pages resolution, genuine shader and regression assertions
+        run: |
+          set -euo pipefail
+          python3 scripts/apply-library-volume-resolution.py
+          git diff --check
+      - name: Build and typecheck the patched Pages entrypoint before committing
+        run: |
+          npm ci
+          npm run pages:build
+      - name: Commit scoped implementation to feature branch only
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- src/sandbox/libraryStudioThumbnail.ts src/sandbox/libraryThumbnail.ts src/experiments/phaser/libraryVolumeProbe.ts tests/phaser-pages/library-hall-studio-shader.spec.ts
+          git diff --cached --check
+          git diff --cached --quiet && { echo 'No changes to commit'; exit 1; }
+          git commit -m 'render(library): 512px Pages Studio snapshots with original V3 decor'
+          git push origin HEAD:feat/library-visual-recovery-sep21

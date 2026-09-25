@@ -133,11 +133,13 @@ export const PALETTES: readonly PaletteSpec[] = [
 
 export const MATERIALS: readonly MaterialSpec[] = [
   { id: 'soft', label: 'Soft', translucency: 0, iridescence: 0, roughness: 0.42, metallic: 0, pearlescence: 0, cloudiness: 0.05 },
-  { id: 'jelly', label: 'Jelly', translucency: 0.72, iridescence: 0.05, roughness: 0.16, metallic: 0, pearlescence: 0.04, cloudiness: 0.02 },
-  { id: 'holo', label: 'Holographic', translucency: 0.16, iridescence: 0.92, roughness: 0.20, metallic: 0.08, pearlescence: 0.18, cloudiness: 0 },
-  { id: 'marshmallow', label: 'Marshmallow', translucency: 0.03, iridescence: 0, roughness: 0.92, metallic: 0, pearlescence: 0.03, cloudiness: 0.62 },
-  { id: 'pearl', label: 'Pearl', translucency: 0.08, iridescence: 0.20, roughness: 0.30, metallic: 0.08, pearlescence: 1.0, cloudiness: 0.08 },
-  { id: 'chrome', label: 'Chrome', translucency: 0, iridescence: 0.05, roughness: 0.06, metallic: 0.96, pearlescence: 0.08, cloudiness: 0 },
+  // Jelly is the deliberately see-through hero material: its inclusions should
+  // read as content suspended inside the body, not as surface stickers.
+  { id: 'jelly', label: 'Jelly', translucency: 0.88, iridescence: 0.08, roughness: 0.08, metallic: 0, pearlescence: 0.06, cloudiness: 0 },
+  { id: 'holo', label: 'Holographic', translucency: 0.18, iridescence: 1.0, roughness: 0.12, metallic: 0.08, pearlescence: 0.18, cloudiness: 0 },
+  { id: 'marshmallow', label: 'Marshmallow', translucency: 0.01, iridescence: 0, roughness: 1.0, metallic: 0, pearlescence: 0.01, cloudiness: 0.98 },
+  { id: 'pearl', label: 'Pearl', translucency: 0.06, iridescence: 0.24, roughness: 0.12, metallic: 0.06, pearlescence: 1.0, cloudiness: 0.02 },
+  { id: 'chrome', label: 'Metallic', translucency: 0.01, iridescence: 0.03, roughness: 0.12, metallic: 0.92, pearlescence: 0.03, cloudiness: 0 },
 ] as const;
 
 export const FILLINGS: readonly FillingSpec[] = [

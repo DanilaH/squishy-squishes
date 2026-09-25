@@ -105,9 +105,9 @@
   box-shadow: inset -7px -7px 12px rgba(111, 93, 132, .12), inset 6px 6px 10px rgba(255,255,255,.78);
 }
 .sandbox-material__orb--chrome {
-  background: linear-gradient(145deg, #fbfdff 0 14%, #676e78 30%, #f9fbfd 47%, #454b54 66%, #e7edf3 86%, #7f8790 100%);
-  border: 1px solid rgba(54, 60, 68, .18);
-  box-shadow: inset -3px -4px 8px rgba(17, 21, 26, .28), inset 4px 4px 8px rgba(255,255,255,.72), 0 2px 7px rgba(56, 65, 76, .15);
+  background: linear-gradient(145deg, #4b3655 0 14%, #c279d3 25%, #f4d9f7 34%, #684272 46%, #392f42 58%, #d68fc8 72%, #73527f 84%, #c7a6d6 100%);
+  border: 1px solid rgba(75, 52, 84, .22);
+  box-shadow: inset -4px -5px 9px rgba(35, 24, 39, .28), inset 4px 4px 7px rgba(255,255,255,.42), 0 2px 7px rgba(80, 52, 89, .16);
 }
 @media (max-height: 520px) and (orientation: landscape) {
   .sandbox-material-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }

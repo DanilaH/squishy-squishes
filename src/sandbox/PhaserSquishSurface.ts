@@ -49,6 +49,7 @@ export class PhaserSquishSurface {
     private readonly onMetrics: (metrics: SquishMetrics) => void,
     private readonly audio: SquishyAudio,
     private readonly callbacks: PhaserSandboxCallbacks,
+    private readonly volumeProfile = false,
   ) {
     this.appearanceSnapshot.width = 256;
     this.appearanceSnapshot.height = 256;
@@ -66,11 +67,12 @@ export class PhaserSquishSurface {
       create(): void {
         if (owner.disposed) return;
         owner.scene = this;
-        const squish = new PhaserSquishCandidate(this, gl!);
+        const squish = new PhaserSquishCandidate(this, gl!, owner.volumeProfile);
         owner.squish = squish;
         this.add.existing(squish);
         owner.bridge = new PhaserStudioGestureBridge(this, canvas, {
           pointToUv: (x, y) => squish.pointToUv(x, y),
+          paintPointToUv: (x, y) => squish.pointToAppearanceUv(x, y),
           beginSquish: (pointer) => {
             const claimed = squish.begin(pointer);
             if (claimed) void owner.audio.prime();
@@ -92,6 +94,7 @@ export class PhaserSquishSurface {
         owner.syncCanvasSize();
         owner.applyPending();
         canvas.dataset.phaserReady = 'true';
+        if (owner.volumeProfile) canvas.dataset.phaserVolume = 'deformable';
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => owner.cleanupScene());
         this.events.once(Phaser.Scenes.Events.DESTROY, () => owner.cleanupScene());
       }
@@ -120,6 +123,8 @@ export class PhaserSquishSurface {
   private syncCanvasSize(): void {
     if (this.disposed || !this.scene) return;
     const rect = this.canvas.getBoundingClientRect();
+    const cssRatio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio'));
+    this.squish?.setRenderRadiusRatio(Number.isFinite(cssRatio) ? cssRatio : 0.34);
     const width = Math.max(1, Math.round(rect.width));
     const height = Math.max(1, Math.round(rect.height));
     if (this.game.scale.width !== width || this.game.scale.height !== height) {
@@ -188,6 +193,21 @@ export class PhaserSquishSurface {
     return { u: Math.min(1, Math.max(0, localX * 0.5 + 0.5)), v: Math.min(1, Math.max(0, localY * 0.5 + 0.5)) };
   }
 
+  public clientPointToAppearanceUv(clientX: number, clientY: number): AppearancePoint | null {
+    const rect = this.canvas.getBoundingClientRect();
+    const width = this.scene?.scale.width ?? rect.width;
+    const height = this.scene?.scale.height ?? rect.height;
+    const x = (clientX - rect.left) * width / Math.max(1, rect.width);
+    const y = (clientY - rect.top) * height / Math.max(1, rect.height);
+    if (this.squish) return this.squish.pointToAppearanceUv(x, y);
+    const ratio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio'));
+    const radius = Math.max(1, Math.min(width, height) * (Number.isFinite(ratio) ? ratio : 0.34));
+    const localX = (x - width / 2) / radius;
+    const localY = (height / 2 - y) / radius;
+    if (Math.abs(localX) > 1 || Math.abs(localY) > 1) return null;
+    return { u: Math.min(1, Math.max(0, localX * 0.5 + 0.5)), v: Math.min(1, Math.max(0, localY * 0.5 + 0.5)) };
+  }
+
   public projectUvToCanvas(u: number, v: number): { x: number; y: number } {
     if (this.squish) {
       const projected = this.squish.projectUvToCanvas(u, v);
@@ -246,5 +266,6 @@ export class PhaserSquishSurface {
     this.cleanupScene();
     this.game.destroy(true);
     delete this.canvas.dataset.phaserReady;
+    delete this.canvas.dataset.phaserVolume;
   }
 }

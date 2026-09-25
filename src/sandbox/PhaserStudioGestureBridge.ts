@@ -29,6 +29,7 @@ export class PhaserStudioGestureBridge {
   ) {
     this.router = new StageGestureRouter({
       pointToUv: (x, y) => host.pointToUv(x, y),
+      paintPointToUv: (x, y) => host.paintPointToUv(x, y),
       beginSquish: (pointer) => {
         const phaserPointer = this.pointers.get(pointer.id);
         return phaserPointer ? host.beginSquish(phaserPointer) : false;

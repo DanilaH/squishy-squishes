@@ -3,6 +3,7 @@ export const APPEARANCE_TARGET_BYTES = 6_000;
 export const MAX_APPEARANCE_STROKES = 96;
 export const MAX_STROKE_PAYLOAD_CHARS = 1_024;
 export const MAX_MIXIN_PLACEMENTS = 160;
+export const BODY_FILL_BRUSH_SIZE = 112;
 
 export type AppearanceStrokeMode = 0 | 1;
 export type MixInId = 'glitter' | 'stars' | 'foam' | 'pearls' | 'hearts' | 'confetti';
@@ -97,6 +98,20 @@ export const createAppearanceStroke = (
   s: clamp(Math.round(sizePx), 1, 255),
   p: encodeAppearancePoints(points),
 });
+
+const BODY_FILL_POINTS: readonly AppearancePoint[] = Array.from({ length: 6 }, (_, row) => {
+  const v = 0.04 + row * 0.184;
+  return row % 2 === 0
+    ? [{ u: 0.02, v }, { u: 0.98, v }]
+    : [{ u: 0.98, v }, { u: 0.02, v }];
+}).flat();
+const BODY_FILL_POINT_PAYLOAD = encodeAppearancePoints(BODY_FILL_POINTS);
+
+export const createBodyFillStroke = (color: number): AppearanceStrokeV1 =>
+  createAppearanceStroke(0, color, BODY_FILL_BRUSH_SIZE, BODY_FILL_POINTS);
+
+export const isBodyFillStroke = (stroke: AppearanceStrokeV1): boolean =>
+  stroke.m === 0 && stroke.s === BODY_FILL_BRUSH_SIZE && stroke.p === BODY_FILL_POINT_PAYLOAD;
 
 export const createMixInPlacement = (
   id: MixInId,
@@ -309,7 +324,14 @@ export const replayAppearanceDocument = (
   options: { readonly excludeMixIns?: readonly MixInId[] } = {},
 ): void => {
   context.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
-  for (const stroke of document.strokes) {
+  // Fill is stored as an ordinary V1 stroke for rollback compatibility, but it
+  // behaves like a base paint layer. Replaying it first preserves hand-painted
+  // details and eraser strokes while the array can still keep action order for Undo.
+  const orderedStrokes = [
+    ...document.strokes.filter(isBodyFillStroke),
+    ...document.strokes.filter((stroke) => !isBodyFillStroke(stroke)),
+  ];
+  for (const stroke of orderedStrokes) {
     const points = decodeAppearancePoints(stroke.p);
     const first = points[0];
     if (!first) continue;

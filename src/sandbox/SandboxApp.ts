@@ -1,6 +1,6 @@
 import { MATERIALS, getMaterial, getPalette, type MaterialId } from '../game/content';
 import { SquishyAudio } from '../game/SquishyAudio';
-import { SHAPES, getShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
+import { SHAPES, getShape, isPointInsideShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { SquishSurface, type SquishMaterialStyle, type SquishMetrics } from '../squish/SquishSurface';
 import type { PhaserSquishSurface, PhaserSandboxCallbacks } from './PhaserSquishSurface';
 import {
@@ -9,11 +9,13 @@ import {
   MAX_APPEARANCE_STROKES,
   MAX_MIXIN_PLACEMENTS,
   createAppearanceStroke,
+  createBodyFillStroke,
   createMixInPlacement,
   drawAppearanceSegment,
   drawAppearanceStamp,
   estimateAppearanceBytes,
   getMixInId,
+  isBodyFillStroke,
   replayAppearanceDocument,
   type AppearanceDocumentV1,
   type AppearancePoint,
@@ -41,7 +43,7 @@ import { createSandboxDraft, type SandboxDraft, type SavedSquishy } from './type
 
 export type SandboxLanguage = 'en' | 'ru';
 type SandboxStage = 'home' | 'shape' | 'paint' | 'mixins' | 'mix' | 'decor' | 'finish' | 'squeeze';
-type PaintTool = 'paint' | 'erase';
+type PaintTool = 'paint' | 'erase' | 'fill';
 type DecorSection = 'face' | 'stickers' | 'accessory';
 
 export interface SandboxAppOptions {
@@ -90,6 +92,12 @@ interface SandboxCopy {
   readonly clear: string;
   readonly eraser: string;
   readonly brush: string;
+  readonly fill: string;
+  readonly exit: string;
+  readonly exitTitle: string;
+  readonly exitHint: string;
+  readonly stay: string;
+  readonly leave: string;
   readonly mixReady: string;
   readonly mixMore: string;
   readonly drawingFull: string;
@@ -127,7 +135,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     mixinsHint: 'Tap or drag to scatter. Skip it if you want.',
     mixHint: 'Grab the squishy and really move it around.',
     decorHint: 'Give it a face, stickers or a little something on top.',
-    finishHint: 'Choose how the material feels, then keep your squishy.',
+    finishHint: 'Choose a material, then pull the squishy to feel it before you keep it.',
     homeHint: 'Your saved squishy is here whenever you want to play.',
     squeezeHint: 'Pull, press and let go.',
     next: 'CONTINUE',
@@ -140,9 +148,15 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     clear: 'Clear',
     eraser: 'Eraser',
     brush: 'Brush',
+    fill: 'Fill',
+    exit: 'EXIT',
+    exitTitle: 'Leave this squishy?',
+    exitHint: 'Unsaved changes will be lost.',
+    stay: 'STAY',
+    leave: 'LEAVE',
     mixReady: 'Nice. It is mixed!',
     mixMore: 'Keep stretching…',
-    drawingFull: 'This squishy has plenty of detail already.',
+    drawingFull: 'Detail limit reached. Undo or clear to keep editing.',
     muted: 'Sound off',
     sound: 'Sound on',
     soft: 'Soft',
@@ -150,7 +164,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     holo: 'Holo',
     marshmallow: 'Marshmallow',
     pearl: 'Pearl',
-    chrome: 'Chrome',
+    chrome: 'Metallic',
     face: 'Face',
     stickers: 'Stickers',
     head: 'Head',
@@ -175,7 +189,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     mixinsHint: 'Тапай или веди пальцем. Можно вообще пропустить.',
     mixHint: 'Хватай сквиш и хорошенько потяни его.',
     decorHint: 'Добавь мордочку, наклейки или что-нибудь на макушку.',
-    finishHint: 'Выбери материал и сохрани свой сквиш.',
+    finishHint: 'Выбери материал, потяни сквиша и почувствуй его перед сохранением.',
     homeHint: 'Твой сквиш сохранён и всегда ждёт тебя.',
     squeezeHint: 'Тяни, дави и отпускай.',
     next: 'ДАЛЬШЕ',
@@ -188,9 +202,15 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     clear: 'Очистить',
     eraser: 'Ластик',
     brush: 'Кисть',
+    fill: 'Заливка',
+    exit: 'ВЫЙТИ',
+    exitTitle: 'Выйти из студии?',
+    exitHint: 'Несохранённые изменения пропадут.',
+    stay: 'ОСТАТЬСЯ',
+    leave: 'ВЫЙТИ',
     mixReady: 'Отлично замешано!',
     mixMore: 'Ещё немного потяни…',
-    drawingFull: 'На этом сквише уже очень много деталей.',
+    drawingFull: 'Лимит деталей достигнут. Отмени или очисти, чтобы продолжить редактирование.',
     muted: 'Звук выкл.',
     sound: 'Звук вкл.',
     soft: 'Мягкий',
@@ -198,7 +218,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     holo: 'Голографик',
     marshmallow: 'Маршмеллоу',
     pearl: 'Перламутр',
-    chrome: 'Хром',
+    chrome: 'Металлик',
     face: 'Мордочка',
     stickers: 'Наклейки',
     head: 'Макушка',
@@ -339,6 +359,8 @@ export class SandboxApp {
   private accessoryRestV = 0;
   private muted = false;
   private activityBlocked = false;
+  private appearanceLimitReached = false;
+  private exitConfirmOpen = false;
   private saving = false;
   private disposed = false;
 
@@ -388,6 +410,11 @@ export class SandboxApp {
     this.renderer = options.rendererBackend === 'phaser'
       ? options.makePhaserRenderer!(this.canvas, this.handleMetrics, this.audio, {
           paintStamp: (point) => {
+            if (this.appearanceLimitReached) return;
+            if (this.paintTool === 'fill') {
+              this.applyPaintFill(point);
+              return;
+            }
             this.authoredStrokeMode = this.paintTool === 'erase' ? 1 : 0;
             this.authoredStrokeColor = this.paintColor;
             this.authoredPoints = [point];
@@ -395,12 +422,15 @@ export class SandboxApp {
             this.scheduleTextureUpload();
           },
           paintSegment: (from, to) => {
-            if (this.authoredPoints.length >= 320) return;
+            if (this.appearanceLimitReached || this.paintTool === 'fill' || this.authoredPoints.length >= 320) return;
             drawAppearanceSegment(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, from, to);
             this.authoredPoints.push(to);
             this.scheduleTextureUpload();
           },
-          paintEnd: () => { this.finishPaintStroke(); this.authoredPoints = []; },
+          paintEnd: () => {
+            if (!this.appearanceLimitReached && this.paintTool !== 'fill') this.finishPaintStroke();
+            this.authoredPoints = [];
+          },
           addMixin: (point) => this.addMixinAt(point),
           addSticker: (point) => {
             if (this.draft.decor.stickers.length >= MAX_DECOR_STICKERS) return;
@@ -507,6 +537,7 @@ export class SandboxApp {
         <header class="sandbox-topbar">
           <strong data-sandbox-brand>${this.copy.studio}</strong>
           <button class="sandbox-sound" type="button" data-action="stage-back" hidden>← ${this.copy.back}</button>
+          <button class="sandbox-sound sandbox-exit-craft" type="button" data-action="exit-craft" hidden>${this.copy.exit}</button>
           <button class="sandbox-sound" type="button" data-action="mute" aria-pressed="${this.muted}">${this.muted ? this.copy.muted : this.copy.sound}</button>
         </header>
 
@@ -528,9 +559,10 @@ export class SandboxApp {
 
           <div class="sandbox-panel" data-panel="paint">
             <div class="sandbox-tool-row">${paintColors}</div>
-            <div class="sandbox-tool-row">
+            <div class="sandbox-tool-row sandbox-paint-tools">
               <button type="button" data-paint-tool="paint" aria-pressed="true">${this.copy.brush}</button>
               <button type="button" data-paint-tool="erase" aria-pressed="false">${this.copy.eraser}</button>
+              <button type="button" data-paint-tool="fill" aria-pressed="false">${this.copy.fill}</button>
               ${brushSizes}
             </div>
             <div class="sandbox-tool-row sandbox-tool-row--actions">
@@ -592,6 +624,16 @@ export class SandboxApp {
           </div>
         </section>
         <div class="sandbox-status" data-sandbox-status aria-live="polite"></div>
+        <div class="sandbox-exit-overlay" data-exit-overlay hidden>
+          <section class="sandbox-exit-dialog" role="dialog" aria-modal="true" aria-labelledby="sandbox-exit-title">
+            <strong id="sandbox-exit-title">${this.copy.exitTitle}</strong>
+            <p>${this.copy.exitHint}</p>
+            <div>
+              <button class="sandbox-secondary" type="button" data-action="exit-cancel">${this.copy.stay}</button>
+              <button class="sandbox-exit-danger" type="button" data-action="exit-confirm">${this.copy.leave}</button>
+            </div>
+          </section>
+        </div>
       </main>
     `;
   }
@@ -623,14 +665,16 @@ export class SandboxApp {
     const paintColor = target.dataset.paintColor;
     if (paintColor) {
       this.paintColor = Number(paintColor);
-      this.paintTool = 'paint';
+      // Colour selection exits Eraser, but keeps Fill selected so choosing a new
+      // bucket colour does not silently switch tools underneath the player.
+      if (this.paintTool === 'erase') this.paintTool = 'paint';
       this.updatePressed('[data-paint-color]', 'paintColor', paintColor);
-      this.updatePressed('[data-paint-tool]', 'paintTool', 'paint');
+      this.updatePressed('[data-paint-tool]', 'paintTool', this.paintTool);
       return;
     }
 
     const paintTool = target.dataset.paintTool as PaintTool | undefined;
-    if (paintTool === 'paint' || paintTool === 'erase') {
+    if (paintTool === 'paint' || paintTool === 'erase' || paintTool === 'fill') {
       this.paintTool = paintTool;
       this.updatePressed('[data-paint-tool]', 'paintTool', paintTool);
       return;
@@ -706,6 +750,9 @@ export class SandboxApp {
 
     const action = target.dataset.action;
     if (action === 'stage-back') this.goBack();
+    else if (action === 'exit-craft') this.requestCraftExit();
+    else if (action === 'exit-cancel') this.setExitConfirmOpen(false);
+    else if (action === 'exit-confirm') this.confirmCraftExit();
     else if (action === 'shape-continue') this.setStage('paint');
     else if (action === 'paint-continue') this.setStage('mixins');
     else if (action === 'paint-undo') this.undoPaint();
@@ -732,8 +779,13 @@ export class SandboxApp {
   private readonly handlePointerDown = (event: PointerEvent): void => {
     if (this.activityBlocked) return;
     if (this.stage === 'paint') {
-      if (this.authoredPointerId !== null) return;
-      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
+      if (this.authoredPointerId !== null || this.appearanceLimitReached) return;
+      const point = this.renderer.clientPointToAppearanceUv(event.clientX, event.clientY);
+      if (this.paintTool === 'fill') {
+        if (point) this.applyPaintFill(point);
+        event.preventDefault();
+        return;
+      }
       this.authoredPointerId = event.pointerId;
       this.authoredPoints = [];
       this.authoredStrokeMode = this.paintTool === 'erase' ? 1 : 0;
@@ -782,7 +834,7 @@ export class SandboxApp {
   private readonly handlePointerMove = (event: PointerEvent): void => {
     if (this.activityBlocked) return;
     if (this.stage === 'paint' && event.pointerId === this.authoredPointerId) {
-      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
+      const point = this.renderer.clientPointToAppearanceUv(event.clientX, event.clientY);
       if (!point) {
         if (this.authoredPoints.length > 0) {
           this.finishPaintStroke();
@@ -846,7 +898,7 @@ export class SandboxApp {
   private finishPaintStroke(): void {
     if (this.authoredPoints.length === 0) return;
     if (this.draft.appearance.strokes.length >= MAX_APPEARANCE_STROKES) {
-      this.status.textContent = this.copy.drawingFull;
+      this.setAppearanceLimitReached(true);
       this.replayAndUpload();
       return;
     }
@@ -861,7 +913,7 @@ export class SandboxApp {
       strokes: [...this.draft.appearance.strokes, stroke],
     };
     if (estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
-      this.status.textContent = this.copy.drawingFull;
+      this.setAppearanceLimitReached(true);
       this.replayAndUpload();
       return;
     }
@@ -869,8 +921,37 @@ export class SandboxApp {
     this.updateAppearanceDataset();
   }
 
+  private applyPaintFill(point: AppearancePoint): void {
+    if (this.appearanceLimitReached) return;
+    const localX = point.u * 2 - 1;
+    const localY = point.v * 2 - 1;
+    if (!isPointInsideShape(getShape(this.draft.shapeId), localX, localY)) return;
+    const strokesWithoutFill = this.draft.appearance.strokes.filter((stroke) => !isBodyFillStroke(stroke));
+    if (strokesWithoutFill.length >= MAX_APPEARANCE_STROKES) {
+      this.setAppearanceLimitReached(true);
+      return;
+    }
+    const stroke = createBodyFillStroke(this.paintColor);
+    const next: AppearanceDocumentV1 = {
+      ...this.draft.appearance,
+      // Keep Fill as the latest action so Undo removes it first. The replay
+      // pipeline renders the recognized Fill stroke underneath ordinary paint.
+      strokes: [...strokesWithoutFill, stroke],
+    };
+    if (estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
+      this.setAppearanceLimitReached(true);
+      return;
+    }
+    this.draft = { ...this.draft, appearance: next };
+    this.replayAndUpload();
+  }
+
   private addMixinAt(point: AppearancePoint): void {
-    if (this.draft.appearance.mixins.length >= MAX_MIXIN_PLACEMENTS) return;
+    if (this.appearanceLimitReached) return;
+    if (this.draft.appearance.mixins.length >= MAX_MIXIN_PLACEMENTS) {
+      this.setAppearanceLimitReached(true);
+      return;
+    }
     const index = this.draft.appearance.mixins.length;
     const size = 10 + ((index * 7 + this.selectedMixIn.length * 3) % 13);
     const rotation = ((index * 37 + this.selectedMixIn.length * 19) % 255) / 255;
@@ -880,7 +961,7 @@ export class SandboxApp {
       mixins: [...this.draft.appearance.mixins, placement],
     };
     if (estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
-      this.status.textContent = this.copy.drawingFull;
+      this.setAppearanceLimitReached(true);
       return;
     }
     this.draft = { ...this.draft, appearance: next };
@@ -892,6 +973,7 @@ export class SandboxApp {
 
   private undoPaint(): void {
     if (this.draft.appearance.strokes.length === 0) return;
+    this.setAppearanceLimitReached(false);
     this.draft = {
       ...this.draft,
       appearance: { ...this.draft.appearance, strokes: this.draft.appearance.strokes.slice(0, -1) },
@@ -900,12 +982,14 @@ export class SandboxApp {
   }
 
   private clearPaint(): void {
+    this.setAppearanceLimitReached(false);
     this.draft = { ...this.draft, appearance: { ...this.draft.appearance, strokes: [] } };
     this.replayAndUpload();
   }
 
   private undoMixin(): void {
     if (this.draft.appearance.mixins.length === 0) return;
+    this.setAppearanceLimitReached(false);
     this.draft = {
       ...this.draft,
       appearance: { ...this.draft.appearance, mixins: this.draft.appearance.mixins.slice(0, -1) },
@@ -914,6 +998,7 @@ export class SandboxApp {
   }
 
   private clearMixins(): void {
+    this.setAppearanceLimitReached(false);
     this.draft = { ...this.draft, appearance: { ...this.draft.appearance, mixins: [] } };
     this.replayAndUpload();
   }
@@ -956,6 +1041,54 @@ export class SandboxApp {
     for (const action of ['decor-undo', 'decor-clear']) {
       const button = this.root.querySelector<HTMLButtonElement>(`[data-action="${action}"]`);
       if (button) button.disabled = this.draft.decor.stickers.length === 0;
+    }
+  }
+
+  private isDraftDirty(): boolean {
+    const pristine = createSandboxDraft();
+    return this.draft.shapeId !== pristine.shapeId
+      || this.draft.materialId !== pristine.materialId
+      || this.draft.appearance.strokes.length > 0
+      || this.draft.appearance.mixins.length > 0
+      || hasSurfaceDecor(this.draft.decor)
+      || this.draft.decor.accessory !== null
+      || this.mixDistance > 0;
+  }
+
+  private requestCraftExit(): void {
+    if (!this.options.onExitToLibrary) return;
+    if (!this.isDraftDirty()) {
+      this.options.onExitToLibrary();
+      return;
+    }
+    this.setExitConfirmOpen(true);
+  }
+
+  private confirmCraftExit(): void {
+    this.setExitConfirmOpen(false);
+    this.options.onExitToLibrary?.();
+  }
+
+  private setExitConfirmOpen(open: boolean): void {
+    this.exitConfirmOpen = open;
+    this.shell.dataset.exitConfirm = String(open);
+    this.requireElement<HTMLElement>('[data-exit-overlay]').hidden = !open;
+    this.syncInteractivity();
+  }
+
+  private setAppearanceLimitReached(value: boolean): void {
+    this.appearanceLimitReached = value;
+    this.shell.dataset.appearanceFull = String(value);
+    this.updateAppearanceLimitUi();
+  }
+
+  private updateAppearanceLimitUi(): void {
+    const showNotice = this.appearanceLimitReached && (this.stage === 'paint' || this.stage === 'mixins');
+    this.status.toggleAttribute('data-limit', showNotice);
+    if (showNotice) this.status.textContent = this.copy.drawingFull;
+    else if (this.status.textContent === this.copy.drawingFull) this.status.textContent = '';
+    for (const selector of ['[data-paint-color]', '[data-paint-tool]', '[data-brush-size]', '[data-mixin]']) {
+      for (const button of this.root.querySelectorAll<HTMLButtonElement>(selector)) button.disabled = this.appearanceLimitReached;
     }
   }
 
@@ -1009,6 +1142,8 @@ export class SandboxApp {
   }
 
   private startNew(): void {
+    this.setExitConfirmOpen(false);
+    this.setAppearanceLimitReached(false);
     this.draft = createSandboxDraft();
     this.paintTool = 'paint';
     this.paintColor = PAINT_COLORS[0];
@@ -1093,12 +1228,17 @@ export class SandboxApp {
       const context = this.rigidMixinContext;
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.clearRect(0, 0, canvasRect.width, canvasRect.height);
-      const appearanceScale = Math.min(canvasRect.width, canvasRect.height) * 0.68 / APPEARANCE_TEXTURE_SIZE;
+      const cssRadiusRatio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio'));
+      const radiusRatio = Number.isFinite(cssRadiusRatio) ? cssRadiusRatio : 0.34;
+      const appearanceScale = Math.min(canvasRect.width, canvasRect.height) * radiusRatio * 2 / APPEARANCE_TEXTURE_SIZE;
+      context.save();
+      context.globalAlpha = this.draft.materialId === 'chrome' ? 0.42 : 1;
       for (const placement of rigidPlacements) {
         const center = this.renderer.projectUvToCanvas(placement.x / 255, placement.y / 255);
         const radius = Math.max(3.5, placement.s * appearanceScale * 0.5);
         context.drawImage(this.pearlSprite, center.x - radius, center.y - radius, radius * 2, radius * 2);
       }
+      context.restore();
     }
 
     if (this.options.rendererBackend !== 'phaser') this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);
@@ -1117,7 +1257,7 @@ export class SandboxApp {
     }
     this.accessoryCanvas.hidden = false;
     this.accessoryCanvas.dataset.accessoryId = accessory;
-    drawAccessoryGraphic(this.accessoryContext, accessory, this.accessoryCanvas.width, this.accessoryCanvas.height);
+    drawAccessoryGraphic(this.accessoryContext, accessory, this.accessoryCanvas.width, this.accessoryCanvas.height, this.draft.shapeId);
     if (this.accessoryFrame === 0 && this.options.rendererBackend !== 'phaser') this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
   }
 
@@ -1126,7 +1266,7 @@ export class SandboxApp {
       this.accessoryFrame = 0;
       return;
     }
-    const frame = getDecorFrame(getShape(this.draft.shapeId));
+    const frame = getDecorFrame(getShape(this.draft.shapeId), this.draft.decor.accessory);
     const anchor = this.renderer.projectUvToCanvas(frame.headAnchor.u, frame.headAnchor.v);
     const right = this.renderer.projectUvToCanvas(frame.headAnchor.u + frame.headBasisU, frame.headAnchor.v);
     const down = this.renderer.projectUvToCanvas(frame.headAnchor.u, frame.headAnchor.v - frame.headBasisV);
@@ -1155,8 +1295,15 @@ export class SandboxApp {
       const anchorY = canvasRect.top - stageRect.top + anchor.y - normVy * seatOffsetPx;
       const width = this.accessoryCanvas.offsetWidth || 160;
       const height = this.accessoryCanvas.offsetHeight || 107;
+      // Pages' live overlay previously left the broad crown/bow visibly hovering
+      // even after the shared surface anchor was correct in Hall. Seat only these
+      // Phaser preview assets a few pixels deeper; ordinary/Yandex keeps the
+      // established overlay position.
+      const liveSeatFactor = this.options.rendererBackend === 'phaser'
+        ? (this.draft.decor.accessory === 'crown' ? 0.80 : this.draft.decor.accessory === 'bow' ? 0.87 : 0.92)
+        : 0.92;
       this.accessoryCanvas.style.left = (anchorX - width * 0.5).toFixed(2) + 'px';
-      this.accessoryCanvas.style.top = (anchorY - height * 0.92).toFixed(2) + 'px';
+      this.accessoryCanvas.style.top = (anchorY - height * liveSeatFactor).toFixed(2) + 'px';
       this.accessoryCanvas.style.transform = 'matrix(' + [a, b, c, d].map((value) => value.toFixed(4)).join(',') + ',0,0)';
       this.accessoryCanvas.dataset.accessoryAnchorX = anchorX.toFixed(2);
       this.accessoryCanvas.dataset.accessoryAnchorY = anchorY.toFixed(2);
@@ -1195,11 +1342,14 @@ export class SandboxApp {
     this.status.textContent = next === 'mix'
       ? (this.mixDistance >= MIX_DISTANCE_FOR_COMPLETE_PX ? this.copy.mixReady : this.copy.mixMore) : '';
     const canGoBack = next === 'paint' || next === 'mixins' || next === 'mix' || next === 'decor';
+    const inCraft = next === 'shape' || next === 'paint' || next === 'mixins' || next === 'mix' || next === 'decor' || next === 'finish';
     this.requireElement<HTMLButtonElement>('[data-action="stage-back"]').hidden = !canGoBack;
+    this.requireElement<HTMLButtonElement>('[data-action="exit-craft"]').hidden = !inCraft || !this.options.onExitToLibrary;
     this.requireElement<HTMLElement>('[data-sandbox-brand]').hidden = canGoBack;
     for (const panel of this.root.querySelectorAll<HTMLElement>('[data-panel]')) {
       panel.hidden = panel.dataset.panel !== next;
     }
+    this.updateAppearanceLimitUi();
     this.syncInteractivity();
   }
 
@@ -1215,12 +1365,13 @@ export class SandboxApp {
   }
 
   private syncInteractivity(): void {
+    const blocked = this.activityBlocked || this.exitConfirmOpen;
     if (this.options.rendererBackend === 'phaser') {
       (this.renderer as PhaserSquishSurface).setStudioStage(this.stage, this.decorSection);
-      (this.renderer as PhaserSquishSurface).setActivityBlocked(this.activityBlocked);
+      (this.renderer as PhaserSquishSurface).setActivityBlocked(blocked);
       return;
     }
-    const shouldRenderInteract = !this.activityBlocked && (this.stage === 'mix' || this.stage === 'squeeze');
+    const shouldRenderInteract = !blocked && (this.stage === 'mix' || this.stage === 'finish' || this.stage === 'squeeze');
     this.renderer.setInteractive(shouldRenderInteract);
   }
 
@@ -1250,6 +1401,12 @@ export class SandboxApp {
     this.shell.dataset.appearanceBytes = String(estimateAppearanceBytes(this.draft.appearance));
     this.shell.dataset.paintStrokes = String(this.draft.appearance.strokes.length);
     this.shell.dataset.mixinCount = String(this.draft.appearance.mixins.length);
+    if (!this.appearanceLimitReached
+      && (this.draft.appearance.strokes.length >= MAX_APPEARANCE_STROKES
+        || this.draft.appearance.mixins.length >= MAX_MIXIN_PLACEMENTS)) {
+      this.setAppearanceLimitReached(true);
+    }
+    this.updateAppearanceLimitUi();
     for (const [action, empty] of [
       ['paint-undo', this.draft.appearance.strokes.length === 0],
       ['paint-clear', this.draft.appearance.strokes.length === 0],

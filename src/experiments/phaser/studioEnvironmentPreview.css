@@ -1,7 +1,7 @@
 /* Pages-only environment. All artwork is noninteractive and remains behind the real canvas/UI. */
 /* The jelly UI stylesheet uses #app[data-jelly-ui-ready] .sandbox-shell[data-stage],
    so the environment selector must outrank its background shorthand. */
-#app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='shape'], [data-stage='paint']) {
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active {
   position: relative;
   isolation: isolate;
   background-color: #ffeadb;
@@ -23,11 +23,31 @@
   z-index: 0;
   inset-inline: 0;
   bottom: 0;
-  background-color: #da9d74;
-  background-image: url('./studio-assets/studio-floor.png');
-  background-position: left top;
-  background-repeat: repeat-x;
-  background-size: 320px 348px;
+  overflow: hidden;
+  background: #eab18a;
+  perspective: 1250px;
+  perspective-origin: 50% 0;
+  pointer-events: none;
+}
+
+/* Use the exact Library parquet source and projection in Craft/Squeeze too.
+   The plane is repeated before projection, so large desktop floors never
+   stretch one bitmap and mobile/desktop keep the same room language. */
+.studio-env-floor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -115%;
+  width: 330%;
+  height: 200%;
+  background-image: url('./library-assets/floor-tile.webp');
+  background-color: #eab18a;
+  background-repeat: repeat;
+  background-position: center top;
+  background-size: clamp(270px, 28vw, 390px) auto;
+  transform-origin: 50% 0;
+  transform: rotateX(64deg);
+  backface-visibility: hidden;
   pointer-events: none;
 }
 
@@ -35,19 +55,21 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
 }
 
 .studio-env-decor-clip {
   position: absolute;
+  z-index: 1;
   inset: 0;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
 }
 
 .studio-env-decor {
   position: absolute;
+  z-index: 1;
   top: 62px;
   width: 356px;
   height: auto;
@@ -62,6 +84,7 @@
    composited at native pixel boundaries before any browser/DPR scaling. */
 .studio-env-desk {
   position: absolute;
+  z-index: 2;
   left: 50%;
   transform: translateX(-50%);
   display: block;
@@ -83,11 +106,228 @@
    the source image's purple legs; controls and canvas stay above passive art. */
 @media (min-width: 901px) and (orientation: landscape) {
   .studio-env-stage-art { overflow: visible; }
-  .studio-env-desk { clip-path: inset(0 0 59% 0); }
+  .studio-env-desk { clip-path: none; }
 }
 @media (min-width: 501px) and (max-width: 900px) {
   .studio-env-decor { width: 300px; }
 }
 @media (max-height: 520px) and (orientation: landscape) {
   .studio-env-decor, .studio-env-desk { display: none !important; }
+  .studio-env-floor::before {
+    height: 250%;
+    background-size: 285px auto;
+    transform: rotateX(59deg);
+  }
+}
+
+/* One workshop at every step: reserve the same heading, playfield and control
+   tracks so changing panels never shifts the toy, tabletop or floor. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active {
+  --studio-controls-height: clamp(202px, 31dvh, 276px);
+  grid-template-rows: 38px 88px minmax(0, 1fr) var(--studio-controls-height) 20px;
+  gap: 4px;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-stage {
+  min-height: 0;
+  padding: 0;
+  container-type: size;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-canvas {
+  --squish-radius-ratio: .34;
+  width: min(82vw, 430px, 100cqh);
+  height: auto;
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-glow {
+  width: min(88vw, 470px, 110cqh);
+  max-height: 110cqh;
+}
+/* A small contact shadow does the grounding job; the broad canvas drop-shadow is
+   still the soft body shadow. Keep this under the WebGL toy and above room art. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-stage::after {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  /* Follow the actual rendered body's lower edge rather than a percentage of
+     the stage. This keeps the shadow on the tabletop at both phone and desktop
+     sizes, even when the square canvas itself changes size. */
+  top: calc(50% + min(23.78vw, 125px, 29cqh));
+  width: min(38vw, 175px, 46cqh);
+  height: min(4.2vw, 17px, 5.2cqh);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse,
+    rgba(82, 50, 34, .24) 0 16%,
+    rgba(82, 50, 34, .11) 45%,
+    transparent 76%);
+  filter: blur(2.2px);
+  opacity: .76;
+  pointer-events: none;
+}
+/* The desk is z=2. Contact lives on its surface, then the live toy/rigid
+   inclusions render above it. This is intentionally local to Pages Studio. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-canvas { z-index: 4; }
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-rigid-mixin-layer { z-index: 5; }
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-controls {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-panel {
+  min-height: 0;
+  flex-shrink: 0;
+  margin-top: auto;
+}
+@media (max-height: 740px) and (orientation: portrait) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
+    --studio-controls-height: clamp(198px, 33dvh, 242px);
+    grid-template-rows: 36px 76px minmax(0, 1fr) var(--studio-controls-height) 18px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='shape'] .sandbox-shape {
+    min-height: 56px !important;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='shape'] .sandbox-shape__icon {
+    width: 26px; height: 26px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active [data-action='shape-continue'] {
+    min-height: 52px !important;
+  }
+}
+/* Preserve the existing compact-landscape two-column layout and absolute
+   heading; every step gets identical stage padding, including Decor. */
+@media (max-height: 520px) and (orientation: landscape) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
+    grid-template-columns: minmax(280px, .9fr) minmax(390px, 1.1fr);
+    grid-template-rows: 38px minmax(0, 1fr) 18px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy {
+    position: absolute;
+    left: 14px; top: 48px;
+    width: calc(42% - 20px);
+    height: auto;
+    display: block;
+    text-align: left;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-stage {
+    padding-top: 45px;
+    padding-bottom: 0;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-canvas {
+    width: min(64vh, 280px, calc(100cqh - 45px));
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-controls {
+    justify-content: flex-start;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-panel {
+    margin-bottom: auto;
+  }
+}
+
+/* Desktop: the whole Decor panel including its CTA remains in the shared tray. */
+@media (min-width: 901px) and (min-height: 640px) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
+    --studio-controls-height: clamp(290px, 40dvh, 356px);
+  }
+}
+
+
+/* Owner review: stage counters are compact labels, not full-width placeholder bars. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy > span {
+  align-self: center;
+  width: max-content;
+  min-height: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(176,111,41,.16);
+  background: rgba(255,249,237,.72);
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy > span:empty {
+  display: none;
+}
+
+/* Edit trays are viewport-contained. Do not turn the maker into a nested
+   scroller; compact devices tighten the decor controls instead. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-panel {
+  max-height: 100%;
+}
+@media (max-height: 620px) and (orientation: portrait) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
+    --studio-controls-height: clamp(210px, 37dvh, 232px);
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-panel--decor {
+    gap: 3px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-decor-tabs {
+    gap: 4px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-decor-tabs button {
+    min-height: 32px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-decor-section {
+    min-height: 0;
+    gap: 3px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-decor-choice {
+    min-height: 32px !important;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-decor-toggle {
+    min-height: 30px !important;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='decor'] .sandbox-panel__wide {
+    min-height: 42px !important;
+  }
+}
+
+/* Squeeze gets a larger transparent playfield while the lower render-radius
+   ratio preserves approximately the accepted resting toy size. The extra pixels
+   are deformation headroom, not a smaller hero. Keep short landscape unchanged. */
+@media (min-height: 521px) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-canvas {
+    --squish-radius-ratio: .30;
+    width: min(93vw, 488px, 113cqh);
+    max-width: none;
+    max-height: none;
+  }
+}
+
+/* Squeeze is the hero interaction. On roomy desktop stages the former 620px
+   playfield still clipped extreme pulls, so enlarge the transparent field again
+   and compensate with the radius ratio to keep the resting body size stable. */
+@media (min-width: 901px) and (min-height: 640px) and (orientation: landscape) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-canvas {
+    --squish-radius-ratio: .27;
+    width: min(63vw, 780px, 199cqh);
+    max-width: none;
+    max-height: none;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-glow {
+    width: min(54vw, 660px, 170cqh);
+    max-height: none;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-stage::after {
+    top: calc(50% + min(14.5vw, 180px, 45.82cqh));
+    width: min(24vw, 230px, 65cqh);
+    height: min(3.1vw, 22px, 7cqh);
+  }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy > span {
+    align-self: flex-start;
+  }
 }

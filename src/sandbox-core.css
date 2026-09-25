@@ -68,11 +68,16 @@
 
 .sandbox-glow {
   position: absolute;
-  width: min(88vw, 470px);
+  width: min(80vw, 410px);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,.95) 0 35%, rgba(211,191,242,.24) 56%, transparent 72%);
-  filter: blur(1px);
+  /* A faint warm halo only; the material itself must provide the highlight. */
+  background: radial-gradient(circle,
+    rgba(255, 248, 242, .22) 0 24%,
+    rgba(246, 226, 235, .10) 42%,
+    rgba(211, 191, 242, .04) 59%,
+    transparent 74%);
+  filter: blur(7px);
   pointer-events: none;
 }
 
@@ -185,8 +190,65 @@
 
 .sandbox-status { min-height: 18px; text-align: center; color: var(--sandbox-muted); font-size: 11px; font-weight: 750; }
 
+.sandbox-status[data-limit] {
+  justify-self: center;
+  width: min(100%, 560px);
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid rgba(151, 92, 42, .24);
+  border-radius: 12px;
+  background: rgba(255, 235, 191, .92);
+  color: #6e3c1f;
+  font-weight: 900;
+  box-shadow: 0 4px 12px rgba(94, 58, 30, .08);
+}
+
+.sandbox-exit-overlay {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(58, 39, 67, .22);
+  backdrop-filter: blur(4px);
+}
+.sandbox-exit-dialog {
+  width: min(100%, 390px);
+  padding: 22px;
+  border: 1px solid rgba(88, 64, 112, .14);
+  border-radius: 22px;
+  background: rgba(255, 252, 248, .98);
+  color: var(--sandbox-ink);
+  text-align: center;
+  box-shadow: 0 20px 48px rgba(64, 40, 76, .22);
+}
+.sandbox-exit-dialog > strong { display: block; font-size: 20px; font-weight: 950; }
+.sandbox-exit-dialog > p { margin: 7px 0 18px; color: var(--sandbox-muted); font-size: 12px; font-weight: 700; }
+.sandbox-exit-dialog > div { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.sandbox-exit-dialog button {
+  min-height: 46px;
+  border: 1px solid var(--sandbox-line);
+  border-radius: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.sandbox-exit-dialog .sandbox-secondary { background: rgba(255,255,255,.86); color: var(--sandbox-ink); }
+.sandbox-exit-dialog .sandbox-exit-danger {
+  border-color: rgba(169, 62, 67, .22);
+  background: linear-gradient(155deg, #e45e67, #b83f4d);
+  color: #fff;
+}
+
 @media (max-width: 620px) {
   .sandbox-shell { padding-inline: 10px; }
+  .sandbox-paint-tools button {
+    min-width: 0;
+    padding-inline: 4px;
+    font-size: 10px;
+  }
+  .sandbox-paint-tools [data-paint-tool] { flex: 1.45 1 0; }
+  .sandbox-paint-tools [data-brush-size] { flex: .70 1 0; }
   .sandbox-panel { gap: 6px; }
   .sandbox-shape { min-height: 68px !important; }
   .sandbox-shape__icon { width: 30px; height: 30px; }
