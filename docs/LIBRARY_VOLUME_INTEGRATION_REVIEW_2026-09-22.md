@@ -76,7 +76,7 @@ The next owner-review pass is deliberately split from the earlier material/layou
 3. expand Squeeze render/input headroom without reducing the accepted resting hero size;
 4. separate Paint authoring UV from shape hit-testing so a brush footprint can feather across the silhouette edge while squeeze/sticker/mix-in hit-testing stays canonical;
 5. add a craft exit with unsaved confirmation;
-6. add a whole-body Fill tool without changing the SaveState V3 root or material IDs;
+6. add a whole-body Fill tool without changing the SaveState V3 root or material IDs; repeated Fill replaces the prior base Fill and replay keeps manual paint/eraser strokes above it;
 7. make appearance-budget exhaustion explicit and disable only additive customization actions.
 
 Physically localized appendage grabbing remains deferred. Final acceptance still requires exact-HEAD release/browser/Pages/Hall/candidate/Yandex-DRAFT gates plus screenshot/video inspection; PR #59 remains draft and unmerged.

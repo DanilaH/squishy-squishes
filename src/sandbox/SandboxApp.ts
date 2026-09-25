@@ -9,11 +9,13 @@ import {
   MAX_APPEARANCE_STROKES,
   MAX_MIXIN_PLACEMENTS,
   createAppearanceStroke,
+  createBodyFillStroke,
   createMixInPlacement,
   drawAppearanceSegment,
   drawAppearanceStamp,
   estimateAppearanceBytes,
   getMixInId,
+  isBodyFillStroke,
   replayAppearanceDocument,
   type AppearanceDocumentV1,
   type AppearancePoint,
@@ -255,13 +257,6 @@ const DECOR_LABELS: Readonly<Record<SandboxLanguage, DecorLabels>> = {
 
 const PAINT_COLORS = [0xd58cff, 0x63e6e2, 0xff79a8, 0x92df83, 0xffa46f, 0xffdc70] as const;
 const BRUSH_SIZES = [18, 34, 56] as const;
-const BODY_FILL_BRUSH_SIZE = 112;
-const BODY_FILL_POINTS: readonly AppearancePoint[] = Array.from({ length: 6 }, (_, row) => {
-  const v = 0.04 + row * 0.184;
-  return row % 2 === 0
-    ? [{ u: 0.02, v }, { u: 0.98, v }]
-    : [{ u: 0.98, v }, { u: 0.02, v }];
-}).flat();
 const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti'];
 const MIX_DISTANCE_FOR_COMPLETE_PX = 1_650;
 const MIXIN_SPACING_PX = 24;
@@ -931,14 +926,17 @@ export class SandboxApp {
     const localX = point.u * 2 - 1;
     const localY = point.v * 2 - 1;
     if (!isPointInsideShape(getShape(this.draft.shapeId), localX, localY)) return;
-    if (this.draft.appearance.strokes.length >= MAX_APPEARANCE_STROKES) {
+    const strokesWithoutFill = this.draft.appearance.strokes.filter((stroke) => !isBodyFillStroke(stroke));
+    if (strokesWithoutFill.length >= MAX_APPEARANCE_STROKES) {
       this.setAppearanceLimitReached(true);
       return;
     }
-    const stroke = createAppearanceStroke(0, this.paintColor, BODY_FILL_BRUSH_SIZE, BODY_FILL_POINTS);
+    const stroke = createBodyFillStroke(this.paintColor);
     const next: AppearanceDocumentV1 = {
       ...this.draft.appearance,
-      strokes: [...this.draft.appearance.strokes, stroke],
+      // Keep Fill as the latest action so Undo removes it first. The replay
+      // pipeline renders the recognized Fill stroke underneath ordinary paint.
+      strokes: [...strokesWithoutFill, stroke],
     };
     if (estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
       this.setAppearanceLimitReached(true);

@@ -97,9 +97,14 @@ test('dirty craft exit confirms, and appearance limit stays explicit without blo
   await expect(shell, 'Fill ignores transparent playfield outside the canonical shape').toHaveAttribute('data-paint-strokes', '0');
   await page.mouse.click(x, y);
   await expect(shell).toHaveAttribute('data-paint-strokes', '1');
-  for (let index = 1; index < 110; index += 1) {
+  await page.mouse.click(x, y);
+  await expect(shell, 'repeating Fill replaces the prior base fill instead of consuming budget')
+    .toHaveAttribute('data-paint-strokes', '1');
+
+  await page.locator('[data-action="paint-clear"]').click();
+  await page.locator('[data-paint-tool="paint"]').click();
+  for (let index = 0; index < 96; index += 1) {
     await page.mouse.click(x, y);
-    if (index % 20 === 19) await page.waitForTimeout(20);
   }
 
   await expect(shell).toHaveAttribute('data-appearance-full', 'true');

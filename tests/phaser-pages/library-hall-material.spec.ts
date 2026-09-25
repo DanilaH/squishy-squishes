@@ -90,7 +90,7 @@ test('real saved materials have comparable Studio and Library captures', async (
   expect(Object.keys(stats).sort()).toEqual(['chrome', 'holo', 'jelly', 'marshmallow', 'pearl', 'soft']);
   for (const entry of materialStats) expect(entry.count, `${entry.material} has a visible material body`).toBeGreaterThan(2_000);
   expect(stats.jelly!.alpha, 'Jelly keeps its translucent body in Hall').toBeLessThan(stats.marshmallow!.alpha - 4);
-  expect(stats.chrome!.lumaStd, 'Chrome has a materially stronger reflection range than Marshmallow').toBeGreaterThan(stats.marshmallow!.lumaStd + 4);
+  expect(stats.chrome!.lumaStd, 'Metallic has a materially stronger reflection range than Marshmallow').toBeGreaterThan(stats.marshmallow!.lumaStd + 4);
   expect(stats.holo!.chroma, 'Holo keeps spectral colour response in Hall').toBeGreaterThan(stats.marshmallow!.chroma + 2);
   await writeFile(info.outputPath('library-hall-material-stats.json'), JSON.stringify(materialStats, null, 2));
   expect(await visibleProfiles()).toEqual(['soft', 'jelly']);
@@ -104,6 +104,9 @@ test('real saved materials have comparable Studio and Library captures', async (
   await page.screenshot({ path: info.outputPath('library-hall-material-desktop-1440.png'), animations: 'disabled' });
   await page.locator('[data-library-hall-next]').click();
   expect(await visibleProfiles()).toEqual(['marshmallow', 'chrome']);
+  const metallicLabel = page.locator('.sandbox-library-card:visible .sandbox-library-card__footer strong').nth(1);
+  await expect(metallicLabel).toContainText('Metallic');
+  await expect(metallicLabel).not.toContainText('Chrome');
   await page.screenshot({ path: info.outputPath('library-hall-material-marshmallow-chrome-1440.png'), animations: 'disabled' });
   await captureThumbnail('marshmallow');
   await captureStudio('marshmallow');

@@ -174,7 +174,7 @@ const RU_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {
   holo: 'Голографик',
   marshmallow: 'Маршмеллоу',
   pearl: 'Перламутр',
-  chrome: 'Хром',
+  chrome: 'Металлик',
 };
 
 const EN_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {
@@ -183,7 +183,7 @@ const EN_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {
   holo: 'Holo',
   marshmallow: 'Marshmallow',
   pearl: 'Pearl',
-  chrome: 'Chrome',
+  chrome: 'Metallic',
 };
 
 interface PendingReplacement {

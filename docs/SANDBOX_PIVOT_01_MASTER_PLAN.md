@@ -894,5 +894,5 @@ This follow-up refines the already accepted freeform maker; it does not reintrod
 - Pages face art must not add unexplained white stripe highlights over line eyes/mouths. Expression ink should stay legible across Soft, Jelly, Pearl, Holo and Metallic.
 - Squeeze/play needs deformation headroom beyond the visible resting body. Expand the transparent interactive/render playfield while preserving approximately the accepted resting toy size; do not solve clipping by shrinking the hero.
 - Craft has an explicit exit-to-Library action. Unsaved work requires confirmation; already-saved Squeeze may return directly.
-- Fill is a whole-body paint operation, not Photoshop flood-fill. Prefer encoding it through the existing replayable Appearance V1 stroke representation so V3/rollback compatibility remains intact.
+- Fill is a whole-body paint operation, not Photoshop flood-fill. It stays an ordinary replayable Appearance V1 stroke so V3/rollback compatibility remains intact. The current Fill replaces any prior Fill, is replayed beneath ordinary paint/eraser strokes, and remains the latest action in the stored stroke array so Undo removes it correctly.
 - Localized draggable ears/appendage physics remain deferred expressive polish.
