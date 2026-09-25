@@ -14,9 +14,12 @@ const setup = () => {
   let distance = 0;
   let active = false;
   const pointToUv = (x: number, y: number): AppearancePoint | null =>
-    Math.hypot(x, y) <= 1 ? { u: x * 0.5 + 0.5, v: y * 0.5 + 0.5 } : null;
+    Math.hypot(x, y) <= 0.9 ? { u: x * 0.5 + 0.5, v: y * 0.5 + 0.5 } : null;
+  const paintPointToUv = (x: number, y: number): AppearancePoint | null =>
+    Math.abs(x) <= 1 && Math.abs(y) <= 1 ? { u: x * 0.5 + 0.5, v: y * 0.5 + 0.5 } : null;
   const host: StageGestureHost = {
     pointToUv,
+    paintPointToUv,
     beginSquish: ({ x, y }) => {
       if (!pointToUv(x, y)) return false;
       active = true;
@@ -46,21 +49,21 @@ const setup = () => {
   };
 };
 
-test('M4 input: paint captures outside down and stamps only after entering silhouette', () => {
+test('M4 input: paint captures outside down and authors at texture edge before canonical silhouette', () => {
   const s = setup();
   s.router.setStage('paint');
-  expect(s.router.down(pointer(1, 2))).toBe(true);
+  expect(s.router.down(pointer(1, 1.2))).toBe(true);
   expect(s.router.snapshot().owner).toBe(1);
   expect(s.paintStamps).toBe(0);
   s.router.move(pointer(2, 0)); // competing touch cannot paint
   expect(s.paintStamps).toBe(0);
-  s.router.move(pointer(1, 0));
+  s.router.move(pointer(1, 1.0)); // canonical hit is still null, appearance UV is valid
   expect(s.paintStamps).toBe(1);
-  s.router.move(pointer(1, 0.2));
+  s.router.move(pointer(1, 0.8));
   expect(s.events).toContain('paint-segment');
-  s.router.move(pointer(1, 2));
+  s.router.move(pointer(1, 1.2));
   expect(s.paintEnds).toBe(1);
-  s.router.move(pointer(1, 0.1)); // next entry must start a new stroke
+  s.router.move(pointer(1, 1.0)); // re-entering appearance space starts a new stroke
   expect(s.paintStamps).toBe(2);
   s.router.up(1);
   expect(s.paintEnds).toBe(2);
