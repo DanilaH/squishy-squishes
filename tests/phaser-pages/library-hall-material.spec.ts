@@ -185,14 +185,14 @@ test('owner material stress matrix keeps authored colour legible across six mate
 
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
-    await page.screenshot({ path: info.outputPath(`material-stress-${scenario.id}-library.png`), animations: 'disabled' });
+    await page.screenshot({ path: info.outputPath(`library-hall-material-stress-${scenario.id}-library.png`), animations: 'disabled' });
 
     for (const material of materials) {
       await page.locator(`[data-library-play-id="material-stress-${scenario.id}-${material}"]`).click();
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-material', material);
       await page.locator('[data-sandbox-canvas]').screenshot({
-        path: info.outputPath(`material-stress-${scenario.id}-${material}.png`),
+        path: info.outputPath(`library-hall-material-stress-${scenario.id}-${material}.png`),
         animations: 'disabled',
       });
       await page.locator('[data-action="home"]').click();
