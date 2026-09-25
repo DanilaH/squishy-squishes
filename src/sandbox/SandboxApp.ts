@@ -733,7 +733,7 @@ export class SandboxApp {
     if (this.activityBlocked) return;
     if (this.stage === 'paint') {
       if (this.authoredPointerId !== null) return;
-      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
+      const point = this.renderer.clientPointToAppearanceUv(event.clientX, event.clientY);
       this.authoredPointerId = event.pointerId;
       this.authoredPoints = [];
       this.authoredStrokeMode = this.paintTool === 'erase' ? 1 : 0;
@@ -782,7 +782,7 @@ export class SandboxApp {
   private readonly handlePointerMove = (event: PointerEvent): void => {
     if (this.activityBlocked) return;
     if (this.stage === 'paint' && event.pointerId === this.authoredPointerId) {
-      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
+      const point = this.renderer.clientPointToAppearanceUv(event.clientX, event.clientY);
       if (!point) {
         if (this.authoredPoints.length > 0) {
           this.finishPaintStroke();

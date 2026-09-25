@@ -140,6 +140,7 @@
   container-type: size;
 }
 #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-canvas {
+  --squish-radius-ratio: .34;
   width: min(82vw, 430px, 100cqh);
   height: auto;
   aspect-ratio: 1;
@@ -293,12 +294,25 @@
   }
 }
 
-/* Squeeze is the hero interaction. On roomy desktop stages the old common
-   430px cap made the toy read as a thumbnail; allow deliberate stage overflow
-   while keeping craft-step geometry unchanged. */
+/* Squeeze gets a larger transparent playfield while the lower render-radius
+   ratio preserves approximately the accepted resting toy size. The extra pixels
+   are deformation headroom, not a smaller hero. Keep short landscape unchanged. */
+@media (min-height: 521px) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-canvas {
+    --squish-radius-ratio: .30;
+    width: min(93vw, 488px, 113cqh);
+    max-width: none;
+    max-height: none;
+  }
+}
+
+/* Squeeze is the hero interaction. On roomy desktop stages the former 620px
+   playfield still clipped extreme pulls, so enlarge the transparent field again
+   and compensate with the radius ratio to keep the resting body size stable. */
 @media (min-width: 901px) and (min-height: 640px) and (orientation: landscape) {
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-canvas {
-    width: min(50vw, 620px, 158cqh);
+    --squish-radius-ratio: .27;
+    width: min(63vw, 780px, 199cqh);
     max-width: none;
     max-height: none;
   }

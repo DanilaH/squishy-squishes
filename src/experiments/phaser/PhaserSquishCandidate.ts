@@ -94,6 +94,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private drawCalls = 0;
   private disposed = false;
   private lastReleaseEnergy = 0;
+  private renderRadiusRatio = 0.34;
 
   public constructor(scene: Phaser.Scene, private readonly gl: WebGL2RenderingContext, private readonly pagesVolume = false) {
     super(scene);
@@ -124,12 +125,20 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public setFillProgress(progress: number): void { this.fillProgress = clamp01(progress); }
   public setMoldProgress(progress: number): void { this.moldProgress = clamp01(progress); }
   public setWireframe(enabled: boolean): void { this.wireframe = enabled; }
+  public setRenderRadiusRatio(value: number): void {
+    this.renderRadiusRatio = Math.min(0.42, Math.max(0.20, Number.isFinite(value) ? value : 0.34));
+  }
   public resetTiming(): void { this.simulation.resetTiming(performance.now()); }
+
+  private radius(): number {
+    const { width, height } = this.scene.scale;
+    return Math.max(1, Math.min(width, height) * this.renderRadiusRatio);
+  }
 
   /** One canonical UV transform for the Extern and the studio input bridge. */
   private localPoint(x: number, y: number): { x: number; y: number } {
     const { width, height } = this.scene.scale;
-    const radius = Math.max(1, Math.min(width, height) * 0.34);
+    const radius = this.radius();
     return { x: (x - width / 2) / radius, y: (height / 2 - y) / radius };
   }
 
@@ -139,9 +148,16 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     return this.simulation.pointToUv(point.x, point.y);
   }
 
+  public pointToAppearanceUv(x: number, y: number): AppearancePoint | null {
+    if (this.disposed) return null;
+    const point = this.localPoint(x, y);
+    if (Math.abs(point.x) > 1 || Math.abs(point.y) > 1) return null;
+    return { u: clamp01(point.x * 0.5 + 0.5), v: clamp01(point.y * 0.5 + 0.5) };
+  }
+
   public projectUvToCanvas(u: number, v: number): { x: number; y: number } {
     const { width, height } = this.scene.scale;
-    const radius = Math.max(1, Math.min(width, height) * 0.34);
+    const radius = this.radius();
     const point = this.simulation.projectUvToLocal(u, v);
     return { x: width / 2 + point.x * radius, y: height / 2 - point.y * radius };
   }
@@ -353,7 +369,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.uniform1i(u('uAppearanceTexture'), 1);
     gl.uniform1i(u('uAppearanceEnabled'), this.appearanceEnabled ? 1 : 0);
     const { width, height } = this.scene.scale;
-    const radius = Math.min(width, height) * 0.34;
+    const radius = this.radius();
     gl.uniform2f(u('uScale'), radius * 2 / width, radius * 2 / height);
     gl.uniform1f(u('uMoldProgress'), this.moldProgress);
     gl.uniform2f(u('uPointerUv'), clamp01(sample.sheenX * 0.5 + 0.5), clamp01(sample.sheenY * 0.5 + 0.5));
@@ -380,7 +396,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.drawElements(gl.TRIANGLES, this.simulation.triangleIndices.length, gl.UNSIGNED_SHORT, 0);
     if (this.pagesVolume && !this.wireframe && this.fillProgress >= 0.999 && this.moldProgress > 0.85) {
       this.volume ??= new PhaserDeformableVolume(gl);
-      const radius = Math.min(this.scene.scale.width, this.scene.scale.height) * 0.34;
+      const radius = this.radius();
       this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
         this.appearanceEnabled, radius * 2 / this.scene.scale.width,
         radius * 2 / this.scene.scale.height, this.moldProgress, sample.compression);

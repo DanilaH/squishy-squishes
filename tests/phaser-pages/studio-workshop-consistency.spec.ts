@@ -69,6 +69,7 @@ for (const device of devices) {
             contactShadowZ: Number.parseInt(getComputedStyle(stage, '::after').zIndex || '0', 10),
             deskZ: Number.parseInt(getComputedStyle(desk).zIndex || '0', 10),
             canvasZ: Number.parseInt(getComputedStyle(canvas).zIndex || '0', 10),
+            radiusRatio: Number.parseFloat(getComputedStyle(canvas).getPropertyValue('--squish-radius-ratio') || '0.34'),
           };
         }, name);
         expect(result.wall, `${device.name}/${name} uses actual wall PNG`).toContain('studio-wall');
@@ -108,8 +109,12 @@ for (const device of devices) {
           expect(Math.abs(result.deskTop - first.deskTop), `${device.name}/${name}: desk never jumps`).toBeLessThan(2);
           expect(Math.abs(result.floorTop - first.floorTop), `${device.name}/${name}: floor never jumps`).toBeLessThan(2);
         }
-        if (first && actualStage === 'squeeze' && device.name === 'desktop-en') {
-          expect(result.canvas.width, 'desktop Squeeze is intentionally hero-sized').toBeGreaterThan(first.canvas.width * 1.15);
+        if (first && actualStage === 'squeeze' && device.name !== 'landscape-ru') {
+          expect(result.canvas.width, `${device.name}: Squeeze gains transparent deformation headroom`).toBeGreaterThan(first.canvas.width * 1.10);
+          expect(result.radiusRatio, `${device.name}: larger playfield compensates radius so the resting hero is not shrunk`).toBeLessThanOrEqual(0.301);
+        }
+        if (first && actualStage !== 'squeeze') {
+          expect(result.radiusRatio, `${device.name}: craft keeps the accepted render scale`).toBeGreaterThanOrEqual(0.339);
         }
         history.push({ stage: name, canvas: result.canvas, stageTop: result.stageTop,
           stageHeight: result.stageHeight, deskTop: result.deskTop, deskBottom: result.deskBottom, floorTop: result.floorTop });
@@ -174,6 +179,13 @@ for (const device of devices) {
       await page.mouse.move(pressed.x + pressed.width / 2 + 26, pressed.y + pressed.height / 2 + 18, { steps: 7 });
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-pressed.png`) });
       await page.mouse.up();
+      if (device.name === 'desktop-en') {
+        await page.mouse.move(pressed.x + pressed.width / 2, pressed.y + pressed.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(pressed.x + pressed.width - 10, pressed.y + pressed.height * .34, { steps: 14 });
+        await page.screenshot({ path: info.outputPath('workshop-desktop-en-stretch-headroom.png') });
+        await page.mouse.up();
+      }
       await page.locator('[data-action="home"]').click();
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
       await expect(page.locator('.sandbox-library-card:visible [data-library-material-profile]').first()).toHaveAttribute('data-library-material-profile', 'holo');

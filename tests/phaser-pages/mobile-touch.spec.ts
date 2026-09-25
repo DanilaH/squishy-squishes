@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { expect, test } from '@playwright/test';
 
 /** Chromium's browser input pipeline, not mouse events or synthetic DOM PointerEvents. */
@@ -39,9 +40,12 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     };
 
     const paint = await bounds();
-    await touch('touchStart', paint.x - paint.radius * 1.25, paint.y);
-    for (let n = 1; n <= 16; n += 1) {
-      await touch('touchMove', paint.x - paint.radius * 1.25 + paint.radius * 1.6 * n / 16, paint.y);
+    // Begin outside the canonical heart but cross the appearance-texture edge
+    // exactly. The first authored UV must exist before the pointer center enters
+    // the silhouette, so a soft brush can feather paint across the body edge.
+    await touch('touchStart', paint.x - paint.radius * 1.20, paint.y);
+    for (let n = 1; n <= 24; n += 1) {
+      await touch('touchMove', paint.x - paint.radius * 1.20 + paint.radius * 1.6 * n / 24, paint.y);
     }
     await touch('touchEnd');
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-paint-strokes', '1');
@@ -78,6 +82,8 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     const saved = JSON.parse(stored.preview ?? 'null');
     expect(saved).toMatchObject({ version: 3, library: [{ shapeId: 'heart', materialId: 'holo' }] });
     expect(saved.library[0].appearance.strokes).toHaveLength(1);
+    const firstPaintBytes = Buffer.from(saved.library[0].appearance.strokes[0].p, 'base64');
+    expect(firstPaintBytes[0], 'Paint authors at the texture edge before the brush center enters the shape').toBeLessThanOrEqual(3);
     expect(saved.library[0].appearance.mixins).toHaveLength(1);
     // V3 serializes decor as a compact document: `s` stores sticker tuples.
     expect(saved.library[0].decor.s).toHaveLength(1);

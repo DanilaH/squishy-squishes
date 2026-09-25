@@ -72,6 +72,7 @@ export class PhaserSquishSurface {
         this.add.existing(squish);
         owner.bridge = new PhaserStudioGestureBridge(this, canvas, {
           pointToUv: (x, y) => squish.pointToUv(x, y),
+          paintPointToUv: (x, y) => squish.pointToAppearanceUv(x, y),
           beginSquish: (pointer) => {
             const claimed = squish.begin(pointer);
             if (claimed) void owner.audio.prime();
@@ -122,6 +123,8 @@ export class PhaserSquishSurface {
   private syncCanvasSize(): void {
     if (this.disposed || !this.scene) return;
     const rect = this.canvas.getBoundingClientRect();
+    const cssRatio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio'));
+    this.squish?.setRenderRadiusRatio(Number.isFinite(cssRatio) ? cssRatio : 0.34);
     const width = Math.max(1, Math.round(rect.width));
     const height = Math.max(1, Math.round(rect.height));
     if (this.game.scale.width !== width || this.game.scale.height !== height) {
@@ -187,6 +190,21 @@ export class PhaserSquishSurface {
     const localX = (x - width / 2) / radius;
     const localY = (height / 2 - y) / radius;
     if (!isPointInsideShape(this.shape, localX, localY)) return null;
+    return { u: Math.min(1, Math.max(0, localX * 0.5 + 0.5)), v: Math.min(1, Math.max(0, localY * 0.5 + 0.5)) };
+  }
+
+  public clientPointToAppearanceUv(clientX: number, clientY: number): AppearancePoint | null {
+    const rect = this.canvas.getBoundingClientRect();
+    const width = this.scene?.scale.width ?? rect.width;
+    const height = this.scene?.scale.height ?? rect.height;
+    const x = (clientX - rect.left) * width / Math.max(1, rect.width);
+    const y = (clientY - rect.top) * height / Math.max(1, rect.height);
+    if (this.squish) return this.squish.pointToAppearanceUv(x, y);
+    const ratio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio'));
+    const radius = Math.max(1, Math.min(width, height) * (Number.isFinite(ratio) ? ratio : 0.34));
+    const localX = (x - width / 2) / radius;
+    const localY = (height / 2 - y) / radius;
+    if (Math.abs(localX) > 1 || Math.abs(localY) > 1) return null;
     return { u: Math.min(1, Math.max(0, localX * 0.5 + 0.5)), v: Math.min(1, Math.max(0, localY * 0.5 + 0.5)) };
   }
 

@@ -13,8 +13,10 @@ export interface StagePointer {
 }
 
 export interface StageGestureHost {
-  /** Return null outside the canonical shape. Never synthesize an edge UV. */
+  /** Return null outside the canonical shape. Used by physical/sticker/mix-in hit tests. */
   pointToUv(x: number, y: number): AppearancePoint | null;
+  /** Paint may author in the full appearance texture so the brush footprint can feather over the silhouette edge. */
+  paintPointToUv(x: number, y: number): AppearancePoint | null;
   beginSquish(pointer: StagePointer): boolean;
   moveSquish(pointer: StagePointer): void;
   endSquish(pointerId: number): void;
@@ -74,9 +76,10 @@ export class StageGestureRouter {
     if (this.blocked || this.owner !== null) return false;
     const point = this.host.pointToUv(pointer.x, pointer.y);
     if (this.stage === 'paint') {
+      const paintPoint = this.host.paintPointToUv(pointer.x, pointer.y);
       this.owner = pointer.id; // IMPORTANT: outside down still belongs to Paint.
-      this.lastUv = point;
-      if (point) this.host.paintStamp(point);
+      this.lastUv = paintPoint;
+      if (paintPoint) this.host.paintStamp(paintPoint);
       return true;
     }
     if (this.stage === 'mixins') {
@@ -113,7 +116,7 @@ export class StageGestureRouter {
   public move(pointer: StagePointer): void {
     if (this.blocked || pointer.id !== this.owner) return;
     if (this.stage === 'paint') {
-      const point = this.host.pointToUv(pointer.x, pointer.y);
+      const point = this.host.paintPointToUv(pointer.x, pointer.y);
       if (!point) {
         if (this.lastUv) this.host.paintEnd(); // Exit splits the stroke, no outside drawing.
         this.lastUv = null;
