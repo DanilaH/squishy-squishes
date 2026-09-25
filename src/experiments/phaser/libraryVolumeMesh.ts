@@ -61,14 +61,24 @@ vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
   float roughness = clamp(uRoughness, 0.0, 1.0);
   float cloudiness = clamp(uCloudiness, 0.0, 1.0);
   float interior = 1.0 - edge;
+  float authoredLuma = dot(base, vec3(0.2126, 0.7152, 0.0722));
+  float authoredMax = max(base.r, max(base.g, base.b));
+  float authoredMin = min(base.r, min(base.g, base.b));
+  float authoredChroma = authoredMax - authoredMin;
+  float lightSurface = smoothstep(0.68, 0.94, authoredLuma);
+  float warmSurface = lightSurface * smoothstep(0.02, 0.22, (base.r + base.g) * 0.5 - base.b);
 
   base *= 1.0 - translucency * (0.020 + interior * 0.040);
   base = mix(base, base * 0.965 + uSheenColor * 0.035, translucency * 0.14);
   float jellyIdentity = translucency * (1.0 - uIridescence) * (1.0 - uPearlescence) * (1.0 - uMetallic);
-  base = mix(base, vec3(0.40, 0.90, 0.84), jellyIdentity * 0.45);
+  float jellyColourProtection = smoothstep(0.10, 0.52, authoredChroma);
+  float jellyTintWeight = jellyIdentity * mix(0.34, 0.20, jellyColourProtection);
+  base = mix(base, vec3(0.36, 0.90, 0.84), jellyTintWeight);
+  float jellyContrast = jellyIdentity * (0.055 + lightSurface * 0.055);
+  base = clamp(vec3(0.5) + (base - vec3(0.5)) * (1.0 + jellyContrast), 0.0, 1.0);
   float gelWave = 0.5 + 0.5 * sin((uv.x * 1.72 + uv.y * 1.08 + uMaterialSeed * 2.31) * 6.2831853);
-  base += uSheenColor * pow(gelWave, 5.0) * interior * translucency * 0.050;
-  base += uRimColor * edge * translucency * 0.23;
+  base += uSheenColor * pow(gelWave, 5.5) * interior * translucency * 0.045;
+  base += uRimColor * edge * translucency * (0.25 + lightSurface * 0.04);
 
   float cloudA = 0.5 + 0.5 * sin((uv.x * 2.2 + uv.y * 1.45 + uMaterialSeed * 1.7) * 6.2831853);
   float cloudB = 0.5 + 0.5 * sin((uv.x * 4.7 - uv.y * 3.1 + uMaterialSeed * 2.9) * 6.2831853);
@@ -82,33 +92,41 @@ vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
     * (1.0 - clamp(uPearlescence, 0.0, 1.0))
     * (1.0 - clamp(uMetallic, 0.0, 1.0));
   vec3 marshmallowTint = vec3(1.0, 0.965, 0.915);
-  base = mix(base, marshmallowTint, marshmallowIdentity * 0.13);
-  base += marshmallowTint * edge * marshmallowIdentity * 0.035;
+  float marshmallowWrap = 1.0 - smoothstep(0.18, 0.82, length(uv - vec2(0.5)) * 1.32);
+  float marshmallowMilk = marshmallowIdentity * (0.24 + marshmallowWrap * 0.08 + lightSurface * 0.035);
+  base = mix(base, mix(base, marshmallowTint, 0.38), marshmallowMilk);
+  base += marshmallowTint * marshmallowIdentity * (0.020 + edge * 0.070 + marshmallowWrap * 0.020);
 
   float iridescence = clamp(uIridescence, 0.0, 1.0);
-  float spectralPhase = uv.x * 0.72 + uv.y * 0.48 + uMaterialSeed * 0.61;
-  vec3 spectral = spectralColor(spectralPhase);
-  float spectralBand = 0.5 + 0.5 * sin((uv.x * 1.35 - uv.y * 0.82 + uMaterialSeed) * 6.2831853);
-  base = mix(base, spectral, iridescence * (0.12 + spectralBand * 0.24 + edge * 0.12));
+  float spectralPhase = uv.x * 0.78 + uv.y * 0.44 + uMaterialSeed * 0.61;
+  float holoSweep = 0.5 + 0.5 * sin((uv.x * 1.58 - uv.y * 0.96 + uMaterialSeed * 0.93) * 6.2831853);
+  float holoFine = 0.5 + 0.5 * sin((uv.x * 3.35 + uv.y * 1.70 + uMaterialSeed * 1.37) * 6.2831853);
+  vec3 spectral = spectralColor(spectralPhase + holoFine * 0.07);
+  base = mix(base, spectral, iridescence * (0.13 + holoSweep * 0.29 + edge * 0.12 + warmSurface * 0.07));
+  base += vec3(0.72, 0.90, 1.0) * iridescence * warmSurface * holoSweep * 0.025;
 
   float pearlescence = clamp(uPearlescence, 0.0, 1.0);
-  float pearlBand = 0.5 + 0.5 * sin((uv.x * 0.78 + uv.y * 0.55 + uMaterialSeed * 0.71) * 6.2831853);
-  float pearlCross = 0.5 + 0.5 * sin((uv.x * 0.44 - uv.y * 0.67 + uMaterialSeed * 0.33) * 6.2831853);
-  vec3 pearlSpectrum = mix(vec3(1.0), spectralColor(spectralPhase * 0.46 + pearlCross * 0.14 + 0.12), 0.52);
-  vec3 pearlSurface = base * (0.90 + pearlBand * 0.035) + pearlSpectrum * (0.14 + pearlBand * 0.16);
-  base = mix(base, pearlSurface, pearlescence * (0.84 + edge * 0.12));
+  float pearlBand = 0.5 + 0.5 * sin((uv.x * 0.64 + uv.y * 0.42 + uMaterialSeed * 0.71) * 6.2831853);
+  float pearlCross = 0.5 + 0.5 * sin((uv.x * 0.38 - uv.y * 0.58 + uMaterialSeed * 0.33) * 6.2831853);
+  vec3 pearlRose = vec3(1.0, 0.78, 0.92);
+  vec3 pearlCyan = vec3(0.69, 0.94, 1.0);
+  vec3 pearlNacre = mix(pearlRose, pearlCyan, pearlBand);
+  vec3 pearlSpectrum = mix(pearlNacre, spectralColor(spectralPhase * 0.42 + pearlCross * 0.12 + 0.10), 0.28);
+  float pearlTint = pearlescence * (0.22 + pearlBand * 0.12 + edge * 0.08 + lightSurface * 0.08);
+  vec3 pearlSurface = mix(base * (0.985 + pearlCross * 0.020), pearlSpectrum, pearlTint);
+  base = mix(base, pearlSurface, pearlescence * (0.72 + edge * 0.12));
 
   float metallic = clamp(uMetallic, 0.0, 1.0);
   float metalBandA = 0.5 + 0.5 * sin((uv.y * 1.22 + uv.x * 0.28 + uMaterialSeed * 0.53) * 6.2831853);
   float metalBandB = 0.5 + 0.5 * sin((uv.y * 2.72 - uv.x * 0.19 + uMaterialSeed * 0.91) * 6.2831853);
   float metalHighlight = pow(metalBandA, mix(14.0, 4.6, roughness));
   float metalDarkBand = pow(1.0 - metalBandB, 3.4);
-  vec3 metalDark = base * mix(0.46, 0.22, metalDarkBand);
-  vec3 metalMid = base * (0.74 + metalBandA * 0.10);
+  vec3 metalDark = base * mix(0.48, 0.27, metalDarkBand);
+  vec3 metalMid = base * (0.76 + metalBandA * 0.10);
   vec3 metalLight = mix(base * 1.10, uSheenColor, 0.24);
-  vec3 metalSurface = mix(metalMid, metalDark, 0.22 + metalDarkBand * 0.50);
-  metalSurface = mix(metalSurface, metalLight, metalHighlight * 0.86);
-  return mix(base, metalSurface, metallic * 0.84);
+  vec3 metalSurface = mix(metalMid, metalDark, 0.20 + metalDarkBand * 0.45);
+  metalSurface = mix(metalSurface, metalLight, metalHighlight * 0.84);
+  return mix(base, metalSurface, metallic * 0.82);
 }
 
 void main() {

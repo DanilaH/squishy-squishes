@@ -896,3 +896,17 @@ This follow-up refines the already accepted freeform maker; it does not reintrod
 - Craft has an explicit exit-to-Library action. Unsaved work requires confirmation; already-saved Squeeze may return directly.
 - Fill is a whole-body paint operation, not Photoshop flood-fill. It stays an ordinary replayable Appearance V1 stroke so V3/rollback compatibility remains intact. The current Fill replaces any prior Fill, is replayed beneath ordinary paint/eraser strokes, and remains the latest action in the stored stroke array so Undo removes it correctly.
 - Localized draggable ears/appendage physics remain deferred expressive polish.
+
+
+### Material differentiation follow-up — 25 September 2026
+
+Owner review with yellow and multi-colour paint established the material hierarchy for the next polish pass:
+
+- **Soft** remains the neutral baseline and should not be chased by every material change.
+- **Marshmallow** must read as opaque, powdery, milky and light-wrapped rather than merely a paler Soft.
+- **Pearl** must read as smooth nacre with slow rose/cyan angle bands; it must not collapse into Marshmallow or become full-spectrum Holo.
+- **Jelly** remains the most translucent material, but saturated authored paint must retain its hue/chroma instead of being washed into aqua.
+- **Holo** gets a more directional spectral sweep and slightly stronger cool response on light/warm paint while preserving authored stripes.
+- **Metallic** keeps its successful colour-preserving reflective identity; only the darkest reflected bands may be softened modestly so custom paint remains legible.
+- Light-colour compensation is evaluated per authored pixel luminance/chroma, not as a palette-specific special case, so mixed/striped paint remains coherent.
+- Finish is also a tactile material-preview surface: the live toy may be dragged/released there using the same simulation/input owner as Squeeze. Material buttons and Keep It remain normal UI controls; no second physics/input path is introduced.
