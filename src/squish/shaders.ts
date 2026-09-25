@@ -204,8 +204,8 @@ void main() {
   vec3 pearlCyan = vec3(0.69, 0.94, 1.0);
   vec3 pearlNacre = mix(pearlRose, pearlCyan, pearlBand);
   vec3 pearlSpectrum = mix(pearlNacre, spectralColor(spectralPhase * 0.42 + pearlCross * 0.12 + 0.10), 0.28);
-  float pearlTint = pearlescence * (0.22 + pearlBand * 0.12 + edge * 0.08 + lightSurface * 0.08);
-  vec3 pearlSurface = mix(base * (0.985 + pearlCross * 0.020), pearlSpectrum, pearlTint);
+  float pearlTintWeight = pearlescence * (0.22 + pearlBand * 0.12 + edge * 0.08 + lightSurface * 0.08);
+  vec3 pearlSurface = mix(base * (0.985 + pearlCross * 0.020), pearlSpectrum, pearlTintWeight);
   base = mix(base, pearlSurface, pearlescence * (0.72 + edge * 0.12));
 
   float metallic = clamp(uMetallic, 0.0, 1.0);
