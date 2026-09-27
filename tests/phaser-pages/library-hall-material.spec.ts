@@ -90,8 +90,10 @@ test('real saved materials have comparable Studio and Library captures', async (
   expect(Object.keys(stats).sort()).toEqual(['chrome', 'holo', 'jelly', 'marshmallow', 'pearl', 'soft']);
   for (const entry of materialStats) expect(entry.count, `${entry.material} has a visible material body`).toBeGreaterThan(2_000);
   expect(stats.jelly!.alpha, 'Jelly keeps its translucent body in Hall').toBeLessThan(stats.marshmallow!.alpha - 4);
+  expect(stats.marshmallow!.lumaStd, 'Marshmallow stays softer/matter than Soft').toBeLessThan(stats.soft!.lumaStd - 2);
+  expect(stats.pearl!.chroma, 'Pearl keeps a visible nacre colour response beyond Marshmallow').toBeGreaterThan(stats.marshmallow!.chroma + 2);
+  expect(stats.holo!.chroma, 'Holo remains more spectral than Pearl').toBeGreaterThan(stats.pearl!.chroma + 8);
   expect(stats.chrome!.lumaStd, 'Metallic has a materially stronger reflection range than Marshmallow').toBeGreaterThan(stats.marshmallow!.lumaStd + 4);
-  expect(stats.holo!.chroma, 'Holo keeps spectral colour response in Hall').toBeGreaterThan(stats.marshmallow!.chroma + 2);
   await writeFile(info.outputPath('library-hall-material-stats.json'), JSON.stringify(materialStats, null, 2));
   expect(await visibleProfiles()).toEqual(['soft', 'jelly']);
   await page.screenshot({ path: info.outputPath('library-hall-material-phone-390.png'), animations: 'disabled' });

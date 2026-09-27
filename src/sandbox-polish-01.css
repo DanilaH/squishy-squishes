@@ -24,6 +24,10 @@
 .sandbox-shell[data-stage="finish"] .sandbox-controls {
   position: relative;
   z-index: 6;
+  pointer-events: none;
+}
+.sandbox-shell[data-stage="finish"] .sandbox-controls button {
+  pointer-events: auto;
 }
 
 /* Give Jelly a saturated gel cue in the selector too; the old pale orb reinforced the
