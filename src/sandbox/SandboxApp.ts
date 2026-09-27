@@ -255,7 +255,11 @@ const DECOR_LABELS: Readonly<Record<SandboxLanguage, DecorLabels>> = {
   },
 };
 
-const PAINT_COLORS = [0xd58cff, 0x63e6e2, 0xff79a8, 0x92df83, 0xffa46f, 0xffdc70] as const;
+const PAINT_COLORS = [
+  0xd58cff, 0x63e6e2, 0xff79a8, 0x92df83, 0xffa46f, 0xffdc70,
+  0xf8f1df, 0xffb6c8, 0x8fd3ff, 0xb7f2cf, 0xb9a0ff, 0xff6f61,
+  0x48bfe3, 0xb8e34a, 0xd94f9d, 0x2f8f83, 0x6d3a8a, 0x9a6b52,
+] as const;
 const BRUSH_SIZES = [18, 34, 56] as const;
 const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti'];
 const MIX_DISTANCE_FOR_COMPLETE_PX = 1_650;
@@ -558,7 +562,7 @@ export class SandboxApp {
           <div class="sandbox-panel" data-panel="shape">${shapes}<button class="sandbox-primary sandbox-panel__wide" type="button" data-action="shape-continue">${this.copy.next}</button></div>
 
           <div class="sandbox-panel" data-panel="paint">
-            <div class="sandbox-tool-row">${paintColors}</div>
+            <div class="sandbox-palette-grid">${paintColors}</div>
             <div class="sandbox-tool-row sandbox-paint-tools">
               <button type="button" data-paint-tool="paint" aria-pressed="true">${this.copy.brush}</button>
               <button type="button" data-paint-tool="erase" aria-pressed="false">${this.copy.eraser}</button>

@@ -154,8 +154,30 @@
 .sandbox-tool-row button { min-width: 42px; min-height: 42px; padding: 0 10px; }
 .sandbox-tool-row--actions { margin-top: 1px; }
 .sandbox-tool-row--actions .sandbox-primary { margin-left: auto; min-width: 118px; }
-.sandbox-swatch { --swatch: #aaa; width: 43px; min-width: 43px !important; padding: 0 !important; background: var(--swatch) !important; border: 3px solid rgba(255,255,255,.88) !important; box-shadow: 0 0 0 1px rgba(65,45,82,.12) !important; border-radius: 50% !important; }
+.sandbox-palette-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(9, 32px);
+  justify-content: center;
+  gap: 6px;
+}
+.sandbox-swatch {
+  --swatch: #aaa;
+  width: 32px;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  height: 32px;
+  padding: 0 !important;
+  background: var(--swatch) !important;
+  border: 3px solid rgba(255,255,255,.88) !important;
+  box-shadow: 0 0 0 1px rgba(65,45,82,.12) !important;
+  border-radius: 50% !important;
+}
 .sandbox-swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px rgba(164,94,229,.42) !important; }
+@media (max-width: 520px) {
+  .sandbox-palette-grid { grid-template-columns: repeat(6, 30px); gap: 5px 7px; }
+  .sandbox-swatch { width: 30px; min-width: 30px !important; min-height: 30px !important; height: 30px; }
+}
 
 .sandbox-mixin-grid, .sandbox-material-grid { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; }
 .sandbox-mixin { min-height: 64px !important; display: grid; place-items: center; align-content: center; gap: 2px; }

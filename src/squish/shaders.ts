@@ -158,8 +158,8 @@ void main() {
     * (1.0 - clamp(uPearlescence, 0.0, 1.0))
     * (1.0 - clamp(uMetallic, 0.0, 1.0));
   float jellyColourProtection = smoothstep(0.10, 0.52, authoredChroma);
-  float jellyTintWeight = jellyIdentity * mix(0.34, 0.20, jellyColourProtection);
-  base = mix(base, vec3(0.36, 0.90, 0.84), jellyTintWeight);
+  float jellyTintWeight = jellyIdentity * mix(0.24, 0.12, jellyColourProtection);
+  base = mix(base, vec3(0.34, 0.88, 0.84), jellyTintWeight);
   float jellyContrast = jellyIdentity * (0.055 + lightSurface * 0.055);
   base = clamp(vec3(0.5) + (base - vec3(0.5)) * (1.0 + jellyContrast), 0.0, 1.0);
   float gelWave = 0.5 + 0.5 * sin(
@@ -184,9 +184,11 @@ void main() {
     * (1.0 - clamp(uMetallic, 0.0, 1.0));
   vec3 marshmallowTint = vec3(1.0, 0.965, 0.915);
   float marshmallowWrap = 1.0 - smoothstep(0.18, 0.82, length(vUv - vec2(0.5)) * 1.32);
-  float marshmallowMilk = marshmallowIdentity * (0.24 + marshmallowWrap * 0.08 + lightSurface * 0.035);
-  base = mix(base, mix(base, marshmallowTint, 0.38), marshmallowMilk);
-  base += marshmallowTint * marshmallowIdentity * (0.020 + edge * 0.070 + marshmallowWrap * 0.020);
+  float marshmallowLuma = dot(base, vec3(0.2126, 0.7152, 0.0722));
+  vec3 marshmallowPowder = mix(vec3(marshmallowLuma), marshmallowTint, 0.34);
+  float marshmallowPowderWeight = marshmallowIdentity * (0.30 + marshmallowWrap * 0.15 + lightSurface * 0.05);
+  base = mix(base, marshmallowPowder, clamp(marshmallowPowderWeight, 0.0, 0.48));
+  base += marshmallowTint * marshmallowIdentity * (0.030 + edge * 0.085 + marshmallowWrap * 0.025);
 
   float iridescence = clamp(uIridescence, 0.0, 1.0);
   float spectralPhase = vUv.x * 0.78 + vUv.y * 0.44 + uMaterialSeed * 0.61 + uCompression * 0.18;
@@ -213,7 +215,12 @@ void main() {
   vec3 pearlSheenColor = mix(pearlRose, pearlCyan, 0.5 + 0.5 * sin(
     (vUv.x * 0.48 + vUv.y * 0.36 + uMaterialSeed * 0.57) * 6.2831853
   ));
-  base += pearlSheenColor * pearlescence * pearlSheen * (0.105 + edge * 0.020);
+  float nacreSweep = 0.5 + 0.5 * sin(
+    (vUv.x * 0.72 + vUv.y * 0.22 + uMaterialSeed * 0.67 + uCompression * 0.03) * 6.2831853
+  );
+  vec3 nacreBand = mix(pearlRose, pearlCyan, nacreSweep);
+  base = mix(base, mix(base, nacreBand, 0.56), pearlescence * (0.20 + edge * 0.06));
+  base += pearlSheenColor * pearlescence * pearlSheen * (0.135 + edge * 0.024);
 
   float metallic = clamp(uMetallic, 0.0, 1.0);
   // Metallic keeps the authored hue. Two reflected bands provide the material
@@ -275,7 +282,7 @@ void main() {
   meniscusBand *= 1.0 - step(0.995, fillProgress);
   base += uSheenColor * meniscusBand * 0.12;
 
-  float bodyAlpha = mix(0.985, 0.76 + edge * 0.15, translucency);
+  float bodyAlpha = mix(0.985, 0.60 + edge * 0.30, translucency);
   outColor = vec4(base, bodyAlpha * shapeAlpha);
 }
 `;
