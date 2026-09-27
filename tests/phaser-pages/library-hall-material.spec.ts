@@ -65,6 +65,7 @@ test('real saved materials have comparable Studio and Library captures', async (
       if (!context) throw new Error('No thumbnail context');
       const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
       let count = 0, alpha = 0, luma = 0, luma2 = 0, chroma = 0;
+      let rg = 0, rg2 = 0, gb = 0, gb2 = 0;
       for (let y = Math.floor(canvas.height * .22); y < Math.ceil(canvas.height * .78); y += 2) {
         for (let x = Math.floor(canvas.width * .22); x < Math.ceil(canvas.width * .78); x += 2) {
           const offset = (y * canvas.width + x) * 4;
@@ -72,29 +73,39 @@ test('real saved materials have comparable Studio and Library captures', async (
           if (a < 48) continue;
           const r = pixels[offset] ?? 0, g = pixels[offset + 1] ?? 0, b = pixels[offset + 2] ?? 0;
           const y709 = .2126 * r + .7152 * g + .0722 * b;
+          const rgAxis = r - g, gbAxis = g - b;
           count += 1; alpha += a; luma += y709; luma2 += y709 * y709;
           chroma += Math.max(r, g, b) - Math.min(r, g, b);
+          rg += rgAxis; rg2 += rgAxis * rgAxis; gb += gbAxis; gb2 += gbAxis * gbAxis;
         }
       }
-      const mean = luma / Math.max(1, count);
+      const samples = Math.max(1, count);
+      const mean = luma / samples;
+      const rgMean = rg / samples, gbMean = gb / samples;
       return {
         material: canvas.getAttribute('data-library-material-profile') ?? '',
         count,
-        alpha: alpha / Math.max(1, count),
-        lumaStd: Math.sqrt(Math.max(0, luma2 / Math.max(1, count) - mean * mean)),
-        chroma: chroma / Math.max(1, count),
+        alpha: alpha / samples,
+        lumaStd: Math.sqrt(Math.max(0, luma2 / samples - mean * mean)),
+        chroma: chroma / samples,
+        // Spatial chromatic-axis variance measures nacre/holographic hue movement
+        // without rewarding a uniformly saturated base colour.
+        hueStd: Math.sqrt(
+          Math.max(0, rg2 / samples - rgMean * rgMean)
+          + Math.max(0, gb2 / samples - gbMean * gbMean)
+        ),
       };
     }),
   );
   const stats = Object.fromEntries(materialStats.map((entry) => [entry.material, entry]));
   expect(Object.keys(stats).sort()).toEqual(['chrome', 'holo', 'jelly', 'marshmallow', 'pearl', 'soft']);
   for (const entry of materialStats) expect(entry.count, `${entry.material} has a visible material body`).toBeGreaterThan(2_000);
+  await writeFile(info.outputPath('library-hall-material-stats.json'), JSON.stringify(materialStats, null, 2));
   expect(stats.jelly!.alpha, 'Jelly keeps its translucent body in Hall').toBeLessThan(stats.marshmallow!.alpha - 4);
   expect(stats.marshmallow!.lumaStd, 'Marshmallow stays softer/matter than Soft').toBeLessThan(stats.soft!.lumaStd - 2);
-  expect(stats.pearl!.chroma, 'Pearl keeps a visible nacre colour response beyond Marshmallow').toBeGreaterThan(stats.marshmallow!.chroma + 2);
-  expect(stats.holo!.chroma, 'Holo remains more spectral than Pearl').toBeGreaterThan(stats.pearl!.chroma + 8);
+  expect(stats.pearl!.hueStd, 'Pearl keeps spatial nacre hue movement beyond Marshmallow').toBeGreaterThan(stats.marshmallow!.hueStd + 2);
+  expect(stats.holo!.hueStd, 'Holo remains substantially more spectral than Pearl').toBeGreaterThan(stats.pearl!.hueStd + 8);
   expect(stats.chrome!.lumaStd, 'Metallic has a materially stronger reflection range than Marshmallow').toBeGreaterThan(stats.marshmallow!.lumaStd + 4);
-  await writeFile(info.outputPath('library-hall-material-stats.json'), JSON.stringify(materialStats, null, 2));
   expect(await visibleProfiles()).toEqual(['soft', 'jelly']);
   await page.screenshot({ path: info.outputPath('library-hall-material-phone-390.png'), animations: 'disabled' });
   await captureThumbnail('soft');

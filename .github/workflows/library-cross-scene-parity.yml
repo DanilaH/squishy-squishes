@@ -13,6 +13,7 @@ on:
       - 'src/experiments/phaser/libraryVolumeProduction.ts'
       - 'src/squish/shaders.ts'
       - 'tests/phaser-pages/library-hall-cross-scene-parity.spec.ts'
+      - 'tests/phaser-pages/library-hall-material.spec.ts'
       - '.github/workflows/library-cross-scene-parity.yml'
   workflow_dispatch:
 permissions:
