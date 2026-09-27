@@ -3,12 +3,18 @@ import type { SquishMaterialStyle } from '../../squish/SquishSurface';
 import type { SquishSimulation } from '../../squish/SquishSimulation';
 import { fragmentShaderSource, vertexShaderSource } from '../../squish/shaders';
 
-/** Pages adds cap/side geometry on top of the shared material shader. */
-const BODY_ALPHA_LINE = '  float bodyAlpha = mix(0.985, 0.76 + edge * 0.15, translucency);';
-if (fragmentShaderSource.split(BODY_ALPHA_LINE).length !== 2) {
-  throw new Error('Pages volume needs the reviewed Studio fragment shader.');
-}
-export const pagesVolumeFrontShader = fragmentShaderSource.replace('  base *= 1.0 - edge * 0.26;', '  base *= 1.0 - edge * 0.17;').replace(BODY_ALPHA_LINE, `
+/** Pages adds cap/side geometry on top of the shared material shader.
+ * Build it lazily: Yandex imports the shared candidate but never enables the
+ * Pages volume profile, so a Pages-only review assertion must not abort Yandex
+ * bootstrap when the shared material shader evolves. */
+const BODY_ALPHA_LINE = '  float bodyAlpha = mix(0.985, 0.60 + edge * 0.30, translucency);';
+export const getPagesVolumeFrontShader = (): string => {
+  if (fragmentShaderSource.split(BODY_ALPHA_LINE).length !== 2) {
+    throw new Error('Pages volume needs the reviewed Studio fragment shader.');
+  }
+  return fragmentShaderSource
+    .replace('  base *= 1.0 - edge * 0.26;', '  base *= 1.0 - edge * 0.17;')
+    .replace(BODY_ALPHA_LINE, `
   // Smooth radial cap normals avoid the concave paw/heart wedge artifacts.
   // UVs and 2D deformation still belong to the one canonical simulation.
   float capSlope = smoothstep(0.10, 0.48, shapeField);
@@ -16,6 +22,7 @@ export const pagesVolumeFrontShader = fragmentShaderSource.replace('  base *= 1.
   float capLight = max(dot(capNormal, normalize(vec3(-0.42, 0.51, 0.75))), 0.0);
   base *= mix(1.0, 0.80 + 0.23 * capLight, 0.64);
   ${BODY_ALPHA_LINE}`);
+};
 
 const SIDE_FRAGMENT = `#version 300 es
 precision highp float;

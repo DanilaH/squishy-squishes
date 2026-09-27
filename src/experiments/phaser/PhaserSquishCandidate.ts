@@ -13,7 +13,7 @@ import { renderSurfaceDecor, type DecorDocumentV1 } from '../../sandbox/decor';
 import type { SquishFillingStyle, SquishMaterialStyle } from '../../squish/SquishSurface';
 import { SquishSimulation, type SquishSimulationSample } from '../../squish/SquishSimulation';
 import { fragmentShaderSource, vertexShaderSource } from '../../squish/shaders';
-import { PhaserDeformableVolume, pagesVolumeFrontShader } from './PhaserDeformableVolume';
+import { getPagesVolumeFrontShader, PhaserDeformableVolume } from './PhaserDeformableVolume';
 
 interface GpuResources {
   readonly program: WebGLProgram;
@@ -276,7 +276,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private createGpu(): GpuResources {
     const gl = this.gl;
     const vertexShader = compile(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = compile(gl, gl.FRAGMENT_SHADER, this.pagesVolume ? pagesVolumeFrontShader : fragmentShaderSource);
+    const fragmentShader = compile(gl, gl.FRAGMENT_SHADER, this.pagesVolume ? getPagesVolumeFrontShader() : fragmentShaderSource);
     const program = gl.createProgram();
     if (!program) throw new Error('Cannot allocate Phaser candidate program');
     gl.attachShader(program, vertexShader);
