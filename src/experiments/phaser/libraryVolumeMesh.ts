@@ -73,9 +73,9 @@ vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
   base = mix(base, base * 0.965 + uSheenColor * 0.035, translucency * 0.14);
   float jellyIdentity = translucency * (1.0 - uIridescence) * (1.0 - uPearlescence) * (1.0 - uMetallic);
   float jellyColourProtection = smoothstep(0.10, 0.52, authoredChroma);
-  float jellyTintWeight = jellyIdentity * mix(0.24, 0.12, jellyColourProtection);
+  float jellyTintWeight = jellyIdentity * mix(0.18, 0.07, jellyColourProtection);
   base = mix(base, vec3(0.34, 0.88, 0.84), jellyTintWeight);
-  float jellyContrast = jellyIdentity * (0.055 + lightSurface * 0.055);
+  float jellyContrast = jellyIdentity * (0.075 + lightSurface * 0.070);
   base = clamp(vec3(0.5) + (base - vec3(0.5)) * (1.0 + jellyContrast), 0.0, 1.0);
   float gelWave = 0.5 + 0.5 * sin((uv.x * 1.72 + uv.y * 1.08 + uMaterialSeed * 2.31) * 6.2831853);
   base += uSheenColor * pow(gelWave, 5.5) * interior * translucency * 0.045;
@@ -92,12 +92,12 @@ vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
     * (1.0 - clamp(uIridescence, 0.0, 1.0))
     * (1.0 - clamp(uPearlescence, 0.0, 1.0))
     * (1.0 - clamp(uMetallic, 0.0, 1.0));
-  vec3 marshmallowTint = vec3(1.0, 0.965, 0.915);
+  vec3 marshmallowTint = vec3(1.0, 0.925, 0.82);
   float marshmallowWrap = 1.0 - smoothstep(0.18, 0.82, length(uv - vec2(0.5)) * 1.32);
   float marshmallowLuma = dot(base, vec3(0.2126, 0.7152, 0.0722));
-  vec3 marshmallowPowder = mix(vec3(marshmallowLuma), marshmallowTint, 0.34);
-  float marshmallowPowderWeight = marshmallowIdentity * (0.30 + marshmallowWrap * 0.15 + lightSurface * 0.05);
-  base = mix(base, marshmallowPowder, clamp(marshmallowPowderWeight, 0.0, 0.48));
+  vec3 marshmallowPowder = mix(vec3(marshmallowLuma), marshmallowTint, 0.50);
+  float marshmallowPowderWeight = marshmallowIdentity * (0.34 + marshmallowWrap * 0.18 + lightSurface * 0.06);
+  base = mix(base, marshmallowPowder, clamp(marshmallowPowderWeight, 0.0, 0.56));
   base += marshmallowTint * marshmallowIdentity * (0.030 + edge * 0.085 + marshmallowWrap * 0.025);
 
   float iridescence = clamp(uIridescence, 0.0, 1.0);
