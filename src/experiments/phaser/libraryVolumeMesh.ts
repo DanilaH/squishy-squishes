@@ -17,9 +17,10 @@ out vec3 vNormal;
 out vec2 vUv;
 out float vFront;
 void main() {
-  // Subtle three-quarter angle shows thickness without distorting saved art.
-  const float yaw = -0.12;
-  const float pitch = -0.07;
+  // Saved paint/decor/accessories are authored in Studio's front frame.
+  // Keep Hall front-facing; curvature/normals provide the visible thickness.
+  const float yaw = 0.0;
+  const float pitch = 0.0;
   float cy = cos(yaw), sy = sin(yaw), cp = cos(pitch), sp = sin(pitch);
   vec3 p = vec3(aPosition.x * cy + aPosition.z * sy,
                 aPosition.y, -aPosition.x * sy + aPosition.z * cy);
@@ -394,8 +395,8 @@ class VolumeMeshRenderer {
       if (accessoryContext) {
         accessoryContext.setTransform(2, 0, 0, 2, 0, 0);
         drawAccessoryGraphic(accessoryContext, toy.decor.accessory, 180, 120, toy.shapeId);
-        // Front projects slightly up and left; the bow is behind the body.
-        context.drawImage(accessory, (x - 56) * 2 - 10, (y - 67.5) * 2 - 7, 224, 150);
+        // Hall is front-facing, so accessory art uses the same authored frame.
+        context.drawImage(accessory, (x - 56) * 2, (y - 67.5) * 2, 224, 150);
       }
     }
     context.drawImage(this.canvas, 0, 0);

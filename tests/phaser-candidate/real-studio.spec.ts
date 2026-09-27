@@ -100,7 +100,7 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
   await expect(page.locator('[data-sandbox-canvas]')).toHaveCount(0);
 });
 
-test('M4 real studio: activity blockers cancel gesture and Finish leaves canvas click-through', async ({ page }) => {
+test('M4 real studio: activity blockers cancel gesture and Finish stays tactile under UI', async ({ page }) => {
   await page.setViewportSize({ width: 430, height: 840 });
   await open(page);
   await page.locator('[data-action="shape-continue"]').click();
@@ -124,7 +124,14 @@ test('M4 real studio: activity blockers cancel gesture and Finish leaves canvas 
   await page.locator('[data-action="mix-continue"]').click();
   await page.locator('[data-action="decor-continue"]').click();
   await enter(page, 'finish');
-  await expect(page.locator('[data-sandbox-canvas]')).toHaveCSS('pointer-events', 'none');
+  await expect(page.locator('[data-sandbox-canvas]')).toHaveCSS('pointer-events', 'auto');
   await expect(page.locator('[data-action="save"]')).toBeEnabled();
+  const finish = await canvasCenter(page);
+  await page.mouse.move(finish.x, finish.y);
+  await page.mouse.down();
+  await page.mouse.move(Math.min(410, finish.x + 120), finish.y - 35, { steps: 10 });
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'true');
+  await page.mouse.up();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'false');
   await page.evaluate(() => window.__squishyRealStudio!.dispose());
 });

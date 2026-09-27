@@ -98,6 +98,7 @@ test('all six contours and all five existing accessory IDs render distinct authe
     for (const shape of SHAPES) {
       const thumbnail = page.locator(`[data-library-thumbnail="art-${shape}-${accessory}"]`);
       await expect(thumbnail).toHaveAttribute('data-library-renderer', 'volume-mesh');
+      await expect(thumbnail).toHaveAttribute('data-library-projection', 'front');
       const pixels = await thumbnail.evaluate((node) => {
         const image = node as HTMLCanvasElement;
         const context = image.getContext('2d');

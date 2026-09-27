@@ -299,8 +299,8 @@
    are deformation headroom, not a smaller hero. Keep short landscape unchanged. */
 @media (min-height: 521px) {
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-canvas {
-    --squish-radius-ratio: .30;
-    width: min(93vw, 488px, 113cqh);
+    --squish-radius-ratio: .28;
+    width: min(100vw, 520px);
     max-width: none;
     max-height: none;
   }

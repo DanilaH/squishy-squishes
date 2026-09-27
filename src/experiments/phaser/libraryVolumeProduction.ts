@@ -24,6 +24,7 @@ export const renderPagesVolumeThumbnail = (
   }
   destination.drawImage(volume, 0, 0, 256, 256);
   destination.canvas.dataset.libraryRenderer = 'volume-mesh';
+  destination.canvas.dataset.libraryProjection = 'front';
   return true;
 };
 

@@ -57,7 +57,8 @@ test.describe('M4 bridge: browser-emulated touch', () => {
     await expect.poll(() => page.evaluate(() => window.__squishyStageInput!.snapshot().stickerCount)).toBe(1);
     expect((await page.evaluate(() => window.__squishyStageInput!.snapshot())).squeezes).toBe(0);
     await page.locator('[data-gesture-stage="finish"]').tap();
-    expect(await page.locator('#gesture-stage canvas').evaluate((node) => (node as HTMLCanvasElement).style.pointerEvents)).toBe('none');
+    expect(await page.locator('#gesture-stage canvas').evaluate((node) => (node as HTMLCanvasElement).style.pointerEvents)).toBe('auto');
+    // A simple tap may preview pressure but must not fabricate a completed squeeze.
     await page.touchscreen.tap(x, y);
     expect((await page.evaluate(() => window.__squishyStageInput!.snapshot())).squeezes).toBe(0);
   });

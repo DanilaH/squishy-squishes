@@ -11,22 +11,18 @@
   height: min(76vw, 390px);
 }
 
-/* Only Finish needs pointer passthrough where the inactive preview overlaps material
-   controls. Paint, Mix-ins and Decor deliberately handle pointer input on a canvas
-   which SquishSurface marks is-disabled (it only disables squeeze physics). */
-.sandbox-shell[data-stage="finish"] .sandbox-canvas.is-disabled {
-  pointer-events: none;
+/* Finish/Squeeze use a large transparent capture surface. The viewport is the
+   drag domain after a valid body grab, but real UI must always win the initial hit. */
+.sandbox-shell:is([data-stage="finish"], [data-stage="squeeze"]) .sandbox-topbar {
+  position: relative;
+  z-index: 8;
 }
-
-/* Finish is now a live tactile preview. Where the square canvas visually overlaps
-   the material tray, UI controls must win hit-testing while the exposed tabletop
-   portion remains draggable. */
-.sandbox-shell[data-stage="finish"] .sandbox-controls {
+.sandbox-shell:is([data-stage="finish"], [data-stage="squeeze"]) .sandbox-controls {
   position: relative;
   z-index: 6;
   pointer-events: none;
 }
-.sandbox-shell[data-stage="finish"] .sandbox-controls button {
+.sandbox-shell:is([data-stage="finish"], [data-stage="squeeze"]) .sandbox-controls button {
   pointer-events: auto;
 }
 
