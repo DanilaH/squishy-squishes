@@ -158,7 +158,7 @@ void main() {
     * (1.0 - clamp(uPearlescence, 0.0, 1.0))
     * (1.0 - clamp(uMetallic, 0.0, 1.0));
   float jellyColourProtection = smoothstep(0.10, 0.52, authoredChroma);
-  float jellyTintWeight = jellyIdentity * mix(0.22, 0.09, jellyColourProtection);
+  float jellyTintWeight = jellyIdentity * mix(0.34, 0.10, jellyColourProtection);
   base = mix(base, vec3(0.34, 0.88, 0.84), jellyTintWeight);
   float jellyContrast = jellyIdentity * (0.075 + lightSurface * 0.070);
   base = clamp(vec3(0.5) + (base - vec3(0.5)) * (1.0 + jellyContrast), 0.0, 1.0);
