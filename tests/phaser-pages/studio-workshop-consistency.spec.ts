@@ -95,7 +95,8 @@ for (const device of devices) {
         }
         if (device.name !== 'landscape-ru') expect(result.deskVisible, `${device.name}/${name} has a visible desk`).toBe(true);
         const first = history[0];
-        if (first && actualStage !== 'squeeze') {
+        const tactileStage = actualStage === 'finish' || actualStage === 'squeeze';
+        if (first && !tactileStage) {
           for (const axis of ['x', 'y', 'width', 'height'] as const) {
             expect(Math.abs(result.canvas[axis] - first.canvas[axis]), `${device.name}/${name}: ${axis} never jumps`).toBeLessThan(2);
           }
@@ -104,11 +105,11 @@ for (const device of devices) {
           expect(Math.abs(result.deskTop - first.deskTop), `${device.name}/${name}: desk never jumps`).toBeLessThan(2);
           expect(Math.abs(result.floorTop - first.floorTop), `${device.name}/${name}: floor never jumps`).toBeLessThan(2);
         }
-        if (first && actualStage === 'squeeze' && device.name !== 'landscape-ru') {
-          expect(result.canvas.width, `${device.name}: Squeeze gains transparent deformation headroom`).toBeGreaterThan(first.canvas.width * 1.10);
-          expect(result.radiusRatio, `${device.name}: larger playfield compensates radius so the resting hero is not shrunk`).toBeLessThanOrEqual(0.301);
+        if (first && tactileStage && device.name !== 'landscape-ru') {
+          expect(result.canvas.width, `${device.name}: tactile stage gains transparent deformation headroom`).toBeGreaterThan(first.canvas.width * 1.10);
+          expect(result.radiusRatio, `${device.name}: headroom compensates radius so the resting hero is not shrunk`).toBeLessThanOrEqual(0.301);
         }
-        if (first && actualStage !== 'squeeze') {
+        if (first && !tactileStage) {
           expect(result.radiusRatio, `${device.name}: craft keeps the accepted render scale`).toBeGreaterThanOrEqual(0.339);
         }
         history.push({ stage: name, canvas: result.canvas, stageTop: result.stageTop,
@@ -150,13 +151,17 @@ for (const device of devices) {
       if (!finishSurface) throw new Error('Missing Finish squish surface');
       await page.mouse.move(finishSurface.x + finishSurface.width / 2, finishSurface.y + finishSurface.height / 2);
       await page.mouse.down();
-      await page.mouse.move(
-        finishSurface.x + finishSurface.width / 2 + Math.min(42, finishSurface.width * .12),
-        finishSurface.y + finishSurface.height / 2 + Math.min(24, finishSurface.height * .08),
-        { steps: 8 },
-      );
+      const farX = device.name === 'desktop-en'
+        ? device.width - 18
+        : Math.min(device.width - 12, finishSurface.x + finishSurface.width + 90);
+      const farY = Math.max(24, finishSurface.y + finishSurface.height * .22);
+      await page.mouse.move(farX, farY, { steps: 18 });
+      await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-squish-max-displacement') ?? 0))
+        .toBeGreaterThan(0.55);
+      await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'true');
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-finish-pulled.png`), animations: 'disabled' });
       await page.mouse.up();
+      await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'false');
       const materialLabels = await page.locator('button[data-material] > span:last-child').evaluateAll((labels) =>
         labels.map((label) => {
           const range = document.createRange();

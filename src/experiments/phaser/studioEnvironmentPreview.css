@@ -298,7 +298,7 @@
    ratio preserves approximately the accepted resting toy size. The extra pixels
    are deformation headroom, not a smaller hero. Keep short landscape unchanged. */
 @media (min-height: 521px) {
-  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-canvas {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-canvas {
     --squish-radius-ratio: .30;
     width: min(93vw, 488px, 113cqh);
     max-width: none;
@@ -310,17 +310,17 @@
    playfield still clipped extreme pulls, so enlarge the transparent field again
    and compensate with the radius ratio to keep the resting body size stable. */
 @media (min-width: 901px) and (min-height: 640px) and (orientation: landscape) {
-  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-canvas {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-canvas {
     --squish-radius-ratio: .27;
     width: min(63vw, 780px, 199cqh);
     max-width: none;
     max-height: none;
   }
-  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-glow {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-glow {
     width: min(54vw, 660px, 170cqh);
     max-height: none;
   }
-  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='squeeze'] .sandbox-stage::after {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-stage::after {
     top: calc(50% + min(14.5vw, 180px, 45.82cqh));
     width: min(24vw, 230px, 65cqh);
     height: min(3.1vw, 22px, 7cqh);

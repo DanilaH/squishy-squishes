@@ -74,13 +74,13 @@ export class PhaserSquishSurface {
           pointToUv: (x, y) => squish.pointToUv(x, y),
           paintPointToUv: (x, y) => squish.pointToAppearanceUv(x, y),
           beginSquish: (pointer) => {
-            const claimed = squish.begin(pointer);
+            const claimed = squish.beginAt(pointer.id, pointer.x, pointer.y);
             if (claimed) void owner.audio.prime();
             return claimed;
           },
-          moveSquish: (pointer) => squish.move(pointer),
-          endSquish: (pointer) => {
-            squish.end(pointer);
+          moveSquish: (pointer) => squish.moveAt(pointer.id, pointer.x, pointer.y),
+          endSquish: (pointerId) => {
+            squish.endById(pointerId);
             owner.audio.releaseTactile(squish.snapshot().releaseEnergy);
           },
           cancelSquish: () => { squish.cancel(); owner.audio.releaseTactile(); },

@@ -195,25 +195,29 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.appearanceRevision += 1;
   }
 
-  public begin(pointer: Phaser.Input.Pointer): boolean {
+  public beginAt(pointerId: number, canvasX: number, canvasY: number): boolean {
     if (this.disposed || this.activePointer !== null) return false;
-    const point = this.localPoint(pointer.x, pointer.y);
-    if (!this.simulation.begin(pointer.id, point.x, point.y)) return false;
-    this.activePointer = pointer.id;
+    const point = this.localPoint(canvasX, canvasY);
+    if (!this.simulation.begin(pointerId, point.x, point.y)) return false;
+    this.activePointer = pointerId;
     return true;
   }
 
-  public move(pointer: Phaser.Input.Pointer): void {
-    if (pointer.id !== this.activePointer) return;
-    const point = this.localPoint(pointer.x, pointer.y);
-    this.simulation.move(pointer.id, point.x, point.y);
+  public moveAt(pointerId: number, canvasX: number, canvasY: number): void {
+    if (pointerId !== this.activePointer) return;
+    const point = this.localPoint(canvasX, canvasY);
+    this.simulation.move(pointerId, point.x, point.y);
   }
 
-  public end(pointer: Phaser.Input.Pointer): void {
-    if (pointer.id !== this.activePointer) return;
-    this.lastReleaseEnergy = this.simulation.end(pointer.id) ?? 0;
+  public endById(pointerId: number): void {
+    if (pointerId !== this.activePointer) return;
+    this.lastReleaseEnergy = this.simulation.end(pointerId) ?? 0;
     this.activePointer = null;
   }
+
+  public begin(pointer: Phaser.Input.Pointer): boolean { return this.beginAt(pointer.id, pointer.x, pointer.y); }
+  public move(pointer: Phaser.Input.Pointer): void { this.moveAt(pointer.id, pointer.x, pointer.y); }
+  public end(pointer: Phaser.Input.Pointer): void { this.endById(pointer.id); }
 
   public cancel(): void {
     this.activePointer = null;

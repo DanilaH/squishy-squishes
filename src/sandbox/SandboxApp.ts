@@ -1437,6 +1437,10 @@ export class SandboxApp {
     if (!this.shell || this.disposed) return;
     this.shell.dataset.sandboxSqueezes = String(metrics.squeezes);
     this.shell.dataset.fps = String(Math.round(metrics.fps));
+    this.shell.dataset.squishMaxDisplacement = metrics.maxDisplacement.toFixed(3);
+    this.shell.dataset.gestureX = metrics.gestureX.toFixed(3);
+    this.shell.dataset.gestureY = metrics.gestureY.toFixed(3);
+    this.shell.dataset.squishActive = String(metrics.active);
   };
 
   private requireElement<T extends Element>(selector: string): T {
