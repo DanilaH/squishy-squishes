@@ -101,8 +101,8 @@ test('real saved materials have comparable Studio and Library captures', async (
   expect(Object.keys(stats).sort()).toEqual(['chrome', 'holo', 'jelly', 'marshmallow', 'pearl', 'soft']);
   for (const entry of materialStats) expect(entry.count, `${entry.material} has a visible material body`).toBeGreaterThan(2_000);
   await writeFile(info.outputPath('library-hall-material-stats.json'), JSON.stringify(materialStats, null, 2));
-  expect(stats.jelly!.alpha, 'Jelly stays translucent without becoming ghost-like').toBeGreaterThan(135);
-  expect(stats.jelly!.alpha, 'Jelly remains clearly more translucent than Marshmallow').toBeLessThan(stats.marshmallow!.alpha - 35);
+  expect(stats.jelly!.alpha, 'Jelly stays translucent without becoming ghost-like').toBeGreaterThan(145);
+  expect(stats.jelly!.alpha, 'Jelly remains clearly more translucent than Marshmallow').toBeLessThan(stats.marshmallow!.alpha - 45);
   expect(stats.jelly!.hueStd, 'Jelly keeps more optical colour movement than powdery Marshmallow').toBeGreaterThan(stats.marshmallow!.hueStd + 0.5);
   expect(stats.marshmallow!.lumaStd, 'Marshmallow stays softer/matter than Soft').toBeLessThan(stats.soft!.lumaStd - 2);
   expect(stats.pearl!.hueStd, 'Pearl keeps spatial nacre hue movement beyond Marshmallow').toBeGreaterThan(stats.marshmallow!.hueStd + 2);

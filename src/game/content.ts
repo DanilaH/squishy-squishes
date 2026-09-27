@@ -135,7 +135,7 @@ export const MATERIALS: readonly MaterialSpec[] = [
   { id: 'soft', label: 'Soft', translucency: 0, iridescence: 0, roughness: 0.42, metallic: 0, pearlescence: 0, cloudiness: 0.05 },
   // Jelly is the deliberately see-through hero material: its inclusions should
   // read as content suspended inside the body, not as surface stickers.
-  { id: 'jelly', label: 'Jelly', translucency: 0.78, iridescence: 0.04, roughness: 0.05, metallic: 0, pearlescence: 0.02, cloudiness: 0 },
+  { id: 'jelly', label: 'Jelly', translucency: 0.58, iridescence: 0.04, roughness: 0.05, metallic: 0, pearlescence: 0.02, cloudiness: 0 },
   { id: 'holo', label: 'Holographic', translucency: 0.18, iridescence: 1.0, roughness: 0.12, metallic: 0.08, pearlescence: 0.18, cloudiness: 0 },
   { id: 'marshmallow', label: 'Marshmallow', translucency: 0.00, iridescence: 0, roughness: 1.0, metallic: 0, pearlescence: 0.00, cloudiness: 1.0 },
   { id: 'pearl', label: 'Pearl', translucency: 0.03, iridescence: 0.16, roughness: 0.08, metallic: 0.03, pearlescence: 1.0, cloudiness: 0.00 },
