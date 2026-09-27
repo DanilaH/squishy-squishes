@@ -1308,6 +1308,10 @@ export class SandboxApp {
         : 0.92;
       this.accessoryCanvas.style.left = (anchorX - width * 0.5).toFixed(2) + 'px';
       this.accessoryCanvas.style.top = (anchorY - height * liveSeatFactor).toFixed(2) + 'px';
+      // Rotate/scale around the exact attachment point. A fixed 92% origin made
+      // crown/bow orbit away from the deformed head because their reviewed
+      // seating factors are intentionally lower than the generic accessory seat.
+      this.accessoryCanvas.style.transformOrigin = `50% ${(liveSeatFactor * 100).toFixed(1)}%`;
       this.accessoryCanvas.style.transform = 'matrix(' + [a, b, c, d].map((value) => value.toFixed(4)).join(',') + ',0,0)';
       this.accessoryCanvas.dataset.accessoryAnchorX = anchorX.toFixed(2);
       this.accessoryCanvas.dataset.accessoryAnchorY = anchorY.toFixed(2);
