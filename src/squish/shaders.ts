@@ -200,20 +200,20 @@ void main() {
   float pearlescence = clamp(uPearlescence, 0.0, 1.0);
   float pearlBand = 0.5 + 0.5 * sin((vUv.x * 0.64 + vUv.y * 0.42 + uMaterialSeed * 0.71 + uCompression * 0.05) * 6.2831853);
   float pearlCross = 0.5 + 0.5 * sin((vUv.x * 0.38 - vUv.y * 0.58 + uMaterialSeed * 0.33) * 6.2831853);
-  vec3 pearlRose = vec3(1.0, 0.78, 0.92);
-  vec3 pearlCyan = vec3(0.69, 0.94, 1.0);
+  vec3 pearlRose = vec3(1.0, 0.62, 0.88);
+  vec3 pearlCyan = vec3(0.48, 0.91, 1.0);
   vec3 pearlNacre = mix(pearlRose, pearlCyan, pearlBand);
   vec3 pearlSpectrum = mix(pearlNacre, spectralColor(spectralPhase * 0.42 + pearlCross * 0.12 + 0.10), 0.28);
-  float pearlTintWeight = pearlescence * (0.27 + pearlBand * 0.16 + edge * 0.10 + lightSurface * 0.06);
+  float pearlTintWeight = pearlescence * (0.34 + pearlBand * 0.22 + edge * 0.08 + lightSurface * 0.05);
   vec3 pearlSurface = mix(base * (0.985 + pearlCross * 0.020), pearlSpectrum, pearlTintWeight);
-  base = mix(base, pearlSurface, pearlescence * (0.78 + edge * 0.10));
+  base = mix(base, pearlSurface, pearlescence * (0.82 + edge * 0.08));
   float pearlSheen = pow(0.5 + 0.5 * sin(
     (vUv.x * 0.92 - vUv.y * 0.38 + uMaterialSeed * 0.81 + uCompression * 0.04) * 6.2831853
   ), 3.2);
   vec3 pearlSheenColor = mix(pearlRose, pearlCyan, 0.5 + 0.5 * sin(
     (vUv.x * 0.48 + vUv.y * 0.36 + uMaterialSeed * 0.57) * 6.2831853
   ));
-  base += pearlSheenColor * pearlescence * pearlSheen * (0.050 + edge * 0.018);
+  base += pearlSheenColor * pearlescence * pearlSheen * (0.105 + edge * 0.020);
 
   float metallic = clamp(uMetallic, 0.0, 1.0);
   // Metallic keeps the authored hue. Two reflected bands provide the material
