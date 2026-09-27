@@ -1271,11 +1271,16 @@ export class SandboxApp {
       return;
     }
     const frame = getDecorFrame(getShape(this.draft.shapeId), this.draft.decor.accessory);
-    const anchor = this.renderer.projectUvToCanvas(frame.headAnchor.u, frame.headAnchor.v);
-    const right = this.renderer.projectUvToCanvas(frame.headAnchor.u + frame.headBasisU, frame.headAnchor.v);
-    const down = this.renderer.projectUvToCanvas(frame.headAnchor.u, frame.headAnchor.v - frame.headBasisV);
-    const basisU = { x: right.x - anchor.x, y: right.y - anchor.y };
-    const basisV = { x: down.x - anchor.x, y: down.y - anchor.y };
+    // Project the actual accessory seat through the deformed mesh. The previous
+    // anchor+offset extrapolation was only locally linear and visibly detached
+    // crown/bow under strong full-screen pulls.
+    const seatV = Math.min(1, Math.max(0, frame.headAnchor.v + frame.headSeatOffsetV));
+    const seat = this.renderer.projectUvToCanvas(frame.headAnchor.u, seatV);
+    const left = this.renderer.projectUvToCanvas(frame.headAnchor.u - frame.headBasisU, seatV);
+    const right = this.renderer.projectUvToCanvas(frame.headAnchor.u + frame.headBasisU, seatV);
+    const down = this.renderer.projectUvToCanvas(frame.headAnchor.u, Math.max(0, seatV - frame.headBasisV));
+    const basisU = { x: right.x - left.x, y: right.y - left.y };
+    const basisV = { x: down.x - seat.x, y: down.y - seat.y };
     const lengthU = Math.max(0.001, Math.hypot(basisU.x, basisU.y));
     const lengthV = Math.max(0.001, Math.hypot(basisV.x, basisV.y));
     if (this.accessoryRestU <= 0) this.accessoryRestU = lengthU;
@@ -1293,9 +1298,6 @@ export class SandboxApp {
     const cosAngle = Math.cos(angle);
     const sinAngle = Math.sin(angle);
     const rigidScale = Math.min(1.12, Math.max(0.90, Math.sqrt(ratioU * ratioV)));
-    const seatDirX = -sinAngle;
-    const seatDirY = cosAngle;
-    const seatOffsetPx = (frame.headSeatOffsetV / frame.headBasisV) * this.accessoryRestV * rigidScale;
     const a = cosAngle * rigidScale;
     const b = sinAngle * rigidScale;
     const c = -sinAngle * rigidScale;
@@ -1303,8 +1305,8 @@ export class SandboxApp {
     const canvasRect = this.canvas.getBoundingClientRect();
     const stageRect = this.canvas.parentElement?.getBoundingClientRect();
     if (stageRect) {
-      const anchorX = canvasRect.left - stageRect.left + anchor.x - seatDirX * seatOffsetPx;
-      const anchorY = canvasRect.top - stageRect.top + anchor.y - seatDirY * seatOffsetPx;
+      const anchorX = canvasRect.left - stageRect.left + seat.x;
+      const anchorY = canvasRect.top - stageRect.top + seat.y;
       const width = this.accessoryCanvas.offsetWidth || 160;
       const height = this.accessoryCanvas.offsetHeight || 107;
       // Pages' live overlay previously left the broad crown/bow visibly hovering
