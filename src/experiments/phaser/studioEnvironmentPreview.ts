@@ -131,10 +131,14 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     const sr = stage.getBoundingClientRect();
     const cr = canvas.getBoundingClientRect();
     const pr = controls.getBoundingClientRect();
-    // The shader draws around the canvas centre with a 0.34 * canvas radius.
-    // Start the desk just behind the toy's silhouette. The canvas is above the
-    // passive artwork, so the surface cannot intercept pointer input.
-    const toyBottomProxy = cr.top + cr.height * 0.76;
+    // The tactile stages deliberately enlarge the transparent canvas while
+    // shrinking the render-radius ratio so the resting body keeps its size.
+    // Anchor the desk to the visible body, never to the capture-buffer bounds.
+    const cssRadiusRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue('--squish-radius-ratio'));
+    const radiusRatio = Number.isFinite(cssRadiusRatio) ? cssRadiusRatio : 0.34;
+    // The historical 0.76 canvas proxy corresponds to ~76% of the canonical
+    // shape radius below centre. Preserve that seat while allowing headroom.
+    const toyBottomProxy = cr.top + cr.height * (0.5 + radiusRatio * 0.76);
     const top = Math.min(toyBottomProxy - 3, sr.bottom - 3);
     const desktop = innerWidth >= 901 && innerWidth > innerHeight;
     // Desktop tabletop/front may occupy the background below a short stage;
