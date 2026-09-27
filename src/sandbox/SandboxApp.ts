@@ -1285,18 +1285,26 @@ export class SandboxApp {
     const ratioV = clampRatio(lengthV / this.accessoryRestV);
     const normUx = basisU.x / lengthU;
     const normUy = basisU.y / lengthU;
-    const normVx = basisV.x / lengthV;
-    const normVy = basisV.y / lengthV;
-    const seatOffsetPx = (frame.headSeatOffsetV / frame.headBasisV) * lengthV;
-    const a = normUx * ratioU;
-    const b = normUy * ratioU;
-    const c = normVx * ratioV;
-    const d = normVy * ratioV;
+    // Head gear is rigid: it follows the deformed attachment point, but must not
+    // inherit arbitrary mesh shear or a near-vertical tangent during an extreme
+    // full-screen pull. A modest tilt still sells the deformation.
+    const rawAngle = Math.atan2(normUy, normUx);
+    const angle = Math.min(Math.PI / 6, Math.max(-Math.PI / 6, rawAngle));
+    const cosAngle = Math.cos(angle);
+    const sinAngle = Math.sin(angle);
+    const rigidScale = Math.min(1.12, Math.max(0.90, Math.sqrt(ratioU * ratioV)));
+    const seatDirX = -sinAngle;
+    const seatDirY = cosAngle;
+    const seatOffsetPx = (frame.headSeatOffsetV / frame.headBasisV) * this.accessoryRestV * rigidScale;
+    const a = cosAngle * rigidScale;
+    const b = sinAngle * rigidScale;
+    const c = -sinAngle * rigidScale;
+    const d = cosAngle * rigidScale;
     const canvasRect = this.canvas.getBoundingClientRect();
     const stageRect = this.canvas.parentElement?.getBoundingClientRect();
     if (stageRect) {
-      const anchorX = canvasRect.left - stageRect.left + anchor.x - normVx * seatOffsetPx;
-      const anchorY = canvasRect.top - stageRect.top + anchor.y - normVy * seatOffsetPx;
+      const anchorX = canvasRect.left - stageRect.left + anchor.x - seatDirX * seatOffsetPx;
+      const anchorY = canvasRect.top - stageRect.top + anchor.y - seatDirY * seatOffsetPx;
       const width = this.accessoryCanvas.offsetWidth || 160;
       const height = this.accessoryCanvas.offsetHeight || 107;
       // Pages' live overlay previously left the broad crown/bow visibly hovering
