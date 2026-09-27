@@ -18,6 +18,14 @@
   pointer-events: none;
 }
 
+/* Finish is now a live tactile preview. Where the square canvas visually overlaps
+   the material tray, UI controls must win hit-testing while the exposed tabletop
+   portion remains draggable. */
+.sandbox-shell[data-stage="finish"] .sandbox-controls {
+  position: relative;
+  z-index: 6;
+}
+
 /* Give Jelly a saturated gel cue in the selector too; the old pale orb reinforced the
    same washed-out impression that the shader had. */
 .sandbox-material__orb--jelly {
