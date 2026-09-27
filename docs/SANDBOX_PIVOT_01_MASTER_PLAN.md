@@ -910,3 +910,14 @@ Owner review with yellow and multi-colour paint established the material hierarc
 - **Metallic** keeps its successful colour-preserving reflective identity; only the darkest reflected bands may be softened modestly so custom paint remains legible.
 - Light-colour compensation is evaluated per authored pixel luminance/chroma, not as a palette-specific special case, so mixed/striped paint remains coherent.
 - Finish is also a tactile material-preview surface: the live toy may be dragged/released there using the same simulation/input owner as Squeeze. Material buttons and Keep It remain normal UI controls; no second physics/input path is introduced.
+
+### Viewport drag, Hall alignment and palette follow-up — 27 September 2026
+
+Owner review established three additional interaction/visual contracts:
+
+- **Grab begins on the toy, drag continues across the viewport.** Finish and Squeeze use pointer capture after a valid body hit. Once claimed, the gesture follows captured client coordinates rather than Phaser's cached canvas pointer coordinates, so leaving the visible canvas does not end or freeze the pull.
+- The viewport is an **input domain**, not an unbounded physics domain. The simulation keeps a deliberate maximum pointer/vertex displacement to avoid numerical instability and kilometre-long geometry, while allowing substantially larger expressive pulls than the previous square-bound interaction.
+- Finish is a fully tactile material-preview stage. Its material/Back/Keep controls remain ordinary DOM hit targets above the live canvas.
+- Hall volume is **front-facing by contract**. Saved paint, rigid inclusions and accessory art are authored in the Studio front frame; decorative yaw/pitch is not allowed to make those layers appear misregistered.
+- The Paint palette expands from six to **18 curated colours**, spanning light neutrals, warm/cool pastels, saturated accents and deeper colours. Compact layouts use a fixed grid rather than a horizontal scroller.
+- Material separation after owner review is driven by physical identity: Jelly by transparency/rim density, Marshmallow by opaque powder/milk response, Pearl by slow nacre rose/cyan movement. Holo, Metallic and Soft keep their accepted roles.

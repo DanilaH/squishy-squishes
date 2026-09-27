@@ -80,3 +80,9 @@ The next owner-review pass is deliberately split from the earlier material/layou
 7. make appearance-budget exhaustion explicit and disable only additive customization actions.
 
 Physically localized appendage grabbing remains deferred. Final acceptance still requires exact-HEAD release/browser/Pages/Hall/candidate/Yandex-DRAFT gates plus screenshot/video inspection; PR #59 remains draft and unmerged.
+
+## Hall front-frame correction (2026-09-27)
+
+Owner review exposed a visible mismatch on decorated saved toys: the curved Hall volume used a small yaw/pitch while baked appearance, rigid inclusions and accessory graphics remained authored/composited in the Studio front frame. Even when individual UV math was internally valid, the combined toy looked as if its mask/decor had slipped.
+
+The Hall review renderer is therefore front-facing again (yaw = pitch = 0). Thickness still comes from curved geometry, normals, rim and material lighting. Do not reintroduce decorative object rotation unless every saved visual layer shares the exact same projected transform.

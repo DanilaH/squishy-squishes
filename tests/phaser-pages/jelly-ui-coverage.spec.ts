@@ -71,6 +71,13 @@ for (const layout of layouts) {
       await page.locator('button[data-shape="heart"]').click();
       await page.locator('[data-action="shape-continue"]').click();
       await expect(shell).toHaveAttribute('data-stage', 'paint');
+      await expect(page.locator('[data-paint-color]'), 'expanded paint palette stays complete').toHaveCount(18);
+      const palette = await page.locator('.sandbox-palette-grid').boundingBox();
+      const controls = await page.locator('.sandbox-controls').boundingBox();
+      if (!palette || !controls) throw new Error('Missing expanded palette geometry');
+      expect(palette.x, `${layout.name}: palette stays inside controls`).toBeGreaterThanOrEqual(controls.x - 1);
+      expect(palette.x + palette.width, `${layout.name}: palette stays inside controls`)
+        .toBeLessThanOrEqual(controls.x + controls.width + 1);
       await capture(page, testInfo, layout.name, 'paint');
 
       await page.locator('[data-action="paint-continue"]').click();
