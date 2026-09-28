@@ -171,6 +171,7 @@ export class PhaserDeformableVolume {
     scaleY: number,
     moldProgress: number,
     compression: number,
+    renderCenterOffsetY = 0,
   ): void {
     const gl = this.gl;
     if (gl.isContextLost()) return;
@@ -192,9 +193,9 @@ export class PhaserDeformableVolume {
       this.packed[a] = inset.x;
       // Raise the side's inner rim into the opaque front, covering the
       // subpixel antialias transition without changing the outer silhouette.
-      this.packed[a + 1] = inset.y + 0.025;
+      this.packed[a + 1] = inset.y + 0.025 + renderCenterOffsetY;
       this.packed[b] = deformed.x + thickness * 0.31;
-      this.packed[b + 1] = deformed.y - thickness;
+      this.packed[b + 1] = deformed.y - thickness + renderCenterOffsetY;
       this.packed[a + 2] = this.packed[b + 2] = u;
       this.packed[a + 3] = this.packed[b + 3] = v;
     }
