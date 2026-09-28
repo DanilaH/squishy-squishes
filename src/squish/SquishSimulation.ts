@@ -33,6 +33,10 @@ const GRAB_RADIUS = 0.92;
 const PRESS_RADIUS = 0.58;
 const MAX_POINTER_DISPLACEMENT = 1.32;
 const MAX_VERTEX_DISPLACEMENT = 0.72;
+const VIEWPORT_FOLLOW_RATIO = 0.58;
+const MAX_VIEWPORT_FOLLOW = 1.20;
+const VIEWPORT_FOLLOW_ATTACK = 12;
+const VIEWPORT_FOLLOW_RELEASE = 7;
 const GRAB_STIFFNESS_NEAR = 245;
 const GRAB_STIFFNESS_FAR = 92;
 const REST_STIFFNESS = 44;
@@ -65,6 +69,13 @@ export class SquishSimulation {
   private grabStartY = 0;
   private pointerX = 0;
   private pointerY = 0;
+  private viewportFollowEnabled = false;
+  private bodyOffsetX = 0;
+  private bodyOffsetY = 0;
+  private grabPointerStartX = 0;
+  private grabPointerStartY = 0;
+  private grabBodyStartX = 0;
+  private grabBodyStartY = 0;
   private sheenX = 0;
   private sheenY = 0;
   private gestureX = 0;
@@ -121,6 +132,8 @@ export class SquishSimulation {
   public setShape(shape: ShapeDefinition): void {
     if (shape.id === this.shape.id) return;
     this.cancel();
+    this.bodyOffsetX = 0;
+    this.bodyOffsetY = 0;
     this.shape = shape;
   }
 
@@ -128,10 +141,25 @@ export class SquishSimulation {
     this.previousSampleAt = nowMs;
   }
 
+  /**
+   * Pages tactile stages may let the whole soft body chase a captured pointer
+   * while the local grab still deforms. The default stays disabled so the
+   * ordinary/Yandex renderer preserves its existing interaction contract.
+   */
+  public setViewportFollowEnabled(enabled: boolean): void {
+    this.viewportFollowEnabled = enabled;
+    if (!enabled && this.pointerId === null) {
+      this.bodyOffsetX = 0;
+      this.bodyOffsetY = 0;
+    }
+  }
+
   /** Coordinates in [-1, 1], already transformed from client/Phaser pixels by the host. */
   public pointToUv(x: number, y: number): { u: number; v: number } | null {
-    if (!isPointInsideShape(this.shape, x, y)) return null;
-    return { u: clamp01(x * 0.5 + 0.5), v: clamp01(y * 0.5 + 0.5) };
+    const localX = x - this.bodyOffsetX;
+    const localY = y - this.bodyOffsetY;
+    if (!isPointInsideShape(this.shape, localX, localY)) return null;
+    return { u: clamp01(localX * 0.5 + 0.5), v: clamp01(localY * 0.5 + 0.5) };
   }
 
   /** Project a normalized appearance coordinate through the current deformed mesh. */
@@ -158,15 +186,21 @@ export class SquishSimulation {
 
   /** Returns true only when a valid object hit claims this pointer. */
   public begin(pointerId: number, x: number, y: number): boolean {
-    if (this.pointerId !== null || !isPointInsideShape(this.shape, x, y)) return false;
+    const localX = x - this.bodyOffsetX;
+    const localY = y - this.bodyOffsetY;
+    if (this.pointerId !== null || !isPointInsideShape(this.shape, localX, localY)) return false;
     this.pointerId = pointerId;
-    this.grabStartX = x;
-    this.grabStartY = y;
+    this.grabStartX = localX;
+    this.grabStartY = localY;
     this.pointerX = x;
     this.pointerY = y;
+    this.grabPointerStartX = x;
+    this.grabPointerStartY = y;
+    this.grabBodyStartX = this.bodyOffsetX;
+    this.grabBodyStartY = this.bodyOffsetY;
     this.maxGestureCompression = 0;
-    this.sheenX += (x - this.sheenX) * 0.55;
-    this.sheenY += (y - this.sheenY) * 0.55;
+    this.sheenX += (localX - this.sheenX) * 0.55;
+    this.sheenY += (localY - this.sheenY) * 0.55;
     return true;
   }
 
@@ -194,8 +228,8 @@ export class SquishSimulation {
   }
 
   private applyReleaseImpulse(): void {
-    let dx = this.pointerX - this.grabStartX;
-    let dy = this.pointerY - this.grabStartY;
+    let dx = (this.pointerX - this.bodyOffsetX) - this.grabStartX;
+    let dy = (this.pointerY - this.bodyOffsetY) - this.grabStartY;
     const magnitude = Math.hypot(dx, dy);
     if (magnitude > MAX_POINTER_DISPLACEMENT) {
       const scale = MAX_POINTER_DISPLACEMENT / magnitude;
@@ -222,8 +256,32 @@ export class SquishSimulation {
   public advance(deltaMs: number, nowMs: number): SquishSimulationSample {
     const dt = Math.min(Math.max(0.001, deltaMs / 1000), 1 / 30);
     const active = this.pointerId !== null;
-    let dx = active ? this.pointerX - this.grabStartX : 0;
-    let dy = active ? this.pointerY - this.grabStartY : 0;
+
+    let targetBodyX = active && this.viewportFollowEnabled
+      ? this.grabBodyStartX + (this.pointerX - this.grabPointerStartX) * VIEWPORT_FOLLOW_RATIO
+      : 0;
+    let targetBodyY = active && this.viewportFollowEnabled
+      ? this.grabBodyStartY + (this.pointerY - this.grabPointerStartY) * VIEWPORT_FOLLOW_RATIO
+      : 0;
+    const targetBodyMagnitude = Math.hypot(targetBodyX, targetBodyY);
+    if (targetBodyMagnitude > MAX_VIEWPORT_FOLLOW) {
+      const scale = MAX_VIEWPORT_FOLLOW / targetBodyMagnitude;
+      targetBodyX *= scale;
+      targetBodyY *= scale;
+    }
+    const followRate = active ? VIEWPORT_FOLLOW_ATTACK : VIEWPORT_FOLLOW_RELEASE;
+    const followBlend = 1 - Math.exp(-followRate * dt);
+    this.bodyOffsetX += (targetBodyX - this.bodyOffsetX) * followBlend;
+    this.bodyOffsetY += (targetBodyY - this.bodyOffsetY) * followBlend;
+    if (!active && Math.hypot(this.bodyOffsetX, this.bodyOffsetY) < 0.0005) {
+      this.bodyOffsetX = 0;
+      this.bodyOffsetY = 0;
+    }
+
+    const localPointerX = active ? this.pointerX - this.bodyOffsetX : this.grabStartX;
+    const localPointerY = active ? this.pointerY - this.bodyOffsetY : this.grabStartY;
+    let dx = active ? localPointerX - this.grabStartX : 0;
+    let dy = active ? localPointerY - this.grabStartY : 0;
     const magnitude = Math.hypot(dx, dy);
     if (magnitude > MAX_POINTER_DISPLACEMENT) {
       const scale = MAX_POINTER_DISPLACEMENT / magnitude;
@@ -247,8 +305,8 @@ export class SquishSimulation {
     this.gestureX += (targetDirX - this.gestureX) * directionBlend;
     this.gestureY += (targetDirY - this.gestureY) * directionBlend;
     const sheenBlend = 1 - Math.exp(-(active ? 9 : 3) * dt);
-    this.sheenX += ((active ? this.pointerX : 0) - this.sheenX) * sheenBlend;
-    this.sheenY += ((active ? this.pointerY : 0) - this.sheenY) * sheenBlend;
+    this.sheenX += ((active ? localPointerX : 0) - this.sheenX) * sheenBlend;
+    this.sheenY += ((active ? localPointerY : 0) - this.sheenY) * sheenBlend;
     const sample = sampleContinuousInteraction(
       this.compression,
       this.previousCompression,
@@ -265,8 +323,10 @@ export class SquishSimulation {
     const gestureDirY = dy / gestureMagnitude;
     let frameMax = 0;
     for (const vertex of this.vertices) {
-      let targetX = vertex.restX;
-      let targetY = vertex.restY;
+      const bodyRestX = vertex.restX + this.bodyOffsetX;
+      const bodyRestY = vertex.restY + this.bodyOffsetY;
+      let targetX = bodyRestX;
+      let targetY = bodyRestY;
       let responseInfluence = 0;
       if (active) {
         const lx = vertex.restX - this.grabStartX;
@@ -296,22 +356,24 @@ export class SquishSimulation {
       }
       const stiffness = active ? GRAB_STIFFNESS_FAR + (GRAB_STIFFNESS_NEAR - GRAB_STIFFNESS_FAR) * responseInfluence : 0;
       const damping = Math.exp(-(DAMPING * (0.88 + responseInfluence * 0.12)) * dt);
-      const ax = (targetX - vertex.x) * stiffness + (vertex.restX - vertex.x) * REST_STIFFNESS;
-      const ay = (targetY - vertex.y) * stiffness + (vertex.restY - vertex.y) * REST_STIFFNESS;
+      const ax = (targetX - vertex.x) * stiffness + (bodyRestX - vertex.x) * REST_STIFFNESS;
+      const ay = (targetY - vertex.y) * stiffness + (bodyRestY - vertex.y) * REST_STIFFNESS;
       vertex.vx = (vertex.vx + ax * dt) * damping;
       vertex.vy = (vertex.vy + ay * dt) * damping;
       vertex.x += vertex.vx * dt;
       vertex.y += vertex.vy * dt;
-      const offsetX = vertex.x - vertex.restX;
-      const offsetY = vertex.y - vertex.restY;
-      const offset = Math.hypot(offsetX, offsetY);
-      if (offset > MAX_VERTEX_DISPLACEMENT) {
-        const scale = MAX_VERTEX_DISPLACEMENT / offset;
-        vertex.x = vertex.restX + offsetX * scale;
-        vertex.y = vertex.restY + offsetY * scale;
+      const deformationX = vertex.x - bodyRestX;
+      const deformationY = vertex.y - bodyRestY;
+      const deformation = Math.hypot(deformationX, deformationY);
+      if (deformation > MAX_VERTEX_DISPLACEMENT) {
+        const scale = MAX_VERTEX_DISPLACEMENT / deformation;
+        vertex.x = bodyRestX + deformationX * scale;
+        vertex.y = bodyRestY + deformationY * scale;
         vertex.vx *= 0.55;
         vertex.vy *= 0.55;
       }
+      // Keep the public displacement metric aligned with what the player sees:
+      // local stretch plus whole-body viewport follow.
       frameMax = Math.max(frameMax, Math.hypot(vertex.x - vertex.restX, vertex.y - vertex.restY));
     }
     this.maxDisplacement = frameMax;
