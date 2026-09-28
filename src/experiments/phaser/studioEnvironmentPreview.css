@@ -170,7 +170,7 @@
   /* Follow the actual rendered body's lower edge rather than a percentage of
      the stage. This keeps the shadow on the tabletop at both phone and desktop
      sizes, even when the square canvas itself changes size. */
-  top: calc(50% + min(23.78vw, 125px, 29cqh));
+  top: var(--studio-contact-top, calc(50% + min(23.78vw, 125px, 29cqh)));
   width: min(38vw, 175px, 46cqh);
   height: min(4.2vw, 17px, 5.2cqh);
   transform: translate(-50%, -50%);
@@ -306,10 +306,14 @@
    are deformation headroom, not a smaller hero. Keep short landscape unchanged. */
 @media (min-height: 521px) {
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-canvas {
-    /* The transparent square is a viewport-scale capture/render buffer. Keep the
-       resting body approximately unchanged by lowering the render-radius ratio,
-       but leave enough pixels for the whole toy to chase a captured pointer. */
+    /* The transparent square is a viewport-scale capture/render buffer. Center
+       it explicitly: CSS grid's safe overflow alignment can pin an oversized
+       child to one edge on narrow portrait viewports. */
     --squish-radius-ratio: .14;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     width: min(100vmax, 900px);
     max-width: none;
     max-height: none;
@@ -344,10 +348,6 @@
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='paint'] .sandbox-glow {
     transform: translateY(30px);
   }
-  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='paint'] .sandbox-stage::after {
-    transform: translate(-50%, calc(-50% + 30px));
-  }
-
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-canvas {
     --squish-radius-ratio: .14;
     width: min(92vw, 1400px);
@@ -359,7 +359,6 @@
     max-height: none;
   }
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-stage::after {
-    top: calc(50% + min(14.5vw, 180px, 45.82cqh));
     width: min(24vw, 230px, 65cqh);
     height: min(3.1vw, 22px, 7cqh);
   }
