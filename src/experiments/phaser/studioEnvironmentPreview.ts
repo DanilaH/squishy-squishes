@@ -136,13 +136,11 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     // Anchor the desk to the visible body, never to the capture-buffer bounds.
     const canvasStyle = getComputedStyle(canvas);
     const cssRadiusRatio = Number.parseFloat(canvasStyle.getPropertyValue('--squish-radius-ratio'));
-    const cssCenterOffsetY = Number.parseFloat(canvasStyle.getPropertyValue('--squish-center-offset-y'));
     const radiusRatio = Number.isFinite(cssRadiusRatio) ? cssRadiusRatio : 0.34;
-    const centerOffsetY = Number.isFinite(cssCenterOffsetY) ? cssCenterOffsetY : 0;
-    // The historical 0.76 canvas proxy corresponds to ~76% of the canonical
-    // shape radius below centre. Paint may lower the rendered body inside an
-    // otherwise stable canvas, so include the render-space centre offset too.
-    const toyBottomProxy = cr.top + cr.height * (0.5 + radiusRatio * (0.76 - centerOffsetY));
+    // The workbench is a stable scene anchor across all craft steps. Paint may
+    // lower the rendered squish *inside* this canvas, but that must not move the
+    // desk/floor underneath it.
+    const toyBottomProxy = cr.top + cr.height * (0.5 + radiusRatio * 0.76);
     const top = Math.min(toyBottomProxy - 3, sr.bottom - 3);
     const desktop = innerWidth >= 901 && innerWidth > innerHeight;
     // Desktop tabletop/front may occupy the background below a short stage;
