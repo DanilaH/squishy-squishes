@@ -98,6 +98,9 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
 
   public constructor(scene: Phaser.Scene, private readonly gl: WebGL2RenderingContext, private readonly pagesVolume = false) {
     super(scene);
+    // Only the isolated Pages volume profile gets viewport-follow. The
+    // ordinary/Yandex candidate keeps the established local-deformation feel.
+    this.simulation.setViewportFollowEnabled(pagesVolume);
     this.appearanceCanvas.width = APPEARANCE_TEXTURE_SIZE;
     this.appearanceCanvas.height = APPEARANCE_TEXTURE_SIZE;
     const context = this.appearanceCanvas.getContext('2d');
