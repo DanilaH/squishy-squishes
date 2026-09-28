@@ -306,8 +306,11 @@
    are deformation headroom, not a smaller hero. Keep short landscape unchanged. */
 @media (min-height: 521px) {
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-canvas {
-    --squish-radius-ratio: .28;
-    width: min(100vw, 520px);
+    /* The transparent square is a viewport-scale capture/render buffer. Keep the
+       resting body approximately unchanged by lowering the render-radius ratio,
+       but leave enough pixels for the whole toy to chase a captured pointer. */
+    --squish-radius-ratio: .14;
+    width: min(100vmax, 900px);
     max-width: none;
     max-height: none;
   }
@@ -317,9 +320,33 @@
    playfield still clipped extreme pulls, so enlarge the transparent field again
    and compensate with the radius ratio to keep the resting body size stable. */
 @media (min-width: 901px) and (min-height: 640px) and (orientation: landscape) {
+  /* Creative stages should keep the squish as a close-up hero instead of
+     shrinking it to whatever vertical room remains above the large control tray. */
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is(
+    [data-stage='shape'],
+    [data-stage='paint'],
+    [data-stage='mixins'],
+    [data-stage='mix']
+  ) .sandbox-canvas {
+    --squish-radius-ratio: .35;
+    width: min(46vw, 520px);
+    max-width: none;
+    max-height: none;
+  }
+
+  /* Paint has spare air above its lower controls. Seat the hero lower so the
+     useful drawing surface is closer to the tools without changing UV math. */
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='paint'] .sandbox-canvas,
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='paint'] .sandbox-glow {
+    transform: translateY(30px);
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='paint'] .sandbox-stage::after {
+    transform: translate(-50%, calc(-50% + 30px));
+  }
+
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-canvas {
-    --squish-radius-ratio: .27;
-    width: min(63vw, 780px, 199cqh);
+    --squish-radius-ratio: .16;
+    width: min(92vw, 1400px);
     max-width: none;
     max-height: none;
   }
