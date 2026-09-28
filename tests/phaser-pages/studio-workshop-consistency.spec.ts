@@ -149,6 +149,28 @@ for (const device of devices) {
       await sample('finish');
       const finishSurface = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!finishSurface) throw new Error('Missing Finish squish surface');
+      const readBodyCentroid = async (): Promise<{ x: number; width: number } | null> => page.locator('[data-sandbox-canvas]').evaluate((node) => {
+        const canvas = node as HTMLCanvasElement;
+        const gl = canvas.getContext('webgl2');
+        if (!gl) return null;
+        const width = gl.drawingBufferWidth, height = gl.drawingBufferHeight;
+        const pixels = new Uint8Array(width * height * 4);
+        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        let weightedX = 0, weight = 0;
+        // Sample sparsely: this is a movement invariant, not image analysis.
+        for (let y = 0; y < height; y += 4) {
+          for (let x = 0; x < width; x += 4) {
+            const alpha = pixels[(y * width + x) * 4 + 3] ?? 0;
+            if (alpha < 20) continue;
+            weightedX += x * alpha;
+            weight += alpha;
+          }
+        }
+        return weight > 0 ? { x: weightedX / weight, width } : null;
+      });
+      const centroidBeforePull = (device.name === 'phone-ru' || device.name === 'desktop-en')
+        ? await readBodyCentroid()
+        : null;
       await page.mouse.move(finishSurface.x + finishSurface.width / 2, finishSurface.y + finishSurface.height / 2);
       await page.mouse.down();
       const farX = device.name === 'desktop-en'
@@ -159,6 +181,14 @@ for (const device of devices) {
       await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-squish-max-displacement') ?? 0))
         .toBeGreaterThan(0.55);
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'true');
+      if (centroidBeforePull) {
+        const centroidAfterPull = await readBodyCentroid();
+        expect(centroidAfterPull, `${device.name}: Finish body remains readable while captured`).not.toBeNull();
+        const cssShift = centroidAfterPull
+          ? (centroidAfterPull.x - centroidBeforePull.x) / centroidBeforePull.width * finishSurface.width
+          : 0;
+        expect(cssShift, `${device.name}: captured pointer translates the whole squish toward the cursor`).toBeGreaterThan(18);
+      }
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-finish-pulled.png`), animations: 'disabled' });
       await page.mouse.up();
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'false');
