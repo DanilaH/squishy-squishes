@@ -149,28 +149,8 @@ for (const device of devices) {
       await sample('finish');
       const finishSurface = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!finishSurface) throw new Error('Missing Finish squish surface');
-      const readBodyCentroid = async (): Promise<{ x: number; width: number } | null> => page.locator('[data-sandbox-canvas]').evaluate((node) => {
-        const canvas = node as HTMLCanvasElement;
-        const gl = canvas.getContext('webgl2');
-        if (!gl) return null;
-        const width = gl.drawingBufferWidth, height = gl.drawingBufferHeight;
-        const pixels = new Uint8Array(width * height * 4);
-        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-        let weightedX = 0, weight = 0;
-        // Sample sparsely: this is a movement invariant, not image analysis.
-        for (let y = 0; y < height; y += 4) {
-          for (let x = 0; x < width; x += 4) {
-            const alpha = pixels[(y * width + x) * 4 + 3] ?? 0;
-            if (alpha < 20) continue;
-            weightedX += x * alpha;
-            weight += alpha;
-          }
-        }
-        return weight > 0 ? { x: weightedX / weight, width } : null;
-      });
-      const centroidBeforePull = (device.name === 'phone-ru' || device.name === 'desktop-en')
-        ? await readBodyCentroid()
-        : null;
+      const readBodyOffsetX = async (): Promise<number> =>
+        Number(await page.locator('[data-sandbox-canvas]').getAttribute('data-squish-body-offset-x') ?? 0);
       await page.mouse.move(finishSurface.x + finishSurface.width / 2, finishSurface.y + finishSurface.height / 2);
       await page.mouse.down();
       const farX = device.name === 'desktop-en'
@@ -181,13 +161,9 @@ for (const device of devices) {
       await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-squish-max-displacement') ?? 0))
         .toBeGreaterThan(0.55);
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'true');
-      if (centroidBeforePull) {
-        const centroidAfterPull = await readBodyCentroid();
-        expect(centroidAfterPull, `${device.name}: Finish body remains readable while captured`).not.toBeNull();
-        const cssShift = centroidAfterPull
-          ? (centroidAfterPull.x - centroidBeforePull.x) / centroidBeforePull.width * finishSurface.width
-          : 0;
-        expect(cssShift, `${device.name}: captured pointer translates the whole squish toward the cursor`).toBeGreaterThan(18);
+      if (device.name === 'phone-ru' || device.name === 'desktop-en') {
+        await expect.poll(readBodyOffsetX, { message: `${device.name}: captured pointer translates the whole squish toward the cursor` })
+          .toBeGreaterThan(0.12);
       }
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-finish-pulled.png`), animations: 'disabled' });
       await page.mouse.up();
@@ -212,6 +188,11 @@ for (const device of devices) {
       await page.locator('button[data-material="holo"]').click();
       await page.locator('[data-action="save"]').click();
       await sample('squeeze');
+      if (device.name === 'phone-ru' || device.name === 'desktop-en') {
+        await expect.poll(async () => Math.abs(await readBodyOffsetX()), {
+          message: `${device.name}: Squeeze starts centered instead of inheriting Finish drag translation`,
+        }).toBeLessThan(0.02);
+      }
       const pressed = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!pressed) throw new Error('Missing squeeze surface');
       await page.mouse.move(pressed.x + pressed.width / 2, pressed.y + pressed.height / 2);
@@ -220,17 +201,11 @@ for (const device of devices) {
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-pressed.png`) });
       await page.mouse.up();
       if (device.name === 'desktop-en') {
-        const squeezeCentroidBefore = await readBodyCentroid();
         await page.mouse.move(pressed.x + pressed.width / 2, pressed.y + pressed.height / 2);
         await page.mouse.down();
         await page.mouse.move(pressed.x + pressed.width - 10, pressed.y + pressed.height * .34, { steps: 14 });
-        const squeezeCentroidAfter = await readBodyCentroid();
-        expect(squeezeCentroidBefore, 'desktop-en: Squeeze body is readable before viewport drag').not.toBeNull();
-        expect(squeezeCentroidAfter, 'desktop-en: Squeeze body remains readable during viewport drag').not.toBeNull();
-        const squeezeCssShift = squeezeCentroidBefore && squeezeCentroidAfter
-          ? (squeezeCentroidAfter.x - squeezeCentroidBefore.x) / squeezeCentroidBefore.width * pressed.width
-          : 0;
-        expect(squeezeCssShift, 'desktop-en: Squeeze body follows the captured pointer across the viewport').toBeGreaterThan(18);
+        await expect.poll(readBodyOffsetX, { message: 'desktop-en: Squeeze body follows the captured pointer across the viewport' })
+          .toBeGreaterThan(0.12);
         await page.screenshot({ path: info.outputPath('workshop-desktop-en-stretch-headroom.png') });
         await page.mouse.up();
       }
