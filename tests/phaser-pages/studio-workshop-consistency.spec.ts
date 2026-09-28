@@ -220,9 +220,17 @@ for (const device of devices) {
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-pressed.png`) });
       await page.mouse.up();
       if (device.name === 'desktop-en') {
+        const squeezeCentroidBefore = await readBodyCentroid();
         await page.mouse.move(pressed.x + pressed.width / 2, pressed.y + pressed.height / 2);
         await page.mouse.down();
         await page.mouse.move(pressed.x + pressed.width - 10, pressed.y + pressed.height * .34, { steps: 14 });
+        const squeezeCentroidAfter = await readBodyCentroid();
+        expect(squeezeCentroidBefore, 'desktop-en: Squeeze body is readable before viewport drag').not.toBeNull();
+        expect(squeezeCentroidAfter, 'desktop-en: Squeeze body remains readable during viewport drag').not.toBeNull();
+        const squeezeCssShift = squeezeCentroidBefore && squeezeCentroidAfter
+          ? (squeezeCentroidAfter.x - squeezeCentroidBefore.x) / squeezeCentroidBefore.width * pressed.width
+          : 0;
+        expect(squeezeCssShift, 'desktop-en: Squeeze body follows the captured pointer across the viewport').toBeGreaterThan(18);
         await page.screenshot({ path: info.outputPath('workshop-desktop-en-stretch-headroom.png') });
         await page.mouse.up();
       }
