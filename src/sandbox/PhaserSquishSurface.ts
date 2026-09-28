@@ -166,6 +166,12 @@ export class PhaserSquishSurface {
   /** StageGestureRouter owns all Phaser input, including Paint when squish interaction is disabled. */
   public setInteractive(_enabled: boolean): void { /* The old raw-renderer interaction gate is not a Phaser stage. */ }
   public setStudioStage(stage: StudioGestureStage, section: StudioDecorSection): void {
+    if (stage !== this.stage) {
+      // A new Studio scene must start from its own centered presentation, even
+      // if the player saved immediately after a far Finish drag.
+      this.bridge?.cancel();
+      this.squish?.recenterViewportFollow();
+    }
     this.stage = stage;
     this.decorSection = section;
     this.squish?.setViewportFollowEnabled(stage === 'finish' || stage === 'squeeze');
@@ -239,6 +245,9 @@ export class PhaserSquishSurface {
     const recent = this.frameTimes.slice(-30);
     const mean = recent.reduce((sum, value) => sum + value, 0) / Math.max(1, recent.length);
     const sample = squish.metricsSample();
+    const bodyOffset = squish.viewportFollowOffset();
+    this.canvas.dataset.squishBodyOffsetX = bodyOffset.x.toFixed(3);
+    this.canvas.dataset.squishBodyOffsetY = bodyOffset.y.toFixed(3);
     if (sample.active && sample.tactileActive && !this.muted) {
       this.audio.updateTactile(sample.tactileProgress, sample.normalizedVelocity);
     }
@@ -272,5 +281,7 @@ export class PhaserSquishSurface {
     this.game.destroy(true);
     delete this.canvas.dataset.phaserReady;
     delete this.canvas.dataset.phaserVolume;
+    delete this.canvas.dataset.squishBodyOffsetX;
+    delete this.canvas.dataset.squishBodyOffsetY;
   }
 }
