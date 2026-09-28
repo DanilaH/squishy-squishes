@@ -147,11 +147,48 @@ export class SquishSimulation {
    * ordinary/Yandex renderer preserves its existing interaction contract.
    */
   public setViewportFollowEnabled(enabled: boolean): void {
-    this.viewportFollowEnabled = enabled;
-    if (!enabled && this.pointerId === null) {
-      this.bodyOffsetX = 0;
-      this.bodyOffsetY = 0;
+    if (!enabled && this.viewportFollowEnabled && this.pointerId === null) {
+      this.recenterViewportFollow();
     }
+    this.viewportFollowEnabled = enabled;
+  }
+
+  /** Current whole-body translation used by Pages tactile stages. */
+  public viewportFollowOffset(): { readonly x: number; readonly y: number } {
+    return { x: this.bodyOffsetX, y: this.bodyOffsetY };
+  }
+
+  /**
+   * Stage changes are scene boundaries, not part of a drag. Remove only the
+   * global viewport translation while preserving local deformation/jiggle.
+   * This prevents a fast Finish -> Save -> Squeeze transition from inheriting
+   * the previous drag's screen-space offset.
+   */
+  public recenterViewportFollow(): void {
+    const offsetX = this.bodyOffsetX;
+    const offsetY = this.bodyOffsetY;
+    this.cancel();
+    if (Math.hypot(offsetX, offsetY) > 0.00001) {
+      let averageVx = 0;
+      let averageVy = 0;
+      for (const vertex of this.vertices) {
+        vertex.x -= offsetX;
+        vertex.y -= offsetY;
+        averageVx += vertex.vx;
+        averageVy += vertex.vy;
+      }
+      averageVx /= Math.max(1, this.vertices.length);
+      averageVy /= Math.max(1, this.vertices.length);
+      for (const vertex of this.vertices) {
+        // Remove bulk translation velocity but retain relative spring motion.
+        vertex.vx -= averageVx;
+        vertex.vy -= averageVy;
+      }
+    }
+    this.bodyOffsetX = 0;
+    this.bodyOffsetY = 0;
+    this.grabBodyStartX = 0;
+    this.grabBodyStartY = 0;
   }
 
   /** Coordinates in [-1, 1], already transformed from client/Phaser pixels by the host. */
