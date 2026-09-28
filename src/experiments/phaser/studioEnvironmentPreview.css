@@ -326,7 +326,8 @@
     [data-stage='shape'],
     [data-stage='paint'],
     [data-stage='mixins'],
-    [data-stage='mix']
+    [data-stage='mix'],
+    [data-stage='decor']
   ) .sandbox-canvas {
     --squish-radius-ratio: .35;
     width: min(46vw, 520px);
@@ -334,9 +335,12 @@
     max-height: none;
   }
 
-  /* Paint has spare air above its lower controls. Seat the hero lower so the
-     useful drawing surface is closer to the tools without changing UV math. */
-  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='paint'] .sandbox-canvas,
+  /* Paint has spare air above its lower controls. Move the rendered body inside
+     the stable canvas instead of moving the canvas itself: input/desk geometry
+     stays identical across craft stages while the useful paint surface sits lower. */
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='paint'] .sandbox-canvas {
+    --squish-center-offset-y: -.16;
+  }
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='paint'] .sandbox-glow {
     transform: translateY(30px);
   }
