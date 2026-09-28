@@ -136,6 +136,12 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public setViewportFollowEnabled(enabled: boolean): void {
     this.simulation.setViewportFollowEnabled(this.pagesVolume && enabled);
   }
+  public recenterViewportFollow(): void {
+    if (this.pagesVolume) this.simulation.recenterViewportFollow();
+  }
+  public viewportFollowOffset(): { readonly x: number; readonly y: number } {
+    return this.simulation.viewportFollowOffset();
+  }
   public resetTiming(): void { this.simulation.resetTiming(performance.now()); }
 
   private radius(): number {
