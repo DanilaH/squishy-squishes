@@ -345,7 +345,7 @@
   }
 
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) .sandbox-canvas {
-    --squish-radius-ratio: .16;
+    --squish-radius-ratio: .14;
     width: min(92vw, 1400px);
     max-width: none;
     max-height: none;
