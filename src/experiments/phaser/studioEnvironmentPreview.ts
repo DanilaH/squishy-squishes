@@ -149,7 +149,13 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     const desk = art.querySelector<HTMLElement>('[data-studio-desk]');
     if (!desk) return;
     const showDesk = !landscapeShort && visibleDepth >= 16;
-    const scaleWidth = Math.min(innerWidth * 1.14, cr.width * 1.83);
+    // Size furniture from the visible squish, never from the transparent
+    // capture buffer. Finish/Squeeze intentionally use a viewport-scale canvas,
+    // so cr.width itself can be much larger than the toy the player sees.
+    const visibleBodyDiameter = cr.width * radiusRatio * 2;
+    const tactileStage = shell.dataset.stage === 'finish' || shell.dataset.stage === 'squeeze';
+    const deskToBodyRatio = tactileStage ? 3.25 : (1.83 / (0.34 * 2));
+    const scaleWidth = Math.min(innerWidth * 1.14, visibleBodyDiameter * deskToBodyRatio);
     const imageHeight = scaleWidth * 435 / (421 + 435 + 381);
     const snap = (n: number): number => Math.round(n * devicePixelRatio) / devicePixelRatio;
     desk.style.display = showDesk ? 'block' : 'none';
