@@ -95,6 +95,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private disposed = false;
   private lastReleaseEnergy = 0;
   private renderRadiusRatio = 0.34;
+  /** Local simulation-space render offset; positive Y points upward. */
+  private renderCenterOffsetY = 0;
 
   public constructor(scene: Phaser.Scene, private readonly gl: WebGL2RenderingContext, private readonly pagesVolume = false) {
     super(scene);
@@ -128,6 +130,9 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public setRenderRadiusRatio(value: number): void {
     this.renderRadiusRatio = Math.min(0.42, Math.max(0.10, Number.isFinite(value) ? value : 0.34));
   }
+  public setRenderCenterOffsetY(value: number): void {
+    this.renderCenterOffsetY = Math.min(0.30, Math.max(-0.30, Number.isFinite(value) ? value : 0));
+  }
   public setViewportFollowEnabled(enabled: boolean): void {
     this.simulation.setViewportFollowEnabled(this.pagesVolume && enabled);
   }
@@ -142,7 +147,10 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private localPoint(x: number, y: number): { x: number; y: number } {
     const { width, height } = this.scene.scale;
     const radius = this.radius();
-    return { x: (x - width / 2) / radius, y: (height / 2 - y) / radius };
+    return {
+      x: (x - width / 2) / radius,
+      y: (height / 2 - y) / radius - this.renderCenterOffsetY,
+    };
   }
 
   public pointToUv(x: number, y: number): AppearancePoint | null {
@@ -162,7 +170,10 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const { width, height } = this.scene.scale;
     const radius = this.radius();
     const point = this.simulation.projectUvToLocal(u, v);
-    return { x: width / 2 + point.x * radius, y: height / 2 - point.y * radius };
+    return {
+      x: width / 2 + point.x * radius,
+      y: height / 2 - (point.y + this.renderCenterOffsetY) * radius,
+    };
   }
 
   /** Same replay pipeline as SandboxApp; no new appearance or decor format. */
@@ -352,7 +363,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       const vertex = this.simulation.vertices[index]!;
       const offset = index * 4;
       this.packed[offset] = vertex.x;
-      this.packed[offset + 1] = vertex.y;
+      this.packed[offset + 1] = vertex.y + this.renderCenterOffsetY;
       this.packed[offset + 2] = vertex.u;
       this.packed[offset + 3] = vertex.v;
     }
@@ -406,7 +417,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       const radius = this.radius();
       this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
         this.appearanceEnabled, radius * 2 / this.scene.scale.width,
-        radius * 2 / this.scene.scale.height, this.moldProgress, sample.compression);
+        radius * 2 / this.scene.scale.height, this.moldProgress, sample.compression,
+        this.renderCenterOffsetY);
     }
     if (this.wireframe) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gpu.lines);
