@@ -409,9 +409,9 @@ export class SquishSimulation {
         vertex.vx *= 0.55;
         vertex.vy *= 0.55;
       }
-      // Keep the public displacement metric aligned with what the player sees:
-      // local stretch plus whole-body viewport follow.
-      frameMax = Math.max(frameMax, Math.hypot(vertex.x - vertex.restX, vertex.y - vertex.restY));
+      // maxDisplacement is the deformation contract, not screen-space travel.
+      // Whole-body viewport follow is published separately by the Pages adapter.
+      frameMax = Math.max(frameMax, deformation);
     }
     this.maxDisplacement = frameMax;
     return {
