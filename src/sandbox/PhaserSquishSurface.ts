@@ -123,8 +123,11 @@ export class PhaserSquishSurface {
   private syncCanvasSize(): void {
     if (this.disposed || !this.scene) return;
     const rect = this.canvas.getBoundingClientRect();
-    const cssRatio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio'));
+    const style = getComputedStyle(this.canvas);
+    const cssRatio = Number.parseFloat(style.getPropertyValue('--squish-radius-ratio'));
+    const cssCenterOffsetY = Number.parseFloat(style.getPropertyValue('--squish-center-offset-y'));
     this.squish?.setRenderRadiusRatio(Number.isFinite(cssRatio) ? cssRatio : 0.34);
+    this.squish?.setRenderCenterOffsetY(Number.isFinite(cssCenterOffsetY) ? cssCenterOffsetY : 0);
     const width = Math.max(1, Math.round(rect.width));
     const height = Math.max(1, Math.round(rect.height));
     if (this.game.scale.width !== width || this.game.scale.height !== height) {
