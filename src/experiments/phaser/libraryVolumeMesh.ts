@@ -145,20 +145,39 @@ vec3 applyMaterial(vec3 base, vec2 uv, float edge) {
 }
 
 void main() {
-  vec3 n = normalize(vNormal);
+  vec3 geometricNormal = normalize(vNormal);
+  // Concave silhouettes (especially Paw) are tessellated as radial rings. Using
+  // those triangle normals for the front cap exposed faint spoke-shaped lighting
+  // seams through Holo/Pearl paint. The authored front is a 2D Studio frame, so
+  // light it with one continuous UV-space bulge instead; side/back keep the real
+  // mesh normal and therefore preserve the visible 3D thickness.
+  vec2 frontP = (vUv - vec2(0.5)) * vec2(1.34, 1.12);
+  vec3 frontNormal = normalize(vec3(frontP * 0.34, 1.0));
+  vec3 n = vFront > 0.5 ? frontNormal : geometricNormal;
   vec3 light = normalize(vec3(-0.42, 0.51, 0.75));
   float diffuse = max(dot(n, light), 0.0);
   vec4 paint = texture(uFront, vUv);
   if (paint.a < 0.025) paint = vec4(uSideColor, 1.0);
 
-  float frontRim = 1.0 - smoothstep(0.58, 0.91, n.z);
-  // Authored paint/stickers/face belong to the front Studio frame. The former
-  // broad side shell sampled almost the same front texture and visibly repeated
-  // edge artwork, which read as a slipped 2D mask on the 3D thumbnail.
+  // Read the actual authored alpha mask around this fragment to create a narrow,
+  // silhouette-accurate rim. This avoids approximating the edge from triangle
+  // normals, which was the source of the apparent 2D-mask registration artifact.
+  const vec2 texel = vec2(1.0 / 512.0);
+  float nearAlpha = min(
+    min(texture(uFront, vUv + vec2(texel.x * 4.0, 0.0)).a,
+        texture(uFront, vUv - vec2(texel.x * 4.0, 0.0)).a),
+    min(texture(uFront, vUv + vec2(0.0, texel.y * 4.0)).a,
+        texture(uFront, vUv - vec2(0.0, texel.y * 4.0)).a)
+  );
+  float authoredRim = smoothstep(0.02, 0.82, 1.0 - nearAlpha);
+  float frontRim = vFront > 0.5 ? authoredRim : (1.0 - smoothstep(0.58, 0.91, n.z));
+  // Authored paint/stickers/face belong to the front Studio frame. Keep the
+  // side mostly material/body coloured so edge artwork cannot echo around the
+  // thickness and read as a slipped second mask.
   float materialEdge = vFront > 0.5 ? frontRim : 0.38;
   vec3 color = vFront > 0.5
     ? paint.rgb
-    : mix(uSideColor, paint.rgb, 0.26);
+    : mix(uSideColor, paint.rgb, 0.08);
   color = applyMaterial(color, vUv, materialEdge);
   color *= vFront > 0.5
     ? (0.80 + 0.18 * diffuse) * (1.0 - 0.14 * frontRim)
