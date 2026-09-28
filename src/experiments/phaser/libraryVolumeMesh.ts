@@ -152,10 +152,13 @@ void main() {
   if (paint.a < 0.025) paint = vec4(uSideColor, 1.0);
 
   float frontRim = 1.0 - smoothstep(0.58, 0.91, n.z);
-  float materialEdge = vFront > 0.5 ? frontRim : 0.82;
+  // Authored paint/stickers/face belong to the front Studio frame. The former
+  // broad side shell sampled almost the same front texture and visibly repeated
+  // edge artwork, which read as a slipped 2D mask on the 3D thumbnail.
+  float materialEdge = vFront > 0.5 ? frontRim : 0.38;
   vec3 color = vFront > 0.5
     ? paint.rgb
-    : mix(uSideColor, paint.rgb, 0.90);
+    : mix(uSideColor, paint.rgb, 0.26);
   color = applyMaterial(color, vUv, materialEdge);
   color *= vFront > 0.5
     ? (0.80 + 0.18 * diffuse) * (1.0 - 0.14 * frontRim)
@@ -213,11 +216,11 @@ const createMesh = (toy: SavedSquishy): { vertices: Float32Array; indices: Uint1
   const frontStart = vertices.length / STRIDE;
   for (let ring = 0; ring <= FRONT_RINGS; ring += 1) {
     const radius = ring / FRONT_RINGS;
-    const z = 0.09 + 0.30 * Math.sqrt(Math.max(0, 1 - radius * radius));
+    const z = 0.09 + 0.19 * Math.sqrt(Math.max(0, 1 - radius * radius));
     for (let i = 0; i < count; i += 1) {
       const point = boundary[i]!, normal = outward[i]!;
       // Smooth radial normals avoid diagonal wedges across concave paw tips.
-      const slope = 0.30 * radius / Math.sqrt(Math.max(0.045, 1 - radius * radius));
+      const slope = 0.19 * radius / Math.sqrt(Math.max(0.045, 1 - radius * radius));
       const contourBlend = 0.18 * Math.pow(radius, 5);
       const nx = point.x * slope * 0.85 + normal.x * contourBlend;
       const ny = point.y * slope * 0.85 + normal.y * contourBlend;
@@ -228,15 +231,16 @@ const createMesh = (toy: SavedSquishy): { vertices: Float32Array; indices: Uint1
   }
   joinRings(frontStart, FRONT_RINGS + 1);
 
-  // The maximum side radius is just 1.025, not a rigid 1.04 lip. Multiple
-  // cross-sections give smooth side normals and an actual shallow back roll.
+  // Roll the Hall thickness inward from the authored front silhouette. The old
+  // 1.025 outer lip exposed a second textured contour around painted/decorated
+  // toys, creating the owner-reported mask-registration artifact.
   const sideStart = vertices.length / STRIDE;
   const sections = [
-    { r: 1.000, z: 0.090, nz: 0.21 },
-    { r: 1.025, z: 0.028, nz: 0.08 },
-    { r: 1.017, z: -0.042, nz: -0.08 },
-    { r: 0.990, z: -0.094, nz: -0.33 },
-    { r: 0.962, z: -0.116, nz: -0.62 },
+    { r: 1.000, z: 0.090, nz: 0.22 },
+    { r: 0.997, z: 0.030, nz: 0.08 },
+    { r: 0.989, z: -0.036, nz: -0.10 },
+    { r: 0.976, z: -0.080, nz: -0.36 },
+    { r: 0.958, z: -0.100, nz: -0.64 },
   ] as const;
   for (const section of sections) {
     for (let i = 0; i < count; i += 1) {
@@ -251,10 +255,10 @@ const createMesh = (toy: SavedSquishy): { vertices: Float32Array; indices: Uint1
   const backStart = vertices.length / STRIDE;
   for (let ring = 0; ring <= 2; ring += 1) {
     const radius = ring / 2;
-    const z = -0.116 - 0.025 * Math.sqrt(Math.max(0, 1 - radius * radius));
+    const z = -0.100 - 0.020 * Math.sqrt(Math.max(0, 1 - radius * radius));
     for (let i = 0; i < count; i += 1) {
       const point = boundary[i]!, normal = outward[i]!;
-      addVertex(vertices, point.x * radius * 0.962, point.y * radius * 0.962,
+      addVertex(vertices, point.x * radius * 0.958, point.y * radius * 0.958,
         z, normal.x * radius * 0.20, normal.y * radius * 0.20, -1, 0);
     }
   }
