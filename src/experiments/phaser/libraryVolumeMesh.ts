@@ -159,18 +159,13 @@ void main() {
   vec4 paint = texture(uFront, vUv);
   if (paint.a < 0.025) paint = vec4(uSideColor, 1.0);
 
-  // Read the actual authored alpha mask around this fragment to create a narrow,
-  // silhouette-accurate rim. This avoids approximating the edge from triangle
-  // normals, which was the source of the apparent 2D-mask registration artifact.
-  const vec2 texel = vec2(1.0 / 512.0);
-  float nearAlpha = min(
-    min(texture(uFront, vUv + vec2(texel.x * 4.0, 0.0)).a,
-        texture(uFront, vUv - vec2(texel.x * 4.0, 0.0)).a),
-    min(texture(uFront, vUv + vec2(0.0, texel.y * 4.0)).a,
-        texture(uFront, vUv - vec2(0.0, texel.y * 4.0)).a)
-  );
-  float authoredRim = smoothstep(0.02, 0.82, 1.0 - nearAlpha);
-  float frontRim = vFront > 0.5 ? authoredRim : (1.0 - smoothstep(0.58, 0.91, n.z));
+  // Front vertices encode their contour-ring radius in vFront (1..2).
+  // Using that continuous ring coordinate gives a clean narrow rim without
+  // consulting concave triangle normals or the intentionally overfilled albedo.
+  float frontRadius = clamp(vFront - 1.0, 0.0, 1.0);
+  float frontRim = vFront > 0.5
+    ? smoothstep(0.80, 0.995, frontRadius)
+    : (1.0 - smoothstep(0.58, 0.91, n.z));
   // Authored paint/stickers/face belong to the front Studio frame. Keep the
   // side mostly material/body coloured so edge artwork cannot echo around the
   // thickness and read as a slipped second mask.
@@ -244,8 +239,10 @@ const createMesh = (toy: SavedSquishy): { vertices: Float32Array; indices: Uint1
       const nx = point.x * slope * 0.85 + normal.x * contourBlend;
       const ny = point.y * slope * 0.85 + normal.y * contourBlend;
       const length = Math.hypot(nx, ny, 1);
+      // vFront doubles as a smooth front-ring coordinate: 1 at the
+      // centre, 2 at the contour. Side/back remain 0.
       addVertex(vertices, point.x * radius, point.y * radius, z,
-        nx / length, ny / length, 1 / length, 1);
+        nx / length, ny / length, 1 / length, 1 + radius);
     }
   }
   joinRings(frontStart, FRONT_RINGS + 1);
