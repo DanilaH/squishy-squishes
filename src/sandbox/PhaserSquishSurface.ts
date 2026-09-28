@@ -142,6 +142,7 @@ export class PhaserSquishSurface {
     squish.setFillProgress(this.fillProgress);
     squish.setMoldProgress(this.moldProgress);
     squish.setWireframe(this.wireframe);
+    squish.setViewportFollowEnabled(this.stage === 'finish' || this.stage === 'squeeze');
     if (this.appearanceDefined) squish.setAppearanceCanvas(this.appearance);
     this.bridge?.setStage(this.stage, this.decorSection);
     this.bridge?.setBlocked(this.blocked);
@@ -164,6 +165,7 @@ export class PhaserSquishSurface {
   public setStudioStage(stage: StudioGestureStage, section: StudioDecorSection): void {
     this.stage = stage;
     this.decorSection = section;
+    this.squish?.setViewportFollowEnabled(stage === 'finish' || stage === 'squeeze');
     this.bridge?.setStage(stage, section);
     this.syncCanvasSize();
   }
