@@ -134,11 +134,15 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     // The tactile stages deliberately enlarge the transparent canvas while
     // shrinking the render-radius ratio so the resting body keeps its size.
     // Anchor the desk to the visible body, never to the capture-buffer bounds.
-    const cssRadiusRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue('--squish-radius-ratio'));
+    const canvasStyle = getComputedStyle(canvas);
+    const cssRadiusRatio = Number.parseFloat(canvasStyle.getPropertyValue('--squish-radius-ratio'));
+    const cssCenterOffsetY = Number.parseFloat(canvasStyle.getPropertyValue('--squish-center-offset-y'));
     const radiusRatio = Number.isFinite(cssRadiusRatio) ? cssRadiusRatio : 0.34;
+    const centerOffsetY = Number.isFinite(cssCenterOffsetY) ? cssCenterOffsetY : 0;
     // The historical 0.76 canvas proxy corresponds to ~76% of the canonical
-    // shape radius below centre. Preserve that seat while allowing headroom.
-    const toyBottomProxy = cr.top + cr.height * (0.5 + radiusRatio * 0.76);
+    // shape radius below centre. Paint may lower the rendered body inside an
+    // otherwise stable canvas, so include the render-space centre offset too.
+    const toyBottomProxy = cr.top + cr.height * (0.5 + radiusRatio * (0.76 - centerOffsetY));
     const top = Math.min(toyBottomProxy - 3, sr.bottom - 3);
     const desktop = innerWidth >= 901 && innerWidth > innerHeight;
     // Desktop tabletop/front may occupy the background below a short stage;
@@ -158,6 +162,10 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     const scaleWidth = Math.min(innerWidth * 1.14, visibleBodyDiameter * deskToBodyRatio);
     const imageHeight = scaleWidth * 435 / (421 + 435 + 381);
     const snap = (n: number): number => Math.round(n * devicePixelRatio) / devicePixelRatio;
+    // Drive the CSS contact shadow from the same tabletop anchor as the desk.
+    // A formula based only on stage/canvas percentages drifted tens of pixels
+    // once desktop craft gained a larger hero and tactile stages gained headroom.
+    stage.style.setProperty('--studio-contact-top', `${snap(top - sr.top + 4)}px`);
     desk.style.display = showDesk ? 'block' : 'none';
     desk.style.top = `${snap(top - sr.top)}px`;
     desk.style.width = `${snap(scaleWidth)}px`;
