@@ -35,7 +35,17 @@ void main() {
 }
 `;
 
-export const fragmentShaderSource = `#version 300 es
+export interface SquishFragmentShaderOptions {
+  readonly edgeDarkening?: number;
+  readonly finalBodyLighting?: string;
+}
+
+export const createFragmentShaderSource = (
+  options: SquishFragmentShaderOptions = {},
+): string => {
+  const edgeDarkening = options.edgeDarkening ?? 0.26;
+  const finalBodyLighting = options.finalBodyLighting ?? '';
+  return `#version 300 es
 precision highp float;
 
 in vec2 vUv;
@@ -140,7 +150,7 @@ void main() {
   float warmSurface = lightSurface * smoothstep(0.02, 0.22, (base.r + base.g) * 0.5 - base.b);
 
   float edge = smoothstep(0.5, 1.0, shape);
-  base *= 1.0 - edge * 0.26;
+  base *= 1.0 - edge * ${edgeDarkening.toFixed(3)};
 
   // Translucent materials should read as dense gel rather than a white exposure pass.
   // Preserve authored colour, darken optical depth slightly, then add narrow internal
@@ -282,7 +292,11 @@ void main() {
   meniscusBand *= 1.0 - step(0.995, fillProgress);
   base += uSheenColor * meniscusBand * 0.12;
 
+  ${finalBodyLighting}
   float bodyAlpha = mix(0.985, 0.60 + edge * 0.30, translucency);
   outColor = vec4(base, bodyAlpha * shapeAlpha);
 }
 `;
+};
+
+export const fragmentShaderSource = createFragmentShaderSource();
