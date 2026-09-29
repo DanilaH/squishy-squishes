@@ -4,7 +4,6 @@ import { drawPagesAccessoryGraphic, renderPagesSurfaceDecor } from '../../sandbo
 import { renderPagesVolumeThumbnail, releasePagesVolumeThumbnail } from './libraryVolumeProduction';
 import { mountLibraryHallFeel } from './libraryHallFeel';
 import { mountLibraryHallPreview } from './libraryHallPreview';
-import { mountLibraryVolumeReview } from './libraryVolumeReview';
 import { mountStudioEnvironmentPreview } from './studioEnvironmentPreview';
 import './libraryHallPolish.css';
 import './libraryHallGrounding.css';
@@ -32,7 +31,9 @@ export const installReviewVisualProfile = (
   const disposeStudio = mountStudioEnvironmentPreview(root);
   mountLibraryHallPreview(root);
   mountLibraryHallFeel(root);
-  if (options.volumeProbe) mountLibraryVolumeReview();
+  if (options.volumeProbe && new URLSearchParams(location.search).get('volume-probe') === '1') {
+    void import('./libraryVolumeReview').then(({ mountLibraryVolumeReview }) => mountLibraryVolumeReview());
+  }
 
   return () => {
     disposeStudio();
