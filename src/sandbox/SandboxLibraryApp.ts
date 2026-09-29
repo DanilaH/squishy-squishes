@@ -215,6 +215,7 @@ export class SandboxLibraryApp {
   private pendingReplacement: PendingReplacement | null = null;
   private pendingDeleteId: string | null = null;
   private modalReturnFocus: HTMLElement | null = null;
+  private thumbnailObserver: IntersectionObserver | null = null;
   private loadedMakerRendererOptions: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'> | null = null;
   private makerRendererLoad: Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>> | null = null;
   private makerStartToken = 0;
@@ -249,6 +250,8 @@ export class SandboxLibraryApp {
     this.pendingReplacement = null;
     this.currentMaker?.dispose();
     this.currentMaker = null;
+    this.thumbnailObserver?.disconnect();
+    this.thumbnailObserver = null;
     releasePagesLibraryMaterialLighting();
     this.abortController.abort();
     this.root.replaceChildren();
@@ -314,11 +317,12 @@ export class SandboxLibraryApp {
         <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>
       </main>
     `;
-    this.renderVisibleThumbnails();
+    this.observeLibraryThumbnails();
   }
 
   private renderIdeas(): void {
     this.cancelPendingMakerStart();
+    this.thumbnailObserver?.disconnect();
     this.currentMaker?.dispose();
     this.currentMaker = null;
     releasePagesLibraryMaterialLighting();
@@ -406,12 +410,40 @@ export class SandboxLibraryApp {
     `;
   }
 
+  private renderThumbnail(canvas: HTMLCanvasElement): void {
+    const id = canvas.dataset.libraryThumbnail;
+    const toy = this.library.find((candidate) => candidate.id === id);
+    if (!toy) return;
+    renderLibraryThumbnail(canvas, toy);
+    canvas.dataset.libraryRendered = 'true';
+  }
+
   private renderVisibleThumbnails(scope: ParentNode = this.root): void {
     for (const canvas of scope.querySelectorAll<HTMLCanvasElement>('[data-library-thumbnail]')) {
-      const id = canvas.dataset.libraryThumbnail;
-      const toy = this.library.find((candidate) => candidate.id === id);
-      if (toy) renderLibraryThumbnail(canvas, toy);
+      this.renderThumbnail(canvas);
     }
+  }
+
+  private observeLibraryThumbnails(): void {
+    this.thumbnailObserver?.disconnect();
+    this.thumbnailObserver = null;
+    const canvases = [...this.root.querySelectorAll<HTMLCanvasElement>('[data-sandbox-library] [data-library-thumbnail]')];
+    if (canvases.length === 0) return;
+
+    if (typeof IntersectionObserver !== 'function') {
+      for (const canvas of canvases) this.renderThumbnail(canvas);
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting || !(entry.target instanceof HTMLCanvasElement)) continue;
+        this.renderThumbnail(entry.target);
+        observer.unobserve(entry.target);
+      }
+    }, { root: null, rootMargin: '160px' });
+    this.thumbnailObserver = observer;
+    for (const canvas of canvases) observer.observe(canvas);
   }
 
   /** May be called during idle time by preview/draft entrypoints to hide first-craft latency. */
