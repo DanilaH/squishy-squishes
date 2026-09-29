@@ -21,6 +21,15 @@ const decode = async (url: string): Promise<void> => {
   if (!image.naturalWidth || !image.naturalHeight) throw new Error(`Empty Library image: ${url}`);
 };
 
+let hallAssetsReady: Promise<void> | null = null;
+export const preloadLibraryHallAssets = (): Promise<void> => {
+  hallAssetsReady ??= Promise.all(Object.values(art).map(decode)).then(() => undefined).catch((error: unknown) => {
+    hallAssetsReady = null;
+    throw error;
+  });
+  return hallAssetsReady;
+};
+
 /** Only decorate the isolated /phaser/ Pages app; main / and Yandex keep their existing Library. */
 export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
   let disposed = false;
@@ -111,7 +120,7 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
   };
   root.addEventListener('click', handleClick, { capture: true });
 
-  void Promise.all(Object.values(art).map(decode)).then(() => {
+  void preloadLibraryHallAssets().then(() => {
     if (disposed) return;
     ready = true;
     decorate();
