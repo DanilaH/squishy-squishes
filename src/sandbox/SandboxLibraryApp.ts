@@ -440,7 +440,7 @@ export class SandboxLibraryApp {
       releasePagesLibraryMaterialLighting();
       this.activeIdea = toy ? null : idea;
       this.rewardMessage = null;
-      this.root.innerHTML = \`<div class="sandbox-maker-host" data-sandbox-maker-host></div>\${idea ? this.renderIdeaGuideMarkup(idea) : ''}\`;
+      this.root.innerHTML = `<div class="sandbox-maker-host" data-sandbox-maker-host></div>${idea ? this.renderIdeaGuideMarkup(idea) : ''}`;
       const host = this.root.querySelector<HTMLDivElement>('[data-sandbox-maker-host]');
       if (!host) throw new Error('Sandbox library failed to mount maker host.');
       this.currentMaker = new SandboxApp(host, {
