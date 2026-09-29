@@ -39,6 +39,7 @@ import {
   type MouthStyleId,
   type StickerId,
 } from './decor';
+import { captureModalReturnFocus, focusModal, restoreModalFocus, trapModalTab } from './modalFocus';
 import { createSandboxDraft, type SandboxDraft, type SavedSquishy } from './types';
 
 export type SandboxLanguage = 'en' | 'ru';
@@ -117,6 +118,11 @@ interface SandboxCopy {
   readonly none: string;
   readonly blush: string;
   readonly back: string;
+  readonly workbenchLabel: string;
+  readonly squishyLabel: string;
+  readonly decorCategories: string;
+  readonly colorLabel: string;
+  readonly saveFailed: string;
 }
 
 const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
@@ -173,6 +179,11 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     none: 'None',
     blush: 'Blush',
     back: 'BACK',
+    workbenchLabel: 'Squishy workbench',
+    squishyLabel: 'Squishy',
+    decorCategories: 'Decor categories',
+    colorLabel: 'Color',
+    saveFailed: 'Save failed. Try again.',
   },
   ru: {
     studio: 'СКВИШ-СТУДИЯ',
@@ -227,6 +238,11 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     none: 'Нет',
     blush: 'Румянец',
     back: 'НАЗАД',
+    workbenchLabel: 'Стол для сквиша',
+    squishyLabel: 'Сквиш',
+    decorCategories: 'Категории украшений',
+    colorLabel: 'Цвет',
+    saveFailed: 'Не удалось сохранить. Попробуй ещё раз.',
   },
 };
 
@@ -253,6 +269,30 @@ const DECOR_LABELS: Readonly<Record<SandboxLanguage, DecorLabels>> = {
     accessories: { 'cat-ears': 'Кошачьи', 'bunny-ears': 'Заячьи', horns: 'Рожки', bow: 'Бант', crown: 'Корона' },
     stickerTip: 'Тапни по сквишу, чтобы наклеить.',
   },
+};
+
+const SHAPE_LABELS: Readonly<Record<SandboxLanguage, Readonly<Record<ShapeId, string>>>> = {
+  en: {
+    'soft-square': 'Soft Cube',
+    heart: 'Heart',
+    mochi: 'Mochi',
+    peach: 'Peach',
+    mushroom: 'Mushroom',
+    paw: 'Paw',
+  },
+  ru: {
+    'soft-square': 'Кубик',
+    heart: 'Сердечко',
+    mochi: 'Моти',
+    peach: 'Персик',
+    mushroom: 'Грибочек',
+    paw: 'Лапка',
+  },
+};
+
+const MIXIN_LABELS: Readonly<Record<SandboxLanguage, Readonly<Record<MixInId, string>>>> = {
+  en: { glitter: 'Glitter', stars: 'Stars', foam: 'Foam', pearls: 'Pearls', hearts: 'Hearts', confetti: 'Confetti' },
+  ru: { glitter: 'Блёстки', stars: 'Звёзды', foam: 'Пена', pearls: 'Жемчужины', hearts: 'Сердечки', confetti: 'Конфетти' },
 };
 
 const PAINT_COLORS = [
@@ -303,15 +343,6 @@ const mixinGlyph = (id: MixInId): string => {
   if (id === 'pearls') return '◉';
   if (id === 'hearts') return '♥';
   return '▰';
-};
-
-const mixinLabel = (id: MixInId): string => {
-  if (id === 'glitter') return 'Glitter';
-  if (id === 'stars') return 'Stars';
-  if (id === 'foam') return 'Foam';
-  if (id === 'pearls') return 'Pearls';
-  if (id === 'hearts') return 'Hearts';
-  return 'Confetti';
 };
 
 export class SandboxApp {
@@ -365,6 +396,7 @@ export class SandboxApp {
   private activityBlocked = false;
   private appearanceLimitReached = false;
   private exitConfirmOpen = false;
+  private exitReturnFocus: HTMLElement | null = null;
   private saving = false;
   private disposed = false;
 
@@ -488,21 +520,23 @@ export class SandboxApp {
 
   private renderShell(): string {
     const decorLabels = DECOR_LABELS[this.options.language];
+    const shapeLabels = SHAPE_LABELS[this.options.language];
+    const mixinLabels = MIXIN_LABELS[this.options.language];
     const shapes = SHAPES.map((shape) => `
       <button class="sandbox-shape" type="button" data-shape="${shape.id}" aria-pressed="${shape.id === this.draft.shapeId}">
         <span class="sandbox-shape__icon">${shapeSvg(shape)}</span>
-        <span>${shape.label}</span>
+        <span>${shapeLabels[shape.id]}</span>
       </button>
     `).join('');
     const paintColors = PAINT_COLORS.map((color, index) => `
-      <button class="sandbox-swatch" type="button" data-paint-color="${color}" aria-label="Color ${index + 1}" aria-pressed="${index === 0}" style="--swatch:#${color.toString(16).padStart(6, '0')}"></button>
+      <button class="sandbox-swatch" type="button" data-paint-color="${color}" aria-label="${this.copy.colorLabel} ${index + 1}" aria-pressed="${index === 0}" style="--swatch:#${color.toString(16).padStart(6, '0')}"></button>
     `).join('');
     const brushSizes = BRUSH_SIZES.map((size) => `
       <button type="button" data-brush-size="${size}" aria-pressed="${size === this.brushSize}">${size === 18 ? 'S' : size === 34 ? 'M' : 'L'}</button>
     `).join('');
     const mixins = MIXIN_IDS.map((id, index) => `
       <button class="sandbox-mixin" type="button" data-mixin="${id}" aria-pressed="${index === 0}">
-        <span>${mixinGlyph(id)}</span><small>${mixinLabel(id)}</small>
+        <span>${mixinGlyph(id)}</span><small>${mixinLabels[id]}</small>
       </button>
     `).join('');
     const materials = MATERIALS.map((material) => `
@@ -551,10 +585,10 @@ export class SandboxApp {
           <p data-sandbox-hint></p>
         </section>
 
-        <section class="sandbox-stage" aria-label="Squishy workbench">
+        <section class="sandbox-stage" aria-label="${this.copy.workbenchLabel}">
           <div class="sandbox-glow" aria-hidden="true"></div>
           <canvas class="sandbox-accessory-layer" data-sandbox-accessory aria-hidden="true" hidden></canvas>
-          <canvas class="sandbox-canvas" data-sandbox-canvas aria-label="Squishy"></canvas>
+          <canvas class="sandbox-canvas" data-sandbox-canvas aria-label="${this.copy.squishyLabel}"></canvas>
           <canvas class="sandbox-rigid-mixin-layer" data-sandbox-rigid-mixins aria-hidden="true" hidden></canvas>
         </section>
 
@@ -591,22 +625,22 @@ export class SandboxApp {
           </div>
 
           <div class="sandbox-panel sandbox-panel--decor" data-panel="decor">
-            <div class="sandbox-decor-tabs" role="tablist" aria-label="Decor categories">
-              <button type="button" data-decor-section="face" aria-pressed="true">☺ <span>${this.copy.face}</span></button>
-              <button type="button" data-decor-section="stickers" aria-pressed="false">✦ <span>${this.copy.stickers}</span></button>
-              <button type="button" data-decor-section="accessory" aria-pressed="false">♛ <span>${this.copy.head}</span></button>
+            <div class="sandbox-decor-tabs" role="tablist" aria-label="${this.copy.decorCategories}">
+              <button type="button" role="tab" id="decor-tab-face" aria-controls="decor-panel-face" aria-selected="true" tabindex="0" data-decor-section="face">☺ <span>${this.copy.face}</span></button>
+              <button type="button" role="tab" id="decor-tab-stickers" aria-controls="decor-panel-stickers" aria-selected="false" tabindex="-1" data-decor-section="stickers">✦ <span>${this.copy.stickers}</span></button>
+              <button type="button" role="tab" id="decor-tab-accessory" aria-controls="decor-panel-accessory" aria-selected="false" tabindex="-1" data-decor-section="accessory">♛ <span>${this.copy.head}</span></button>
             </div>
-            <div class="sandbox-decor-section" data-decor-panel="face">
+            <div class="sandbox-decor-section" role="tabpanel" id="decor-panel-face" aria-labelledby="decor-tab-face" data-decor-panel="face">
               <label>${this.copy.eyes}</label><div class="sandbox-decor-grid sandbox-decor-grid--four">${eyes}</div>
               <label>${this.copy.mouth}</label><div class="sandbox-decor-grid sandbox-decor-grid--four">${mouths}</div>
               <button class="sandbox-decor-toggle" type="button" data-action="decor-blush" aria-pressed="false">● ● <span>${this.copy.blush}</span></button>
             </div>
-            <div class="sandbox-decor-section" data-decor-panel="stickers" hidden>
+            <div class="sandbox-decor-section" role="tabpanel" id="decor-panel-stickers" aria-labelledby="decor-tab-stickers" data-decor-panel="stickers" hidden>
               <div class="sandbox-decor-grid sandbox-decor-grid--four">${stickers}</div>
               <p class="sandbox-decor-tip">${decorLabels.stickerTip}</p>
               <div class="sandbox-tool-row sandbox-tool-row--actions"><button type="button" data-action="decor-undo">${this.copy.undo}</button><button type="button" data-action="decor-clear">${this.copy.clear}</button></div>
             </div>
-            <div class="sandbox-decor-section" data-decor-panel="accessory" hidden>
+            <div class="sandbox-decor-section" role="tabpanel" id="decor-panel-accessory" aria-labelledby="decor-tab-accessory" data-decor-panel="accessory" hidden>
               <div class="sandbox-decor-grid sandbox-decor-grid--three">${accessories}</div>
             </div>
             <button class="sandbox-primary sandbox-panel__wide" type="button" data-action="decor-continue">${this.copy.next}</button>
@@ -645,6 +679,7 @@ export class SandboxApp {
   private bindEvents(): void {
     const signal = this.abortController.signal;
     this.root.addEventListener('click', this.handleClick, { signal });
+    this.root.addEventListener('keydown', this.handleKeyDown, { signal });
     if (this.options.rendererBackend !== 'phaser') {
       this.canvas.addEventListener('pointerdown', this.handlePointerDown, { signal });
       this.canvas.addEventListener('pointermove', this.handlePointerMove, { signal });
@@ -778,6 +813,35 @@ export class SandboxApp {
       else this.setStage(this.savedSquishy ? 'home' : 'shape');
     }
     else if (action === 'mute') this.toggleMuted();
+  };
+
+  private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    if (this.exitConfirmOpen) {
+      const dialog = this.root.querySelector<HTMLElement>('[data-exit-overlay] [role="dialog"]');
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.setExitConfirmOpen(false);
+        return;
+      }
+      if (dialog && trapModalTab(event, dialog)) return;
+    }
+
+    const tab = event.target instanceof HTMLElement ? event.target.closest<HTMLButtonElement>('[role="tab"][data-decor-section]') : null;
+    if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = [...this.root.querySelectorAll<HTMLButtonElement>('[role="tab"][data-decor-section]')];
+    const index = tabs.indexOf(tab);
+    if (index < 0) return;
+    event.preventDefault();
+    const nextIndex = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? tabs.length - 1
+        : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    const next = tabs[nextIndex];
+    const section = next?.dataset.decorSection as DecorSection | undefined;
+    if (!next || !section) return;
+    this.setDecorSection(section);
+    next.focus();
   };
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
@@ -1074,10 +1138,19 @@ export class SandboxApp {
   }
 
   private setExitConfirmOpen(open: boolean): void {
+    const overlay = this.requireElement<HTMLElement>('[data-exit-overlay]');
+    if (open && !this.exitConfirmOpen) this.exitReturnFocus = captureModalReturnFocus();
     this.exitConfirmOpen = open;
     this.shell.dataset.exitConfirm = String(open);
-    this.requireElement<HTMLElement>('[data-exit-overlay]').hidden = !open;
+    overlay.hidden = !open;
     this.syncInteractivity();
+    if (open) {
+      const dialog = overlay.querySelector<HTMLElement>('[role="dialog"]');
+      if (dialog) focusModal(dialog);
+    } else {
+      restoreModalFocus(this.exitReturnFocus);
+      this.exitReturnFocus = null;
+    }
   }
 
   private setAppearanceLimitReached(value: boolean): void {
@@ -1131,7 +1204,7 @@ export class SandboxApp {
     } catch (error: unknown) {
       console.error('[squishy:sandbox-save]', error);
       this.shell.dataset.saveComplete = 'false';
-      this.status.textContent = 'Save failed';
+      this.status.textContent = this.copy.saveFailed;
     } finally {
       this.saving = false;
       this.saveButton.disabled = false;
@@ -1447,7 +1520,13 @@ export class SandboxApp {
 
   private updatePressed(selector: string, datasetKey: string, value: string): void {
     for (const button of this.root.querySelectorAll<HTMLButtonElement>(selector)) {
-      button.setAttribute('aria-pressed', String(button.dataset[datasetKey] === value));
+      const selected = button.dataset[datasetKey] === value;
+      if (button.getAttribute('role') === 'tab') {
+        button.setAttribute('aria-selected', String(selected));
+        button.tabIndex = selected ? 0 : -1;
+      } else {
+        button.setAttribute('aria-pressed', String(selected));
+      }
     }
   }
 
