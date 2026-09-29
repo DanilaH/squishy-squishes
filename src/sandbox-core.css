@@ -131,7 +131,8 @@
   cursor: pointer;
 }
 .sandbox-panel button:active { transform: translateY(1px) scale(.985); }
-.sandbox-panel button[aria-pressed="true"] { border-color: rgba(164, 94, 229, .55); box-shadow: 0 0 0 3px rgba(164, 94, 229, .13), 0 5px 13px rgba(78,56,97,.07); }
+.sandbox-panel button[aria-pressed="true"],
+.sandbox-panel button[aria-selected="true"] { border-color: rgba(164, 94, 229, .55); box-shadow: 0 0 0 3px rgba(164, 94, 229, .13), 0 5px 13px rgba(78,56,97,.07); }
 .sandbox-panel button:disabled { opacity: .42; cursor: default; }
 .sandbox-panel .sandbox-primary {
   border: 0;
@@ -193,7 +194,7 @@
 .sandbox-panel--decor { grid-template-columns: 1fr; gap: 7px; }
 .sandbox-decor-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
 .sandbox-decor-tabs button { min-height: 42px; display:flex; align-items:center; justify-content:center; gap:6px; }
-.sandbox-decor-tabs button[aria-pressed="true"] { background: rgba(247,235,255,.96); }
+.sandbox-decor-tabs button[aria-selected="true"] { background: rgba(247,235,255,.96); }
 .sandbox-decor-section { display:grid; gap:6px; min-height: 102px; align-content:center; }
 .sandbox-decor-section > label { color: var(--sandbox-muted); font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; text-align:center; }
 .sandbox-decor-grid { display:grid; gap:6px; }
