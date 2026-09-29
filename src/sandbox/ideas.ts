@@ -100,7 +100,16 @@ const RU_MATERIALS: Readonly<Record<MaterialId, string>> = {
   holo: 'Голографик',
   marshmallow: 'Маршмеллоу',
   pearl: 'Перламутр',
-  chrome: 'Хром',
+  chrome: 'Металлик',
+};
+
+const EN_MATERIALS: Readonly<Record<MaterialId, string>> = {
+  soft: 'Soft',
+  jelly: 'Jelly',
+  holo: 'Holo',
+  marshmallow: 'Marshmallow',
+  pearl: 'Pearl',
+  chrome: 'Metallic',
 };
 
 const EN_MIXINS: Readonly<Record<MixInId, string>> = {
@@ -126,12 +135,8 @@ export const getIdeaLabel = (idea: SquishyIdea, language: IdeaLanguage): string 
   return `${RU_SHAPES[idea.shapeId]} · ${RU_PALETTES[idea.paletteId]}`;
 };
 
-export const getIdeaMaterialLabel = (idea: SquishyIdea, language: IdeaLanguage): string => {
-  if (language === 'ru') return RU_MATERIALS[idea.materialId];
-  if (idea.materialId === 'soft') return 'Soft';
-  if (idea.materialId === 'jelly') return 'Jelly';
-  return 'Holo';
-};
+export const getIdeaMaterialLabel = (idea: SquishyIdea, language: IdeaLanguage): string =>
+  language === 'ru' ? RU_MATERIALS[idea.materialId] : EN_MATERIALS[idea.materialId];
 
 export const getIdeaMixinLabel = (idea: SquishyIdea, language: IdeaLanguage): string | null => {
   if (idea.requiredMixin === null) return null;

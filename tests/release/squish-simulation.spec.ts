@@ -75,7 +75,7 @@ test('M1: shape changes retain mesh but change hit testing without resetting sav
   expect(simulation.pointToUv(5, 5)).toBeNull();
 });
 
-test('M1: the original DOM sandbox still renders, accepts a real drag and reports one squeeze', async ({ page }) => {
+test('M1: the production Phaser sandbox renders, accepts a real drag and reports one squeeze', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/squishy-squishes/');
   const state = {
@@ -102,13 +102,18 @@ test('M1: the original DOM sandbox still renders, accepts a real drag and report
   expect(await canvas.evaluate((node) => (node as HTMLCanvasElement).getContext('webgl2')?.getContextAttributes()?.alpha)).toBe(true);
   const centerX = box.x + box.width / 2;
   const centerY = box.y + box.height / 2;
+  await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
+  await expect(canvas).toHaveAttribute('data-phaser-volume', 'deformable');
+  const offsetBefore = Number(await canvas.getAttribute('data-squish-body-offset-x'));
   await page.mouse.move(centerX, centerY);
   await page.mouse.down();
   await page.mouse.move(centerX + Math.min(box.width * 0.15, 60), centerY, { steps: 12 });
-  await expect(canvas).toHaveClass(/is-active/);
+  await expect.poll(async () => {
+    const offset = Number(await canvas.getAttribute('data-squish-body-offset-x'));
+    return Math.abs(offset - offsetBefore);
+  }).toBeGreaterThan(0.02);
   await page.mouse.up();
   await expect.poll(async () => Number(await shell.getAttribute('data-sandbox-squeezes'))).toBe(1);
-  await expect(canvas).not.toHaveClass(/is-active/);
   await page.locator('[data-action="home"]').click();
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
 });

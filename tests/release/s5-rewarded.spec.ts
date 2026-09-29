@@ -170,7 +170,10 @@ test('S5 mock rewarded click durably expands 8 slots to 10 exactly once and surv
   await expect(library).toHaveAttribute('data-library-capacity', '10');
   await expect(page.locator('[data-library-reward-message]')).toContainText(/10/);
   await expect(page.locator('[data-library-expand-reward]')).toHaveCount(0);
-  await expect(page.locator('.sandbox-library-add-card')).toBeVisible();
+  // The accepted Hall deliberately removes the legacy in-grid add card; free
+  // creation remains available through the persistent heading action.
+  await expect(page.locator('[data-library-new]').first()).toBeVisible();
+  await expect(page.locator('.sandbox-library-add-card')).toHaveCount(0);
 
   const saved = await readSave(page);
   expect(saved.libraryCapacity).toBe(10);

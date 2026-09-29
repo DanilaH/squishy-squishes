@@ -8,7 +8,8 @@ import {
   getIdeaShapeLabel,
   type SquishyIdea,
 } from './ideas';
-import { renderLibraryThumbnail } from './libraryThumbnail';
+import { renderLibraryThumbnail, releasePagesLibraryMaterialLighting } from './libraryThumbnail';
+import { captureModalReturnFocus, focusModal, restoreModalFocus, trapModalTab } from './modalFocus';
 import { getSquishyTitle } from './titles';
 import type { SandboxDraft, SavedSquishy } from './types';
 
@@ -31,6 +32,8 @@ export interface SandboxLibraryAppOptions {
   readonly onDeleteSquishy: (targetId: string) => Promise<readonly SavedSquishy[]>;
   /** Candidate-only renderer port. Ordinary library bootstrap leaves it absent. */
   readonly makerRendererOptions?: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
+  /** Optional lazy renderer seam: keeps Phaser out of the first Library paint. */
+  readonly loadMakerRendererOptions?: () => Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>>;
   readonly onMutedChange: (muted: boolean) => void | Promise<void>;
 }
 
@@ -66,6 +69,8 @@ interface LibraryCopy {
   readonly rewardAction: string;
   readonly rewardExpanded: string;
   readonly rewardUnavailable: string;
+  readonly studioLoading: string;
+  readonly studioUnavailable: string;
 }
 
 
@@ -102,6 +107,8 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     rewardAction: 'WATCH AD · +2 SLOTS',
     rewardExpanded: 'Shelf expanded · 10 slots',
     rewardUnavailable: 'No shelf change. Try again when you want.',
+    studioLoading: 'Opening the studio…',
+    studioUnavailable: 'The studio could not start. Try again or use another browser.',
   },
   ru: {
     studio: 'СКВИШ-СТУДИЯ',
@@ -135,6 +142,8 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     rewardAction: 'РЕКЛАМА · +2 МЕСТА',
     rewardExpanded: 'Полка расширена · 10 мест',
     rewardUnavailable: 'Полка не изменилась. Можно попробовать позже.',
+    studioLoading: 'Открываем студию…',
+    studioUnavailable: 'Не удалось открыть студию. Попробуй ещё раз или открой игру в другом браузере.',
   },
 };
 
@@ -174,7 +183,7 @@ const RU_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {
   holo: 'Голографик',
   marshmallow: 'Маршмеллоу',
   pearl: 'Перламутр',
-  chrome: 'Хром',
+  chrome: 'Металлик',
 };
 
 const EN_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {
@@ -183,7 +192,7 @@ const EN_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {
   holo: 'Holo',
   marshmallow: 'Marshmallow',
   pearl: 'Pearl',
-  chrome: 'Chrome',
+  chrome: 'Metallic',
 };
 
 interface PendingReplacement {
@@ -205,6 +214,10 @@ export class SandboxLibraryApp {
   private currentMaker: SandboxApp | null = null;
   private pendingReplacement: PendingReplacement | null = null;
   private pendingDeleteId: string | null = null;
+  private modalReturnFocus: HTMLElement | null = null;
+  private loadedMakerRendererOptions: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'> | null = null;
+  private makerRendererLoad: Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>> | null = null;
+  private makerStartToken = 0;
   private activityBlocked = false;
   private disposed = false;
 
@@ -218,10 +231,12 @@ export class SandboxLibraryApp {
     this.libraryCapacity = options.libraryCapacity;
     this.muted = options.muted;
     this.root.addEventListener('click', this.handleClick, { signal: this.abortController.signal });
+    this.root.addEventListener('keydown', this.handleKeyDown, { signal: this.abortController.signal });
     this.renderLibrary();
   }
 
   public setActivityBlocked(blocked: boolean): void {
+    if (this.disposed) return;
     this.activityBlocked = blocked;
     this.currentMaker?.setActivityBlocked(blocked);
     this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]')?.classList.toggle('is-blocked', blocked);
@@ -230,15 +245,18 @@ export class SandboxLibraryApp {
   public dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.cancelPendingMakerStart();
     this.pendingReplacement?.resolve(null);
     this.pendingReplacement = null;
     this.currentMaker?.dispose();
     this.currentMaker = null;
+    releasePagesLibraryMaterialLighting();
     this.abortController.abort();
     this.root.replaceChildren();
   }
 
   private renderLibrary(): void {
+    this.cancelPendingMakerStart();
     this.currentMaker?.dispose();
     this.currentMaker = null;
     this.activeIdea = null;
@@ -294,14 +312,17 @@ export class SandboxLibraryApp {
           ` : ''}
           ${this.rewardMessage ? `<p class="sandbox-library-reward-message" data-library-reward-message aria-live="polite">${this.rewardMessage}</p>` : ''}
         `}
+        <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>
       </main>
     `;
     this.renderVisibleThumbnails();
   }
 
   private renderIdeas(): void {
+    this.cancelPendingMakerStart();
     this.currentMaker?.dispose();
     this.currentMaker = null;
+    releasePagesLibraryMaterialLighting();
     this.activeIdea = null;
     this.pendingDeleteId = null;
     const completed = new Set(this.completedRecipeIds);
@@ -310,7 +331,7 @@ export class SandboxLibraryApp {
       const done = completed.has(idea.id);
       const mixin = getIdeaMixinLabel(idea, this.options.language);
       return `
-        <button class="sandbox-idea-card${done ? ' is-complete' : ''}" type="button" data-idea-id="${escapeAttribute(idea.id)}" aria-pressed="${done}" style="--idea-color:#${idea.paintColor.toString(16).padStart(6, '0')}">
+        <button class="sandbox-idea-card${done ? ' is-complete' : ''}" type="button" data-idea-id="${escapeAttribute(idea.id)}" style="--idea-color:#${idea.paintColor.toString(16).padStart(6, '0')}">
           <span class="sandbox-idea-card__top">
             <span class="sandbox-idea-card__shape">${getIdeaShapeLabel(idea, this.options.language)}</span>
             ${done ? `<strong>✓ ${this.copy.completed}</strong>` : ''}
@@ -342,6 +363,7 @@ export class SandboxLibraryApp {
           <p>${this.copy.ideasHint}</p>
         </section>
         <section class="sandbox-ideas-grid" aria-label="${this.copy.ideasTitle}">${cards}</section>
+        <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>
       </main>
     `;
   }
@@ -393,26 +415,97 @@ export class SandboxLibraryApp {
     }
   }
 
-  private startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): void {
-    this.currentMaker?.dispose();
-    this.currentMaker = null;
-    this.activeIdea = toy ? null : idea;
-    this.rewardMessage = null;
-    this.root.innerHTML = `<div class="sandbox-maker-host" data-sandbox-maker-host></div>${idea ? this.renderIdeaGuideMarkup(idea) : ''}`;
-    const host = this.root.querySelector<HTMLDivElement>('[data-sandbox-maker-host]');
-    if (!host) throw new Error('Sandbox library failed to mount maker host.');
-    this.currentMaker = new SandboxApp(host, {
-      ...this.options.makerRendererOptions,
-      language: this.options.language,
-      muted: this.muted,
-      savedSquishy: toy,
-      ...(toy === null && idea ? { initialShapeId: idea.shapeId } : {}),
-      startSavedInSqueeze: toy !== null,
-      onExitToLibrary: () => this.renderLibrary(),
-      onSaveSquishy: (draft) => this.handleSaveRequest(draft),
-      onMutedChange: (muted) => this.setMuted(muted),
-    });
-    this.currentMaker.setActivityBlocked(this.activityBlocked);
+  /** May be called during idle time by preview/draft entrypoints to hide first-craft latency. */
+  public preloadMakerRenderer(): Promise<void> {
+    if (!this.options.loadMakerRendererOptions || this.loadedMakerRendererOptions || this.options.makerRendererOptions) {
+      return Promise.resolve();
+    }
+    if (!this.makerRendererLoad) {
+      this.makerRendererLoad = this.options.loadMakerRendererOptions().then((rendererOptions) => {
+        this.loadedMakerRendererOptions = rendererOptions;
+        return rendererOptions;
+      }).finally(() => {
+        this.makerRendererLoad = null;
+      });
+    }
+    return this.makerRendererLoad.then(() => undefined);
+  }
+
+  private async resolveMakerRendererOptions(): Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'> | undefined> {
+    if (this.options.makerRendererOptions) return this.options.makerRendererOptions;
+    if (this.loadedMakerRendererOptions) return this.loadedMakerRendererOptions;
+    if (!this.options.loadMakerRendererOptions) return undefined;
+    await this.preloadMakerRenderer();
+    return this.loadedMakerRendererOptions ?? undefined;
+  }
+
+  private async startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): Promise<void> {
+    if (this.disposed) return;
+    const startToken = ++this.makerStartToken;
+    const currentShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
+    const origin: 'library' | 'ideas' = currentShell?.hasAttribute('data-sandbox-ideas') ? 'ideas' : 'library';
+    currentShell?.setAttribute('aria-busy', 'true');
+    const loadingMessage = currentShell?.querySelector<HTMLElement>('[data-library-maker-error]');
+    if (loadingMessage) {
+      loadingMessage.textContent = this.copy.studioLoading;
+      loadingMessage.hidden = false;
+      loadingMessage.classList.remove('is-error');
+    }
+    try {
+      const makerRendererOptions = await this.resolveMakerRendererOptions();
+      if (this.disposed || startToken !== this.makerStartToken || !currentShell?.isConnected) return;
+      this.currentMaker?.dispose();
+      this.currentMaker = null;
+      releasePagesLibraryMaterialLighting();
+      this.activeIdea = toy ? null : idea;
+      this.rewardMessage = null;
+      this.root.innerHTML = `<div class="sandbox-maker-host" data-sandbox-maker-host></div>${idea ? this.renderIdeaGuideMarkup(idea) : ''}`;
+      const host = this.root.querySelector<HTMLDivElement>('[data-sandbox-maker-host]');
+      if (!host) throw new Error('Sandbox library failed to mount maker host.');
+      this.currentMaker = new SandboxApp(host, {
+        ...makerRendererOptions,
+        language: this.options.language,
+        muted: this.muted,
+        savedSquishy: toy,
+        ...(toy === null && idea ? { initialShapeId: idea.shapeId } : {}),
+        startSavedInSqueeze: toy !== null,
+        onExitToLibrary: () => this.renderLibrary(),
+        onSaveSquishy: (draft) => this.handleSaveRequest(draft),
+        onMutedChange: (muted) => this.setMuted(muted),
+      });
+      this.currentMaker.setActivityBlocked(this.activityBlocked);
+    } catch (error: unknown) {
+      if (startToken !== this.makerStartToken) return;
+      console.error('[squishy:maker-start]', error);
+
+      // Loader failures leave the origin shell in place; constructor/renderer
+      // failures can happen after it was replaced with the maker host. Restore
+      // the exact originating screen before surfacing the retryable error.
+      if (!currentShell?.isConnected) {
+        if (origin === 'ideas') this.renderIdeas();
+        else this.renderLibrary();
+      }
+      const recoveryShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
+      recoveryShell?.removeAttribute('aria-busy');
+      const message = recoveryShell?.querySelector<HTMLElement>('[data-library-maker-error]');
+      if (message) {
+        message.textContent = this.copy.studioUnavailable;
+        message.hidden = false;
+        message.classList.add('is-error');
+      }
+    }
+  }
+
+  private cancelPendingMakerStart(): void {
+    this.makerStartToken += 1;
+    const shell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
+    shell?.removeAttribute('aria-busy');
+    const message = shell?.querySelector<HTMLElement>('[data-library-maker-error]');
+    if (message && message.textContent === this.copy.studioLoading) {
+      message.textContent = '';
+      message.hidden = true;
+      message.classList.remove('is-error');
+    }
   }
 
   private async handleSaveRequest(draft: SandboxDraft): Promise<SavedSquishy | null> {
@@ -420,6 +513,7 @@ export class SandboxLibraryApp {
     if (this.library.length < this.libraryCapacity) {
       const previousCompleted = this.completedRecipeIds;
       const result = await this.options.onAppendSquishy(draft, ideaId);
+      if (this.disposed) return null;
       this.library = [...result.library];
       this.completedRecipeIds = [...result.completedRecipeIds];
       if (ideaId) this.renderIdeaCompletion(ideaId, previousCompleted);
@@ -456,7 +550,7 @@ export class SandboxLibraryApp {
         <button class="sandbox-library-modal__cancel" type="button" data-library-replace-cancel>${this.copy.cancel}</button>
       </div>
     `;
-    this.root.append(overlay);
+    this.openModal(overlay);
     this.renderVisibleThumbnails(overlay);
   }
 
@@ -477,9 +571,33 @@ export class SandboxLibraryApp {
         </div>
       </div>
     `;
-    this.root.append(overlay);
+    this.openModal(overlay);
     this.renderVisibleThumbnails(overlay);
   }
+
+  private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    const replace = this.root.querySelector<HTMLElement>('[data-library-replace-overlay]');
+    const deleteOverlay = this.root.querySelector<HTMLElement>('[data-library-delete-overlay]');
+    const overlay = replace ?? deleteOverlay;
+    const dialog = overlay?.querySelector<HTMLElement>('[role="dialog"]') ?? null;
+    if (!overlay || !dialog) return;
+
+    if (this.activityBlocked || overlay.getAttribute('aria-busy') === 'true') {
+      // Platform lifecycle blocks (ads/pagehide) must freeze modal mutations as
+      // well as pointer input, while still keeping keyboard focus inside it.
+      if (event.key === 'Escape') event.preventDefault();
+      else trapModalTab(event, dialog);
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (replace) this.cancelReplacement();
+      else this.cancelDelete();
+      return;
+    }
+    trapModalTab(event, dialog);
+  };
 
   private readonly handleClick = (event: MouseEvent): void => {
     if (this.disposed || this.activityBlocked) return;
@@ -510,6 +628,7 @@ export class SandboxLibraryApp {
       return;
     }
     if (target.hasAttribute('data-library-expand-reward')) {
+      this.cancelPendingMakerStart();
       void this.unlockShelfExpansion();
       return;
     }
@@ -525,18 +644,18 @@ export class SandboxLibraryApp {
     const ideaId = target.dataset.ideaId;
     if (ideaId) {
       const idea = SQUISHY_IDEAS.find((candidate) => candidate.id === ideaId);
-      if (idea) this.startMaker(null, idea);
+      if (idea) void this.startMaker(null, idea);
       return;
     }
     if (target.hasAttribute('data-library-new')) {
-      this.startMaker(null);
+      void this.startMaker(null);
       return;
     }
 
     const playId = target.dataset.libraryPlayId;
     if (playId) {
       const toy = this.library.find((candidate) => candidate.id === playId);
-      if (toy) this.startMaker(toy);
+      if (toy) void this.startMaker(toy);
       return;
     }
 
@@ -544,6 +663,7 @@ export class SandboxLibraryApp {
     if (deleteId) {
       const toy = this.library.find((candidate) => candidate.id === deleteId);
       if (!toy) return;
+      this.cancelPendingMakerStart();
       this.pendingDeleteId = deleteId;
       this.renderDeleteOverlay(toy);
     }
@@ -553,20 +673,23 @@ export class SandboxLibraryApp {
     const pending = this.pendingReplacement;
     if (!pending) return;
     const overlay = this.root.querySelector<HTMLElement>('[data-library-replace-overlay]');
-    overlay?.setAttribute('aria-busy', 'true');
+    if (!overlay || overlay.getAttribute('aria-busy') === 'true') return;
+    this.setModalBusy(overlay, true);
     try {
       const previousCompleted = this.completedRecipeIds;
       const result = await this.options.onReplaceSquishy(targetId, pending.draft, pending.ideaId);
+      if (this.disposed || this.pendingReplacement !== pending || !overlay.isConnected) return;
       this.library = [...result.library];
       this.completedRecipeIds = [...result.completedRecipeIds];
       this.pendingReplacement = null;
-      overlay?.remove();
+      this.closeModal(false);
       if (pending.ideaId) this.renderIdeaCompletion(pending.ideaId, previousCompleted);
       pending.resolve(result.savedSquishy);
     } catch (error: unknown) {
+      if (this.disposed || this.pendingReplacement !== pending || !overlay.isConnected) return;
       console.error('[squishy:library-replace]', error);
-      overlay?.removeAttribute('aria-busy');
-      const message = overlay?.querySelector<HTMLElement>('[data-library-modal-error]');
+      this.setModalBusy(overlay, false);
+      const message = overlay.querySelector<HTMLElement>('[data-library-modal-error]');
       if (message) message.textContent = this.copy.saveFailed;
     }
   }
@@ -575,7 +698,7 @@ export class SandboxLibraryApp {
     const pending = this.pendingReplacement;
     if (!pending) return;
     this.pendingReplacement = null;
-    this.root.querySelector('[data-library-replace-overlay]')?.remove();
+    this.closeModal(true);
     pending.resolve(null);
   }
 
@@ -583,22 +706,58 @@ export class SandboxLibraryApp {
     const targetId = this.pendingDeleteId;
     if (!targetId) return;
     const overlay = this.root.querySelector<HTMLElement>('[data-library-delete-overlay]');
-    overlay?.setAttribute('aria-busy', 'true');
+    if (!overlay || overlay.getAttribute('aria-busy') === 'true') return;
+    this.setModalBusy(overlay, true);
     try {
-      this.library = [...await this.options.onDeleteSquishy(targetId)];
+      const library = await this.options.onDeleteSquishy(targetId);
+      if (this.disposed || this.pendingDeleteId !== targetId || !overlay.isConnected) return;
+      this.library = [...library];
       this.pendingDeleteId = null;
+      this.closeModal(false);
       this.renderLibrary();
     } catch (error: unknown) {
+      if (this.disposed || this.pendingDeleteId !== targetId || !overlay.isConnected) return;
       console.error('[squishy:library-delete]', error);
-      overlay?.removeAttribute('aria-busy');
-      const message = overlay?.querySelector<HTMLElement>('[data-library-modal-error]');
+      this.setModalBusy(overlay, false);
+      const message = overlay.querySelector<HTMLElement>('[data-library-modal-error]');
       if (message) message.textContent = this.copy.saveFailed;
     }
   }
 
   private cancelDelete(): void {
     this.pendingDeleteId = null;
-    this.root.querySelector('[data-library-delete-overlay]')?.remove();
+    this.closeModal(true);
+  }
+
+  private openModal(overlay: HTMLElement): void {
+    this.closeModal(false);
+    this.modalReturnFocus = captureModalReturnFocus();
+    this.root.append(overlay);
+    const dialog = overlay.querySelector<HTMLElement>('[role="dialog"]');
+    if (dialog) focusModal(dialog);
+  }
+
+  private closeModal(restore: boolean): void {
+    this.root.querySelector('[data-library-replace-overlay], [data-library-delete-overlay]')?.remove();
+    const returnFocus = this.modalReturnFocus;
+    this.modalReturnFocus = null;
+    if (restore) restoreModalFocus(returnFocus);
+  }
+
+  private setModalBusy(overlay: HTMLElement, busy: boolean): void {
+    if (busy) overlay.setAttribute('aria-busy', 'true');
+    else overlay.removeAttribute('aria-busy');
+    for (const button of overlay.querySelectorAll<HTMLButtonElement>('button')) button.disabled = busy;
+
+    const dialog = overlay.querySelector<HTMLElement>('[role="dialog"]');
+    if (!dialog) return;
+    if (busy) {
+      dialog.tabIndex = -1;
+      dialog.focus();
+    } else {
+      dialog.removeAttribute('tabindex');
+      focusModal(dialog);
+    }
   }
 
   private async unlockShelfExpansion(): Promise<void> {
@@ -612,6 +771,7 @@ export class SandboxLibraryApp {
 
     try {
       const result = await this.options.onUnlockShelfExpansion();
+      if (this.disposed) return;
       if (result.granted) {
         this.libraryCapacity = Math.max(this.libraryCapacity, result.libraryCapacity);
         this.rewardMessage = this.copy.rewardExpanded;
@@ -623,7 +783,7 @@ export class SandboxLibraryApp {
       this.rewardMessage = this.copy.rewardUnavailable;
     } finally {
       this.rewardInFlight = false;
-      this.renderLibrary();
+      if (!this.disposed) this.renderLibrary();
     }
   }
 

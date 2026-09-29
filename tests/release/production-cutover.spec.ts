@@ -1,0 +1,110 @@
+import { expect, test, type Page } from '@playwright/test';
+import { createDefaultSaveV3, type SaveStateV3 } from '../../src/platform/saveV3';
+import { createEmptyAppearanceDocument } from '../../src/sandbox/appearance';
+import { createEmptyDecorDocument } from '../../src/sandbox/decor';
+import type { SavedSquishy } from '../../src/sandbox/types';
+
+const WEB_URL = '/squishy-squishes/';
+const YANDEX_URL = '/yandex/';
+
+const toy: SavedSquishy = {
+  id: 'production-cutover-toy',
+  createdAt: 1_700_000_000_000,
+  shapeId: 'paw',
+  materialId: 'holo',
+  appearance: createEmptyAppearanceDocument(),
+  decor: createEmptyDecorDocument(),
+};
+
+const save: SaveStateV3 = {
+  ...createDefaultSaveV3(),
+  library: [toy],
+  totalCrafts: 1,
+  updatedAt: toy.createdAt,
+};
+
+const installYandexStub = async (page: Page): Promise<void> => {
+  await page.addInitScript(() => {
+    const listeners = {
+      game_api_pause: new Set<() => void>(),
+      game_api_resume: new Set<() => void>(),
+    };
+    const sdk = {
+      environment: { i18n: { lang: 'en' } },
+      features: {
+        GameplayAPI: { start: () => undefined, stop: () => undefined },
+        LoadingAPI: { ready: () => undefined },
+      },
+      on: (event: 'game_api_pause' | 'game_api_resume', listener: () => void) => listeners[event].add(listener),
+      off: (event: 'game_api_pause' | 'game_api_resume', listener: () => void) => listeners[event].delete(listener),
+      getStorage: async () => window.localStorage,
+      getPlayer: async () => ({
+        getData: async () => ({}),
+        setData: async () => undefined,
+      }),
+      adv: {
+        showFullscreenAdv: ({ callbacks }: { callbacks: { onOpen?: () => void; onClose?: (shown: boolean) => void } }) => {
+          callbacks.onOpen?.();
+          callbacks.onClose?.(false);
+        },
+        showRewardedVideo: ({ callbacks }: { callbacks: { onOpen?: () => void; onRewarded?: () => void; onClose?: () => void } }) => {
+          callbacks.onOpen?.();
+          callbacks.onRewarded?.();
+          callbacks.onClose?.();
+        },
+        showBannerAdv: async () => ({}),
+        hideBannerAdv: async () => ({ stickyAdvIsShowing: false }),
+        getBannerAdvStatus: async () => ({ stickyAdvIsShowing: false }),
+      },
+    };
+    (window as unknown as { YaGames?: { init(): Promise<typeof sdk> } }).YaGames = {
+      init: async () => sdk,
+    };
+  });
+};
+
+test('production web uses the accepted 512px Hall profile and lazy Phaser maker', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(WEB_URL);
+  await page.evaluate((value) => {
+    localStorage.clear();
+    localStorage.setItem('squishy.save.v3', JSON.stringify(value));
+  }, save);
+  await page.reload();
+
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
+  const thumbnail = page.locator('[data-library-thumbnail="production-cutover-toy"]');
+  await expect(thumbnail).toHaveAttribute('data-library-renderer', 'volume-mesh');
+  await expect(thumbnail).toHaveAttribute('data-library-projection', 'front');
+  expect(await thumbnail.evaluate((canvas) => [(canvas as HTMLCanvasElement).width, (canvas as HTMLCanvasElement).height]))
+    .toEqual([512, 512]);
+
+  const phaserChunksBefore = await page.evaluate(() => performance.getEntriesByType('resource')
+    .filter((entry) => entry.name.includes('PhaserSquishSurface')).length);
+  expect(phaserChunksBefore).toBe(0);
+
+  await page.locator('[data-library-play-id="production-cutover-toy"]').click();
+  const canvas = page.locator('[data-sandbox-canvas]');
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+  await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
+  await expect(canvas).toHaveAttribute('data-phaser-volume', 'deformable');
+  await expect.poll(() => page.evaluate(() => performance.getEntriesByType('resource')
+    .filter((entry) => entry.name.includes('PhaserSquishSurface')).length)).toBeGreaterThan(0);
+});
+
+test('production Yandex entry uses the same Phaser maker without the DRAFT namespace', async ({ page }) => {
+  await installYandexStub(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(YANDEX_URL);
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-stage', 'library');
+
+  await page.locator('[data-library-new]').first().click();
+  const canvas = page.locator('[data-sandbox-canvas]');
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
+  await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
+  await expect(canvas).toHaveAttribute('data-phaser-volume', 'deformable');
+
+  expect(await page.evaluate(() => [...Array(localStorage.length)].map((_, index) => localStorage.key(index))
+    .filter((key): key is string => Boolean(key))
+    .some((key) => key.startsWith('squishy.phaser-yandex-draft.')))).toBe(false);
+});

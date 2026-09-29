@@ -1,4 +1,4 @@
-/* Isolated Phaser Pages hall: source art is behind real DOM controls/canvases. */
+/* Owner-reviewed Phaser Hall (review Pages + isolated Yandex DRAFT): source art stays behind real DOM controls/canvases. */
 #app .sandbox-library-shell.is-library-hall {
   position: relative;
   display: flex;
@@ -39,7 +39,7 @@
   width: clamp(76px, 11vw, 145px);
   aspect-ratio: 256 / 522;
   left: max(-34px, calc(50% - 560px));
-  top: 28%;
+  top: 19%;
   background: var(--hall-cabinet) center / contain no-repeat;
 }
 #app .library-hall-scene__shelf {
@@ -53,7 +53,7 @@
   width: clamp(76px, 10vw, 130px);
   aspect-ratio: 244 / 343;
   right: max(-30px, calc(50% - 580px));
-  bottom: 22%;
+  top: 33%;
   background: var(--hall-plant) center / contain no-repeat;
 }
 
@@ -152,6 +152,9 @@
   font-weight: 900;
   font-size: 13px;
 }
+#app .library-hall-nav[data-single-room] {
+  visibility: hidden;
+}
 #app .library-hall-nav button {
   width: 44px;
   height: 44px;
@@ -186,6 +189,39 @@
 #app .is-library-hall .sandbox-library-reward__copy > p { display: none; }
 #app .is-library-hall .sandbox-library-reward > button { min-height: 37px; }
 #app .is-library-hall .sandbox-library-reward-message { flex: 0 0 auto; margin: 0 auto; }
+
+@media (min-width: 900px) and (min-height: 650px) {
+  /* Desktop has enough room to present the collection as the hero instead of
+     leaving the two podiums at tablet scale in a large empty room. */
+  #app .is-library-hall .library-hall-stage {
+    width: min(100%, 760px);
+  }
+  #app .is-library-hall .library-hall-stage .sandbox-library-grid {
+    width: min(100%, 560px);
+    gap: clamp(14px, 1.6vw, 22px);
+  }
+  #app .is-library-hall .sandbox-library-card,
+  #app .is-library-hall .library-hall-vacant {
+    height: clamp(185px, 34dvh, 300px);
+  }
+}
+
+@media (min-width: 1600px) and (min-height: 850px) {
+  /* Large desktops should still read as a collection room, not a tablet-sized
+     diorama floating in unused wall/floor. Keep the approved two-item layout
+     and grow only its physical presentation. */
+  #app .is-library-hall .library-hall-stage {
+    width: min(100%, 860px);
+  }
+  #app .is-library-hall .library-hall-stage .sandbox-library-grid {
+    width: min(100%, 660px);
+    gap: 24px;
+  }
+  #app .is-library-hall .sandbox-library-card,
+  #app .is-library-hall .library-hall-vacant {
+    height: min(36dvh, 340px);
+  }
+}
 
 @media (max-width: 430px) {
   #app .library-hall-scene__cabinet { left: -48px; top: 31%; }

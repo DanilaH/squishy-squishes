@@ -1,9 +1,10 @@
 import './studioEnvironmentPreview.css';
 
-// Isolated Pages-only visual experiment. The gameplay canvas and hit targets are untouched.
+// Owner-reviewed Phaser visual profile shared by review Pages and isolated Yandex DRAFT.
+// The gameplay canvas, hit targets and production entry remain untouched.
 const assets = {
   wall: new URL('./studio-assets/studio-wall.png', import.meta.url).href,
-  floor: new URL('./studio-assets/studio-floor.png', import.meta.url).href,
+  floor: new URL('./library-assets/floor-tile.webp', import.meta.url).href,
   left: new URL('./studio-assets/studio-desk-left.png', import.meta.url).href,
   middle: new URL('./studio-assets/studio-desk-middle.png', import.meta.url).href,
   right: new URL('./studio-assets/studio-desk-right.png', import.meta.url).href,
@@ -39,6 +40,27 @@ const composeDesk = (left: HTMLImageElement, middle: HTMLImageElement, right: HT
   return canvas.toDataURL('image/png');
 };
 
+// Shared decode promise. Pages/Yandex idle-warm it after the Library paints;
+// a direct maker entry awaits the same promise before mounting Phaser, so the
+// workbench still appears fully composed without blocking the initial shelf.
+let preparedDesk: Promise<string | null> | null = null;
+export const preloadStudioEnvironmentAssets = (): Promise<string | null> => {
+  preparedDesk ??= Promise.all(Object.values(assets).map(loadImage))
+    .then((images) => {
+      const left = images[2], middle = images[3], right = images[4];
+      if (!left || !middle || !right) throw new Error('Missing Studio desk slices');
+      return composeDesk(left, middle, right);
+    })
+    .catch((error: unknown) => {
+      // Idle warmup is best-effort. Clear the memoized failure so a later real
+      // maker mount can retry after a transient network/decode problem.
+      preparedDesk = null;
+      console.warn('[squishy:studio-preview] Environment assets failed to decode or compose; original UI retained.', error);
+      return null;
+    });
+  return preparedDesk;
+};
+
 const element = (tag: 'div' | 'img', className: string): HTMLDivElement | HTMLImageElement => {
   const node = document.createElement(tag);
   node.className = className;
@@ -47,16 +69,20 @@ const element = (tag: 'div' | 'img', className: string): HTMLDivElement | HTMLIm
   return node;
 };
 
-/** Returns cleanup; never mutates non-Shape/Paint gameplay, storage, or main/Yandex entrypoints. */
+/** Pages-only visual layer for the entire maker and Squeeze; no gameplay mutation. */
 export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) => {
   let disposed = false;
   let decoded = false;
+  let prepareStarted = false;
   let deskTexture: string | null = null;
   let frame = 0;
   const abort = new AbortController();
-  const observer = new MutationObserver(() => schedule());
-  // The real stage changes height AFTER its data-stage mutation (notably on wide Paint).
-  // Observing layout keeps the floor and desk aligned without moving gameplay/UI.
+  const observer = new MutationObserver(() => {
+    prepareEnvironment();
+    schedule();
+  });
+  // Observe viewport geometry, not step-panel heights: Pages CSS reserves one
+  // stable workbench and controls track for every maker stage.
   const geometryObserver = new ResizeObserver(() => schedule());
   let observedStage: HTMLElement | null = null;
   let observedCanvas: HTMLElement | null = null;
@@ -67,7 +93,7 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     if (disposed || !decoded || !deskTexture) return;
     const shell = root.querySelector<HTMLElement>('.sandbox-shell');
     if (!shell) return;
-    const supported = shell.dataset.stage === 'shape' || shell.dataset.stage === 'paint';
+    const supported = ['shape', 'paint', 'mixins', 'mix', 'decor', 'finish', 'squeeze', 'home'].includes(shell.dataset.stage ?? '');
     if (!supported) {
       geometryObserver.disconnect();
       observedStage = observedCanvas = observedControls = observedHeading = null;
@@ -115,10 +141,16 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     const sr = stage.getBoundingClientRect();
     const cr = canvas.getBoundingClientRect();
     const pr = controls.getBoundingClientRect();
-    // The shader draws around the canvas centre with a 0.34 * canvas radius.
-    // Start the desk just behind the toy's silhouette. The canvas is above the
-    // passive artwork, so the surface cannot intercept pointer input.
-    const toyBottomProxy = cr.top + cr.height * 0.76;
+    // The tactile stages deliberately enlarge the transparent canvas while
+    // shrinking the render-radius ratio so the resting body keeps its size.
+    // Anchor the desk to the visible body, never to the capture-buffer bounds.
+    const canvasStyle = getComputedStyle(canvas);
+    const cssRadiusRatio = Number.parseFloat(canvasStyle.getPropertyValue('--squish-radius-ratio'));
+    const radiusRatio = Number.isFinite(cssRadiusRatio) ? cssRadiusRatio : 0.34;
+    // The workbench is a stable scene anchor across all craft steps. Paint may
+    // lower the rendered squish *inside* this canvas, but that must not move the
+    // desk/floor underneath it.
+    const toyBottomProxy = cr.top + cr.height * (0.5 + radiusRatio * 0.76);
     const top = Math.min(toyBottomProxy - 3, sr.bottom - 3);
     const desktop = innerWidth >= 901 && innerWidth > innerHeight;
     // Desktop tabletop/front may occupy the background below a short stage;
@@ -129,9 +161,19 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     const desk = art.querySelector<HTMLElement>('[data-studio-desk]');
     if (!desk) return;
     const showDesk = !landscapeShort && visibleDepth >= 16;
-    const scaleWidth = Math.min(innerWidth * 1.14, cr.width * 1.83);
+    // Size furniture from the visible squish, never from the transparent
+    // capture buffer. Finish/Squeeze intentionally use a viewport-scale canvas,
+    // so cr.width itself can be much larger than the toy the player sees.
+    const visibleBodyDiameter = cr.width * radiusRatio * 2;
+    const tactileStage = shell.dataset.stage === 'finish' || shell.dataset.stage === 'squeeze';
+    const deskToBodyRatio = tactileStage ? 3.25 : (1.83 / (0.34 * 2));
+    const scaleWidth = Math.min(innerWidth * 1.14, visibleBodyDiameter * deskToBodyRatio);
     const imageHeight = scaleWidth * 435 / (421 + 435 + 381);
     const snap = (n: number): number => Math.round(n * devicePixelRatio) / devicePixelRatio;
+    // Drive the CSS contact shadow from the same tabletop anchor as the desk.
+    // A formula based only on stage/canvas percentages drifted tens of pixels
+    // once desktop craft gained a larger hero and tactile stages gained headroom.
+    stage.style.setProperty('--studio-contact-top', `${snap(top - sr.top + 4)}px`);
     desk.style.display = showDesk ? 'block' : 'none';
     desk.style.top = `${snap(top - sr.top)}px`;
     desk.style.width = `${snap(scaleWidth)}px`;
@@ -147,21 +189,25 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     frame = requestAnimationFrame(() => { frame = 0; sync(); });
   };
 
+  const prepareEnvironment = (): void => {
+    if (disposed || prepareStarted || !root.querySelector('.sandbox-shell')) return;
+    prepareStarted = true;
+    void preloadStudioEnvironmentAssets().then((texture) => {
+      if (disposed) return;
+      if (!texture) {
+        prepareStarted = false;
+        return;
+      }
+      deskTexture = texture;
+      decoded = true;
+      root.dataset.studioEnvReady = '';
+      schedule();
+    });
+  };
+
   observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-stage'] });
   window.addEventListener('resize', schedule, { signal: abort.signal });
-  void Promise.all(Object.values(assets).map(loadImage)).then((images) => {
-    if (disposed) return;
-    const left = images[2];
-    const middle = images[3];
-    const right = images[4];
-    if (!left || !middle || !right) throw new Error('Missing Studio desk slices');
-    deskTexture = composeDesk(left, middle, right);
-    decoded = true;
-    root.dataset.studioEnvReady = '';
-    schedule();
-  }).catch((error: unknown) => {
-    console.warn('[squishy:studio-preview] Environment assets failed to decode or compose; original UI retained.', error);
-  });
+  prepareEnvironment();
 
   return () => {
     disposed = true;

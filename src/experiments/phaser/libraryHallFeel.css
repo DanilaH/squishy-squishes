@@ -1,0 +1,59 @@
+/* Pages-only feel; composited toy motion never animates the podium, furniture or controls. */
+@keyframes library-toy-idle {
+  0%, 16%, 88%, 100% { translate: 0 0; filter: brightness(1); }
+  49% { translate: 0 -1.6px; filter: brightness(1.012); }
+}
+@keyframes library-shadow-idle {
+  0%, 16%, 88%, 100% { transform: scaleX(1); opacity: 1; }
+  49% { transform: scaleX(.94); opacity: .84; }
+}
+@keyframes library-toy-arrival {
+  0% { translate: 0 -13px; opacity: 0; }
+  58% { translate: 0 2px; opacity: 1; }
+  78% { translate: 0 -1px; opacity: 1; }
+  100% { translate: 0 0; opacity: 1; }
+}
+@keyframes library-shadow-arrival {
+  0% { transform: scaleX(.7); opacity: 0; }
+  58% { transform: scaleX(1.05); opacity: .9; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+@keyframes library-toy-page-enter {
+  from { translate: 0 4px; opacity: .78; }
+  to { translate: 0 0; opacity: 1; }
+}
+@keyframes library-shadow-page-enter {
+  from { transform: scaleX(.9); opacity: .6; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+#app .is-library-hall .sandbox-library-card:not([hidden]):not(.is-library-arrival):not(.is-library-page-enter) .sandbox-library-card__canvas {
+  animation: library-toy-idle 6.2s ease-in-out infinite;
+}
+#app .is-library-hall .sandbox-library-card:not([hidden]):not(.is-library-arrival):not(.is-library-page-enter) .sandbox-library-card__play::before {
+  animation: library-shadow-idle 6.2s ease-in-out infinite;
+}
+#app .is-library-hall .sandbox-library-card.is-library-arrival .sandbox-library-card__canvas {
+  animation: library-toy-arrival 480ms cubic-bezier(.23,.7,.27,1) both;
+}
+#app .is-library-hall .sandbox-library-card.is-library-arrival .sandbox-library-card__play::before {
+  animation: library-shadow-arrival 480ms cubic-bezier(.23,.7,.27,1) both;
+}
+#app .is-library-hall .sandbox-library-card.is-library-page-enter .sandbox-library-card__canvas {
+  animation: library-toy-page-enter 260ms ease-out both;
+}
+#app .is-library-hall .sandbox-library-card.is-library-page-enter .sandbox-library-card__play::before {
+  animation: library-shadow-page-enter 260ms ease-out both;
+}
+#app .is-library-hall:is(.is-library-hidden, .library-hall-interacting, .is-blocked) .sandbox-library-card__canvas,
+#app .is-library-hall:is(.is-library-hidden, .library-hall-interacting, .is-blocked) .sandbox-library-card__play::before {
+  animation-play-state: paused !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  #app .is-library-hall .sandbox-library-card__canvas,
+  #app .is-library-hall .sandbox-library-card__play::before {
+    animation: none !important;
+    translate: none !important;
+    filter: none !important;
+    opacity: 1;
+  }
+}

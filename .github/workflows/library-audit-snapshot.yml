@@ -1,0 +1,27 @@
+name: Library independent source snapshot
+on:
+  push:
+    branches: [feat/library-visual-recovery-sep21]
+    paths: ['.github/workflows/library-audit-snapshot.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Archive exact tracked sources and art without node_modules or git history
+        shell: bash
+        run: |
+          git ls-files -z | tar --null -czf library-audit-source.tar.gz --files-from=-
+          tar -tzf library-audit-source.tar.gz | wc -l
+          du -h library-audit-source.tar.gz
+          git rev-parse HEAD > library-audit-head.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: library-audit-source
+          path: |
+            library-audit-source.tar.gz
+            library-audit-head.txt
+          retention-days: 2
+# Integration snapshot: preserve exact current feature code before changing the Hall renderer.

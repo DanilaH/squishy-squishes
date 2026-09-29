@@ -17,22 +17,59 @@ test('Pages preview without WebGL2 keeps Library usable and preserves existing s
   const library = page.locator('[data-sandbox-library]');
   await expect(library).toBeVisible();
   await page.evaluate(() => localStorage.setItem('squishy.save.v3', 'original-player-save'));
-  await page.locator('[data-library-new]').first().click();
+  const newButton = page.locator('[data-library-new]').first();
+  await newButton.click();
   const warning = page.locator('[data-phaser-unsupported]');
+  const warningClose = page.locator('[data-phaser-unsupported-close]');
   await expect(warning).toBeVisible();
   await expect(warning).toContainText('WebGL2');
   await expect(library).toBeVisible();
   await expect(page.locator('[data-sandbox-maker-host]')).toHaveCount(0);
-  await page.locator('[data-phaser-unsupported-close]').click();
+  await expect(warningClose).toBeFocused();
+  await page.keyboard.press('Escape');
   await expect(warning).toHaveCount(0);
+  await expect(newButton).toBeFocused();
   await page.locator('[data-library-ideas]').click();
   await expect(page.locator('[data-sandbox-ideas]')).toBeVisible();
-  await page.locator('[data-idea-id]').first().click();
+  const ideaButton = page.locator('[data-idea-id]').first();
+  await ideaButton.click();
   await expect(warning).toBeVisible();
   await expect(page.locator('[data-sandbox-maker-host]')).toHaveCount(0);
-  await page.locator('[data-phaser-unsupported-close]').click();
+  await expect(warningClose).toBeFocused();
+  await warningClose.click();
+  await expect(ideaButton).toBeFocused();
   await page.locator('[data-ideas-back]').click();
   await expect(library).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe('original-player-save');
   expect(errors).toEqual([]);
 });
+
+test('a transient WebGL2 probe failure does not poison later maker entry', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    let webgl2Calls = 0;
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+      configurable: true,
+      value: function (this: HTMLCanvasElement, type: string, ...args: unknown[]) {
+        if (type === 'webgl2') {
+          webgl2Calls += 1;
+          if (webgl2Calls === 1) return null;
+        }
+        return Reflect.apply(original, this, [type, ...args]);
+      },
+    });
+  });
+
+  await page.goto('/phaser/');
+  const newButton = page.locator('[data-library-new]').first();
+  await newButton.click();
+  const warning = page.locator('[data-phaser-unsupported]');
+  await expect(warning).toBeVisible();
+  await page.locator('[data-phaser-unsupported-close]').click();
+  await expect(warning).toHaveCount(0);
+
+  await newButton.click();
+  await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
+});
+

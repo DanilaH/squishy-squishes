@@ -1,64 +1,35 @@
 {
-  "status": "Isolated Phaser Pages visual candidate. The unified room master and simplified three-prop preview were accepted as separate art references; their combined in-game layout is not yet owner-approved. Commercial rights and physical-device QA are not independently established.",
+  "status": "Owner Library source restored in isolated Phaser Pages preview. Visual composition, size, material and motion are not accepted; commercial rights not independently established.",
+  "ownerCommit": "223c84339c7700b0ae0d53749be86d13fb56f30f",
+  "sourceNote": "All seven owner PNGs verified against their original Git blobs. This manifest pins active original-image exports; see docs/LIBRARY_OWNER_ART_INVENTORY_2026-09-21.md.",
   "active": [
     {
-      "name": "wall",
-      "file": "src/experiments/phaser/library-assets/approved-master-wall.webp",
-      "gitBlobSha": "32b40c9285dd192606f3fcee0dbcccbc0c7e9a26",
-      "sha256": "25816f39be2eda695d4d5e5b1ecb50aa099b1bcfa97c5a0812172e85fb59d609",
-      "source": "library-hall-v1/source/approved-master.png (RGB flattened approved concept)",
-      "sourceSha256": "dd1c7b09232ff8365143b66090c10b138915007fa754809051672324523c784e",
-      "recipe": "Reconstructed split wall; crop [0,0,1024,810], resize to 768x608, WebP quality 55. Occluded source pixels were reconstructed, not original painted layers.",
-      "size": [768, 608]
+      "name": "wall", "file": "src/experiments/phaser/library-assets/wall.webp", "sha256": "d0c95be904ebb2283571c8eb271343542a28f01e7110ebee8aee5980c9b5f621", "source": "ChatGPT Image Sep 20, 2026, 04_03_29 PM.png", "sourceSha256": "22b10abdb34753cc72e96b2bef67182bb88858c58b77c630bfe840d05830929c", "recipe": "scripts/build-library-hall.mjs; crop [16,90,992,740]; flatten #f2c9ae; 768px; WebP 77", "size": [768, 573]
     },
     {
-      "name": "floor",
-      "file": "src/experiments/phaser/library-assets/approved-master-floor.webp",
-      "gitBlobSha": "1b357dd539551fab6a715981addb8ac46dd50703",
-      "sha256": "d04857ca1c1531d67a46859d43f8f7aef763c312323d254aac512b191ec41606",
-      "source": "library-hall-v1/source/approved-master.png (RGB flattened approved concept)",
-      "sourceSha256": "dd1c7b09232ff8365143b66090c10b138915007fa754809051672324523c784e",
-      "recipe": "Reconstructed split floor; crop [0,810,1024,1536], resize to 768x545, WebP quality 55. Occluded source pixels were reconstructed, not original painted layers.",
-      "size": [768, 545]
+      "name": "floor", "file": "src/experiments/phaser/library-assets/floor.webp", "sha256": "ad477f366efbf06a465bbc8e3f640b2bd653de0dce3989fde77075f6d778ae6d", "source": "ChatGPT Image Sep 20, 2026, 04_03_37 PM.png", "sourceSha256": "42243f69e181d0eba6bdbd8ab820ac840fd758b765182f293f029e0c51992966", "recipe": "scripts/build-library-hall.mjs; crop [0,780,1024,756]; flatten #e4ad81; 768px; WebP 77", "size": [768, 567]
     },
     {
-      "name": "cabinet",
-      "file": "src/experiments/phaser/library-assets/approved-flat-cabinet.svg",
-      "gitBlobSha": "46ac943f38886a5e9bfda80f81de9b7ae45c629d",
-      "source": "library-hall-decor-flat-v1/three-decors-preview.png and its editable build.py SVG shapes; independent left object, no screenshot UI",
-      "sourcePreviewSha256": "285d0c6db190e1ba88de465a30fc824f770ae26c34cfe12dc7ca63bb46968523",
-      "size": [326, 654]
+      "name": "pedestal", "file": "src/experiments/phaser/library-assets/pedestal.webp", "sha256": "60d21bf5781a5462dc836db080dfe820a96b6785612aa65dd1256708ca09ea6e", "source": "ChatGPT Image Sep 20, 2026, 04_14_47 PM.png", "sourceSha256": "e93f828502898a6d6219fbfeaf242858a03cca0f2252e1cc66d83f07c5362f5e", "recipe": "scripts/build-library-hall.mjs; crop [120,226,1210,690]; 460px; WebP 84", "size": [460, 262]
     },
     {
-      "name": "shelf",
-      "file": "src/experiments/phaser/library-assets/approved-flat-shelf.svg",
-      "gitBlobSha": "96f7dcb3d2412b620d184aab24140ea8df0a4afb",
-      "source": "Same accepted flat-decor preview; separate upper-right shelf, solid-fill leaves",
-      "sourcePreviewSha256": "285d0c6db190e1ba88de465a30fc824f770ae26c34cfe12dc7ca63bb46968523",
-      "size": [572, 257]
+      "name": "cabinet", "file": "src/experiments/phaser/library-assets/cabinet.webp", "sha256": "2ecfbe7191c40c966ed367f68176f6aacb14f129e81ab3fab0e954d7fcf48958", "source": "ChatGPT Image Sep 20, 2026, 04_01_55 PM (1).png", "sourceSha256": "48ec94bbb3cd3a5100a52b462689c251bb22041b0b869f14edad2173ed33d788", "recipe": "scripts/build-library-hall.mjs; crop [210,120,610,1244]; 256px; WebP 84", "size": [256, 522]
     },
     {
-      "name": "plant",
-      "file": "src/experiments/phaser/library-assets/approved-flat-plant.svg",
-      "gitBlobSha": "b4093d003860036aa94e63cceaab2bc3e9429412",
-      "source": "Same accepted flat-decor preview; separate lower-right plant, solid-fill leaves",
-      "sourcePreviewSha256": "285d0c6db190e1ba88de465a30fc824f770ae26c34cfe12dc7ca63bb46968523",
-      "size": [271, 416]
+      "name": "shelf", "file": "src/experiments/phaser/library-assets/shelf.webp", "sha256": "c65674fb1d9b68bd34001900dc7b45c885d42038dd2d038e044f1b3e52438de4", "source": "ChatGPT Image Sep 20, 2026, 04_01_55 PM (2).png", "sourceSha256": "853231067ff88749b083eb15009f39003a9d70c0de8c43f017e5ce7d9e68ebbb", "recipe": "scripts/build-library-hall.mjs; crop [200,275,1170,510]; 440px; WebP 84", "size": [440, 192]
     },
     {
-      "name": "pedestal",
-      "file": "src/experiments/phaser/library-assets/pedestal.webp",
-      "sha256": "60d21bf5781a5462dc836db080dfe820a96b6785612aa65dd1256708ca09ea6e",
-      "source": "ChatGPT Image Sep 20, 2026, 04_14_47 PM.png; new individual pedestal concept; final visual acceptance not established",
-      "sourceSha256": "e93f828502898a6d6219fbfeaf242858a03cca0f2252e1cc66d83f07c5362f5e",
-      "size": [460, 262]
+      "name": "plant", "file": "src/experiments/phaser/library-assets/plant.webp", "sha256": "2b30e7461267659d609b538f3154a79b1c7b83cbef00906632d24083061cf16b", "source": "ChatGPT Image Sep 20, 2026, 04_01_56 PM (3).png", "sourceSha256": "9a1dfd2f08746060ad1e8cf0ee9baaf281bec1cdba9998ad3c4e372d2b4ef76b", "recipe": "scripts/build-library-hall.mjs; crop [195,178,775,1090]; 244px; WebP 84", "size": [244, 343]
+    },
+    {
+      "name": "groundShadow", "file": "src/experiments/phaser/library-assets/ground-shadow.webp", "sha256": "0e51a59a14a1ecfcfb8a8e415f0af236507ec32b38592367840504a57ec6ff48", "source": "ChatGPT Image Sep 20, 2026, 04_03_59 PM.png", "sourceSha256": "51e28b36943b5dddcab002962ad1a70909054729a7c15485667813e007d33f65", "gitBlobSha": "6717b101b29eb52b21ce1441f62ef2ccc713ce2b", "recipe": "scripts/export-library-ground-shadow.mjs; crop [200,260,1760,280]; 680x108; WebP 84 alpha", "size": [680, 108]
     }
   ],
   "supersededCandidates": [
-    {"file": "wall.webp", "sourceSha256": "22b10abdb34753cc72e96b2bef67182bb88858c58b77c630bfe840d05830929c", "sha256": "d0c95be904ebb2283571c8eb271343542a28f01e7110ebee8aee5980c9b5f621"},
-    {"file": "floor.webp", "sourceSha256": "42243f69e181d0eba6bdbd8ab820ac840fd758b765182f293f029e0c51992966", "sha256": "ad477f366efbf06a465bbc8e3f640b2bd653de0dce3989fde77075f6d778ae6d"},
-    {"file": "cabinet.webp", "sourceSha256": "48ec94bbb3cd3a5100a52b462689c251bb22041b0b869f14edad2173ed33d788", "sha256": "2ecfbe7191c40c966ed367f68176f6aacb14f129e81ab3fab0e954d7fcf48958"},
-    {"file": "shelf.webp", "sourceSha256": "853231067ff88749b083eb15009f39003a9d70c0de8c43f017e5ce7d9e68ebbb", "sha256": "c65674fb1d9b68bd34001900dc7b45c885d42038dd2d038e044f1b3e52438de4"},
-    {"file": "plant.webp", "sourceSha256": "9a1dfd2f08746060ad1e8cf0ee9baaf281bec1cdba9998ad3c4e372d2b4ef76b", "sha256": "2b30e7461267659d609b538f3154a79b1c7b83cbef00906632d24083061cf16b"}
+    { "file": "approved-master-wall.webp", "reason": "other flattened master" },
+    { "file": "approved-master-floor.webp", "reason": "other flattened master" },
+    { "file": "approved-flat-cabinet.svg", "reason": "separately authored SVG" },
+    { "file": "approved-flat-shelf.svg", "reason": "separately authored SVG" },
+    { "file": "approved-flat-plant.svg", "reason": "separately authored SVG" }
   ]
 }

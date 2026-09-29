@@ -1,4 +1,4 @@
-import { readFile, rename, readdir } from 'node:fs/promises';
+import { readFile, rename, readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { assertYandexBuildDirectory } from '@danilah/mini-games-kit/yandex-tooling';
 
@@ -21,6 +21,15 @@ if (/(?:src|href)=["']\/(?!\/)/.test(index) || index.includes('/squishy-squishes
 }
 if (index.includes('/src/') || index.includes('phaser-platform.html')) throw new Error('Uncompiled/test HTML leaked into DRAFT.');
 
+const entryMatch = index.match(/src="\.\/(assets\/[^" ]+\.js)"/);
+if (!entryMatch?.[1]) throw new Error('DRAFT entry script could not be resolved.');
+const entryBytes = (await stat(join(root, entryMatch[1]))).size;
+if (entryBytes > 350_000) {
+  throw new Error(`Phaser DRAFT entry JS regressed to ${entryBytes} bytes; Phaser must remain lazy-loaded after Library paint.`);
+}
+const phaserChunk = report.files.find((file) => /^assets\/PhaserSquishSurface-.*\.js$/.test(file));
+if (!phaserChunk) throw new Error('Phaser DRAFT no longer contains the expected lazy maker chunk.');
+
 const scripts = await Promise.all(report.files.filter((file) => file.endsWith('.js')).map((file) => readFile(join(root, file), 'utf8')));
 const source = scripts.join('\n');
 if (!source.includes('squishy.phaser-yandex-draft.')) throw new Error('DRAFT storage isolation is missing.');
@@ -31,5 +40,5 @@ for (const marker of ['__squishyPhaserPlatform', 'Injected candidate-only V3 sto
 if (report.files.some((file) => file.endsWith('.map') || file.endsWith('.ts') || file.endsWith('.html') && file !== 'index.html')) {
   throw new Error('DRAFT upload root contains non-release sources or an extra HTML entry.');
 }
-console.log(`Verified Phaser Yandex DRAFT: ${report.fileCount} files, ${report.uncompressedBytes} uncompressed bytes`);
+console.log(`Verified Phaser Yandex DRAFT: ${report.fileCount} files, ${report.uncompressedBytes} uncompressed bytes; entry JS ${entryBytes} bytes; lazy ${phaserChunk}`);
 for (const file of report.files) console.log(`- ${file}`);

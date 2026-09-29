@@ -113,6 +113,7 @@ V1 tools:
 - color palette;
 - color blending through alpha compositing;
 - eraser that softly reduces paint alpha / rubs paint back toward the base;
+- one-tap whole-body Fill tool using the selected paint color;
 - undo last stroke;
 - clear paint as a secondary action;
 - `Continue` available immediately.
@@ -122,6 +123,7 @@ Rules:
 - zero minimum coverage;
 - player can paint one dot, a smiley, stripes, a gradient or fully cover the toy;
 - paint is clipped by the selected shape;
+- Brush/Eraser authoring may begin slightly outside the silhouette so the brush footprint can feather across the edge; squeeze/sticker/mix-in hit-testing remains shape-bound;
 - strokes use normalized UV-space so the design follows deformation later;
 - no scoring.
 
@@ -290,6 +292,8 @@ Before implementation lock concrete budgets, but V1 should include:
 - hard maximum mix-in placements;
 - hard maximum decal placements;
 - schema versioning.
+
+When a hard appearance/decor budget is reached, the player must get an explicit visible limit notice. Only actions that would add more persisted detail become unavailable; Undo/Clear and every Continue/exit action remain usable.
 
 If actual save payloads become excessive, optimize the procedural representation before switching to image blobs.
 
@@ -880,3 +884,40 @@ Stop and reassess if:
 8. Add rewarded monetization only after the free product loop is already satisfying.
 
 The critical dependency is not ads, ranks or recipe copy. It is proving that a freely painted custom squishy can be created, saved, reloaded and still look/feel good while deforming.
+
+
+## 15. Owner polish follow-up — 25 September 2026
+
+This follow-up refines the already accepted freeform maker; it does not reintroduce recipe/XP gating.
+
+- The durable material ID `chrome` remains unchanged for SaveState V3/backward compatibility, but its player-facing identity becomes **Metallic**: authored colour remains visible under denser, darker reflective bands rather than being replaced by neutral mirror chrome.
+- Pages face art must not add unexplained white stripe highlights over line eyes/mouths. Expression ink should stay legible across Soft, Jelly, Pearl, Holo and Metallic.
+- Squeeze/play needs deformation headroom beyond the visible resting body. Expand the transparent interactive/render playfield while preserving approximately the accepted resting toy size; do not solve clipping by shrinking the hero.
+- Craft has an explicit exit-to-Library action. Unsaved work requires confirmation; already-saved Squeeze may return directly.
+- Fill is a whole-body paint operation, not Photoshop flood-fill. It stays an ordinary replayable Appearance V1 stroke so V3/rollback compatibility remains intact. The current Fill replaces any prior Fill, is replayed beneath ordinary paint/eraser strokes, and remains the latest action in the stored stroke array so Undo removes it correctly.
+- Localized draggable ears/appendage physics remain deferred expressive polish.
+
+
+### Material differentiation follow-up — 25 September 2026
+
+Owner review with yellow and multi-colour paint established the material hierarchy for the next polish pass:
+
+- **Soft** remains the neutral baseline and should not be chased by every material change.
+- **Marshmallow** must read as opaque, powdery, milky and light-wrapped rather than merely a paler Soft.
+- **Pearl** must read as smooth nacre with slow rose/cyan angle bands; it must not collapse into Marshmallow or become full-spectrum Holo.
+- **Jelly** remains the most translucent material, but saturated authored paint must retain its hue/chroma instead of being washed into aqua.
+- **Holo** gets a more directional spectral sweep and slightly stronger cool response on light/warm paint while preserving authored stripes.
+- **Metallic** keeps its successful colour-preserving reflective identity; only the darkest reflected bands may be softened modestly so custom paint remains legible.
+- Light-colour compensation is evaluated per authored pixel luminance/chroma, not as a palette-specific special case, so mixed/striped paint remains coherent.
+- Finish is also a tactile material-preview surface: the live toy may be dragged/released there using the same simulation/input owner as Squeeze. Material buttons and Keep It remain normal UI controls; no second physics/input path is introduced.
+
+### Viewport drag, Hall alignment and palette follow-up — 27 September 2026
+
+Owner review established three additional interaction/visual contracts:
+
+- **Grab begins on the toy, drag continues across the viewport.** Finish and Squeeze use pointer capture after a valid body hit. Once claimed, the gesture follows captured client coordinates rather than Phaser's cached canvas pointer coordinates, so leaving the visible canvas does not end or freeze the pull.
+- The viewport is an **input domain**, not an unbounded physics domain. The simulation keeps a deliberate maximum pointer/vertex displacement to avoid numerical instability and kilometre-long geometry, while allowing substantially larger expressive pulls than the previous square-bound interaction.
+- Finish is a fully tactile material-preview stage. Its material/Back/Keep controls remain ordinary DOM hit targets above the live canvas.
+- Hall volume is **front-facing by contract**. Saved paint, rigid inclusions and accessory art are authored in the Studio front frame; decorative yaw/pitch is not allowed to make those layers appear misregistered.
+- The Paint palette expands from six to **18 curated colours**, spanning light neutrals, warm/cool pastels, saturated accents and deeper colours. Compact layouts use a fixed grid rather than a horizontal scroller.
+- Material separation after owner review is driven by physical identity: Jelly by transparency/rim density, Marshmallow by opaque powder/milk response, Pearl by slow nacre rose/cyan movement. Holo, Metallic and Soft keep their accepted roles.

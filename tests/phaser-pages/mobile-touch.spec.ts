@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { expect, test } from '@playwright/test';
 
 /** Chromium's browser input pipeline, not mouse events or synthetic DOM PointerEvents. */
@@ -21,7 +22,15 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('[data-shape="heart"]').tap();
     await page.locator('[data-action="shape-continue"]').tap();
-    await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
+    const shell = page.locator('[data-sandbox-app]');
+    await expect(shell).toHaveAttribute('data-stage', 'paint');
+
+    // Dirty craft can always be exited, but requires an explicit confirmation.
+    await page.locator('[data-action="exit-craft"]').tap();
+    await expect(page.locator('[data-exit-overlay]')).toBeVisible();
+    await page.locator('[data-action="exit-cancel"]').tap();
+    await expect(page.locator('[data-exit-overlay]')).toBeHidden();
+    await expect(shell).toHaveAttribute('data-stage', 'paint');
 
     const cdp = await context.newCDPSession(page);
     const touch = async (type: 'touchStart' | 'touchMove' | 'touchEnd', x = 0, y = 0): Promise<void> => {
@@ -39,12 +48,20 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     };
 
     const paint = await bounds();
-    await touch('touchStart', paint.x - paint.radius * 1.25, paint.y);
-    for (let n = 1; n <= 16; n += 1) {
-      await touch('touchMove', paint.x - paint.radius * 1.25 + paint.radius * 1.6 * n / 16, paint.y);
+    await page.locator('[data-paint-tool="fill"]').tap();
+    await page.touchscreen.tap(paint.x, paint.y);
+    await expect(shell).toHaveAttribute('data-paint-strokes', '1');
+    await page.locator('[data-paint-tool="paint"]').tap();
+
+    // Begin outside the canonical heart but cross the appearance-texture edge
+    // exactly. The first authored UV must exist before the pointer center enters
+    // the silhouette, so a soft brush can feather paint across the body edge.
+    await touch('touchStart', paint.x - paint.radius * 1.20, paint.y);
+    for (let n = 1; n <= 24; n += 1) {
+      await touch('touchMove', paint.x - paint.radius * 1.20 + paint.radius * 1.6 * n / 24, paint.y);
     }
     await touch('touchEnd');
-    await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-paint-strokes', '1');
+    await expect(shell).toHaveAttribute('data-paint-strokes', '2');
     await page.locator('[data-action="paint-continue"]').tap();
 
     await page.locator('[data-mixin="pearls"]').tap();
@@ -77,7 +94,10 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     expect(stored.original).toBe('keep-original-save');
     const saved = JSON.parse(stored.preview ?? 'null');
     expect(saved).toMatchObject({ version: 3, library: [{ shapeId: 'heart', materialId: 'holo' }] });
-    expect(saved.library[0].appearance.strokes).toHaveLength(1);
+    expect(saved.library[0].appearance.strokes).toHaveLength(2);
+    expect(saved.library[0].appearance.strokes[0].s, 'Fill remains an ordinary replayable Appearance V1 paint stroke').toBe(112);
+    const firstPaintBytes = Buffer.from(saved.library[0].appearance.strokes[1].p, 'base64');
+    expect(firstPaintBytes[0], 'Paint authors at the texture edge before the brush center enters the shape').toBeLessThanOrEqual(3);
     expect(saved.library[0].appearance.mixins).toHaveLength(1);
     // V3 serializes decor as a compact document: `s` stores sticker tuples.
     expect(saved.library[0].decor.s).toHaveLength(1);
@@ -92,3 +112,64 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     await context.close();
   }
 });
+
+test('DPR 3 phone keeps the tactile Phaser framebuffer in CSS pixels', async ({ browser, browserName }) => {
+  test.skip(browserName !== 'chromium', 'WebGL backbuffer audit is Chromium-only.');
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    hasTouch: true,
+    isMobile: true,
+  });
+  const page = await context.newPage();
+  try {
+    await page.goto('/phaser/');
+    await page.locator('[data-library-new]').first().tap();
+    const canvas = page.locator('[data-sandbox-canvas]');
+    await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
+    await page.locator('[data-action="shape-continue"]').tap();
+    await page.locator('[data-action="paint-continue"]').tap();
+    await page.locator('[data-action="mixin-continue"]').tap();
+
+    const mixBox = await canvas.boundingBox();
+    if (!mixBox) throw new Error('Missing mix surface');
+    const cx = mixBox.x + mixBox.width / 2;
+    const cy = mixBox.y + mixBox.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    for (let i = 0; i < 24; i += 1) {
+      await page.mouse.move(cx + (i % 2 ? -65 : 65), cy, { steps: 2 });
+    }
+    await page.mouse.up();
+    await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
+    await page.locator('[data-action="mix-continue"]').tap();
+    await page.locator('[data-action="decor-continue"]').tap();
+    await page.locator('[data-action="save"]').tap();
+    await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+
+    const metrics = await canvas.evaluate((node) => {
+      const surface = node as HTMLCanvasElement;
+      const rect = surface.getBoundingClientRect();
+      const gl = surface.getContext('webgl2');
+      return {
+        dpr: devicePixelRatio,
+        cssWidth: rect.width,
+        cssHeight: rect.height,
+        canvasWidth: surface.width,
+        canvasHeight: surface.height,
+        drawingWidth: gl?.drawingBufferWidth ?? -1,
+        drawingHeight: gl?.drawingBufferHeight ?? -1,
+      };
+    });
+
+    expect(metrics.dpr).toBe(3);
+    expect(metrics.cssWidth).toBeGreaterThan(700);
+    expect(metrics.canvasWidth, 'canvas backing width must not be multiplied by DPR').toBeLessThanOrEqual(Math.ceil(metrics.cssWidth) + 2);
+    expect(metrics.canvasHeight, 'canvas backing height must not be multiplied by DPR').toBeLessThanOrEqual(Math.ceil(metrics.cssHeight) + 2);
+    expect(metrics.drawingWidth).toBe(metrics.canvasWidth);
+    expect(metrics.drawingHeight).toBe(metrics.canvasHeight);
+  } finally {
+    await context.close();
+  }
+});
+

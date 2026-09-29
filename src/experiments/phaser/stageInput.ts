@@ -107,9 +107,10 @@ class StudioInputScene extends Phaser.Scene {
     this.add.existing(squish);
     const bridge = new PhaserStudioGestureBridge(this, canvas, {
       pointToUv: (x, y) => squish.pointToUv(x, y),
-      beginSquish: (pointer) => squish.begin(pointer),
-      moveSquish: (pointer) => squish.move(pointer),
-      endSquish: (pointer) => squish.end(pointer),
+      paintPointToUv: (x, y) => squish.pointToAppearanceUv(x, y),
+      beginSquish: (pointer) => squish.beginAt(pointer.id, pointer.x, pointer.y),
+      moveSquish: (pointer) => squish.moveAt(pointer.id, pointer.x, pointer.y),
+      endSquish: (pointerId) => squish.endById(pointerId),
       cancelSquish: () => squish.cancel(),
       paintStamp: (point) => { this.strokePoints = [point]; this.replay(); },
       paintSegment: (_from, to) => {

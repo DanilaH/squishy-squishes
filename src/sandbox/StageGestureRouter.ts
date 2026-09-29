@@ -13,8 +13,10 @@ export interface StagePointer {
 }
 
 export interface StageGestureHost {
-  /** Return null outside the canonical shape. Never synthesize an edge UV. */
+  /** Return null outside the canonical shape. Used by physical/sticker/mix-in hit tests. */
   pointToUv(x: number, y: number): AppearancePoint | null;
+  /** Paint may author in the full appearance texture so the brush footprint can feather over the silhouette edge. */
+  paintPointToUv(x: number, y: number): AppearancePoint | null;
   beginSquish(pointer: StagePointer): boolean;
   moveSquish(pointer: StagePointer): void;
   endSquish(pointerId: number): void;
@@ -74,9 +76,10 @@ export class StageGestureRouter {
     if (this.blocked || this.owner !== null) return false;
     const point = this.host.pointToUv(pointer.x, pointer.y);
     if (this.stage === 'paint') {
+      const paintPoint = this.host.paintPointToUv(pointer.x, pointer.y);
       this.owner = pointer.id; // IMPORTANT: outside down still belongs to Paint.
-      this.lastUv = point;
-      if (point) this.host.paintStamp(point);
+      this.lastUv = paintPoint;
+      if (paintPoint) this.host.paintStamp(paintPoint);
       return true;
     }
     if (this.stage === 'mixins') {
@@ -100,20 +103,20 @@ export class StageGestureRouter {
       if (this.host.beginSquish(pointer)) this.squishOwner = pointer.id;
       return true;
     }
-    if (this.stage === 'squeeze') {
+    if (this.stage === 'finish' || this.stage === 'squeeze') {
       if (!this.host.beginSquish(pointer)) return false; // Invalid hits cannot squeeze.
       this.owner = pointer.id;
       this.squishOwner = pointer.id;
       return true;
     }
-    // Shape/Home/Finish and non-sticker Decor never claim the playfield.
+    // Shape/Home and non-sticker Decor never claim the playfield.
     return false;
   }
 
   public move(pointer: StagePointer): void {
     if (this.blocked || pointer.id !== this.owner) return;
     if (this.stage === 'paint') {
-      const point = this.host.pointToUv(pointer.x, pointer.y);
+      const point = this.host.paintPointToUv(pointer.x, pointer.y);
       if (!point) {
         if (this.lastUv) this.host.paintEnd(); // Exit splits the stroke, no outside drawing.
         this.lastUv = null;
@@ -145,7 +148,7 @@ export class StageGestureRouter {
       this.host.mixProgress(this.mixDistance, Math.min(1, this.mixDistance / MIX_DISTANCE_FOR_COMPLETE_PX));
       return;
     }
-    if (this.stage === 'squeeze' && this.squishOwner === pointer.id) this.host.moveSquish(pointer);
+    if ((this.stage === 'finish' || this.stage === 'squeeze') && this.squishOwner === pointer.id) this.host.moveSquish(pointer);
   }
 
   /** Native pointercancel, focus loss and activity blockers must never credit a squeeze. */

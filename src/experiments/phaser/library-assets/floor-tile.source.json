@@ -1,0 +1,14 @@
+{
+  "ownerCommit": "8f92bd25868e34d79cb1c343411f26b61fcbb19b",
+  "source": "biba/ChatGPT Image Sep 21, 2026, 11_08_56 PM.png",
+  "sourceGitBlob": "d9f287a0cfe28bb1a88bcffd03bacf24e5f5c38d",
+  "sourceSha256": "cb6cea7a11c2122e60faeb082940f1da4d16414819cb019732409e940e6ab77c",
+  "export": "src/experiments/phaser/library-assets/floor-tile.webp",
+  "exportSha256": "9c5af415adcecf2730e00c474527a8d0ff712620aa6738362f64e7aff9625d91",
+  "exportBytes": 9854,
+  "dimensions": [
+    768,
+    719
+  ],
+  "recipe": "sharp extract [0,0,1254,1174] at plank boundary, resize width 768, WebP q84 effort6"
+}

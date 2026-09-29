@@ -21,6 +21,7 @@ export interface PhaserSandboxCallbacks extends Pick<PhaserStudioGestureHost,
  */
 export class PhaserSquishSurface {
   private readonly game: Phaser.Game;
+  private readonly gl: WebGL2RenderingContext;
   private scene: Phaser.Scene | null = null;
   private squish: PhaserSquishCandidate | null = null;
   private bridge: PhaserStudioGestureBridge | null = null;
@@ -49,6 +50,7 @@ export class PhaserSquishSurface {
     private readonly onMetrics: (metrics: SquishMetrics) => void,
     private readonly audio: SquishyAudio,
     private readonly callbacks: PhaserSandboxCallbacks,
+    private readonly volumeProfile = false,
   ) {
     this.appearanceSnapshot.width = 256;
     this.appearanceSnapshot.height = 256;
@@ -60,25 +62,27 @@ export class PhaserSquishSurface {
       premultipliedAlpha: true, powerPreference: 'high-performance',
     });
     if (!gl) throw new Error('Phaser studio requires WebGL2.');
+    this.gl = gl;
     const owner = this;
     class StudioScene extends Phaser.Scene {
       constructor() { super({ key: 'SquishyRealStudioScene' }); }
       create(): void {
         if (owner.disposed) return;
         owner.scene = this;
-        const squish = new PhaserSquishCandidate(this, gl!);
+        const squish = new PhaserSquishCandidate(this, gl!, owner.volumeProfile);
         owner.squish = squish;
         this.add.existing(squish);
         owner.bridge = new PhaserStudioGestureBridge(this, canvas, {
           pointToUv: (x, y) => squish.pointToUv(x, y),
+          paintPointToUv: (x, y) => squish.pointToAppearanceUv(x, y),
           beginSquish: (pointer) => {
-            const claimed = squish.begin(pointer);
+            const claimed = squish.beginAt(pointer.id, pointer.x, pointer.y);
             if (claimed) void owner.audio.prime();
             return claimed;
           },
-          moveSquish: (pointer) => squish.move(pointer),
-          endSquish: (pointer) => {
-            squish.end(pointer);
+          moveSquish: (pointer) => squish.moveAt(pointer.id, pointer.x, pointer.y),
+          endSquish: (pointerId) => {
+            squish.endById(pointerId);
             owner.audio.releaseTactile(squish.snapshot().releaseEnergy);
           },
           cancelSquish: () => { squish.cancel(); owner.audio.releaseTactile(); },
@@ -92,6 +96,7 @@ export class PhaserSquishSurface {
         owner.syncCanvasSize();
         owner.applyPending();
         canvas.dataset.phaserReady = 'true';
+        if (owner.volumeProfile) canvas.dataset.phaserVolume = 'deformable';
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => owner.cleanupScene());
         this.events.once(Phaser.Scenes.Events.DESTROY, () => owner.cleanupScene());
       }
@@ -102,24 +107,40 @@ export class PhaserSquishSurface {
         owner.callbacks.onFrame();
       }
     }
-    this.game = new Phaser.Game({
-      type: Phaser.WEBGL, parent: canvas.parentElement, canvas,
-      context: gl as unknown as CanvasRenderingContext2D,
-      width: Math.max(1, canvas.clientWidth), height: Math.max(1, canvas.clientHeight),
-      transparent: true, scale: { mode: Phaser.Scale.NONE },
-      render: { antialias: true, premultipliedAlpha: true },
-      audio: { noAudio: true }, scene: [StudioScene],
-    });
-    // The stage's responsive CSS owns the displayed square playfield. Phaser's
-    // RESIZE mode instead follows the taller parent and vertically squashes art.
-    this.resizeObserver = new ResizeObserver(() => this.syncCanvasSize());
-    this.resizeObserver.observe(canvas);
+    let game: Phaser.Game | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    try {
+      game = new Phaser.Game({
+        type: Phaser.WEBGL, parent: canvas.parentElement, canvas,
+        context: gl as unknown as CanvasRenderingContext2D,
+        width: Math.max(1, canvas.clientWidth), height: Math.max(1, canvas.clientHeight),
+        transparent: true, scale: { mode: Phaser.Scale.NONE },
+        render: { antialias: true, premultipliedAlpha: true },
+        audio: { noAudio: true }, scene: [StudioScene],
+      });
+      this.game = game;
+      // The stage's responsive CSS owns the displayed square playfield. Phaser's
+      // RESIZE mode instead follows the taller parent and vertically squashes art.
+      resizeObserver = new ResizeObserver(() => this.syncCanvasSize());
+      this.resizeObserver = resizeObserver;
+      resizeObserver.observe(canvas);
+    } catch (error: unknown) {
+      resizeObserver?.disconnect();
+      game?.destroy(true);
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      throw error;
+    }
   }
 
   /** Keep the WebGL backbuffer and simulation projection in the CSS playfield's aspect ratio. */
   private syncCanvasSize(): void {
     if (this.disposed || !this.scene) return;
     const rect = this.canvas.getBoundingClientRect();
+    const style = getComputedStyle(this.canvas);
+    const cssRatio = Number.parseFloat(style.getPropertyValue('--squish-radius-ratio'));
+    const cssCenterOffsetY = Number.parseFloat(style.getPropertyValue('--squish-center-offset-y'));
+    this.squish?.setRenderRadiusRatio(Number.isFinite(cssRatio) ? cssRatio : 0.34);
+    this.squish?.setRenderCenterOffsetY(Number.isFinite(cssCenterOffsetY) ? cssCenterOffsetY : 0);
     const width = Math.max(1, Math.round(rect.width));
     const height = Math.max(1, Math.round(rect.height));
     if (this.game.scale.width !== width || this.game.scale.height !== height) {
@@ -137,6 +158,7 @@ export class PhaserSquishSurface {
     squish.setFillProgress(this.fillProgress);
     squish.setMoldProgress(this.moldProgress);
     squish.setWireframe(this.wireframe);
+    squish.setViewportFollowEnabled(this.stage === 'finish' || this.stage === 'squeeze');
     if (this.appearanceDefined) squish.setAppearanceCanvas(this.appearance);
     this.bridge?.setStage(this.stage, this.decorSection);
     this.bridge?.setBlocked(this.blocked);
@@ -157,8 +179,15 @@ export class PhaserSquishSurface {
   /** StageGestureRouter owns all Phaser input, including Paint when squish interaction is disabled. */
   public setInteractive(_enabled: boolean): void { /* The old raw-renderer interaction gate is not a Phaser stage. */ }
   public setStudioStage(stage: StudioGestureStage, section: StudioDecorSection): void {
+    if (stage !== this.stage) {
+      // A new Studio scene must start from its own centered presentation, even
+      // if the player saved immediately after a far Finish drag.
+      this.bridge?.cancel();
+      this.squish?.recenterViewportFollow();
+    }
     this.stage = stage;
     this.decorSection = section;
+    this.squish?.setViewportFollowEnabled(stage === 'finish' || stage === 'squeeze');
     this.bridge?.setStage(stage, section);
     this.syncCanvasSize();
   }
@@ -188,6 +217,21 @@ export class PhaserSquishSurface {
     return { u: Math.min(1, Math.max(0, localX * 0.5 + 0.5)), v: Math.min(1, Math.max(0, localY * 0.5 + 0.5)) };
   }
 
+  public clientPointToAppearanceUv(clientX: number, clientY: number): AppearancePoint | null {
+    const rect = this.canvas.getBoundingClientRect();
+    const width = this.scene?.scale.width ?? rect.width;
+    const height = this.scene?.scale.height ?? rect.height;
+    const x = (clientX - rect.left) * width / Math.max(1, rect.width);
+    const y = (clientY - rect.top) * height / Math.max(1, rect.height);
+    if (this.squish) return this.squish.pointToAppearanceUv(x, y);
+    const ratio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio'));
+    const radius = Math.max(1, Math.min(width, height) * (Number.isFinite(ratio) ? ratio : 0.34));
+    const localX = (x - width / 2) / radius;
+    const localY = (height / 2 - y) / radius;
+    if (Math.abs(localX) > 1 || Math.abs(localY) > 1) return null;
+    return { u: Math.min(1, Math.max(0, localX * 0.5 + 0.5)), v: Math.min(1, Math.max(0, localY * 0.5 + 0.5)) };
+  }
+
   public projectUvToCanvas(u: number, v: number): { x: number; y: number } {
     if (this.squish) {
       const projected = this.squish.projectUvToCanvas(u, v);
@@ -214,6 +258,9 @@ export class PhaserSquishSurface {
     const recent = this.frameTimes.slice(-30);
     const mean = recent.reduce((sum, value) => sum + value, 0) / Math.max(1, recent.length);
     const sample = squish.metricsSample();
+    const bodyOffset = squish.viewportFollowOffset();
+    this.canvas.dataset.squishBodyOffsetX = bodyOffset.x.toFixed(3);
+    this.canvas.dataset.squishBodyOffsetY = bodyOffset.y.toFixed(3);
     if (sample.active && sample.tactileActive && !this.muted) {
       this.audio.updateTactile(sample.tactileProgress, sample.normalizedVelocity);
     }
@@ -245,6 +292,10 @@ export class PhaserSquishSurface {
     this.resizeObserver.disconnect();
     this.cleanupScene();
     this.game.destroy(true);
+    this.gl.getExtension('WEBGL_lose_context')?.loseContext();
     delete this.canvas.dataset.phaserReady;
+    delete this.canvas.dataset.phaserVolume;
+    delete this.canvas.dataset.squishBodyOffsetX;
+    delete this.canvas.dataset.squishBodyOffsetY;
   }
 }

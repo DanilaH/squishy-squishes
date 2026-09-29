@@ -3,9 +3,9 @@ import { StageGestureRouter, type StageGestureHost, type StagePointer, type Stud
 
 /** The Phaser scene supplies its own shared simulation; the bridge never creates one. */
 export interface PhaserStudioGestureHost extends Omit<StageGestureHost, 'beginSquish' | 'moveSquish' | 'endSquish'> {
-  beginSquish(pointer: Phaser.Input.Pointer): boolean;
-  moveSquish(pointer: Phaser.Input.Pointer): void;
-  endSquish(pointer: Phaser.Input.Pointer): void;
+  beginSquish(pointer: StagePointer): boolean;
+  moveSquish(pointer: StagePointer): void;
+  endSquish(pointerId: number): void;
 }
 
 /**
@@ -17,7 +17,6 @@ export interface PhaserStudioGestureHost extends Omit<StageGestureHost, 'beginSq
  * the bridge does not create a WebGL context, Scene or animation clock.
  */
 export class PhaserStudioGestureBridge {
-  private readonly pointers = new Map<number, Phaser.Input.Pointer>();
   private readonly router: StageGestureRouter;
   private readonly abort = new AbortController();
   private disposed = false;
@@ -29,18 +28,10 @@ export class PhaserStudioGestureBridge {
   ) {
     this.router = new StageGestureRouter({
       pointToUv: (x, y) => host.pointToUv(x, y),
-      beginSquish: (pointer) => {
-        const phaserPointer = this.pointers.get(pointer.id);
-        return phaserPointer ? host.beginSquish(phaserPointer) : false;
-      },
-      moveSquish: (pointer) => {
-        const phaserPointer = this.pointers.get(pointer.id);
-        if (phaserPointer) host.moveSquish(phaserPointer);
-      },
-      endSquish: (id) => {
-        const phaserPointer = this.pointers.get(id);
-        if (phaserPointer) host.endSquish(phaserPointer);
-      },
+      paintPointToUv: (x, y) => host.paintPointToUv(x, y),
+      beginSquish: (pointer) => host.beginSquish(pointer),
+      moveSquish: (pointer) => host.moveSquish(pointer),
+      endSquish: (id) => host.endSquish(id),
       cancelSquish: () => host.cancelSquish(),
       paintStamp: (point) => host.paintStamp(point),
       paintSegment: (from, to) => host.paintSegment(from, to),
@@ -65,7 +56,9 @@ export class PhaserStudioGestureBridge {
   public setStage(stage: StudioGestureStage, decorSection?: StudioDecorSection): void {
     if (this.disposed) return;
     this.router.setStage(stage, decorSection);
-    this.canvas.style.pointerEvents = stage === 'finish' ? 'none' : 'auto';
+    // Finish is a real tactile preview. UI layers decide which buttons win
+    // hit-testing; the canvas itself must stay eligible for the initial grab.
+    this.canvas.style.pointerEvents = 'auto';
   }
 
   public setBlocked(blocked: boolean): void {
@@ -76,7 +69,6 @@ export class PhaserStudioGestureBridge {
   public cancel(): void {
     if (this.disposed) return;
     this.router.cancel();
-    this.pointers.clear();
   }
 
   public snapshot(): ReturnType<StageGestureRouter['snapshot']> { return this.router.snapshot(); }
@@ -109,11 +101,7 @@ export class PhaserStudioGestureBridge {
 
   private readonly handleDown = (pointer: Phaser.Input.Pointer): void => {
     if (this.disposed) return;
-    this.pointers.set(pointer.id, pointer);
-    if (!this.router.down(this.point(pointer))) {
-      this.pointers.delete(pointer.id);
-      return;
-    }
+    if (!this.router.down(this.point(pointer))) return;
     if (pointer.event instanceof PointerEvent) {
       try { this.canvas.setPointerCapture(pointer.event.pointerId); } catch { /* best effort */ }
     }
@@ -122,14 +110,12 @@ export class PhaserStudioGestureBridge {
   private readonly handleMove = (pointer: Phaser.Input.Pointer): void => {
     if (this.disposed) return;
     if (pointer.id !== this.router.snapshot().owner) return;
-    this.pointers.set(pointer.id, pointer);
     this.router.move(this.point(pointer));
   };
 
   private readonly handleUp = (pointer: Phaser.Input.Pointer): void => {
     if (this.disposed) return;
     this.router.up(pointer.id);
-    this.pointers.delete(pointer.id);
   };
 
   private readonly handleCancel = (): void => { this.cancel(); };
@@ -142,7 +128,6 @@ export class PhaserStudioGestureBridge {
     if (this.disposed) return;
     this.router.cancel();
     this.disposed = true;
-    this.pointers.clear();
     this.abort.abort();
     this.scene.input.off('pointerdown', this.handleDown);
     this.scene.input.off('pointermove', this.handleMove);

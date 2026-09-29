@@ -10,10 +10,15 @@ import '../../sandbox-core.css';
 import '../../sandbox-library.css';
 import '../../sandbox-ideas.css';
 import '../../sandbox-polish-01.css';
+import './candyStudioPreview.css';
+import './jellyUiPreview.css';
+import './jellyTypographyPreview.css';
+import { installReviewVisualProfile } from './reviewVisualProfile';
+import { prepareReviewFirstPaint } from './reviewStartupAssets';
+import { createReviewMakerRendererLoader } from './reviewMakerLoader';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
-import { PhaserSquishSurface } from '../../sandbox/PhaserSquishSurface';
 
 /** DRAFT must exercise the real SDK but cannot mutate an existing player's normal save/settings. */
 const DRAFT_PREFIX = 'squishy.phaser-yandex-draft.';
@@ -36,22 +41,27 @@ const createDraftRuntime = async (): Promise<SquishyPlatformRuntime> => {
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root.');
+document.documentElement.lang = normalizeLanguage(navigator.language);
 
-void bootstrapSquishyApp(root, {
+const makerRenderer = createReviewMakerRendererLoader('draft');
+
+const disposeReviewVisualProfile = installReviewVisualProfile(root);
+root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
+
+void prepareReviewFirstPaint(root, 'draft').then(() => bootstrapSquishyApp(root, {
   createRuntime: createDraftRuntime,
-  makerRendererOptions: {
-    rendererBackend: 'phaser',
-    makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
-      new PhaserSquishSurface(canvas, onMetrics, audio, callbacks),
-  },
-}).then((handle) => {
+  loadMakerRendererOptions: makerRenderer.load,
+})).then((handle) => {
+  const cancelMakerWarm = makerRenderer.scheduleWarm();
   const listeners = new AbortController();
   let disposed = false;
   const dispose = (): void => {
     if (disposed) return;
     disposed = true;
     listeners.abort();
+    cancelMakerWarm();
     draftRuntime = null;
+    disposeReviewVisualProfile();
     void handle.dispose();
   };
   // A bfcache pagehide suspends the existing Phaser.Game; only a final hide destroys it.
@@ -63,6 +73,7 @@ void bootstrapSquishyApp(root, {
     draftRuntime?.activity.setBlocked('pagehide', false);
   }, { signal: listeners.signal });
 }).catch((error: unknown) => {
+  disposeReviewVisualProfile();
   console.error('[squishy:phaser-yandex-draft]', error);
   const copy = getGameCopy(normalizeLanguage(navigator.language));
   root.innerHTML = `<main class="lab-shell"><section class="recipe-panel"><strong>${copy.fatal.title}</strong><span>${copy.fatal.retry}</span></section></main>`;

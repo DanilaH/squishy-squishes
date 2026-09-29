@@ -176,6 +176,28 @@
   .sandbox-shell[data-stage="shape"] .sandbox-shape__icon { width: 30px; height: 30px; }
   .sandbox-shell[data-stage="finish"] .sandbox-material__orb { width: 27px; height: 27px; }
 }
+/* 320px RU review exposed labels breaking inside words ("Голограф/ик",
+   "Маршмел/лоу"). Keep the three-column tray, but tighten the preview orb/gap
+   and reserve one readable line for the material name. */
+@media (max-width: 360px) and (orientation: portrait) {
+  .sandbox-shell[data-stage="finish"] .sandbox-material {
+    flex-direction: column;
+    gap: 3px;
+    padding: 5px 4px;
+    font-size: 10px;
+  }
+  .sandbox-shell[data-stage="finish"] .sandbox-material__orb {
+    width: 24px;
+    height: 24px;
+  }
+  .sandbox-shell[data-stage="finish"] .sandbox-material > span:last-child {
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    font-size: 10px;
+    line-height: 1;
+  }
+}
 @media (max-height: 520px) and (orientation: landscape) {
   .sandbox-shell[data-stage="shape"] .sandbox-copy > span,
   .sandbox-shell[data-stage="finish"] .sandbox-copy > span { margin-left: 0; }

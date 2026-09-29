@@ -63,7 +63,7 @@ test('M4: Phaser events author real Paint, Mix-in and Decor documents without co
   expect(errors).toEqual([]);
 });
 
-test('M4: Mix shares one Phaser pointer with Squish; blockers/cancel and Finish prevent false squeezes', async ({ page }) => {
+test('M4: Mix shares one Phaser pointer with Squish; blockers cancel and Finish stays tactile', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 850 });
   await open(page);
   const bounds = await page.locator('#gesture-stage canvas').boundingBox();
@@ -91,7 +91,10 @@ test('M4: Mix shares one Phaser pointer with Squish; blockers/cancel and Finish 
   await expect.poll(() => page.evaluate(() => window.__squishyStageInput!.snapshot().squeezes)).toBeGreaterThan(0);
   const earned = (await page.evaluate(() => window.__squishyStageInput!.snapshot())).squeezes;
   await page.locator('[data-gesture-stage="finish"]').click();
-  expect(await page.locator('#gesture-stage canvas').evaluate((element) => (element as HTMLCanvasElement).style.pointerEvents)).toBe('none');
-  await page.mouse.click(x, y);
-  expect((await page.evaluate(() => window.__squishyStageInput!.snapshot())).squeezes).toBe(earned);
+  expect(await page.locator('#gesture-stage canvas').evaluate((element) => (element as HTMLCanvasElement).style.pointerEvents)).toBe('auto');
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(860, Math.max(20, y - 140), { steps: 16 });
+  await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => window.__squishyStageInput!.snapshot().squeezes)).toBeGreaterThan(earned);
 });

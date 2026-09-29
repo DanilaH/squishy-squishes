@@ -13,11 +13,12 @@ import '../../sandbox-polish-01.css';
 import './candyStudioPreview.css';
 import './jellyUiPreview.css';
 import './jellyTypographyPreview.css';
-import { preloadJellyUi } from './jellyUiPreload';
+import { prepareReviewFirstPaint } from './reviewStartupAssets';
+import { createReviewMakerRendererLoader } from './reviewMakerLoader';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
-import { PhaserSquishSurface } from '../../sandbox/PhaserSquishSurface';
+import { captureModalReturnFocus, focusModal, restoreModalFocus, trapModalTab } from '../../sandbox/modalFocus';
 
 // Pages is a public device-preview, not a migration of real player saves or a Yandex SDK test.
 const PAGES_PREFIX = 'squishy.phaser-pages-preview.';
@@ -40,14 +41,23 @@ const createPagesRuntime = async (): Promise<SquishyPlatformRuntime> => {
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root.');
+document.documentElement.lang = normalizeLanguage(navigator.language);
 
-/** Phaser's renderer needs WebGL2; do not leave an unusable maker mounted if it is absent. */
+const makerRenderer = createReviewMakerRendererLoader('pages');
+
+/** Phaser's renderer needs WebGL2; probe once per page instead of allocating a throwaway context on every maker entry. */
+let phaserSupportConfirmed = false;
 const canStartPhaser = (): boolean => {
+  if (phaserSupportConfirmed) return true;
   const probe = document.createElement('canvas');
   try {
     const gl = probe.getContext('webgl2');
     if (!gl) return false;
     gl.getExtension('WEBGL_lose_context')?.loseContext();
+    // Success is stable enough to memoize. A null/throw may be transient
+    // (temporary context pressure), so failure remains retryable on the next
+    // explicit maker attempt instead of poisoning the whole session.
+    phaserSupportConfirmed = true;
     return true;
   } catch {
     return false;
@@ -56,27 +66,17 @@ const canStartPhaser = (): boolean => {
 
 // Session-reachable UI images decode before the first playable Library frame.
 root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
-void preloadJellyUi().then((ready) => {
-  if (ready) root.dataset.jellyUiReady = '';
-  return bootstrapSquishyApp(root, {
+void prepareReviewFirstPaint(root, 'pages').then(() => bootstrapSquishyApp(root, {
     createRuntime: createPagesRuntime,
-    makerRendererOptions: {
-      rendererBackend: 'phaser',
-      makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
-        new PhaserSquishSurface(canvas, onMetrics, audio, callbacks),
-    },
-  });
-}).then((handle) => {
+    loadMakerRendererOptions: makerRenderer.load,
+  })).then((handle) => {
+  const cancelMakerWarm = makerRenderer.scheduleWarm();
   const listeners = new AbortController();
   // Capture before the Library's delegated bubble click, but only on maker entry.
   // A diagnostic overlay keeps the Library and all existing saves intact.
   root.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
-    if (target.closest('[data-phaser-unsupported-close]')) {
-      root.querySelector('[data-phaser-unsupported]')?.remove();
-      return;
-    }
     if (!target.closest('button[data-library-new], button[data-library-play-id], button[data-idea-id]')) return;
     if (!root.querySelector('[data-sandbox-library], [data-sandbox-ideas]') || canStartPhaser()) return;
     event.preventDefault();
@@ -97,14 +97,32 @@ void preloadJellyUi().then((ready) => {
         : 'WebGL2 is unavailable or disabled in this browser or device. Enable hardware acceleration or try another browser.'}</p>
       <button class="sandbox-library-modal__cancel" type="button" data-phaser-unsupported-close>${ru ? 'НАЗАД К ПОЛКЕ' : 'BACK TO LIBRARY'}</button>
     </div>`;
+    const returnFocus = captureModalReturnFocus();
+    const dialog = overlay.querySelector<HTMLElement>('.sandbox-library-modal__sheet');
+    const close = (): void => {
+      overlay.remove();
+      restoreModalFocus(returnFocus);
+    };
+    overlay.addEventListener('click', (closeEvent) => {
+      if (closeEvent.target instanceof Element && closeEvent.target.closest('[data-phaser-unsupported-close]')) close();
+    });
+    overlay.addEventListener('keydown', (keyEvent) => {
+      if (keyEvent.key === 'Escape') {
+        keyEvent.preventDefault();
+        close();
+        return;
+      }
+      if (dialog) trapModalTab(keyEvent, dialog);
+    });
     root.append(overlay);
-    overlay.querySelector<HTMLButtonElement>('[data-phaser-unsupported-close]')?.focus();
+    if (dialog) focusModal(dialog);
   }, { capture: true, signal: listeners.signal });
   let disposed = false;
   const dispose = (): void => {
     if (disposed) return;
     disposed = true;
     listeners.abort();
+    cancelMakerWarm();
     pagesRuntime = null;
     void handle.dispose();
   };

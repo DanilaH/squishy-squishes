@@ -71,3 +71,79 @@ test('A missing jelly asset leaves all original CSS controls usable', async ({ p
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
   await expect(page.locator('[data-panel="shape"] .sandbox-shape')).toHaveCount(6);
 });
+
+
+test('dirty craft exit confirms, and appearance limit stays explicit without blocking Continue', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/phaser/');
+  await page.locator('[data-library-new]').first().click();
+  const shell = page.locator('[data-sandbox-app]');
+  await page.locator('[data-shape="heart"]').click();
+  await page.locator('[data-action="shape-continue"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'paint');
+
+  await page.locator('[data-action="exit-craft"]').click();
+  await expect(page.locator('[data-exit-overlay]')).toBeVisible();
+  await page.locator('[data-action="exit-cancel"]').click();
+  await expect(page.locator('[data-exit-overlay]')).toBeHidden();
+  await expect(shell).toHaveAttribute('data-stage', 'paint');
+
+  await page.locator('[data-paint-tool="fill"]').click();
+  const box = await page.locator('[data-sandbox-canvas]').boundingBox();
+  if (!box) throw new Error('Missing paint canvas');
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.click(box.x + 8, box.y + 8);
+  await expect(shell, 'Fill ignores transparent playfield outside the canonical shape').toHaveAttribute('data-paint-strokes', '0');
+  await page.mouse.click(x, y);
+  await expect(shell).toHaveAttribute('data-paint-strokes', '1');
+  await page.mouse.click(x, y);
+  await expect(shell, 'repeating Fill replaces the prior base fill instead of consuming budget')
+    .toHaveAttribute('data-paint-strokes', '1');
+
+  await page.locator('[data-action="paint-clear"]').click();
+  await page.locator('[data-paint-tool="paint"]').click();
+  for (let index = 0; index < 96; index += 1) {
+    await page.mouse.click(x, y);
+  }
+
+  await expect(shell).toHaveAttribute('data-appearance-full', 'true');
+  await expect(page.locator('[data-sandbox-status]')).toHaveAttribute('data-limit', '');
+  await expect(page.locator('[data-sandbox-status]')).toContainText(/Detail limit|Лимит деталей/);
+  await expect(page.locator('[data-paint-tool="fill"]')).toBeDisabled();
+  await expect(page.locator('[data-action="paint-continue"]')).toBeEnabled();
+
+  await page.locator('[data-action="paint-clear"]').click();
+  await expect(shell).toHaveAttribute('data-appearance-full', 'false');
+  await expect(page.locator('[data-paint-tool="fill"]')).toBeEnabled();
+
+  await page.locator('[data-action="exit-craft"]').click();
+  await expect(page.locator('[data-exit-overlay]')).toBeVisible();
+  await page.locator('[data-action="exit-confirm"]').click();
+  await expect(page.locator('[data-sandbox-library]')).toBeVisible();
+});
+
+test('a transient Library jelly-art failure recovers in-place without delaying play', async ({ page }) => {
+  let requests = 0;
+  await page.route('**/*honey-wide*.webp', async (route) => {
+    requests += 1;
+    if (requests === 1) {
+      await route.abort('connectionfailed');
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto('/phaser/');
+  const library = page.locator('[data-sandbox-library]');
+  await expect(library).toBeVisible();
+  await expect(page.locator('[data-library-new]').first()).toBeEnabled();
+
+  await expect.poll(async () => page.locator('#app').getAttribute('data-jelly-ui-ready'), {
+    timeout: 4_000,
+    message: 'authored Library chrome should recover after one transient asset failure',
+  }).toBe('');
+  expect(requests).toBeGreaterThanOrEqual(2);
+  await expect(page.locator('[data-library-new]').first()).toHaveCSS('background-image', /honey-wide.*webp/);
+});
+
