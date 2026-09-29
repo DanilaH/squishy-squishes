@@ -10,7 +10,7 @@ const STARTUP_ART_BUDGET_MS = 1800;
  */
 export const prepareReviewFirstPaint = async (
   root: HTMLElement,
-  scope: 'pages' | 'draft',
+  scope: 'pages' | 'draft' | 'production',
 ): Promise<void> => {
   const markJellyReady = (ready: boolean): void => {
     if (ready && root.isConnected) root.dataset.jellyUiReady = '';

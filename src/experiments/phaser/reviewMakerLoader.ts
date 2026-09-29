@@ -3,7 +3,7 @@ import { preloadMakerJellyUi } from './jellyUiPreload';
 import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
 
 type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
-type ReviewScope = 'pages' | 'draft';
+type ReviewScope = 'pages' | 'draft' | 'production';
 const MAKER_ART_BUDGET_MS = 1_200;
 
 const waitForOptionalMakerArt = async (): Promise<void> => {
