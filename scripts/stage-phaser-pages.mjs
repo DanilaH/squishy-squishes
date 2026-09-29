@@ -31,4 +31,15 @@ for (const ref of refs) {
   const asset = join(destination, ref.slice(2));
   if (!(await stat(asset)).isFile()) throw new Error(`Missing compiled preview asset: ${asset}`);
 }
-console.log(`Phaser Pages preview staged: phaser/index.html and ${refs.length} relative assets.`);
+
+const entryScript = refs.find((ref) => ref?.endsWith('.js'));
+if (!entryScript) throw new Error('Missing staged Pages entry script.');
+const entryBytes = (await stat(join(destination, entryScript.slice(2)))).size;
+if (entryBytes > 350_000) {
+  throw new Error(`Pages entry JS regressed to ${entryBytes} bytes; Phaser must remain lazy-loaded after Library paint.`);
+}
+const assetNames = await readdir(join(destination, 'assets'));
+const phaserChunk = assetNames.find((name) => /^PhaserSquishSurface-.*\.js$/.test(name));
+if (!phaserChunk) throw new Error('Pages build no longer contains the expected lazy Phaser maker chunk.');
+
+console.log(`Phaser Pages preview staged: phaser/index.html and ${refs.length} relative assets; entry JS ${entryBytes} bytes; lazy ${phaserChunk}.`);
