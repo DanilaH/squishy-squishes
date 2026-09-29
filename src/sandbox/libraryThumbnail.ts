@@ -10,8 +10,8 @@ import type { SavedSquishy } from './types';
 const THUMBNAIL_SIZE = 256;
 const SHAPE_PADDING = 30;
 
-// Opt-in only for the isolated Phaser Pages entry. Ordinary/Yandex cards
-// retain their existing pixels and the same saved V3 document representation.
+// Opt-in only for the owner-reviewed Phaser profile (Pages + isolated
+// Yandex DRAFT). Ordinary production keeps its existing pixels and V3 format.
 let pagesMaterialLighting = false;
 export const enablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = true; };
 export const disablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = false; };
