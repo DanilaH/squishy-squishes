@@ -546,6 +546,7 @@ export class SandboxLibraryApp {
     if (this.library.length < this.libraryCapacity) {
       const previousCompleted = this.completedRecipeIds;
       const result = await this.options.onAppendSquishy(draft, ideaId);
+      if (this.disposed) return null;
       this.library = [...result.library];
       this.completedRecipeIds = [...result.completedRecipeIds];
       if (ideaId) this.renderIdeaCompletion(ideaId, previousCompleted);
@@ -710,6 +711,7 @@ export class SandboxLibraryApp {
     try {
       const previousCompleted = this.completedRecipeIds;
       const result = await this.options.onReplaceSquishy(targetId, pending.draft, pending.ideaId);
+      if (this.disposed || this.pendingReplacement !== pending || !overlay.isConnected) return;
       this.library = [...result.library];
       this.completedRecipeIds = [...result.completedRecipeIds];
       this.pendingReplacement = null;
@@ -717,6 +719,7 @@ export class SandboxLibraryApp {
       if (pending.ideaId) this.renderIdeaCompletion(pending.ideaId, previousCompleted);
       pending.resolve(result.savedSquishy);
     } catch (error: unknown) {
+      if (this.disposed || this.pendingReplacement !== pending || !overlay.isConnected) return;
       console.error('[squishy:library-replace]', error);
       this.setModalBusy(overlay, false);
       const message = overlay.querySelector<HTMLElement>('[data-library-modal-error]');
@@ -739,11 +742,14 @@ export class SandboxLibraryApp {
     if (!overlay || overlay.getAttribute('aria-busy') === 'true') return;
     this.setModalBusy(overlay, true);
     try {
-      this.library = [...await this.options.onDeleteSquishy(targetId)];
+      const library = await this.options.onDeleteSquishy(targetId);
+      if (this.disposed || this.pendingDeleteId !== targetId || !overlay.isConnected) return;
+      this.library = [...library];
       this.pendingDeleteId = null;
       this.closeModal(false);
       this.renderLibrary();
     } catch (error: unknown) {
+      if (this.disposed || this.pendingDeleteId !== targetId || !overlay.isConnected) return;
       console.error('[squishy:library-delete]', error);
       this.setModalBusy(overlay, false);
       const message = overlay.querySelector<HTMLElement>('[data-library-modal-error]');
@@ -798,6 +804,7 @@ export class SandboxLibraryApp {
 
     try {
       const result = await this.options.onUnlockShelfExpansion();
+      if (this.disposed) return;
       if (result.granted) {
         this.libraryCapacity = Math.max(this.libraryCapacity, result.libraryCapacity);
         this.rewardMessage = this.copy.rewardExpanded;
@@ -809,7 +816,7 @@ export class SandboxLibraryApp {
       this.rewardMessage = this.copy.rewardUnavailable;
     } finally {
       this.rewardInFlight = false;
-      this.renderLibrary();
+      if (!this.disposed) this.renderLibrary();
     }
   }
 
