@@ -3,13 +3,16 @@ import { enablePagesLibraryMaterialLighting, registerPagesLibraryMaterialRendere
 import { drawPagesAccessoryGraphic, renderPagesSurfaceDecor } from '../../sandbox/pagesDecorArt';
 import { renderPagesVolumeThumbnail, releasePagesVolumeThumbnail } from './libraryVolumeProduction';
 import { mountLibraryHallFeel } from './libraryHallFeel';
-import { mountLibraryHallPreview } from './libraryHallPreview';
+import { mountLibraryHallPreview, preloadLibraryHallAssets } from './libraryHallPreview';
 import { mountStudioEnvironmentPreview } from './studioEnvironmentPreview';
 import './libraryHallPolish.css';
 import './libraryHallGrounding.css';
 import './libraryHallAccess.css';
 import './libraryHallOwnerReview.css';
 import './libraryHallPerspectiveFloor.css';
+
+/** Decode the Hall's small first-screen art before the playable Library mounts. */
+export const preloadReviewVisualProfile = (): Promise<void> => preloadLibraryHallAssets();
 
 /**
  * Registers the owner-reviewed Hall/Studio appearance before the first Library
