@@ -84,10 +84,11 @@ test('Studio reflows through live portrait, desktop and landscape resizes on Sha
   page.on('pageerror', (error) => errors.push(error.message));
   try {
     await page.goto('/phaser/');
-    await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '');
+    await expect(page.locator('#app')).not.toHaveAttribute('data-studio-env-ready', '');
     await page.locator('[data-library-new]').first().click();
     const shell = page.locator('[data-sandbox-app]');
     await expect(shell).toHaveAttribute('data-stage', 'shape');
+    await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '', { timeout: 8_000 });
     for (const view of [
       { name: 'phone-320-shape', width: 320, height: 700 },
       { name: 'desktop-1440-shape', width: 1440, height: 900 },
