@@ -233,6 +233,7 @@ export class SandboxLibraryApp {
     this.muted = options.muted;
     this.root.addEventListener('click', this.handleClick, { signal: this.abortController.signal });
     this.root.addEventListener('keydown', this.handleKeyDown, { signal: this.abortController.signal });
+    this.root.addEventListener('squishy:library-room-visible', this.handleLibraryRoomVisible, { signal: this.abortController.signal });
     this.renderLibrary();
   }
 
@@ -412,6 +413,7 @@ export class SandboxLibraryApp {
   }
 
   private renderThumbnail(canvas: HTMLCanvasElement): void {
+    if (canvas.dataset.libraryRendered === 'true') return;
     const id = canvas.dataset.libraryThumbnail;
     const toy = this.library.find((candidate) => candidate.id === id);
     if (!toy) return;
@@ -424,6 +426,13 @@ export class SandboxLibraryApp {
       this.renderThumbnail(canvas);
     }
   }
+
+  private readonly handleLibraryRoomVisible = (): void => {
+    for (const card of this.root.querySelectorAll<HTMLElement>('[data-sandbox-library] .sandbox-library-card:not([hidden])')) {
+      const canvas = card.querySelector<HTMLCanvasElement>('[data-library-thumbnail]');
+      if (canvas) this.renderThumbnail(canvas);
+    }
+  };
 
   private observeLibraryThumbnails(): void {
     this.thumbnailObserver?.disconnect();
