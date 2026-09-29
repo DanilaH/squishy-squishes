@@ -488,6 +488,14 @@ export class SandboxLibraryApp {
 
   private cancelPendingMakerStart(): void {
     this.makerStartToken += 1;
+    const shell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
+    shell?.removeAttribute('aria-busy');
+    const message = shell?.querySelector<HTMLElement>('[data-library-maker-error]');
+    if (message && message.textContent === this.copy.studioLoading) {
+      message.textContent = '';
+      message.hidden = true;
+      message.classList.remove('is-error');
+    }
   }
 
   private async handleSaveRequest(draft: SandboxDraft): Promise<SavedSquishy | null> {
@@ -601,6 +609,7 @@ export class SandboxLibraryApp {
       return;
     }
     if (target.hasAttribute('data-library-expand-reward')) {
+      this.cancelPendingMakerStart();
       void this.unlockShelfExpansion();
       return;
     }
@@ -635,6 +644,7 @@ export class SandboxLibraryApp {
     if (deleteId) {
       const toy = this.library.find((candidate) => candidate.id === deleteId);
       if (!toy) return;
+      this.cancelPendingMakerStart();
       this.pendingDeleteId = deleteId;
       this.renderDeleteOverlay(toy);
     }
