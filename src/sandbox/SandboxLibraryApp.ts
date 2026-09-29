@@ -334,7 +334,7 @@ export class SandboxLibraryApp {
       const done = completed.has(idea.id);
       const mixin = getIdeaMixinLabel(idea, this.options.language);
       return `
-        <button class="sandbox-idea-card${done ? ' is-complete' : ''}" type="button" data-idea-id="${escapeAttribute(idea.id)}" aria-pressed="${done}" style="--idea-color:#${idea.paintColor.toString(16).padStart(6, '0')}">
+        <button class="sandbox-idea-card${done ? ' is-complete' : ''}" type="button" data-idea-id="${escapeAttribute(idea.id)}" style="--idea-color:#${idea.paintColor.toString(16).padStart(6, '0')}">
           <span class="sandbox-idea-card__top">
             <span class="sandbox-idea-card__shape">${getIdeaShapeLabel(idea, this.options.language)}</span>
             ${done ? `<strong>✓ ${this.copy.completed}</strong>` : ''}
