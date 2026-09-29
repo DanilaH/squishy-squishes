@@ -18,9 +18,10 @@
   z-index: 1;
 }
 
-/* The tactile canvas is intentionally large and may overlap the top row.
-   Keep actual topbar actions above the stage stacking context. */
-#app[data-studio-env-ready] .sandbox-shell.studio-env-active:is([data-stage='finish'],[data-stage='squeeze']) > .sandbox-topbar {
+/* The visible body may be deliberately larger than the stage's normal
+   footprint on every Studio step. Keep real navigation/actions above that
+   canvas, not only during Finish/Squeeze. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active > .sandbox-topbar {
   position: relative;
   z-index: 8;
 }
