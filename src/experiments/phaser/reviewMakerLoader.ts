@@ -4,26 +4,14 @@ import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
 
 type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
 type ReviewScope = 'pages' | 'draft' | 'production';
-const MAKER_ART_BUDGET_MS = 1_200;
 
-const waitForOptionalMakerArt = async (): Promise<void> => {
-  const art = Promise.all([
-    preloadStudioEnvironmentAssets(),
-    preloadMakerJellyUi(),
-  ]).then(() => undefined);
-
-  let budgetTimer = 0;
-  const budget = new Promise<void>((resolve) => {
-    budgetTimer = globalThis.setTimeout(() => {
-      budgetTimer = 0;
-      resolve();
-    }, MAKER_ART_BUDGET_MS);
-  });
-  try {
-    await Promise.race([art, budget]);
-  } finally {
-    if (budgetTimer) globalThis.clearTimeout(budgetTimer);
-  }
+const waitForMakerArt = async (): Promise<void> => {
+  // Furniture is part of the normal scene, not progressive decoration. Keep the
+  // player on the previous screen while authored Studio art is still loading.
+  // A genuine decode/network failure may still fall back to the original Studio
+  // rather than trapping the player outside the maker forever.
+  await preloadStudioEnvironmentAssets();
+  await preloadMakerJellyUi();
 };
 
 export interface ReviewMakerRendererLoader {
@@ -42,7 +30,7 @@ export const createReviewMakerRendererLoader = (scope: ReviewScope): ReviewMaker
     if (!makerRendererPromise) {
       makerRendererPromise = Promise.all([
         import('../../sandbox/PhaserSquishSurface'),
-        waitForOptionalMakerArt(),
+        waitForMakerArt(),
       ])
         .then<MakerRendererOptions>(([{ PhaserSquishSurface }]) => ({
           rendererBackend: 'phaser',

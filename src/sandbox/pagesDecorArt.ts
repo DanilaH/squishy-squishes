@@ -106,13 +106,11 @@ const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number): vo
   ctx.restore();
 };
 
-export const renderPagesSurfaceDecor = (
+export const renderPagesSurfaceStickers = (
   ctx: CanvasRenderingContext2D, decor: DecorDocumentV1, _shape: ShapeDefinition, frame: DecorFrame,
 ): void => {
   const [faceX, faceY] = point(frame.mouth);
   const ids: readonly StickerId[] = ['heart', 'star', 'flower', 'sparkle'];
-  // Render stickers behind face details. Overlapping older save coordinates
-  // stay intact; a softer overprint keeps the expression legible at 320px.
   for (const placed of decor.stickers) {
     const x = placed.x / 255 * S;
     const y = (1 - placed.y / 255) * S;
@@ -122,9 +120,21 @@ export const renderPagesSurfaceDecor = (
     sticker(ctx, ids[placed.t] ?? 'heart', placed.s);
     ctx.restore();
   }
+};
+
+export const renderPagesSurfaceFace = (
+  ctx: CanvasRenderingContext2D, decor: DecorDocumentV1, _shape: ShapeDefinition, frame: DecorFrame,
+): void => {
   if (decor.blush) { blush(ctx, frame.blushLeft); blush(ctx, frame.blushRight); }
   if (decor.eyes) { eye(ctx, decor.eyes, frame.eyesLeft); eye(ctx, decor.eyes, frame.eyesRight); }
   if (decor.mouth) mouth(ctx, decor.mouth, frame.mouth);
+};
+
+export const renderPagesSurfaceDecor = (
+  ctx: CanvasRenderingContext2D, decor: DecorDocumentV1, shape: ShapeDefinition, frame: DecorFrame,
+): void => {
+  renderPagesSurfaceStickers(ctx, decor, shape, frame);
+  renderPagesSurfaceFace(ctx, decor, shape, frame);
 };
 
 export const drawPagesAccessoryGraphic = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, shapeId?: ShapeId): void => {

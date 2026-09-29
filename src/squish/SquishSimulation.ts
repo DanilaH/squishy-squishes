@@ -31,10 +31,10 @@ export interface SquishSimulationSample {
 export const SQUISH_GRID_CELLS = 16;
 const GRAB_RADIUS = 0.92;
 const PRESS_RADIUS = 0.58;
-const MAX_POINTER_DISPLACEMENT = 1.32;
+const MAX_POINTER_DISPLACEMENT = 0.92;
 const MAX_VERTEX_DISPLACEMENT = 0.72;
-const VIEWPORT_FOLLOW_RATIO = 0.68;
-const MAX_VIEWPORT_FOLLOW = 1.70;
+const VIEWPORT_FOLLOW_RATIO = 0.22;
+const MAX_VIEWPORT_FOLLOW = 0.30;
 const VIEWPORT_FOLLOW_ATTACK = 12;
 const VIEWPORT_FOLLOW_RELEASE = 7;
 const GRAB_STIFFNESS_NEAR = 245;
@@ -50,6 +50,8 @@ const PRESS_ATTACK = 12;
 const PRESS_RELEASE = 18;
 const RELEASE_DRAG_KICK = 1.05;
 const RELEASE_PRESS_KICK = 0.24;
+const POKE_MAX_TRAVEL = 0.10;
+const POKE_REBOUND_KICK = 1.08;
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 const clamp01 = (value: number): number => clamp(value, 0, 1);
@@ -248,15 +250,37 @@ export class SquishSimulation {
   }
 
   /** Returns tactile release energy; a weak gesture does not count as a squeeze. */
-  public end(pointerId: number): number | null {
+  public end(pointerId: number, pokeOnTap = false): number | null {
     if (pointerId !== this.pointerId) return null;
+    const localPointerX = this.pointerX - this.bodyOffsetX;
+    const localPointerY = this.pointerY - this.bodyOffsetY;
+    const tapTravel = Math.hypot(localPointerX - this.grabStartX, localPointerY - this.grabStartY);
+    const poke = pokeOnTap && tapTravel <= POKE_MAX_TRAVEL;
     const energy = clamp01(Math.max(this.maxGestureCompression, this.pressDepth * PRESS_COMPRESSION_WEIGHT));
     if (energy >= 0.08) {
       this.squeezes += 1;
       this.applyReleaseImpulse();
     }
+    if (poke) this.applyPokeImpulse();
     this.cancel();
-    return energy;
+    return poke ? Math.max(energy, 0.16) : energy;
+  }
+
+  /** A short click creates a local rebound without translating the whole toy. */
+  private applyPokeImpulse(): void {
+    for (const vertex of this.vertices) {
+      const lx = vertex.restX - this.grabStartX;
+      const ly = vertex.restY - this.grabStartY;
+      const distance = Math.hypot(lx, ly);
+      const influence = smoothstep01(1 - distance / PRESS_RADIUS) ** 2;
+      if (influence <= 0) continue;
+      const inverse = distance > 0.0001 ? 1 / distance : 0;
+      const radialX = distance > 0.0001 ? lx * inverse : 0;
+      const radialY = distance > 0.0001 ? ly * inverse : 1;
+      const kick = POKE_REBOUND_KICK * influence * (0.55 + this.pressDepth * 0.45);
+      vertex.vx += radialX * kick;
+      vertex.vy += radialY * kick;
+    }
   }
 
   /** Cancel without adding a squeeze or a release impulse. */

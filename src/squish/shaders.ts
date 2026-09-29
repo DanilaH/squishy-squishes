@@ -38,6 +38,8 @@ void main() {
 export interface SquishFragmentShaderOptions {
   readonly edgeDarkening?: number;
   readonly finalBodyLighting?: string;
+  readonly extraUniforms?: string;
+  readonly finalComposite?: string;
 }
 
 export const createFragmentShaderSource = (
@@ -45,6 +47,8 @@ export const createFragmentShaderSource = (
 ): string => {
   const edgeDarkening = options.edgeDarkening ?? 0.26;
   const finalBodyLighting = options.finalBodyLighting ?? '';
+  const extraUniforms = options.extraUniforms ?? '';
+  const finalComposite = options.finalComposite ?? '';
   return `#version 300 es
 precision highp float;
 
@@ -73,6 +77,7 @@ uniform float uMetallic;
 uniform float uPearlescence;
 uniform float uCloudiness;
 uniform bool uWireframePass;
+${extraUniforms}
 
 out vec4 outColor;
 
@@ -293,6 +298,7 @@ void main() {
   base += uSheenColor * meniscusBand * 0.12;
 
   ${finalBodyLighting}
+  ${finalComposite}
   float bodyAlpha = mix(0.985, 0.60 + edge * 0.30, translucency);
   outColor = vec4(base, bodyAlpha * shapeAlpha);
 }

@@ -5,7 +5,12 @@ import {
   registerPagesLibraryMaterialRenderer,
   unregisterPagesLibraryMaterialRenderer,
 } from '../../sandbox/libraryThumbnail';
-import { drawPagesAccessoryGraphic, renderPagesSurfaceDecor } from '../../sandbox/pagesDecorArt';
+import {
+  drawPagesAccessoryGraphic,
+  renderPagesSurfaceDecor,
+  renderPagesSurfaceFace,
+  renderPagesSurfaceStickers,
+} from '../../sandbox/pagesDecorArt';
 import { renderPagesVolumeThumbnail, releasePagesVolumeThumbnail } from './libraryVolumeProduction';
 import { mountLibraryHallFeel } from './libraryHallFeel';
 import { mountLibraryHallPreview, preloadLibraryHallAssets } from './libraryHallPreview';
@@ -27,7 +32,12 @@ export const preloadReviewVisualProfile = (): Promise<void> => preloadLibraryHal
 export const installReviewVisualProfile = (root: HTMLElement): (() => void) => {
   enablePagesLibraryMaterialLighting();
   registerPagesLibraryMaterialRenderer(renderPagesVolumeThumbnail, releasePagesVolumeThumbnail);
-  registerPagesDecorArt({ render: renderPagesSurfaceDecor, accessory: drawPagesAccessoryGraphic });
+  registerPagesDecorArt({
+    render: renderPagesSurfaceDecor,
+    renderFace: renderPagesSurfaceFace,
+    renderStickers: renderPagesSurfaceStickers,
+    accessory: drawPagesAccessoryGraphic,
+  });
 
   const disposeStudio = mountStudioEnvironmentPreview(root);
   const disposeHall = mountLibraryHallPreview(root);

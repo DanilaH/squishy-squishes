@@ -55,6 +55,8 @@ export interface DecorFrame {
 
 type PagesDecorArt = {
   render: (context: CanvasRenderingContext2D, decor: DecorDocumentV1, shape: ShapeDefinition, frame: DecorFrame) => void;
+  renderFace: (context: CanvasRenderingContext2D, decor: DecorDocumentV1, shape: ShapeDefinition, frame: DecorFrame) => void;
+  renderStickers: (context: CanvasRenderingContext2D, decor: DecorDocumentV1, shape: ShapeDefinition, frame: DecorFrame) => void;
   accessory: (context: CanvasRenderingContext2D, accessory: AccessoryId, width: number, height: number, shapeId?: ShapeId) => void;
 };
 let pagesDecorArt: PagesDecorArt | null = null;
@@ -428,13 +430,13 @@ const drawStickerShape = (
   context.stroke();
 };
 
-export const renderSurfaceDecor = (
+export const renderSurfaceFace = (
   context: CanvasRenderingContext2D,
   decor: DecorDocumentV1,
   shape: ShapeDefinition,
 ): void => {
   const frame = getDecorFrame(shape);
-  if (pagesDecorArt) { pagesDecorArt.render(context, decor, shape, frame); return; }
+  if (pagesDecorArt) { pagesDecorArt.renderFace(context, decor, shape, frame); return; }
   if (decor.eyes) {
     drawEye(context, decor.eyes, frame.eyesLeft);
     drawEye(context, decor.eyes, frame.eyesRight);
@@ -444,6 +446,15 @@ export const renderSurfaceDecor = (
     drawBlush(context, frame.blushLeft);
     drawBlush(context, frame.blushRight);
   }
+};
+
+export const renderSurfaceStickers = (
+  context: CanvasRenderingContext2D,
+  decor: DecorDocumentV1,
+  shape: ShapeDefinition,
+): void => {
+  const frame = getDecorFrame(shape);
+  if (pagesDecorArt) { pagesDecorArt.renderStickers(context, decor, shape, frame); return; }
   for (const placement of decor.stickers) {
     const [x, y] = pointToCanvas(stickerPlacementPoint(placement));
     context.save();
@@ -452,6 +463,17 @@ export const renderSurfaceDecor = (
     drawStickerShape(context, getStickerId(placement), placement.s);
     context.restore();
   }
+};
+
+export const renderSurfaceDecor = (
+  context: CanvasRenderingContext2D,
+  decor: DecorDocumentV1,
+  shape: ShapeDefinition,
+): void => {
+  const frame = getDecorFrame(shape);
+  if (pagesDecorArt) { pagesDecorArt.render(context, decor, shape, frame); return; }
+  renderSurfaceStickers(context, decor, shape);
+  renderSurfaceFace(context, decor, shape);
 };
 
 export const drawAccessoryGraphic = (
