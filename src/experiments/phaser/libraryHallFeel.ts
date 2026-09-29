@@ -1,7 +1,9 @@
 import './libraryHallFeel.css';
 
 /** Pages-only Hall motion. DOM state owns transitions; no RAF, timers or extra GPU contexts. */
-export const mountLibraryHallFeel = (root: HTMLElement): void => {
+export const mountLibraryHallFeel = (root: HTMLElement): (() => void) => {
+  const listeners = new AbortController();
+  const signal = listeners.signal;
   let lastCount: number | null = null;
   let lastRoom: string | null = null;
   let shell: HTMLElement | null = null;
@@ -47,21 +49,28 @@ export const mountLibraryHallFeel = (root: HTMLElement): void => {
   document.addEventListener('visibilitychange', () => {
     shell?.classList.toggle('is-library-hidden', document.hidden);
     if (document.hidden) clearInteraction();
-  });
+  }, { signal });
   root.addEventListener('pointerdown', (event) => {
     if (!(event.target instanceof Node) || !shell?.contains(event.target)) return;
     clearInteraction();
     activePointer = shell;
     shell.classList.add('library-hall-interacting');
-  }, { capture: true });
-  window.addEventListener('pointerup', clearInteraction, { capture: true });
-  window.addEventListener('pointercancel', clearInteraction, { capture: true });
-  window.addEventListener('blur', clearInteraction);
+  }, { capture: true, signal });
+  window.addEventListener('pointerup', clearInteraction, { capture: true, signal });
+  window.addEventListener('pointercancel', clearInteraction, { capture: true, signal });
+  window.addEventListener('blur', clearInteraction, { signal });
   root.addEventListener('animationend', (event) => {
     if (!(event.target instanceof Element)) return;
     const card = event.target.closest<HTMLElement>('.sandbox-library-card');
     if (!card) return;
     if (event.animationName === 'library-toy-arrival') card.classList.remove('is-library-arrival');
     if (event.animationName === 'library-toy-page-enter') card.classList.remove('is-library-page-enter');
-  });
+  }, { signal });
+
+  return () => {
+    observer.disconnect();
+    listeners.abort();
+    clearInteraction();
+    shell?.classList.remove('is-library-hidden', 'library-hall-interacting');
+  };
 };
