@@ -97,6 +97,11 @@ async function audit(page: Page, label: string, saved: boolean): Promise<unknown
       }
     }
   }
+  if (facts.viewport.width >= 1600 && facts.viewport.height >= 850) {
+    for (const stand of facts.stands) {
+      expect(stand.pedestal.width, `${label}: large-desktop collection must not stay tablet-sized`).toBeGreaterThanOrEqual(235);
+    }
+  }
   const visibleProps = facts.props.filter(p => p.visible);
   if (facts.viewport.width <= 430 && facts.viewport.height > facts.viewport.width) {
     const cabinet = visibleProps.find(prop => prop.name === 'cabinet');
