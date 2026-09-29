@@ -214,6 +214,7 @@ export class SandboxLibraryApp {
   private modalReturnFocus: HTMLElement | null = null;
   private loadedMakerRendererOptions: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'> | null = null;
   private makerRendererLoad: Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>> | null = null;
+  private makerStartToken = 0;
   private makerStarting = false;
   private activityBlocked = false;
   private disposed = false;
@@ -251,6 +252,7 @@ export class SandboxLibraryApp {
   }
 
   private renderLibrary(): void {
+    this.cancelPendingMakerStart();
     this.currentMaker?.dispose();
     this.currentMaker = null;
     this.activeIdea = null;
@@ -313,6 +315,7 @@ export class SandboxLibraryApp {
   }
 
   private renderIdeas(): void {
+    this.cancelPendingMakerStart();
     this.currentMaker?.dispose();
     this.currentMaker = null;
     releasePagesLibraryMaterialLighting();
@@ -433,13 +436,14 @@ export class SandboxLibraryApp {
   }
 
   private async startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): Promise<void> {
-    if (this.makerStarting || this.disposed) return;
+    if (this.disposed) return;
+    const startToken = ++this.makerStartToken;
     this.makerStarting = true;
     const currentShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
     currentShell?.setAttribute('aria-busy', 'true');
     try {
       const makerRendererOptions = await this.resolveMakerRendererOptions();
-      if (this.disposed) return;
+      if (this.disposed || startToken !== this.makerStartToken || !currentShell?.isConnected) return;
       this.currentMaker?.dispose();
       this.currentMaker = null;
       releasePagesLibraryMaterialLighting();
@@ -461,6 +465,7 @@ export class SandboxLibraryApp {
       });
       this.currentMaker.setActivityBlocked(this.activityBlocked);
     } catch (error: unknown) {
+      if (startToken !== this.makerStartToken) return;
       console.error('[squishy:maker-renderer-load]', error);
       currentShell?.removeAttribute('aria-busy');
       const message = currentShell?.querySelector<HTMLElement>('[data-library-maker-error]');
@@ -469,8 +474,13 @@ export class SandboxLibraryApp {
         message.hidden = false;
       }
     } finally {
-      this.makerStarting = false;
+      if (startToken === this.makerStartToken) this.makerStarting = false;
     }
+  }
+
+  private cancelPendingMakerStart(): void {
+    this.makerStartToken += 1;
+    this.makerStarting = false;
   }
 
   private async handleSaveRequest(draft: SandboxDraft): Promise<SavedSquishy | null> {
