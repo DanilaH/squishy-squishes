@@ -307,51 +307,75 @@ class VolumeMeshRenderer {
       gl.shaderSource(shader, source);
       gl.compileShader(shader);
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        throw new Error(gl.getShaderInfoLog(shader) ?? '3D review shader compilation failed');
+        const details = gl.getShaderInfoLog(shader) ?? '3D review shader compilation failed';
+        gl.deleteShader(shader);
+        throw new Error(details);
       }
       return shader;
     };
-    const vertex = compile(gl.VERTEX_SHADER, VERTEX);
-    const fragment = compile(gl.FRAGMENT_SHADER, FRAGMENT);
-    const program = gl.createProgram();
-    if (!program) throw new Error('3D review program allocation failed');
-    gl.attachShader(program, vertex);
-    gl.attachShader(program, fragment);
-    gl.linkProgram(program);
-    gl.deleteShader(vertex);
-    gl.deleteShader(fragment);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      throw new Error(gl.getProgramInfoLog(program) ?? '3D review shader link failed');
+
+    let vertex: WebGLShader | null = null;
+    let fragment: WebGLShader | null = null;
+    let program: WebGLProgram | null = null;
+    let vao: WebGLVertexArrayObject | null = null;
+    let vertexBuffer: WebGLBuffer | null = null;
+    let indexBuffer: WebGLBuffer | null = null;
+    let frontTexture: WebGLTexture | null = null;
+    try {
+      vertex = compile(gl.VERTEX_SHADER, VERTEX);
+      fragment = compile(gl.FRAGMENT_SHADER, FRAGMENT);
+      program = gl.createProgram();
+      if (!program) throw new Error('3D review program allocation failed');
+      gl.attachShader(program, vertex);
+      gl.attachShader(program, fragment);
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        throw new Error(gl.getProgramInfoLog(program) ?? '3D review shader link failed');
+      }
+
+      vao = gl.createVertexArray();
+      vertexBuffer = gl.createBuffer();
+      indexBuffer = gl.createBuffer();
+      frontTexture = gl.createTexture();
+      if (!vao || !vertexBuffer || !indexBuffer || !frontTexture) {
+        throw new Error('3D review GPU resource allocation failed');
+      }
+
+      this.program = program;
+      this.vao = vao;
+      this.vertexBuffer = vertexBuffer;
+      this.indexBuffer = indexBuffer;
+      this.frontTexture = frontTexture;
+
+      gl.bindVertexArray(vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+      const stride = STRIDE * Float32Array.BYTES_PER_ELEMENT;
+      for (const [index, size, offset] of [[0, 3, 0], [1, 3, 3], [2, 2, 6], [3, 1, 8]] as const) {
+        gl.enableVertexAttribArray(index);
+        gl.vertexAttribPointer(index, size, gl.FLOAT, false, stride, offset * Float32Array.BYTES_PER_ELEMENT);
+      }
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+      gl.bindVertexArray(null);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, frontTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.useProgram(program);
+      gl.uniform1i(gl.getUniformLocation(program, 'uFront'), 0);
+    } catch (error: unknown) {
+      if (vao) gl.deleteVertexArray(vao);
+      if (vertexBuffer) gl.deleteBuffer(vertexBuffer);
+      if (indexBuffer) gl.deleteBuffer(indexBuffer);
+      if (frontTexture) gl.deleteTexture(frontTexture);
+      if (program) gl.deleteProgram(program);
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      throw error;
+    } finally {
+      if (vertex) gl.deleteShader(vertex);
+      if (fragment) gl.deleteShader(fragment);
     }
-    this.program = program;
-    const vao = gl.createVertexArray();
-    const vertexBuffer = gl.createBuffer();
-    const indexBuffer = gl.createBuffer();
-    const frontTexture = gl.createTexture();
-    if (!vao || !vertexBuffer || !indexBuffer || !frontTexture) {
-      throw new Error('3D review GPU resource allocation failed');
-    }
-    this.vao = vao;
-    this.vertexBuffer = vertexBuffer;
-    this.indexBuffer = indexBuffer;
-    this.frontTexture = frontTexture;
-    gl.bindVertexArray(vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    const stride = STRIDE * Float32Array.BYTES_PER_ELEMENT;
-    for (const [index, size, offset] of [[0, 3, 0], [1, 3, 3], [2, 2, 6], [3, 1, 8]] as const) {
-      gl.enableVertexAttribArray(index);
-      gl.vertexAttribPointer(index, size, gl.FLOAT, false, stride, offset * Float32Array.BYTES_PER_ELEMENT);
-    }
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bindVertexArray(null);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, frontTexture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.useProgram(program);
-    gl.uniform1i(gl.getUniformLocation(program, 'uFront'), 0);
   }
 
   render(toy: SavedSquishy, flat: HTMLCanvasElement): HTMLCanvasElement {
