@@ -51,6 +51,9 @@ export const preloadStudioEnvironmentAssets = (): Promise<string | null> => {
       return composeDesk(left, middle, right);
     })
     .catch((error: unknown) => {
+      // Idle warmup is best-effort. Clear the memoized failure so a later real
+      // maker mount can retry after a transient network/decode problem.
+      preparedDesk = null;
       console.warn('[squishy:studio-preview] Environment assets failed to decode or compose; original UI retained.', error);
       return null;
     });
