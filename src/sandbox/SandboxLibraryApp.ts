@@ -310,8 +310,8 @@ export class SandboxLibraryApp {
             </section>
           ` : ''}
           ${this.rewardMessage ? `<p class="sandbox-library-reward-message" data-library-reward-message aria-live="polite">${this.rewardMessage}</p>` : ''}
-          <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>
         `}
+        <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>
       </main>
     `;
     this.renderVisibleThumbnails();
@@ -362,7 +362,7 @@ export class SandboxLibraryApp {
           <p>${this.copy.ideasHint}</p>
         </section>
         <section class="sandbox-ideas-grid" aria-label="${this.copy.ideasTitle}">${cards}</section>
-        <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite"></p>
+        <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>
       </main>
     `;
   }
