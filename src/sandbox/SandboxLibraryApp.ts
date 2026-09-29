@@ -580,7 +580,9 @@ export class SandboxLibraryApp {
     const dialog = overlay?.querySelector<HTMLElement>('[role="dialog"]') ?? null;
     if (!overlay || !dialog) return;
 
-    if (overlay.getAttribute('aria-busy') === 'true') {
+    if (this.activityBlocked || overlay.getAttribute('aria-busy') === 'true') {
+      // Platform lifecycle blocks (ads/pagehide) must freeze modal mutations as
+      // well as pointer input, while still keeping keyboard focus inside it.
       if (event.key === 'Escape') event.preventDefault();
       else trapModalTab(event, dialog);
       return;
