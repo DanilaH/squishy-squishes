@@ -69,6 +69,7 @@ interface LibraryCopy {
   readonly rewardAction: string;
   readonly rewardExpanded: string;
   readonly rewardUnavailable: string;
+  readonly studioUnavailable: string;
 }
 
 
@@ -105,6 +106,7 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     rewardAction: 'WATCH AD · +2 SLOTS',
     rewardExpanded: 'Shelf expanded · 10 slots',
     rewardUnavailable: 'No shelf change. Try again when you want.',
+    studioUnavailable: 'The studio could not start. Try again or use another browser.',
   },
   ru: {
     studio: 'СКВИШ-СТУДИЯ',
@@ -138,6 +140,7 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     rewardAction: 'РЕКЛАМА · +2 МЕСТА',
     rewardExpanded: 'Полка расширена · 10 мест',
     rewardUnavailable: 'Полка не изменилась. Можно попробовать позже.',
+    studioUnavailable: 'Не удалось открыть студию. Попробуй ещё раз или открой игру в другом браузере.',
   },
 };
 
@@ -302,6 +305,7 @@ export class SandboxLibraryApp {
             </section>
           ` : ''}
           ${this.rewardMessage ? `<p class="sandbox-library-reward-message" data-library-reward-message aria-live="polite">${this.rewardMessage}</p>` : ''}
+          <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite"></p>
         `}
       </main>
     `;
@@ -352,6 +356,7 @@ export class SandboxLibraryApp {
           <p>${this.copy.ideasHint}</p>
         </section>
         <section class="sandbox-ideas-grid" aria-label="${this.copy.ideasTitle}">${cards}</section>
+        <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite"></p>
       </main>
     `;
   }
@@ -458,6 +463,8 @@ export class SandboxLibraryApp {
     } catch (error: unknown) {
       console.error('[squishy:maker-renderer-load]', error);
       currentShell?.removeAttribute('aria-busy');
+      const message = currentShell?.querySelector<HTMLElement>('[data-library-maker-error]');
+      if (message) message.textContent = this.copy.studioUnavailable;
     } finally {
       this.makerStarting = false;
     }
