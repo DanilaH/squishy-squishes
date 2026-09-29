@@ -31,6 +31,10 @@ export class PhaserSquishSurface {
   private readonly appearanceSnapshot = document.createElement('canvas');
   private appearanceContext: CanvasRenderingContext2D;
   private appearanceDefined = false;
+  private readonly faceSnapshot = document.createElement('canvas');
+  private faceContext: CanvasRenderingContext2D;
+  private face: HTMLCanvasElement | null = null;
+  private faceDefined = false;
   private fillingAmount = 0;
   private fillingStyle: SquishFillingStyle = 'none';
   private fillProgress = 1;
@@ -57,6 +61,11 @@ export class PhaserSquishSurface {
     const context = this.appearanceSnapshot.getContext('2d');
     if (!context) throw new Error('Phaser studio appearance cache requires Canvas2D.');
     this.appearanceContext = context;
+    this.faceSnapshot.width = 256;
+    this.faceSnapshot.height = 256;
+    const faceContext = this.faceSnapshot.getContext('2d');
+    if (!faceContext) throw new Error('Phaser studio face cache requires Canvas2D.');
+    this.faceContext = faceContext;
     const gl = canvas.getContext('webgl2', {
       alpha: true, antialias: true, depth: true, stencil: true,
       premultipliedAlpha: true, powerPreference: 'high-performance',
@@ -159,7 +168,9 @@ export class PhaserSquishSurface {
     squish.setMoldProgress(this.moldProgress);
     squish.setWireframe(this.wireframe);
     squish.setViewportFollowEnabled(this.stage === 'finish' || this.stage === 'squeeze');
+    squish.setPokeEnabled(this.stage === 'squeeze');
     if (this.appearanceDefined) squish.setAppearanceCanvas(this.appearance);
+    if (this.faceDefined) squish.setFaceCanvas(this.face);
     this.bridge?.setStage(this.stage, this.decorSection);
     this.bridge?.setBlocked(this.blocked);
   }
@@ -188,6 +199,7 @@ export class PhaserSquishSurface {
     this.stage = stage;
     this.decorSection = section;
     this.squish?.setViewportFollowEnabled(stage === 'finish' || stage === 'squeeze');
+    this.squish?.setPokeEnabled(stage === 'squeeze');
     this.bridge?.setStage(stage, section);
     this.syncCanvasSize();
   }
@@ -201,6 +213,14 @@ export class PhaserSquishSurface {
     if (source) this.appearanceContext.drawImage(source, 0, 0, 256, 256);
     this.appearance = source ? this.appearanceSnapshot : null;
     this.squish?.setAppearanceCanvas(this.appearance);
+  }
+
+  public setFaceTexture(source: HTMLCanvasElement | null): void {
+    this.faceDefined = true;
+    this.faceContext.clearRect(0, 0, 256, 256);
+    if (source) this.faceContext.drawImage(source, 0, 0, 256, 256);
+    this.face = source ? this.faceSnapshot : null;
+    this.squish?.setFaceCanvas(this.face);
   }
 
   public clientPointToUv(clientX: number, clientY: number): AppearancePoint | null {
