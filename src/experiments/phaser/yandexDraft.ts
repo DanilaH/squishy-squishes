@@ -10,6 +10,12 @@ import '../../sandbox-core.css';
 import '../../sandbox-library.css';
 import '../../sandbox-ideas.css';
 import '../../sandbox-polish-01.css';
+import './candyStudioPreview.css';
+import './jellyUiPreview.css';
+import './jellyTypographyPreview.css';
+import { preloadJellyUi } from './jellyUiPreload';
+import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
+import { installReviewVisualProfile } from './reviewVisualProfile';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
@@ -37,14 +43,17 @@ const createDraftRuntime = async (): Promise<SquishyPlatformRuntime> => {
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root.');
 
-void bootstrapSquishyApp(root, {
+const disposeReviewVisualProfile = installReviewVisualProfile(root);
+root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
+
+void Promise.all([preloadJellyUi(), preloadStudioEnvironmentAssets()]).then(() => bootstrapSquishyApp(root, {
   createRuntime: createDraftRuntime,
   makerRendererOptions: {
     rendererBackend: 'phaser',
     makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
-      new PhaserSquishSurface(canvas, onMetrics, audio, callbacks),
+      new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
   },
-}).then((handle) => {
+})).then((handle) => {
   const listeners = new AbortController();
   let disposed = false;
   const dispose = (): void => {
@@ -52,6 +61,7 @@ void bootstrapSquishyApp(root, {
     disposed = true;
     listeners.abort();
     draftRuntime = null;
+    disposeReviewVisualProfile();
     void handle.dispose();
   };
   // A bfcache pagehide suspends the existing Phaser.Game; only a final hide destroys it.
@@ -63,6 +73,7 @@ void bootstrapSquishyApp(root, {
     draftRuntime?.activity.setBlocked('pagehide', false);
   }, { signal: listeners.signal });
 }).catch((error: unknown) => {
+  disposeReviewVisualProfile();
   console.error('[squishy:phaser-yandex-draft]', error);
   const copy = getGameCopy(normalizeLanguage(navigator.language));
   root.innerHTML = `<main class="lab-shell"><section class="recipe-panel"><strong>${copy.fatal.title}</strong><span>${copy.fatal.retry}</span></section></main>`;
