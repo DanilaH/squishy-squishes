@@ -32,7 +32,7 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Build and run release browser QA
-        run: npm run qa:release
+        run: npm run qa:browser:build
       - name: Upload passing migration baseline evidence
         if: success() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
