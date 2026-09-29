@@ -1,5 +1,10 @@
-import { registerPagesDecorArt } from '../../sandbox/decor';
-import { enablePagesLibraryMaterialLighting, registerPagesLibraryMaterialRenderer } from '../../sandbox/libraryThumbnail';
+import { registerPagesDecorArt, unregisterPagesDecorArt } from '../../sandbox/decor';
+import {
+  disablePagesLibraryMaterialLighting,
+  enablePagesLibraryMaterialLighting,
+  registerPagesLibraryMaterialRenderer,
+  unregisterPagesLibraryMaterialRenderer,
+} from '../../sandbox/libraryThumbnail';
 import { drawPagesAccessoryGraphic, renderPagesSurfaceDecor } from '../../sandbox/pagesDecorArt';
 import { renderPagesVolumeThumbnail, releasePagesVolumeThumbnail } from './libraryVolumeProduction';
 import { mountLibraryHallFeel } from './libraryHallFeel';
@@ -32,6 +37,9 @@ export const installReviewVisualProfile = (root: HTMLElement): (() => void) => {
     disposeFeel();
     disposeHall();
     disposeStudio();
+    unregisterPagesDecorArt();
+    unregisterPagesLibraryMaterialRenderer();
+    disablePagesLibraryMaterialLighting();
     releasePagesVolumeThumbnail();
   };
 };
