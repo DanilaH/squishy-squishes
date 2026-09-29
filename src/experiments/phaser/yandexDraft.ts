@@ -13,14 +13,12 @@ import '../../sandbox-polish-01.css';
 import './candyStudioPreview.css';
 import './jellyUiPreview.css';
 import './jellyTypographyPreview.css';
-import { preloadMakerJellyUi } from './jellyUiPreload';
-import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
 import { installReviewVisualProfile } from './reviewVisualProfile';
 import { prepareReviewFirstPaint } from './reviewStartupAssets';
+import { createReviewMakerRendererLoader } from './reviewMakerLoader';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
-import type { SandboxAppOptions } from '../../sandbox/SandboxApp';
 
 /** DRAFT must exercise the real SDK but cannot mutate an existing player's normal save/settings. */
 const DRAFT_PREFIX = 'squishy.phaser-yandex-draft.';
@@ -45,54 +43,23 @@ const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root.');
 document.documentElement.lang = normalizeLanguage(navigator.language);
 
-type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
-let makerRendererPromise: Promise<MakerRendererOptions> | null = null;
-const loadMakerRendererOptions = (): Promise<MakerRendererOptions> => {
-  if (!makerRendererPromise) {
-    makerRendererPromise = Promise.all([
-      import('../../sandbox/PhaserSquishSurface'),
-      preloadStudioEnvironmentAssets(),
-      preloadMakerJellyUi(),
-    ])
-      .then<MakerRendererOptions>(([{ PhaserSquishSurface }]) => ({
-        rendererBackend: 'phaser',
-        makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
-          new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
-      }))
-      .catch((error: unknown) => {
-        // A transient chunk/network failure must not poison all future maker opens.
-        makerRendererPromise = null;
-        throw error;
-      });
-  }
-  return makerRendererPromise;
-};
-
-const warmMakerRendererAfterFirstPaint = (): void => {
-  const warm = (): void => {
-    void loadMakerRendererOptions().catch((error: unknown) => {
-      console.warn('[squishy:draft] Idle Phaser warmup failed; maker entry will retry.', error);
-    });
-  };
-  const requestIdle = (window as Window & { requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number }).requestIdleCallback;
-  if (typeof requestIdle === 'function') requestIdle(warm, { timeout: 1800 });
-  else globalThis.setTimeout(warm, 900);
-};
+const makerRenderer = createReviewMakerRendererLoader('draft');
 
 const disposeReviewVisualProfile = installReviewVisualProfile(root);
 root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
 
 void prepareReviewFirstPaint(root, 'draft').then(() => bootstrapSquishyApp(root, {
   createRuntime: createDraftRuntime,
-  loadMakerRendererOptions,
+  loadMakerRendererOptions: makerRenderer.load,
 })).then((handle) => {
-  warmMakerRendererAfterFirstPaint();
+  const cancelMakerWarm = makerRenderer.scheduleWarm();
   const listeners = new AbortController();
   let disposed = false;
   const dispose = (): void => {
     if (disposed) return;
     disposed = true;
     listeners.abort();
+    cancelMakerWarm();
     draftRuntime = null;
     disposeReviewVisualProfile();
     void handle.dispose();
