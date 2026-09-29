@@ -19,7 +19,7 @@ import { installReviewVisualProfile } from './reviewVisualProfile';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
-import { PhaserSquishSurface } from '../../sandbox/PhaserSquishSurface';
+import type { SandboxAppOptions } from '../../sandbox/SandboxApp';
 
 /** DRAFT must exercise the real SDK but cannot mutate an existing player's normal save/settings. */
 const DRAFT_PREFIX = 'squishy.phaser-yandex-draft.';
@@ -43,17 +43,34 @@ const createDraftRuntime = async (): Promise<SquishyPlatformRuntime> => {
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root.');
 
+type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
+let makerRendererPromise: Promise<MakerRendererOptions> | null = null;
+const loadMakerRendererOptions = (): Promise<MakerRendererOptions> => {
+  makerRendererPromise ??= import('../../sandbox/PhaserSquishSurface').then<MakerRendererOptions>(({ PhaserSquishSurface }) => ({
+    rendererBackend: 'phaser',
+    makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
+      new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
+  }));
+  return makerRendererPromise;
+};
+
+const warmMakerRendererAfterFirstPaint = (): void => {
+  const warm = (): void => { void loadMakerRendererOptions(); };
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(warm, { timeout: 1800 });
+  } else {
+    window.setTimeout(warm, 900);
+  }
+};
+
 const disposeReviewVisualProfile = installReviewVisualProfile(root);
 root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
 
 void Promise.all([preloadJellyUi(), preloadStudioEnvironmentAssets()]).then(() => bootstrapSquishyApp(root, {
   createRuntime: createDraftRuntime,
-  makerRendererOptions: {
-    rendererBackend: 'phaser',
-    makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
-      new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
-  },
+  loadMakerRendererOptions,
 })).then((handle) => {
+  warmMakerRendererAfterFirstPaint();
   const listeners = new AbortController();
   let disposed = false;
   const dispose = (): void => {
