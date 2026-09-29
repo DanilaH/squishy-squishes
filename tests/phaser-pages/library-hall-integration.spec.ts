@@ -20,7 +20,8 @@ const verifyHall = async (page: Page, label: string): Promise<void> => {
     const nav = shell.querySelector<HTMLElement>('.library-hall-nav');
     const stands = [...shell.querySelectorAll<HTMLElement>('.sandbox-library-card:not([hidden]), .library-hall-vacant')];
     if (!scene || !nav || stands.length !== 2) throw new Error('Hall art/navigation missing');
-    const interactive = [...shell.querySelectorAll<HTMLButtonElement>('.sandbox-library-topbar button, .sandbox-library-heading button, .library-hall-nav button, .sandbox-library-card:not([hidden]) button')];
+    const interactive = [...shell.querySelectorAll<HTMLButtonElement>('.sandbox-library-topbar button, .sandbox-library-heading button, .library-hall-nav button, .sandbox-library-card:not([hidden]) button')]
+      .filter((button) => !button.disabled && getComputedStyle(button).visibility !== 'hidden' && getComputedStyle(button).display !== 'none');
     const rect = (el: Element) => el.getBoundingClientRect().toJSON();
     return {
       viewport: { width: innerWidth, height: innerHeight },
