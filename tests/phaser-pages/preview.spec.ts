@@ -172,3 +172,33 @@ test('delete modal wins over a pending lazy maker navigation', async ({ page }) 
   await expect(page.locator('[data-sandbox-maker-host]')).toHaveCount(0);
 });
 
+test('renderer init failure restores the originating Library with a retryable error', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    let webgl2Calls = 0;
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+      configurable: true,
+      value: function (this: HTMLCanvasElement, type: string, ...args: unknown[]) {
+        if (type === 'webgl2') {
+          webgl2Calls += 1;
+          if (webgl2Calls > 1) return null;
+        }
+        return Reflect.apply(original, this, [type, ...args]);
+      },
+    });
+  });
+
+  await page.goto('/phaser/');
+  const library = page.locator('[data-sandbox-library]');
+  await expect(library).toBeVisible();
+  await page.locator('[data-library-new]').first().click();
+
+  await expect(library).toBeVisible();
+  const error = page.locator('[data-library-maker-error]');
+  await expect(error).toBeVisible();
+  await expect(error).toHaveClass(/is-error/);
+  await expect(error).toContainText(/studio|студи/i);
+  await expect(page.locator('[data-sandbox-maker-host]')).toHaveCount(0);
+  await expect(library).not.toHaveAttribute('aria-busy', 'true');
+});
+
