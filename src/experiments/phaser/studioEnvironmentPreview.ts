@@ -39,7 +39,9 @@ const composeDesk = (left: HTMLImageElement, middle: HTMLImageElement, right: HT
   return canvas.toDataURL('image/png');
 };
 
-// Shared decode before first playable frame; no late background/desk pop-in.
+// Shared decode promise. Pages/Yandex idle-warm it after the Library paints;
+// a direct maker entry awaits the same promise before mounting Phaser, so the
+// workbench still appears fully composed without blocking the initial shelf.
 let preparedDesk: Promise<string | null> | null = null;
 export const preloadStudioEnvironmentAssets = (): Promise<string | null> => {
   preparedDesk ??= Promise.all(Object.values(assets).map(loadImage))
