@@ -344,7 +344,9 @@ for (const viewport of [
     await expect(library).toHaveAttribute('data-stage', 'library');
     await expectInViewport(page, page.locator('.sandbox-library-heading'));
     await expectInViewport(page, page.locator('[data-library-new]').first());
-    await expectInViewport(page, page.locator('.sandbox-library-empty__toy'));
+    await expectInViewport(page, page.locator('.sandbox-library-empty'));
+    await expect(page.locator('.sandbox-library-empty__toy')).toBeHidden();
+    await expect(page.locator('[data-library-hall-stage]')).toBeVisible();
     expect(fatalErrors).toEqual([]);
   });
 }
@@ -708,14 +710,21 @@ test('the same S3 decor document renders and opens across all six production sha
   const save: SaveStateV3 = { ...createDefaultSaveV3(), library, totalCrafts: library.length, updatedAt: 77 };
   await seedSaveV3(page, save);
   await expect(page.locator('[data-library-toy]')).toHaveCount(6);
-  for (const toy of library) {
-    await page.locator(`[data-library-play-id="${toy.id}"]`).click();
-    const shell = page.locator('[data-sandbox-app]');
-    await expect(shell).toHaveAttribute('data-stage', 'squeeze');
-    await expect(shell).toHaveAttribute('data-shape', toy.shapeId);
-    await expect(shell).toHaveAttribute('data-decor-accessory', decor.accessory ?? 'none');
-    await expect(page.locator('[data-sandbox-accessory]')).toBeVisible();
-    await page.locator('[data-action="home"]').click();
+  for (let room = 1; room <= 3; room += 1) {
+    await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(room));
+    for (const toy of library.slice((room - 1) * 2, room * 2)) {
+      const play = page.locator(`[data-library-play-id="${toy.id}"]`);
+      await expect(play).toBeVisible();
+      await play.click();
+      const shell = page.locator('[data-sandbox-app]');
+      await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+      await expect(shell).toHaveAttribute('data-shape', toy.shapeId);
+      await expect(shell).toHaveAttribute('data-decor-accessory', decor.accessory ?? 'none');
+      await expect(page.locator('[data-sandbox-accessory]')).toBeVisible();
+      await page.locator('[data-action="home"]').click();
+      await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(room));
+    }
+    if (room < 3) await page.locator('[data-library-hall-next]').click();
   }
 });
 

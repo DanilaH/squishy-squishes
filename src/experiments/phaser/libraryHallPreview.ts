@@ -30,7 +30,7 @@ export const preloadLibraryHallAssets = (): Promise<void> => {
   return hallAssetsReady;
 };
 
-/** Only decorate the isolated /phaser/ Pages app; main / and Yandex keep their existing Library. */
+/** Mount the accepted Hall profile used by production, review Pages and isolated Yandex DRAFT. */
 export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
   let disposed = false;
   let ready = false;

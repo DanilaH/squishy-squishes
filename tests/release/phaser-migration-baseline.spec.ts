@@ -105,7 +105,7 @@ for (const viewport of [
   { name: 'desktop', width: 1100, height: 760 },
   { name: 'existing-landscape', width: 844, height: 390 },
 ]) {
-  test(`M0: old renderer/layout evidence at ${viewport.name}`, async ({ page }, testInfo) => {
+  test(`M0: production renderer/layout evidence at ${viewport.name}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/squishy-squishes/');
     await expect(page.locator('[data-sandbox-library]')).toBeVisible();
@@ -123,9 +123,9 @@ for (const viewport of [
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     }));
     // Explicit path persists even when Playwright cleans successful test output directories.
-    const screenshotPath = `migration-baseline-evidence/old-engine-${viewport.name}.png`;
+    const screenshotPath = `migration-baseline-evidence/production-engine-${viewport.name}.png`;
     const screenshot = await page.screenshot({ path: screenshotPath });
-    await testInfo.attach(`old-engine-${viewport.name}`, {
+    await testInfo.attach(`production-engine-${viewport.name}`, {
       body: screenshot,
       contentType: 'image/png',
     });
