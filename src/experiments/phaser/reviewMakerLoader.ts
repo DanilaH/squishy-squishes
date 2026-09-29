@@ -4,6 +4,27 @@ import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
 
 type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
 type ReviewScope = 'pages' | 'draft';
+const MAKER_ART_BUDGET_MS = 1_200;
+
+const waitForOptionalMakerArt = async (): Promise<void> => {
+  const art = Promise.all([
+    preloadStudioEnvironmentAssets(),
+    preloadMakerJellyUi(),
+  ]).then(() => undefined);
+
+  let budgetTimer = 0;
+  const budget = new Promise<void>((resolve) => {
+    budgetTimer = globalThis.setTimeout(() => {
+      budgetTimer = 0;
+      resolve();
+    }, MAKER_ART_BUDGET_MS);
+  });
+  try {
+    await Promise.race([art, budget]);
+  } finally {
+    if (budgetTimer) globalThis.clearTimeout(budgetTimer);
+  }
+};
 
 export interface ReviewMakerRendererLoader {
   load(): Promise<MakerRendererOptions>;
@@ -21,8 +42,7 @@ export const createReviewMakerRendererLoader = (scope: ReviewScope): ReviewMaker
     if (!makerRendererPromise) {
       makerRendererPromise = Promise.all([
         import('../../sandbox/PhaserSquishSurface'),
-        preloadStudioEnvironmentAssets(),
-        preloadMakerJellyUi(),
+        waitForOptionalMakerArt(),
       ])
         .then<MakerRendererOptions>(([{ PhaserSquishSurface }]) => ({
           rendererBackend: 'phaser',
