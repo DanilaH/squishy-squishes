@@ -57,11 +57,9 @@ const loadMakerRendererOptions = (): Promise<MakerRendererOptions> => {
 
 const warmMakerRendererAfterFirstPaint = (): void => {
   const warm = (): void => { void loadMakerRendererOptions(); };
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(warm, { timeout: 1800 });
-  } else {
-    window.setTimeout(warm, 900);
-  }
+  const requestIdle = (window as Window & { requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number }).requestIdleCallback;
+  if (typeof requestIdle === 'function') requestIdle(warm, { timeout: 1800 });
+  else globalThis.setTimeout(warm, 900);
 };
 
 /** Phaser's renderer needs WebGL2; probe once per page instead of allocating a throwaway context on every maker entry. */
