@@ -22,10 +22,12 @@ export const installReviewVisualProfile = (root: HTMLElement): (() => void) => {
   registerPagesDecorArt({ render: renderPagesSurfaceDecor, accessory: drawPagesAccessoryGraphic });
 
   const disposeStudio = mountStudioEnvironmentPreview(root);
-  mountLibraryHallPreview(root);
-  mountLibraryHallFeel(root);
+  const disposeHall = mountLibraryHallPreview(root);
+  const disposeFeel = mountLibraryHallFeel(root);
 
   return () => {
+    disposeFeel();
+    disposeHall();
     disposeStudio();
     releasePagesVolumeThumbnail();
   };
