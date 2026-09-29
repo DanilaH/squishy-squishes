@@ -215,7 +215,6 @@ export class SandboxLibraryApp {
   private pendingReplacement: PendingReplacement | null = null;
   private pendingDeleteId: string | null = null;
   private modalReturnFocus: HTMLElement | null = null;
-  private thumbnailObserver: IntersectionObserver | null = null;
   private loadedMakerRendererOptions: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'> | null = null;
   private makerRendererLoad: Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>> | null = null;
   private makerStartToken = 0;
@@ -233,7 +232,6 @@ export class SandboxLibraryApp {
     this.muted = options.muted;
     this.root.addEventListener('click', this.handleClick, { signal: this.abortController.signal });
     this.root.addEventListener('keydown', this.handleKeyDown, { signal: this.abortController.signal });
-    this.root.addEventListener('squishy:library-room-visible', this.handleLibraryRoomVisible, { signal: this.abortController.signal });
     this.renderLibrary();
   }
 
@@ -252,8 +250,6 @@ export class SandboxLibraryApp {
     this.pendingReplacement = null;
     this.currentMaker?.dispose();
     this.currentMaker = null;
-    this.thumbnailObserver?.disconnect();
-    this.thumbnailObserver = null;
     releasePagesLibraryMaterialLighting();
     this.abortController.abort();
     this.root.replaceChildren();
@@ -319,12 +315,11 @@ export class SandboxLibraryApp {
         <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>
       </main>
     `;
-    this.observeLibraryThumbnails();
+    this.renderVisibleThumbnails();
   }
 
   private renderIdeas(): void {
     this.cancelPendingMakerStart();
-    this.thumbnailObserver?.disconnect();
     this.currentMaker?.dispose();
     this.currentMaker = null;
     releasePagesLibraryMaterialLighting();
@@ -412,48 +407,12 @@ export class SandboxLibraryApp {
     `;
   }
 
-  private renderThumbnail(canvas: HTMLCanvasElement): void {
-    if (canvas.dataset.libraryRendered === 'true') return;
-    const id = canvas.dataset.libraryThumbnail;
-    const toy = this.library.find((candidate) => candidate.id === id);
-    if (!toy) return;
-    renderLibraryThumbnail(canvas, toy);
-    canvas.dataset.libraryRendered = 'true';
-  }
-
   private renderVisibleThumbnails(scope: ParentNode = this.root): void {
     for (const canvas of scope.querySelectorAll<HTMLCanvasElement>('[data-library-thumbnail]')) {
-      this.renderThumbnail(canvas);
+      const id = canvas.dataset.libraryThumbnail;
+      const toy = this.library.find((candidate) => candidate.id === id);
+      if (toy) renderLibraryThumbnail(canvas, toy);
     }
-  }
-
-  private readonly handleLibraryRoomVisible = (): void => {
-    for (const card of this.root.querySelectorAll<HTMLElement>('[data-sandbox-library] .sandbox-library-card:not([hidden])')) {
-      const canvas = card.querySelector<HTMLCanvasElement>('[data-library-thumbnail]');
-      if (canvas) this.renderThumbnail(canvas);
-    }
-  };
-
-  private observeLibraryThumbnails(): void {
-    this.thumbnailObserver?.disconnect();
-    this.thumbnailObserver = null;
-    const canvases = [...this.root.querySelectorAll<HTMLCanvasElement>('[data-sandbox-library] [data-library-thumbnail]')];
-    if (canvases.length === 0) return;
-
-    if (typeof IntersectionObserver !== 'function') {
-      for (const canvas of canvases) this.renderThumbnail(canvas);
-      return;
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting || !(entry.target instanceof HTMLCanvasElement)) continue;
-        this.renderThumbnail(entry.target);
-        observer.unobserve(entry.target);
-      }
-    }, { root: null, rootMargin: '160px' });
-    this.thumbnailObserver = observer;
-    for (const canvas of canvases) observer.observe(canvas);
   }
 
   /** May be called during idle time by preview/draft entrypoints to hide first-craft latency. */
@@ -497,8 +456,6 @@ export class SandboxLibraryApp {
       if (this.disposed || startToken !== this.makerStartToken || !currentShell?.isConnected) return;
       this.currentMaker?.dispose();
       this.currentMaker = null;
-      this.thumbnailObserver?.disconnect();
-      this.thumbnailObserver = null;
       releasePagesLibraryMaterialLighting();
       this.activeIdea = toy ? null : idea;
       this.rewardMessage = null;
