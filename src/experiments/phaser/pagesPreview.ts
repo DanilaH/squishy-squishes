@@ -19,6 +19,7 @@ import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
 import type { SandboxAppOptions } from '../../sandbox/SandboxApp';
+import { captureModalReturnFocus, focusModal, restoreModalFocus, trapModalTab } from '../../sandbox/modalFocus';
 
 // Pages is a public device-preview, not a migration of real player saves or a Yandex SDK test.
 const PAGES_PREFIX = 'squishy.phaser-pages-preview.';
@@ -41,6 +42,7 @@ const createPagesRuntime = async (): Promise<SquishyPlatformRuntime> => {
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root.');
+document.documentElement.lang = normalizeLanguage(navigator.language);
 
 type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
 let makerRendererPromise: Promise<MakerRendererOptions> | null = null;
@@ -99,10 +101,6 @@ void Promise.all([preloadJellyUi(), preloadStudioEnvironmentAssets()]).then(([re
   root.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
-    if (target.closest('[data-phaser-unsupported-close]')) {
-      root.querySelector('[data-phaser-unsupported]')?.remove();
-      return;
-    }
     if (!target.closest('button[data-library-new], button[data-library-play-id], button[data-idea-id]')) return;
     if (!root.querySelector('[data-sandbox-library], [data-sandbox-ideas]') || canStartPhaser()) return;
     event.preventDefault();
@@ -123,8 +121,25 @@ void Promise.all([preloadJellyUi(), preloadStudioEnvironmentAssets()]).then(([re
         : 'WebGL2 is unavailable or disabled in this browser or device. Enable hardware acceleration or try another browser.'}</p>
       <button class="sandbox-library-modal__cancel" type="button" data-phaser-unsupported-close>${ru ? 'НАЗАД К ПОЛКЕ' : 'BACK TO LIBRARY'}</button>
     </div>`;
+    const returnFocus = captureModalReturnFocus();
+    const dialog = overlay.querySelector<HTMLElement>('.sandbox-library-modal__sheet');
+    const close = (): void => {
+      overlay.remove();
+      restoreModalFocus(returnFocus);
+    };
+    overlay.addEventListener('click', (closeEvent) => {
+      if (closeEvent.target instanceof Element && closeEvent.target.closest('[data-phaser-unsupported-close]')) close();
+    });
+    overlay.addEventListener('keydown', (keyEvent) => {
+      if (keyEvent.key === 'Escape') {
+        keyEvent.preventDefault();
+        close();
+        return;
+      }
+      if (dialog) trapModalTab(keyEvent, dialog);
+    });
     root.append(overlay);
-    overlay.querySelector<HTMLButtonElement>('[data-phaser-unsupported-close]')?.focus();
+    if (dialog) focusModal(dialog);
   }, { capture: true, signal: listeners.signal });
   let disposed = false;
   const dispose = (): void => {
