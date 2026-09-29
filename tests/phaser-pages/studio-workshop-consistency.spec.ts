@@ -21,9 +21,10 @@ for (const device of devices) {
     const history: Array<{ stage: string; canvas: { x: number; y: number; width: number; height: number }; deskTop: number; deskBottom: number; floorTop: number; stageTop: number; stageHeight: number }> = [];
     try {
       await page.goto('/phaser/');
-      await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '');
+      await expect(page.locator('#app')).not.toHaveAttribute('data-studio-env-ready', '');
       await page.locator('[data-library-new]').first().click();
       await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+      await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '', { timeout: 8_000 });
       const sample = async (name: string, actualStage = name) => {
         const shell = page.locator('[data-sandbox-app]');
         await expect(shell).toHaveAttribute('data-stage', actualStage);
