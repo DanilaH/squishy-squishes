@@ -13,9 +13,10 @@ import '../../sandbox-polish-01.css';
 import './candyStudioPreview.css';
 import './jellyUiPreview.css';
 import './jellyTypographyPreview.css';
-import { preloadJellyUi, preloadMakerJellyUi } from './jellyUiPreload';
+import { preloadMakerJellyUi } from './jellyUiPreload';
 import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
-import { installReviewVisualProfile, preloadReviewVisualProfile } from './reviewVisualProfile';
+import { installReviewVisualProfile } from './reviewVisualProfile';
+import { prepareReviewFirstPaint } from './reviewStartupAssets';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
@@ -80,12 +81,7 @@ const warmMakerRendererAfterFirstPaint = (): void => {
 const disposeReviewVisualProfile = installReviewVisualProfile(root);
 root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
 
-void Promise.all([
-  preloadJellyUi(),
-  preloadReviewVisualProfile().catch((error: unknown) => {
-    console.warn('[squishy:draft] Hall preload failed; the fallback Library can still start.', error);
-  }),
-]).then(() => bootstrapSquishyApp(root, {
+void prepareReviewFirstPaint(root, 'draft').then(() => bootstrapSquishyApp(root, {
   createRuntime: createDraftRuntime,
   loadMakerRendererOptions,
 })).then((handle) => {
