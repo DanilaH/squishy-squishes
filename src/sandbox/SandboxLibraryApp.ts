@@ -32,6 +32,8 @@ export interface SandboxLibraryAppOptions {
   readonly onDeleteSquishy: (targetId: string) => Promise<readonly SavedSquishy[]>;
   /** Candidate-only renderer port. Ordinary library bootstrap leaves it absent. */
   readonly makerRendererOptions?: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
+  /** Optional lazy renderer seam: keeps Phaser out of the first Library paint. */
+  readonly loadMakerRendererOptions?: () => Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>>;
   readonly onMutedChange: (muted: boolean) => void | Promise<void>;
 }
 
@@ -207,6 +209,9 @@ export class SandboxLibraryApp {
   private pendingReplacement: PendingReplacement | null = null;
   private pendingDeleteId: string | null = null;
   private modalReturnFocus: HTMLElement | null = null;
+  private loadedMakerRendererOptions: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'> | null = null;
+  private makerRendererLoad: Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>> | null = null;
+  private makerStarting = false;
   private activityBlocked = false;
   private disposed = false;
 
@@ -398,27 +403,64 @@ export class SandboxLibraryApp {
     }
   }
 
-  private startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): void {
-    this.currentMaker?.dispose();
-    this.currentMaker = null;
-    releasePagesLibraryMaterialLighting();
-    this.activeIdea = toy ? null : idea;
-    this.rewardMessage = null;
-    this.root.innerHTML = `<div class="sandbox-maker-host" data-sandbox-maker-host></div>${idea ? this.renderIdeaGuideMarkup(idea) : ''}`;
-    const host = this.root.querySelector<HTMLDivElement>('[data-sandbox-maker-host]');
-    if (!host) throw new Error('Sandbox library failed to mount maker host.');
-    this.currentMaker = new SandboxApp(host, {
-      ...this.options.makerRendererOptions,
-      language: this.options.language,
-      muted: this.muted,
-      savedSquishy: toy,
-      ...(toy === null && idea ? { initialShapeId: idea.shapeId } : {}),
-      startSavedInSqueeze: toy !== null,
-      onExitToLibrary: () => this.renderLibrary(),
-      onSaveSquishy: (draft) => this.handleSaveRequest(draft),
-      onMutedChange: (muted) => this.setMuted(muted),
-    });
-    this.currentMaker.setActivityBlocked(this.activityBlocked);
+  /** May be called during idle time by preview/draft entrypoints to hide first-craft latency. */
+  public preloadMakerRenderer(): Promise<void> {
+    if (!this.options.loadMakerRendererOptions || this.loadedMakerRendererOptions || this.options.makerRendererOptions) {
+      return Promise.resolve();
+    }
+    if (!this.makerRendererLoad) {
+      this.makerRendererLoad = this.options.loadMakerRendererOptions().then((rendererOptions) => {
+        this.loadedMakerRendererOptions = rendererOptions;
+        return rendererOptions;
+      }).finally(() => {
+        this.makerRendererLoad = null;
+      });
+    }
+    return this.makerRendererLoad.then(() => undefined);
+  }
+
+  private async resolveMakerRendererOptions(): Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'> | undefined> {
+    if (this.options.makerRendererOptions) return this.options.makerRendererOptions;
+    if (this.loadedMakerRendererOptions) return this.loadedMakerRendererOptions;
+    if (!this.options.loadMakerRendererOptions) return undefined;
+    await this.preloadMakerRenderer();
+    return this.loadedMakerRendererOptions ?? undefined;
+  }
+
+  private async startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): Promise<void> {
+    if (this.makerStarting || this.disposed) return;
+    this.makerStarting = true;
+    const currentShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
+    currentShell?.setAttribute('aria-busy', 'true');
+    try {
+      const makerRendererOptions = await this.resolveMakerRendererOptions();
+      if (this.disposed) return;
+      this.currentMaker?.dispose();
+      this.currentMaker = null;
+      releasePagesLibraryMaterialLighting();
+      this.activeIdea = toy ? null : idea;
+      this.rewardMessage = null;
+      this.root.innerHTML = \`<div class="sandbox-maker-host" data-sandbox-maker-host></div>\${idea ? this.renderIdeaGuideMarkup(idea) : ''}\`;
+      const host = this.root.querySelector<HTMLDivElement>('[data-sandbox-maker-host]');
+      if (!host) throw new Error('Sandbox library failed to mount maker host.');
+      this.currentMaker = new SandboxApp(host, {
+        ...makerRendererOptions,
+        language: this.options.language,
+        muted: this.muted,
+        savedSquishy: toy,
+        ...(toy === null && idea ? { initialShapeId: idea.shapeId } : {}),
+        startSavedInSqueeze: toy !== null,
+        onExitToLibrary: () => this.renderLibrary(),
+        onSaveSquishy: (draft) => this.handleSaveRequest(draft),
+        onMutedChange: (muted) => this.setMuted(muted),
+      });
+      this.currentMaker.setActivityBlocked(this.activityBlocked);
+    } catch (error: unknown) {
+      console.error('[squishy:maker-renderer-load]', error);
+      currentShell?.removeAttribute('aria-busy');
+    } finally {
+      this.makerStarting = false;
+    }
   }
 
   private async handleSaveRequest(draft: SandboxDraft): Promise<SavedSquishy | null> {
@@ -547,18 +589,18 @@ export class SandboxLibraryApp {
     const ideaId = target.dataset.ideaId;
     if (ideaId) {
       const idea = SQUISHY_IDEAS.find((candidate) => candidate.id === ideaId);
-      if (idea) this.startMaker(null, idea);
+      if (idea) void this.startMaker(null, idea);
       return;
     }
     if (target.hasAttribute('data-library-new')) {
-      this.startMaker(null);
+      void this.startMaker(null);
       return;
     }
 
     const playId = target.dataset.libraryPlayId;
     if (playId) {
       const toy = this.library.find((candidate) => candidate.id === playId);
-      if (toy) this.startMaker(toy);
+      if (toy) void this.startMaker(toy);
       return;
     }
 
