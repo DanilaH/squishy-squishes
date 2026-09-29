@@ -70,6 +70,8 @@ test('slow lazy Phaser load cannot override newer Library navigation', async ({ 
   await page.locator('[data-library-new]').first().click();
   await chunkSeen;
   await expect(library).toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('[data-library-maker-error]')).toBeVisible();
+  await expect(page.locator('[data-library-maker-error]')).toContainText(/studio|студи/i);
 
   // Navigation made after the async maker request must invalidate that request.
   await page.locator('[data-library-ideas]').click();
