@@ -3,9 +3,10 @@ import { releaseStudioLibraryThumbnail, renderStudioLibraryThumbnail } from '../
 import { renderNeutralVolumeAlbedo } from './libraryVolumeAlbedo';
 import { releaseVolumeMesh, renderVolumeMesh } from './libraryVolumeMesh';
 
-/** Actual Pages Hall: static 512px mesh snapshots, one reusable offscreen WebGL2
- * context, no per-card context or animation. The preexisting thumbnail draws
- * the accessory BEHIND the body; omit it here to prevent a duplicate bow/ears. */
+/** Owner-reviewed Hall: static 512px mesh snapshots, one reusable offscreen WebGL2
+ * context, no per-card context or animation. Review Pages and isolated Yandex
+ * DRAFT share this renderer. The preexisting thumbnail draws the accessory
+ * BEHIND the body; omit it here to prevent a duplicate bow/ears. */
 export const renderPagesVolumeThumbnail = (
   destination: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512,
 ): boolean => {
