@@ -17,9 +17,10 @@ export const renderPagesVolumeThumbnail = (
   };
   const volume = renderVolumeMesh(withoutAccessory, source);
   if (volume.dataset.volumeRenderer === 'mesh-unavailable') {
-    // The source art is not a successful volume render. Preserve the original
-    // Studio shader on devices that can use it, then Canvas2D as last resort.
-    releaseVolumeMesh();
+    // The source art is not a successful volume render. The mesh renderer has
+    // already released its failed context and memoized the fallback for this
+    // Hall session; keep that state so every hidden/next-room toy does not
+    // allocate another doomed WebGL context.
     return renderStudioLibraryThumbnail(destination, toy, snapshotSize);
   }
   destination.drawImage(volume, 0, 0, 256, 256);
