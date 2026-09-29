@@ -487,6 +487,8 @@ export class SandboxLibraryApp {
       if (this.disposed || startToken !== this.makerStartToken || !currentShell?.isConnected) return;
       this.currentMaker?.dispose();
       this.currentMaker = null;
+      this.thumbnailObserver?.disconnect();
+      this.thumbnailObserver = null;
       releasePagesLibraryMaterialLighting();
       this.activeIdea = toy ? null : idea;
       this.rewardMessage = null;
