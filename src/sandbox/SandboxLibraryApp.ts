@@ -237,6 +237,7 @@ export class SandboxLibraryApp {
   }
 
   public setActivityBlocked(blocked: boolean): void {
+    if (this.disposed) return;
     this.activityBlocked = blocked;
     this.currentMaker?.setActivityBlocked(blocked);
     this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]')?.classList.toggle('is-blocked', blocked);
