@@ -48,8 +48,11 @@ type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePha
 let makerRendererPromise: Promise<MakerRendererOptions> | null = null;
 const loadMakerRendererOptions = (): Promise<MakerRendererOptions> => {
   if (!makerRendererPromise) {
-    makerRendererPromise = import('../../sandbox/PhaserSquishSurface')
-      .then<MakerRendererOptions>(({ PhaserSquishSurface }) => ({
+    makerRendererPromise = Promise.all([
+      import('../../sandbox/PhaserSquishSurface'),
+      preloadStudioEnvironmentAssets(),
+    ])
+      .then<MakerRendererOptions>(([{ PhaserSquishSurface }]) => ({
         rendererBackend: 'phaser',
         makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
           new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
@@ -97,9 +100,8 @@ const canStartPhaser = (): boolean => {
 
 // Session-reachable UI images decode before the first playable Library frame.
 root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
-void Promise.all([preloadJellyUi(), preloadStudioEnvironmentAssets()]).then(([ready, desk]) => {
+void preloadJellyUi().then((ready) => {
   if (ready) root.dataset.jellyUiReady = '';
-  if (desk) root.dataset.studioEnvReady = '';
   return bootstrapSquishyApp(root, {
     createRuntime: createPagesRuntime,
     loadMakerRendererOptions,
