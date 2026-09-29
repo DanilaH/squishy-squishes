@@ -81,3 +81,28 @@ test('slow lazy Phaser load cannot override newer Library navigation', async ({ 
   await expect(ideas).toBeVisible();
   await expect(page.locator('[data-sandbox-maker-host]')).toHaveCount(0);
 });
+
+test('failed idle Phaser warmup can retry on real maker entry', async ({ page }) => {
+  let chunkRequests = 0;
+  let markFirstFailure!: () => void;
+  const firstFailure = new Promise<void>((resolve) => { markFirstFailure = resolve; });
+
+  await page.route(/PhaserSquishSurface-.*\.js$/, async (route) => {
+    chunkRequests += 1;
+    if (chunkRequests === 1) {
+      markFirstFailure();
+      await route.abort('connectionfailed');
+      return;
+    }
+    await route.continue();
+  });
+
+  await openPreview(page);
+  await firstFailure;
+
+  await page.locator('[data-library-new]').first().click();
+  await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+  expect(chunkRequests).toBeGreaterThanOrEqual(2);
+  await expect(page.locator('[data-library-maker-error]')).toHaveCount(0);
+});
+
