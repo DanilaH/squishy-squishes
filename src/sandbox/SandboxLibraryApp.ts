@@ -475,7 +475,7 @@ export class SandboxLibraryApp {
       this.currentMaker.setActivityBlocked(this.activityBlocked);
     } catch (error: unknown) {
       if (startToken !== this.makerStartToken) return;
-      console.error('[squishy:maker-renderer-load]', error);
+      console.error('[squishy:maker-start]', error);
 
       // Loader failures leave the origin shell in place; constructor/renderer
       // failures can happen after it was replaced with the maker host. Restore
@@ -492,7 +492,6 @@ export class SandboxLibraryApp {
         message.hidden = false;
         message.classList.add('is-error');
       }
-    } finally {
     }
   }
 
