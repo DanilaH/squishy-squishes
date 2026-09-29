@@ -50,6 +50,13 @@ export const preloadJellyUi = (): Promise<boolean> => {
 
 /** Maker-only art; call from the same lazy/idle path as Phaser. */
 export const preloadMakerJellyUi = (): Promise<boolean> => {
-  makerPreload ??= preload(makerUrls, 'maker');
+  if (!makerPreload) {
+    makerPreload = preload(makerUrls, 'maker').then((ready) => {
+      // A failed idle warmup should not permanently disable authored maker
+      // icons; the first real maker entry gets one clean retry.
+      if (!ready) makerPreload = null;
+      return ready;
+    });
+  }
   return makerPreload;
 };
