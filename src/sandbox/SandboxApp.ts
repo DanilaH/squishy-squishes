@@ -501,6 +501,7 @@ export class SandboxApp {
   }
 
   public setActivityBlocked(blocked: boolean): void {
+    if (this.disposed) return;
     this.activityBlocked = blocked;
     this.shell.classList.toggle('is-blocked', blocked);
     this.shell.setAttribute('aria-busy', String(blocked));
@@ -1201,6 +1202,7 @@ export class SandboxApp {
     this.saveButton.textContent = this.copy.saving;
     try {
       const saved = await this.options.onSaveSquishy(this.draft);
+      if (this.disposed) return;
       if (!saved) {
         this.status.textContent = '';
         return;
@@ -1211,13 +1213,16 @@ export class SandboxApp {
       this.loadSavedSquishy(saved);
       this.setStage('squeeze');
     } catch (error: unknown) {
+      if (this.disposed) return;
       console.error('[squishy:sandbox-save]', error);
       this.shell.dataset.saveComplete = 'false';
       this.status.textContent = this.copy.saveFailed;
     } finally {
       this.saving = false;
-      this.saveButton.disabled = false;
-      this.saveButton.textContent = this.copy.save;
+      if (!this.disposed) {
+        this.saveButton.disabled = false;
+        this.saveButton.textContent = this.copy.save;
+      }
     }
   }
 
