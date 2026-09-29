@@ -1,6 +1,7 @@
 import './studioEnvironmentPreview.css';
 
-// Isolated Pages-only visual experiment. The gameplay canvas and hit targets are untouched.
+// Owner-reviewed Phaser visual profile shared by review Pages and isolated Yandex DRAFT.
+// The gameplay canvas, hit targets and production entry remain untouched.
 const assets = {
   wall: new URL('./studio-assets/studio-wall.png', import.meta.url).href,
   floor: new URL('./library-assets/floor-tile.webp', import.meta.url).href,
