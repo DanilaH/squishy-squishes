@@ -43,6 +43,7 @@ const createDraftRuntime = async (): Promise<SquishyPlatformRuntime> => {
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root.');
+document.documentElement.lang = normalizeLanguage(navigator.language);
 
 type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
 let makerRendererPromise: Promise<MakerRendererOptions> | null = null;
