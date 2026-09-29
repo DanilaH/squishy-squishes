@@ -34,6 +34,7 @@ export const preloadLibraryHallAssets = (): Promise<void> => {
 export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
   let disposed = false;
   let ready = false;
+  let assetLoad: Promise<void> | null = null;
   let room = 0;
   let lastCount: number | null = null;
   let currentShell: HTMLElement | null = null;
@@ -68,7 +69,11 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
   };
 
   const decorate = (): void => {
-    if (disposed || !ready) return;
+    if (disposed) return;
+    if (!ready) {
+      ensureAssets();
+      return;
+    }
     const shell = root.querySelector<HTMLElement>('[data-sandbox-library]');
     if (!shell || shell.dataset.libraryHallMounted === 'true') return;
     const count = Number(shell.dataset.libraryCount ?? 0);
@@ -120,13 +125,22 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
   };
   root.addEventListener('click', handleClick, { capture: true });
 
-  void preloadLibraryHallAssets().then(() => {
-    if (disposed) return;
-    ready = true;
-    decorate();
-  }).catch((error: unknown) => {
-    if (!disposed) console.warn('[squishy:library-hall] Art decode failed; keeping the original Library grid.', error);
-  });
+  const ensureAssets = (): void => {
+    if (disposed || ready || assetLoad) return;
+    assetLoad = preloadLibraryHallAssets()
+      .then(() => {
+        if (disposed) return;
+        ready = true;
+        decorate();
+      })
+      .catch((error: unknown) => {
+        if (!disposed) console.warn('[squishy:library-hall] Art decode failed; keeping the original Library grid until a later retry.', error);
+      })
+      .finally(() => {
+        assetLoad = null;
+      });
+  };
+  ensureAssets();
 
   return () => {
     disposed = true;
