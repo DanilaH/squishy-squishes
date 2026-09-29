@@ -18,7 +18,7 @@ import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
-import { PhaserSquishSurface } from '../../sandbox/PhaserSquishSurface';
+import type { SandboxAppOptions } from '../../sandbox/SandboxApp';
 
 // Pages is a public device-preview, not a migration of real player saves or a Yandex SDK test.
 const PAGES_PREFIX = 'squishy.phaser-pages-preview.';
@@ -41,6 +41,26 @@ const createPagesRuntime = async (): Promise<SquishyPlatformRuntime> => {
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root.');
+
+type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
+let makerRendererPromise: Promise<MakerRendererOptions> | null = null;
+const loadMakerRendererOptions = (): Promise<MakerRendererOptions> => {
+  makerRendererPromise ??= import('../../sandbox/PhaserSquishSurface').then<MakerRendererOptions>(({ PhaserSquishSurface }) => ({
+    rendererBackend: 'phaser',
+    makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
+      new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
+  }));
+  return makerRendererPromise;
+};
+
+const warmMakerRendererAfterFirstPaint = (): void => {
+  const warm = (): void => { void loadMakerRendererOptions(); };
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(warm, { timeout: 1800 });
+  } else {
+    window.setTimeout(warm, 900);
+  }
+};
 
 /** Phaser's renderer needs WebGL2; probe once per page instead of allocating a throwaway context on every maker entry. */
 let phaserSupport: boolean | null = null;
@@ -69,13 +89,10 @@ void Promise.all([preloadJellyUi(), preloadStudioEnvironmentAssets()]).then(([re
   if (desk) root.dataset.studioEnvReady = '';
   return bootstrapSquishyApp(root, {
     createRuntime: createPagesRuntime,
-    makerRendererOptions: {
-      rendererBackend: 'phaser',
-      makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
-        new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
-    },
+    loadMakerRendererOptions,
   });
 }).then((handle) => {
+  warmMakerRendererAfterFirstPaint();
   const listeners = new AbortController();
   // Capture before the Library's delegated bubble click, but only on maker entry.
   // A diagnostic overlay keeps the Library and all existing saves intact.
