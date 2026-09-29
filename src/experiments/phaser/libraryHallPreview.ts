@@ -123,11 +123,6 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
     disposed = true;
     observer.disconnect();
     root.removeEventListener('click', handleClick, true);
-    currentShell?.classList.remove('is-library-hall');
-    currentShell?.querySelector('.library-hall-scene')?.remove();
-    currentShell?.querySelector('.library-hall-nav')?.remove();
-    currentShell?.style.removeProperty('--hall-pedestal');
-    currentShell?.style.removeProperty('--hall-ground-shadow');
     currentShell = null;
   };
 };
