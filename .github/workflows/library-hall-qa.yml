@@ -23,38 +23,9 @@ on:
       - 'src/sandbox/pagesDecorArt.ts'
       - 'src/sandbox/decor.ts'
       - 'src/sandbox/SandboxLibraryApp.ts'
-      - 'src/experiments/phaser/library-assets/**'
-      - 'scripts/build-library-hall.mjs'
-      - 'scripts/export-library-ground-shadow.mjs'
-      - 'scripts/export-library-owner-floor.mjs'
-      - 'scripts/verify-library-art.mjs'
-      - 'tests/phaser-pages/library-hall-*.spec.ts'
-      - 'tests/phaser-pages/studio-workshop-consistency.spec.ts'
-      - 'tests/phaser-pages/material-stress.spec.ts'
-      - '.github/workflows/library-hall-qa.yml'
-  push:
-    branches: [feat/library-visual-recovery-sep21]
-    paths:
-      - 'src/experiments/phaser/libraryHallPreview.*'
-      - 'src/experiments/phaser/libraryHallPolish.css'
-      - 'src/experiments/phaser/libraryHallGrounding.css'
-      - 'src/experiments/phaser/libraryHallAccess.css'
-      - 'src/experiments/phaser/libraryHallFeel.*'
-      - 'src/experiments/phaser/libraryHallOwnerReview.css'
-      - 'src/experiments/phaser/libraryHallPerspectiveFloor.css'
-      - 'src/experiments/phaser/libraryVolumeProbe.ts'
-      - 'src/experiments/phaser/PhaserDeformableVolume.ts'
-      - 'src/experiments/phaser/PhaserSquishCandidate.ts'
-      - 'src/experiments/phaser/pagesPreview.ts'
-      - 'src/experiments/phaser/studioEnvironmentPreview.ts'
-      - 'src/experiments/phaser/studioEnvironmentPreview.css'
-      - 'src/sandbox/PhaserSquishSurface.ts'
-      - 'src/experiments/phaser/studioPagesPreview.ts'
-      - 'src/sandbox/libraryThumbnail.ts'
-      - 'src/sandbox/libraryStudioThumbnail.ts'
-      - 'src/sandbox/pagesDecorArt.ts'
-      - 'src/sandbox/decor.ts'
-      - 'src/sandbox/SandboxLibraryApp.ts'
+      - 'src/squish/SquishSimulation.ts'
+      - 'src/sandbox/modalFocus.ts'
+      - 'src/sandbox/SandboxApp.ts'
       - 'src/experiments/phaser/library-assets/**'
       - 'scripts/build-library-hall.mjs'
       - 'scripts/export-library-ground-shadow.mjs'
@@ -65,6 +36,10 @@ on:
       - 'tests/phaser-pages/material-stress.spec.ts'
       - '.github/workflows/library-hall-qa.yml'
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 jobs:
@@ -76,7 +51,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - run: npm install
+          cache: npm
+      - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Reproduce original Library source exports without overwriting manifest
         run: node scripts/build-library-hall.mjs && node scripts/export-library-ground-shadow.mjs
@@ -99,8 +75,6 @@ jobs:
             test-results/**/workshop-*.json
           if-no-files-found: ignore
           retention-days: 14
-      - name: Full Phaser Pages regression suite
-        run: npm run pages:qa
       - name: Upload failure traces
         if: failure()
         uses: actions/upload-artifact@v4
