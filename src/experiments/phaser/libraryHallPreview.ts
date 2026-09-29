@@ -22,7 +22,8 @@ const decode = async (url: string): Promise<void> => {
 };
 
 /** Only decorate the isolated /phaser/ Pages app; main / and Yandex keep their existing Library. */
-export const mountLibraryHallPreview = (root: HTMLElement): void => {
+export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
+  let disposed = false;
   let ready = false;
   let room = 0;
   let lastCount: number | null = null;
@@ -58,7 +59,7 @@ export const mountLibraryHallPreview = (root: HTMLElement): void => {
   };
 
   const decorate = (): void => {
-    if (!ready) return;
+    if (disposed || !ready) return;
     const shell = root.querySelector<HTMLElement>('[data-sandbox-library]');
     if (!shell || shell.dataset.libraryHallMounted === 'true') return;
     const count = Number(shell.dataset.libraryCount ?? 0);
@@ -102,17 +103,31 @@ export const mountLibraryHallPreview = (root: HTMLElement): void => {
 
   const observer = new MutationObserver(decorate);
   observer.observe(root, { childList: true, subtree: true });
-  root.addEventListener('click', (event) => {
+  const handleClick = (event: MouseEvent): void => {
     const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-library-hall-prev], [data-library-hall-next]') : null;
     if (!target || target.disabled || !currentShell?.isConnected || currentShell.classList.contains('is-blocked')) return;
     room += target.hasAttribute('data-library-hall-next') ? 1 : -1;
     displayRoom();
-  }, { capture: true });
+  };
+  root.addEventListener('click', handleClick, { capture: true });
 
   void Promise.all(Object.values(art).map(decode)).then(() => {
+    if (disposed) return;
     ready = true;
     decorate();
   }).catch((error: unknown) => {
-    console.warn('[squishy:library-hall] Art decode failed; keeping the original Library grid.', error);
+    if (!disposed) console.warn('[squishy:library-hall] Art decode failed; keeping the original Library grid.', error);
   });
+
+  return () => {
+    disposed = true;
+    observer.disconnect();
+    root.removeEventListener('click', handleClick, true);
+    currentShell?.classList.remove('is-library-hall');
+    currentShell?.querySelector('.library-hall-scene')?.remove();
+    currentShell?.querySelector('.library-hall-nav')?.remove();
+    currentShell?.style.removeProperty('--hall-pedestal');
+    currentShell?.style.removeProperty('--hall-ground-shadow');
+    currentShell = null;
+  };
 };
