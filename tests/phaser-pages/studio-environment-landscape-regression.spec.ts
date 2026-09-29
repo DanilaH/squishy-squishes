@@ -5,10 +5,11 @@ test('Studio v8 keeps the real heading visible and desk hidden in short landscap
   const page = await context.newPage();
   try {
     await page.goto('/phaser/');
-    await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '');
+    await expect(page.locator('#app')).not.toHaveAttribute('data-studio-env-ready', '');
     await page.locator('[data-library-new]').first().click();
     const shell = page.locator('[data-sandbox-app]');
     await expect(shell).toHaveAttribute('data-stage', 'shape');
+    await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '', { timeout: 8_000 });
     await expect(shell).toHaveClass(/studio-env-active/);
 
     const facts = await page.evaluate(() => {
