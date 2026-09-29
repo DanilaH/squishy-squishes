@@ -16,10 +16,10 @@ test.describe('Russian maker localization', () => {
     await expect(stage).toHaveAttribute('aria-label', 'Стол для сквиша');
     await expect(canvas).toHaveAttribute('aria-label', 'Сквиш');
 
-    await expect(page.locator('[data-shape="soft-square"]')).toContainText('Кубик');
-    await expect(page.locator('[data-shape="heart"]')).toContainText('Сердечко');
-    await expect(page.locator('[data-shape="paw"]')).toContainText('Лапка');
-    await expect(page.locator('[data-shape="paw"]')).not.toContainText('Paw');
+    await expect(page.locator('button[data-shape="soft-square"]')).toContainText('Кубик');
+    await expect(page.locator('button[data-shape="heart"]')).toContainText('Сердечко');
+    await expect(page.locator('button[data-shape="paw"]')).toContainText('Лапка');
+    await expect(page.locator('button[data-shape="paw"]')).not.toContainText('Paw');
 
     await page.locator('[data-action="shape-continue"]').click();
     await expect(page.locator('[data-paint-color]').first()).toHaveAttribute('aria-label', 'Цвет 1');
@@ -33,7 +33,7 @@ test.describe('Russian maker localization', () => {
 test('unsaved-exit dialog traps focus, closes on Escape and restores the trigger', async ({ page }) => {
   await page.goto(PAGES_URL);
   await page.locator('[data-library-new]').first().click();
-  await page.locator('[data-shape="heart"]').click();
+  await page.locator('button[data-shape="heart"]').click();
 
   const trigger = page.locator('[data-action="exit-craft"]');
   await trigger.click();
@@ -74,9 +74,9 @@ test('Decor uses keyboard-operable ARIA tabs', async ({ page }) => {
   await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
   await page.locator('[data-action="mix-continue"]').click();
 
-  const face = page.locator('[data-decor-section="face"]');
-  const stickers = page.locator('[data-decor-section="stickers"]');
-  const accessory = page.locator('[data-decor-section="accessory"]');
+  const face = page.locator('button[role="tab"][data-decor-section="face"]');
+  const stickers = page.locator('button[role="tab"][data-decor-section="stickers"]');
+  const accessory = page.locator('button[role="tab"][data-decor-section="accessory"]');
   await expect(face).toHaveAttribute('role', 'tab');
   await expect(face).toHaveAttribute('aria-selected', 'true');
   await expect(stickers).toHaveAttribute('aria-selected', 'false');
