@@ -3,10 +3,11 @@ import type { SquishMaterialStyle } from '../../squish/SquishSurface';
 import type { SquishSimulation } from '../../squish/SquishSimulation';
 import { createFragmentShaderSource, vertexShaderSource } from '../../squish/shaders';
 
-/** Pages adds cap/side geometry on top of the shared material shader.
- * Build it lazily: Yandex imports the shared candidate but never enables the
- * Pages volume profile. The shared shader builder owns the variation points,
- * so formatting changes in the base GLSL cannot silently break this profile. */
+/** The owner-reviewed Phaser profile adds cap/side geometry on top of the shared material shader.
+ * It is enabled by review Pages and the isolated Yandex DRAFT, while the normal
+ * production renderer still stays on its established path. The shared shader
+ * builder owns the variation points, so formatting changes in the base GLSL
+ * cannot silently break this profile. */
 const PAGES_CAP_LIGHTING = `
   // Smooth radial cap normals avoid the concave paw/heart wedge artifacts.
   // UVs and 2D deformation still belong to the one canonical simulation.
