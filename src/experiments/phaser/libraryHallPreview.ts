@@ -68,6 +68,10 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
     if (counter) counter.textContent = `${room + 1} / ${pages}`;
     shell.dataset.libraryHallRoom = String(room + 1);
     shell.dataset.libraryHallRooms = String(pages);
+    // The Library owns thumbnail rasterization. Tell it which room just became
+    // visible so those two canvases are ready in the same interaction turn,
+    // while every hidden room stays lazy.
+    shell.dispatchEvent(new CustomEvent('squishy:library-room-visible', { bubbles: true }));
   };
 
   const decorate = (): void => {
