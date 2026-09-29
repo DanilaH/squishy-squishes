@@ -71,7 +71,7 @@ void prepareReviewFirstPaint(root, 'pages').then(() => bootstrapSquishyApp(root,
     createRuntime: createPagesRuntime,
     loadMakerRendererOptions: makerRenderer.load,
   })).then((handle) => {
-  const cancelMakerWarm = makerRenderer.scheduleWarm(canStartPhaser);
+  const cancelMakerWarm = makerRenderer.scheduleWarm();
   const listeners = new AbortController();
   // Capture before the Library's delegated bubble click, but only on maker entry.
   // A diagnostic overlay keeps the Library and all existing saves intact.
