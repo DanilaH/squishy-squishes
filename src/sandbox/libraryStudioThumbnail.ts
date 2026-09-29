@@ -56,79 +56,104 @@ class StudioThumbnailRenderer {
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
         const reason = gl.getShaderInfoLog(shader) ?? 'unknown error';
         gl.deleteShader(shader);
-        throw new Error(`Library Studio shader: ${reason}`);
+        throw new Error(\`Library Studio shader: \${reason}\`);
       }
       return shader;
     };
-    const vertex = compile(gl.VERTEX_SHADER, vertexShaderSource);
-    const fragment = compile(gl.FRAGMENT_SHADER, fragmentShaderSource);
-    const program = gl.createProgram();
-    if (!program) throw new Error('Library shader program allocation failed');
-    gl.attachShader(program, vertex);
-    gl.attachShader(program, fragment);
-    gl.linkProgram(program);
-    gl.deleteShader(vertex);
-    gl.deleteShader(fragment);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      const reason = gl.getProgramInfoLog(program) ?? 'unknown error';
-      gl.deleteProgram(program);
-      throw new Error(`Library Studio shader link: ${reason}`);
+
+    let vertex: WebGLShader | null = null;
+    let fragment: WebGLShader | null = null;
+    let program: WebGLProgram | null = null;
+    let vao: WebGLVertexArrayObject | null = null;
+    let vertexBuffer: WebGLBuffer | null = null;
+    let indices: WebGLBuffer | null = null;
+    let shapeTexture: WebGLTexture | null = null;
+    let appearanceTexture: WebGLTexture | null = null;
+    try {
+      vertex = compile(gl.VERTEX_SHADER, vertexShaderSource);
+      fragment = compile(gl.FRAGMENT_SHADER, fragmentShaderSource);
+      program = gl.createProgram();
+      if (!program) throw new Error('Library shader program allocation failed');
+      gl.attachShader(program, vertex);
+      gl.attachShader(program, fragment);
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        const reason = gl.getProgramInfoLog(program) ?? 'unknown error';
+        throw new Error(\`Library Studio shader link: \${reason}\`);
+      }
+
+      const uniforms = new Map<Uniform, WebGLUniformLocation>();
+      for (const name of UNIFORMS) {
+        const location = gl.getUniformLocation(program, name);
+        if (location === null) throw new Error(\`Missing Studio uniform \${name}\`);
+        uniforms.set(name, location);
+      }
+
+      vao = gl.createVertexArray();
+      vertexBuffer = gl.createBuffer();
+      indices = gl.createBuffer();
+      shapeTexture = gl.createTexture();
+      appearanceTexture = gl.createTexture();
+      if (!vao || !vertexBuffer || !indices || !shapeTexture || !appearanceTexture) {
+        throw new Error('Library Studio buffer/texture allocation failed');
+      }
+
+      for (let index = 0; index < this.simulation.vertices.length; index += 1) {
+        const vertexState = this.simulation.vertices[index]!;
+        const offset = index * 4;
+        this.vertices[offset] = vertexState.restX;
+        this.vertices[offset + 1] = vertexState.restY;
+        this.vertices[offset + 2] = vertexState.u;
+        this.vertices[offset + 3] = vertexState.v;
+      }
+      gl.bindVertexArray(vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(0);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 16, 0);
+      gl.enableVertexAttribArray(1);
+      gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 16, 8);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indices);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.simulation.triangleIndices, gl.STATIC_DRAW);
+      gl.bindVertexArray(null);
+      for (const [unit, texture] of [[gl.TEXTURE0, shapeTexture], [gl.TEXTURE1, appearanceTexture]] as const) {
+        gl.activeTexture(unit);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      }
+
+      this.appearance.width = APPEARANCE_TEXTURE_SIZE * 2;
+      this.appearance.height = APPEARANCE_TEXTURE_SIZE * 2;
+      const context = this.appearance.getContext('2d');
+      if (!context) throw new Error('Library Studio appearance canvas unavailable');
+      // The V3 authoring coordinates stay in the original 256px domain.
+      // Rasterize their actual strokes, expressions and stickers at 2x.
+      context.setTransform(2, 0, 0, 2, 0, 0);
+
+      this.program = program;
+      this.uniforms = uniforms;
+      this.vao = vao;
+      this.vertexBuffer = vertexBuffer;
+      this.indices = indices;
+      this.shapeTexture = shapeTexture;
+      this.appearanceTexture = appearanceTexture;
+      this.appearanceContext = context;
+    } catch (error: unknown) {
+      if (vao) gl.deleteVertexArray(vao);
+      if (vertexBuffer) gl.deleteBuffer(vertexBuffer);
+      if (indices) gl.deleteBuffer(indices);
+      if (shapeTexture) gl.deleteTexture(shapeTexture);
+      if (appearanceTexture) gl.deleteTexture(appearanceTexture);
+      if (program) gl.deleteProgram(program);
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      throw error;
+    } finally {
+      if (vertex) gl.deleteShader(vertex);
+      if (fragment) gl.deleteShader(fragment);
     }
-    this.program = program;
-    const uniforms = new Map<Uniform, WebGLUniformLocation>();
-    for (const name of UNIFORMS) {
-      const location = gl.getUniformLocation(program, name);
-      if (location === null) throw new Error(`Missing Studio uniform ${name}`);
-      uniforms.set(name, location);
-    }
-    this.uniforms = uniforms;
-    const vao = gl.createVertexArray();
-    const vertexBuffer = gl.createBuffer();
-    const indices = gl.createBuffer();
-    const shapeTexture = gl.createTexture();
-    const appearanceTexture = gl.createTexture();
-    if (!vao || !vertexBuffer || !indices || !shapeTexture || !appearanceTexture) {
-      throw new Error('Library Studio buffer/texture allocation failed');
-    }
-    this.vao = vao;
-    this.vertexBuffer = vertexBuffer;
-    this.indices = indices;
-    this.shapeTexture = shapeTexture;
-    this.appearanceTexture = appearanceTexture;
-    for (let index = 0; index < this.simulation.vertices.length; index += 1) {
-      const vertexState = this.simulation.vertices[index]!;
-      const offset = index * 4;
-      this.vertices[offset] = vertexState.restX;
-      this.vertices[offset + 1] = vertexState.restY;
-      this.vertices[offset + 2] = vertexState.u;
-      this.vertices[offset + 3] = vertexState.v;
-    }
-    gl.bindVertexArray(vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 16, 0);
-    gl.enableVertexAttribArray(1);
-    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 16, 8);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indices);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.simulation.triangleIndices, gl.STATIC_DRAW);
-    gl.bindVertexArray(null);
-    for (const [unit, texture] of [[gl.TEXTURE0, shapeTexture], [gl.TEXTURE1, appearanceTexture]] as const) {
-      gl.activeTexture(unit);
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    }
-    this.appearance.width = APPEARANCE_TEXTURE_SIZE * 2;
-    this.appearance.height = APPEARANCE_TEXTURE_SIZE * 2;
-    const context = this.appearance.getContext('2d');
-    if (!context) throw new Error('Library Studio appearance canvas unavailable');
-    // The V3 authoring coordinates stay in the original 256px domain.
-    // Rasterize their actual strokes, expressions and stickers at 2x.
-    context.setTransform(2, 0, 0, 2, 0, 0);
-    this.appearanceContext = context;
   }
 
   public render(destination: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512 = SIZE): void {
