@@ -67,10 +67,14 @@ const element = (tag: 'div' | 'img', className: string): HTMLDivElement | HTMLIm
 export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) => {
   let disposed = false;
   let decoded = false;
+  let prepareStarted = false;
   let deskTexture: string | null = null;
   let frame = 0;
   const abort = new AbortController();
-  const observer = new MutationObserver(() => schedule());
+  const observer = new MutationObserver(() => {
+    prepareEnvironment();
+    schedule();
+  });
   // Observe viewport geometry, not step-panel heights: Pages CSS reserves one
   // stable workbench and controls track for every maker stage.
   const geometryObserver = new ResizeObserver(() => schedule());
@@ -179,15 +183,21 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     frame = requestAnimationFrame(() => { frame = 0; sync(); });
   };
 
+  const prepareEnvironment = (): void => {
+    if (disposed || prepareStarted || !root.querySelector('.sandbox-shell')) return;
+    prepareStarted = true;
+    void preloadStudioEnvironmentAssets().then((texture) => {
+      if (disposed || !texture) return;
+      deskTexture = texture;
+      decoded = true;
+      root.dataset.studioEnvReady = '';
+      schedule();
+    });
+  };
+
   observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-stage'] });
   window.addEventListener('resize', schedule, { signal: abort.signal });
-  void preloadStudioEnvironmentAssets().then((texture) => {
-    if (disposed || !texture) return;
-    deskTexture = texture;
-    decoded = true;
-    root.dataset.studioEnvReady = '';
-    schedule();
-  });
+  prepareEnvironment();
 
   return () => {
     disposed = true;
