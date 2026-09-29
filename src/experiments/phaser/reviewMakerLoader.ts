@@ -28,7 +28,7 @@ const waitForOptionalMakerArt = async (): Promise<void> => {
 
 export interface ReviewMakerRendererLoader {
   load(): Promise<MakerRendererOptions>;
-  scheduleWarm(canWarm?: () => boolean): () => void;
+  scheduleWarm(): () => void;
 }
 
 /**
@@ -58,16 +58,22 @@ export const createReviewMakerRendererLoader = (scope: ReviewScope): ReviewMaker
     return makerRendererPromise;
   };
 
-  const scheduleWarm = (canWarm: () => boolean = () => true): (() => void) => {
+  const scheduleWarm = (): (() => void) => {
     let cancelled = false;
     let timeoutHandle = 0;
     let idleHandle = 0;
     const warm = (): void => {
       timeoutHandle = 0;
       idleHandle = 0;
-      if (cancelled || !canWarm()) return;
-      void load().catch((error: unknown) => {
-        console.warn(`[squishy:${scope}] Idle Phaser warmup failed; maker entry will retry.`, error);
+      if (cancelled) return;
+      // Warm only optional maker art. Importing the Phaser module itself during
+      // idle can poison the browser module cache if that speculative request
+      // fails; the real user click must own the first module import.
+      void Promise.all([
+        preloadStudioEnvironmentAssets(),
+        preloadMakerJellyUi(),
+      ]).catch((error: unknown) => {
+        console.warn(`[squishy:${scope}] Idle maker-art warmup failed; maker entry will retry assets.`, error);
       });
     };
 
