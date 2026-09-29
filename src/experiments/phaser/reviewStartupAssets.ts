@@ -12,8 +12,19 @@ export const prepareReviewFirstPaint = async (
   root: HTMLElement,
   scope: 'pages' | 'draft',
 ): Promise<void> => {
-  const jelly = preloadJellyUi().then((ready) => {
+  const markJellyReady = (ready: boolean): void => {
     if (ready && root.isConnected) root.dataset.jellyUiReady = '';
+  };
+  const jelly = preloadJellyUi().then((ready) => {
+    markJellyReady(ready);
+    if (!ready) {
+      // Retry outside the startup budget: the Library is already playable with
+      // native/CSS controls, so recovery must never delay first interaction.
+      globalThis.setTimeout(() => {
+        if (!root.isConnected || root.dataset.jellyUiReady === '') return;
+        void preloadJellyUi().then(markJellyReady);
+      }, 900);
+    }
   });
   const hall = preloadReviewVisualProfile().catch((error: unknown) => {
     console.warn(`[squishy:${scope}] Hall preload failed; the fallback Library can still start.`, error);
