@@ -88,8 +88,21 @@ test('production web uses the accepted 512px Hall profile and lazy Phaser maker'
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
   await expect(canvas).toHaveAttribute('data-phaser-volume', 'deformable');
+  await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '');
+  await expect(page.locator('.studio-env-decor--left')).toBeVisible();
+  await expect(page.locator('.studio-env-decor--right')).toBeVisible();
   await expect.poll(() => page.evaluate(() => performance.getEntriesByType('resource')
     .filter((entry) => entry.name.includes('PhaserSquishSurface')).length)).toBeGreaterThan(0);
+
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error('Missing production squeeze canvas bounds.');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 8, box.y + box.height / 2, { steps: 8 });
+  await expect.poll(async () =>
+    Math.abs(Number(await canvas.getAttribute('data-squish-body-offset-x') ?? '0')),
+  ).toBeLessThanOrEqual(0.305);
+  await page.mouse.up();
 });
 
 test('production Yandex entry uses the same Phaser maker without the DRAFT namespace', async ({ page }) => {
@@ -107,4 +120,33 @@ test('production Yandex entry uses the same Phaser maker without the DRAFT names
   expect(await page.evaluate(() => [...Array(localStorage.length)].map((_, index) => localStorage.key(index))
     .filter((key): key is string => Boolean(key))
     .some((key) => key.startsWith('squishy.phaser-yandex-draft.')))).toBe(false);
+});
+
+
+test('first production paint gesture is visible before pointerup', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(WEB_URL);
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+
+  await page.locator('[data-library-new]').first().click();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
+  await page.locator('[data-action="shape-continue"]').click();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
+
+  const canvas = page.locator('[data-sandbox-canvas]');
+  await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
+  await page.waitForTimeout(300);
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error('Missing production paint canvas bounds.');
+  const before = await canvas.screenshot();
+
+  await page.mouse.move(box.x + box.width * 0.44, box.y + box.height * 0.52);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.58, box.y + box.height * 0.52, { steps: 6 });
+  await page.waitForTimeout(120);
+  const during = await canvas.screenshot();
+
+  expect(during.equals(before)).toBe(false);
+  await page.mouse.up();
 });
