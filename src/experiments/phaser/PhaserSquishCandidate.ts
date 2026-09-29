@@ -23,6 +23,9 @@ interface GpuResources {
   readonly lines: WebGLBuffer;
   readonly shapeField: WebGLTexture;
   readonly appearance: WebGLTexture;
+  readonly face: WebGLTexture | null;
+  readonly faceTextureUniform: WebGLUniformLocation | null;
+  readonly faceEnabledUniform: WebGLUniformLocation | null;
   readonly uniforms: ReadonlyMap<string, WebGLUniformLocation>;
 }
 
@@ -74,11 +77,16 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private readonly shapeFields = new Map<ShapeId, Uint8Array>();
   private readonly appearanceCanvas = document.createElement('canvas');
   private readonly appearanceContext: CanvasRenderingContext2D;
+  private readonly faceCanvas = document.createElement('canvas');
+  private readonly faceContext: CanvasRenderingContext2D;
   private appearanceDocument: AppearanceDocumentV1 | null = null;
   private decorDocument: DecorDocumentV1 | null = null;
   private appearanceEnabled = false;
   private appearanceRevision = 0;
   private uploadedAppearanceRevision = -1;
+  private faceEnabled = false;
+  private faceRevision = 0;
+  private uploadedFaceRevision = -1;
   private gpu: GpuResources | null = null;
   private volume: PhaserDeformableVolume | null = null;
   private shapeId: ShapeId = 'soft-square';
@@ -91,6 +99,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private moldProgress = 1;
   private wireframe = false;
   private activePointer: number | null = null;
+  private pokeEnabled = false;
   private drawCalls = 0;
   private disposed = false;
   private lastReleaseEnergy = 0;
@@ -105,6 +114,11 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const context = this.appearanceCanvas.getContext('2d');
     if (!context) throw new Error('Cannot create the canonical appearance surface');
     this.appearanceContext = context;
+    this.faceCanvas.width = APPEARANCE_TEXTURE_SIZE;
+    this.faceCanvas.height = APPEARANCE_TEXTURE_SIZE;
+    const faceContext = this.faceCanvas.getContext('2d');
+    if (!faceContext) throw new Error('Cannot create the clean face surface');
+    this.faceContext = faceContext;
   }
 
   public setShape(id: ShapeId): void {
@@ -136,6 +150,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public setViewportFollowEnabled(enabled: boolean): void {
     this.simulation.setViewportFollowEnabled(this.pagesVolume && enabled);
   }
+  public setPokeEnabled(enabled: boolean): void { this.pokeEnabled = this.pagesVolume && enabled; }
   public recenterViewportFollow(): void {
     if (this.pagesVolume) this.simulation.recenterViewportFollow();
   }
@@ -201,6 +216,14 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.appearanceRevision += 1;
   }
 
+  public setFaceCanvas(source: HTMLCanvasElement | null): void {
+    if (this.disposed) return;
+    this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
+    this.faceEnabled = source !== null;
+    if (source) this.faceContext.drawImage(source, 0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
+    this.faceRevision += 1;
+  }
+
   private bakeAppearance(): void {
     replayAppearanceDocument(this.appearanceContext, this.appearanceDocument ?? createEmptyAppearanceDocument(), {
       excludeMixIns: ['pearls'],
@@ -231,7 +254,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
 
   public endById(pointerId: number): void {
     if (pointerId !== this.activePointer) return;
-    this.lastReleaseEnergy = this.simulation.end(pointerId) ?? 0;
+    this.lastReleaseEnergy = this.simulation.end(pointerId, this.pokeEnabled) ?? 0;
     this.activePointer = null;
   }
 
@@ -293,6 +316,30 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.uploadedAppearanceRevision = this.appearanceRevision;
   }
 
+  private uploadFace(gpu: GpuResources): void {
+    if (!this.pagesVolume || !gpu.face || !gpu.faceTextureUniform || !gpu.faceEnabledUniform
+      || this.uploadedFaceRevision === this.faceRevision) return;
+    const gl = this.gl;
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, gpu.face);
+    if (!this.faceEnabled) {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+    } else {
+      const previousFlip = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL) as boolean;
+      const previousPremultiply = gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL) as boolean;
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+      try {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.faceCanvas);
+      } finally {
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, previousFlip ? 1 : 0);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, previousPremultiply ? 1 : 0);
+      }
+    }
+    gl.activeTexture(gl.TEXTURE0);
+    this.uploadedFaceRevision = this.faceRevision;
+  }
+
   private createGpu(): GpuResources {
     const gl = this.gl;
     const vertexShader = compile(gl, gl.VERTEX_SHADER, vertexShaderSource);
@@ -315,7 +362,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const lines = gl.createBuffer();
     const shapeField = gl.createTexture();
     const appearance = gl.createTexture();
-    if (!vao || !vertices || !indices || !lines || !shapeField || !appearance) {
+    const face = this.pagesVolume ? gl.createTexture() : null;
+    if (!vao || !vertices || !indices || !lines || !shapeField || !appearance || (this.pagesVolume && !face)) {
       gl.deleteProgram(program);
       throw new Error('Cannot allocate candidate GPU resources');
     }
@@ -349,10 +397,25 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    const gpu = { program, vao, vertices, indices, lines, shapeField, appearance, uniforms };
+    let faceTextureUniform: WebGLUniformLocation | null = null;
+    let faceEnabledUniform: WebGLUniformLocation | null = null;
+    if (this.pagesVolume && face) {
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, face);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      faceTextureUniform = gl.getUniformLocation(program, 'uFaceTexture');
+      faceEnabledUniform = gl.getUniformLocation(program, 'uFaceEnabled');
+      if (!faceTextureUniform || !faceEnabledUniform) throw new Error('Missing clean face uniforms');
+    }
+    const gpu = { program, vao, vertices, indices, lines, shapeField, appearance, face, faceTextureUniform, faceEnabledUniform, uniforms };
     this.uploadShapeField(gpu);
     this.uploadedAppearanceRevision = -1;
     this.uploadAppearance(gpu);
+    this.uploadedFaceRevision = -1;
+    this.uploadFace(gpu);
     return gpu;
   }
 
@@ -363,6 +426,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.gpu ??= this.createGpu();
     const gpu = this.gpu;
     this.uploadAppearance(gpu);
+    this.uploadFace(gpu);
     const material = this.materialStyle ?? getStyle(this.paletteId, this.materialId);
     const sample = this.simulation.snapshot();
     for (let index = 0; index < this.simulation.vertices.length; index += 1) {
@@ -383,6 +447,16 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.bindBuffer(gl.ARRAY_BUFFER, gpu.vertices);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.packed);
+    const { width, height } = this.scene.scale;
+    const radius = this.radius();
+    if (this.pagesVolume && !this.wireframe && this.fillProgress >= 0.999 && this.moldProgress > 0.85) {
+      // Sidewall is backing geometry. Draw it first so contour folds can never
+      // smear side UVs across the visible front under a strong pull.
+      this.volume ??= new PhaserDeformableVolume(gl);
+      this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
+        this.appearanceEnabled, radius * 2 / width, radius * 2 / height,
+        this.moldProgress, sample.compression, this.renderCenterOffsetY);
+    }
     gl.useProgram(gpu.program);
     const u = (name: typeof UNIFORMS[number]): WebGLUniformLocation => gpu.uniforms.get(name)!;
     gl.activeTexture(gl.TEXTURE0);
@@ -392,8 +466,12 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.bindTexture(gl.TEXTURE_2D, gpu.appearance);
     gl.uniform1i(u('uAppearanceTexture'), 1);
     gl.uniform1i(u('uAppearanceEnabled'), this.appearanceEnabled ? 1 : 0);
-    const { width, height } = this.scene.scale;
-    const radius = this.radius();
+    if (this.pagesVolume && gpu.face && gpu.faceTextureUniform && gpu.faceEnabledUniform) {
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, gpu.face);
+      gl.uniform1i(gpu.faceTextureUniform, 2);
+      gl.uniform1i(gpu.faceEnabledUniform, this.faceEnabled ? 1 : 0);
+    }
     gl.uniform2f(u('uScale'), radius * 2 / width, radius * 2 / height);
     gl.uniform1f(u('uMoldProgress'), this.moldProgress);
     gl.uniform2f(u('uPointerUv'), clamp01(sample.sheenX * 0.5 + 0.5), clamp01(sample.sheenY * 0.5 + 0.5));
@@ -418,14 +496,6 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.bindVertexArray(gpu.vao);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gpu.indices);
     gl.drawElements(gl.TRIANGLES, this.simulation.triangleIndices.length, gl.UNSIGNED_SHORT, 0);
-    if (this.pagesVolume && !this.wireframe && this.fillProgress >= 0.999 && this.moldProgress > 0.85) {
-      this.volume ??= new PhaserDeformableVolume(gl);
-      const radius = this.radius();
-      this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
-        this.appearanceEnabled, radius * 2 / this.scene.scale.width,
-        radius * 2 / this.scene.scale.height, this.moldProgress, sample.compression,
-        this.renderCenterOffsetY);
-    }
     if (this.wireframe) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gpu.lines);
       gl.uniform1i(u('uWireframePass'), 1);
@@ -460,6 +530,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.volume = null;
     this.gpu = null;
     this.uploadedAppearanceRevision = -1;
+    this.uploadedFaceRevision = -1;
     this.cancel();
   }
 
@@ -477,6 +548,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.gl.deleteBuffer(gpu.lines);
     this.gl.deleteTexture(gpu.shapeField);
     this.gl.deleteTexture(gpu.appearance);
+    if (gpu.face) this.gl.deleteTexture(gpu.face);
     this.gl.deleteVertexArray(gpu.vao);
     this.gl.deleteProgram(gpu.program);
   }
