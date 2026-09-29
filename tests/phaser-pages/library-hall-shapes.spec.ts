@@ -42,15 +42,8 @@ test('chrome and holo volume follow all six saved shape boundaries', async ({ pa
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
     await expect(page.locator('[data-library-hall-stage]')).toBeVisible();
-    // Render every lazy room through the real Hall navigation before auditing
-    // all six native canvases; hidden rooms must no longer be assumed eager.
-    for (let room = 1; room <= 3; room += 1) {
-      await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(room));
-      await expect.poll(() => page.locator('.sandbox-library-card:visible canvas[data-library-rendered="true"]').count()).toBe(2);
-      if (room < 3) await page.locator('[data-library-hall-next]').click();
-    }
-    await page.locator('[data-library-hall-prev]').click();
-    await page.locator('[data-library-hall-prev]').click();
+    // Hall thumbnails are eager again: audit all six native canvases directly.
+    // Room navigation below remains presentation/paging coverage only.
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', '1');
 
     for (const shape of SHAPES) {

@@ -39,15 +39,8 @@ test('real saved materials have comparable Studio and Library captures', async (
   });
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
-  // Hall thumbnails are intentionally lazy: exercise each visible room before
-  // running the all-material pixel audit, then return to room 1 for captures.
-  for (let room = 1; room <= 3; room += 1) {
-    await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(room));
-    await expect.poll(() => page.locator('.sandbox-library-card:visible canvas[data-library-rendered="true"]').count()).toBe(2);
-    if (room < 3) await page.locator('[data-library-hall-next]').click();
-  }
-  await page.locator('[data-library-hall-prev]').click();
-  await page.locator('[data-library-hall-prev]').click();
+  // Hall thumbnails are eager again: audit all six native canvases directly.
+  // Room navigation below remains presentation/paging coverage only.
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', '1');
 
   const visibleProfiles = async (): Promise<(string | null)[]> => page.locator('.sandbox-library-card:visible [data-library-material-profile]')
