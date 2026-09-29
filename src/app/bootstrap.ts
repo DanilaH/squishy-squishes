@@ -29,6 +29,7 @@ export interface SquishyAppHandle {
 /** Optional candidate seams. The normal entry passes no options and never imports Phaser. */
 export interface SquishyBootstrapOptions {
   readonly makerRendererOptions?: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
+  readonly loadMakerRendererOptions?: () => Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>>;
   readonly createRuntime?: () => Promise<SquishyPlatformRuntime>;
 }
 
@@ -50,6 +51,7 @@ export const bootstrapSquishyApp = async (
     import.meta.env.VITE_PLATFORM !== 'yandex'
     && new URLSearchParams(window.location.search).get('appearanceProbe') === '1'
     && !options.makerRendererOptions
+    && !options.loadMakerRendererOptions
   ) {
     const { installAppearanceProbe } = await import('../debug/installAppearanceProbe');
     const removeAppearanceProbe = await installAppearanceProbe(root, runtime.storage);
@@ -103,6 +105,7 @@ export const bootstrapSquishyApp = async (
   const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
   const app = new SandboxLibraryApp(root, {
     ...options.makerRendererOptions ? { makerRendererOptions: options.makerRendererOptions } : {},
+    ...options.loadMakerRendererOptions ? { loadMakerRendererOptions: options.loadMakerRendererOptions } : {},
     language,
     muted: settingsState.muted,
     initialLibrary: saveState.library,
@@ -163,7 +166,7 @@ export const bootstrapSquishyApp = async (
   markStartup('gameReady');
 
   let removeDebugTools = (): void => undefined;
-  if (import.meta.env.DEV && !options.makerRendererOptions) {
+  if (import.meta.env.DEV && !options.makerRendererOptions && !options.loadMakerRendererOptions) {
     const { installDebugTools } = await import('../debug/installDebugTools');
     removeDebugTools = installDebugTools({
       resetSave: async () => {
