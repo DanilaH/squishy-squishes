@@ -112,3 +112,64 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     await context.close();
   }
 });
+
+test('DPR 3 phone keeps the tactile Phaser framebuffer in CSS pixels', async ({ browser, browserName }) => {
+  test.skip(browserName !== 'chromium', 'WebGL backbuffer audit is Chromium-only.');
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    hasTouch: true,
+    isMobile: true,
+  });
+  const page = await context.newPage();
+  try {
+    await page.goto('/phaser/');
+    await page.locator('[data-library-new]').first().tap();
+    const canvas = page.locator('[data-sandbox-canvas]');
+    await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
+    await page.locator('[data-action="shape-continue"]').tap();
+    await page.locator('[data-action="paint-continue"]').tap();
+    await page.locator('[data-action="mixin-continue"]').tap();
+
+    const mixBox = await canvas.boundingBox();
+    if (!mixBox) throw new Error('Missing mix surface');
+    const cx = mixBox.x + mixBox.width / 2;
+    const cy = mixBox.y + mixBox.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    for (let i = 0; i < 24; i += 1) {
+      await page.mouse.move(cx + (i % 2 ? -65 : 65), cy, { steps: 2 });
+    }
+    await page.mouse.up();
+    await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
+    await page.locator('[data-action="mix-continue"]').tap();
+    await page.locator('[data-action="decor-continue"]').tap();
+    await page.locator('[data-action="save"]').tap();
+    await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+
+    const metrics = await canvas.evaluate((node) => {
+      const surface = node as HTMLCanvasElement;
+      const rect = surface.getBoundingClientRect();
+      const gl = surface.getContext('webgl2');
+      return {
+        dpr: devicePixelRatio,
+        cssWidth: rect.width,
+        cssHeight: rect.height,
+        canvasWidth: surface.width,
+        canvasHeight: surface.height,
+        drawingWidth: gl?.drawingBufferWidth ?? -1,
+        drawingHeight: gl?.drawingBufferHeight ?? -1,
+      };
+    });
+
+    expect(metrics.dpr).toBe(3);
+    expect(metrics.cssWidth).toBeGreaterThan(700);
+    expect(metrics.canvasWidth, 'canvas backing width must not be multiplied by DPR').toBeLessThanOrEqual(Math.ceil(metrics.cssWidth) + 2);
+    expect(metrics.canvasHeight, 'canvas backing height must not be multiplied by DPR').toBeLessThanOrEqual(Math.ceil(metrics.cssHeight) + 2);
+    expect(metrics.drawingWidth).toBe(metrics.canvasWidth);
+    expect(metrics.drawingHeight).toBe(metrics.canvasHeight);
+  } finally {
+    await context.close();
+  }
+});
+
