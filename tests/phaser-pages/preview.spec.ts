@@ -51,3 +51,33 @@ test('Pages saves persist under a separate key without changing existing web sav
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
 });
+
+
+test('slow lazy Phaser load cannot override newer Library navigation', async ({ page }) => {
+  let releaseChunk!: () => void;
+  let markChunkSeen!: () => void;
+  const chunkGate = new Promise<void>((resolve) => { releaseChunk = resolve; });
+  const chunkSeen = new Promise<void>((resolve) => { markChunkSeen = resolve; });
+
+  await page.route(/PhaserSquishSurface-.*\.js$/, async (route) => {
+    markChunkSeen();
+    await chunkGate;
+    await route.continue();
+  });
+
+  await openPreview(page);
+  const library = page.locator('[data-sandbox-library]');
+  await page.locator('[data-library-new]').first().click();
+  await chunkSeen;
+  await expect(library).toHaveAttribute('aria-busy', 'true');
+
+  // Navigation made after the async maker request must invalidate that request.
+  await page.locator('[data-library-ideas]').click();
+  const ideas = page.locator('[data-sandbox-ideas]');
+  await expect(ideas).toBeVisible();
+
+  releaseChunk();
+  await page.waitForTimeout(150);
+  await expect(ideas).toBeVisible();
+  await expect(page.locator('[data-sandbox-maker-host]')).toHaveCount(0);
+});
