@@ -58,6 +58,17 @@ test('all face and sticker styles remain legible on six saved contours without c
     }, { key: KEY, seed, look, shapes: SHAPES });
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
+    // Production Hall thumbnails are intentionally lazy. Visit all three rooms
+    // once so this exhaustive visual audit inspects real rendered pixels rather
+    // than forcing hidden rooms back onto the startup critical path.
+    for (let room = 1; room <= 3; room += 1) {
+      await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(room));
+      await expect.poll(() => page.locator('.sandbox-library-card:visible canvas[data-library-rendered="true"]').count()).toBe(2);
+      if (room < 3) await page.locator('[data-library-hall-next]').click();
+    }
+    await page.locator('[data-library-hall-prev]').click();
+    await page.locator('[data-library-hall-prev]').click();
+    await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', '1');
     const saved = await page.evaluate((key) => localStorage.getItem(key), KEY);
     const hashes = new Set<string>();
     for (const shape of SHAPES) {
