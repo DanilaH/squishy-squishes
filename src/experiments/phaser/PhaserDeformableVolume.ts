@@ -20,6 +20,14 @@ const PAGES_CAP_LIGHTING = `
 export const getPagesVolumeFrontShader = (): string => createFragmentShaderSource({
   edgeDarkening: 0.17,
   finalBodyLighting: PAGES_CAP_LIGHTING,
+  extraUniforms: `
+uniform sampler2D uFaceTexture;
+uniform bool uFaceEnabled;`,
+  finalComposite: `
+  if (uFaceEnabled) {
+    vec4 face = texture(uFaceTexture, vUv);
+    base = mix(base, face.rgb, clamp(face.a, 0.0, 1.0));
+  }`,
 });
 
 const SIDE_FRAGMENT = `#version 300 es
