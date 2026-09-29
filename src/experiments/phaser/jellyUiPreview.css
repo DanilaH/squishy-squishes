@@ -108,7 +108,8 @@
 }
 #app[data-jelly-ui-ready] .sandbox-shell[data-stage="shape"] .sandbox-shape[aria-pressed="true"],
 #app[data-jelly-ui-ready] .sandbox-shell[data-stage="finish"] .sandbox-material[aria-pressed="true"],
-#app[data-jelly-ui-ready] .sandbox-panel button[aria-pressed="true"]:not(.sandbox-swatch) {
+#app[data-jelly-ui-ready] .sandbox-panel button[aria-pressed="true"]:not(.sandbox-swatch),
+#app[data-jelly-ui-ready] .sandbox-panel button[aria-selected="true"] {
   border-color: #b66b20;
   outline: 2px solid #a85d17;
   outline-offset: 1px;
