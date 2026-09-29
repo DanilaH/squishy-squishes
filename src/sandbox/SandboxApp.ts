@@ -1499,11 +1499,15 @@ export class SandboxApp {
 
   private uploadAppearanceNow(): void {
     const appearance = this.draft.appearance;
+    const hasLiveStroke = this.authoredPoints.length > 0;
     const hasMaterialDecor = this.options.rendererBackend === 'phaser'
       ? this.draft.decor.stickers.length > 0
       : hasSurfaceDecor(this.draft.decor);
-    if (appearance.strokes.length === 0 && appearance.mixins.length === 0 && !hasMaterialDecor) this.renderer.setAppearanceTexture(null);
-    else this.renderer.setAppearanceTexture(this.appearanceCanvas);
+    if (!hasLiveStroke && appearance.strokes.length === 0 && appearance.mixins.length === 0 && !hasMaterialDecor) {
+      this.renderer.setAppearanceTexture(null);
+    } else {
+      this.renderer.setAppearanceTexture(this.appearanceCanvas);
+    }
   }
 
   private uploadFaceNow(): void {
