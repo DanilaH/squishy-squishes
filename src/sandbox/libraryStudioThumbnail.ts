@@ -56,7 +56,7 @@ class StudioThumbnailRenderer {
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
         const reason = gl.getShaderInfoLog(shader) ?? 'unknown error';
         gl.deleteShader(shader);
-        throw new Error(\`Library Studio shader: \${reason}\`);
+        throw new Error(`Library Studio shader: ${reason}`);
       }
       return shader;
     };
@@ -79,13 +79,13 @@ class StudioThumbnailRenderer {
       gl.linkProgram(program);
       if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
         const reason = gl.getProgramInfoLog(program) ?? 'unknown error';
-        throw new Error(\`Library Studio shader link: \${reason}\`);
+        throw new Error(`Library Studio shader link: ${reason}`);
       }
 
       const uniforms = new Map<Uniform, WebGLUniformLocation>();
       for (const name of UNIFORMS) {
         const location = gl.getUniformLocation(program, name);
-        if (location === null) throw new Error(\`Missing Studio uniform \${name}\`);
+        if (location === null) throw new Error(`Missing Studio uniform ${name}`);
         uniforms.set(name, location);
       }
 
