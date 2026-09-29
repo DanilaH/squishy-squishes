@@ -816,6 +816,15 @@ export class SandboxApp {
   };
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    if (this.activityBlocked || this.saving) {
+      const dialog = this.exitConfirmOpen
+        ? this.root.querySelector<HTMLElement>('[data-exit-overlay] [role="dialog"]')
+        : null;
+      if (event.key === 'Escape' && dialog) event.preventDefault();
+      else if (dialog) trapModalTab(event, dialog);
+      return;
+    }
+
     if (this.exitConfirmOpen) {
       const dialog = this.root.querySelector<HTMLElement>('[data-exit-overlay] [role="dialog"]');
       if (event.key === 'Escape') {
