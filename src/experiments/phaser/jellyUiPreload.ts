@@ -44,7 +44,15 @@ const preload = (urls: readonly string[], scope: 'library' | 'maker'): Promise<b
 
 /** First-frame Library chrome only. */
 export const preloadJellyUi = (): Promise<boolean> => {
-  libraryPreload ??= preload(libraryUrls, 'library');
+  if (!libraryPreload) {
+    libraryPreload = preload(libraryUrls, 'library').then((ready) => {
+      // Keep the CSS/native fallback immediately usable, but do not poison the
+      // session after one transient image failure; a later retry may restore
+      // the authored Library chrome in-place.
+      if (!ready) libraryPreload = null;
+      return ready;
+    });
+  }
   return libraryPreload;
 };
 
