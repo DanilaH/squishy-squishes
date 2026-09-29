@@ -122,3 +122,28 @@ test('dirty craft exit confirms, and appearance limit stays explicit without blo
   await page.locator('[data-action="exit-confirm"]').click();
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
 });
+
+test('a transient Library jelly-art failure recovers in-place without delaying play', async ({ page }) => {
+  let requests = 0;
+  await page.route('**/*honey-wide*.webp', async (route) => {
+    requests += 1;
+    if (requests === 1) {
+      await route.abort('connectionfailed');
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto('/phaser/');
+  const library = page.locator('[data-sandbox-library]');
+  await expect(library).toBeVisible();
+  await expect(page.locator('[data-library-new]').first()).toBeEnabled();
+
+  await expect.poll(async () => page.locator('#app').getAttribute('data-jelly-ui-ready'), {
+    timeout: 4_000,
+    message: 'authored Library chrome should recover after one transient asset failure',
+  }).toBe('');
+  expect(requests).toBeGreaterThanOrEqual(2);
+  await expect(page.locator('[data-library-new]').first()).toHaveCSS('background-image', /honey-wide.*webp/);
+});
+
