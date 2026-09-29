@@ -40,6 +40,5 @@ export const installReviewVisualProfile = (root: HTMLElement): (() => void) => {
     unregisterPagesDecorArt();
     unregisterPagesLibraryMaterialRenderer();
     disablePagesLibraryMaterialLighting();
-    releasePagesVolumeThumbnail();
   };
 };
