@@ -442,6 +442,7 @@ export class SandboxLibraryApp {
     if (this.disposed) return;
     const startToken = ++this.makerStartToken;
     const currentShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
+    const origin: 'library' | 'ideas' = currentShell?.hasAttribute('data-sandbox-ideas') ? 'ideas' : 'library';
     currentShell?.setAttribute('aria-busy', 'true');
     const loadingMessage = currentShell?.querySelector<HTMLElement>('[data-library-maker-error]');
     if (loadingMessage) {
@@ -475,8 +476,17 @@ export class SandboxLibraryApp {
     } catch (error: unknown) {
       if (startToken !== this.makerStartToken) return;
       console.error('[squishy:maker-renderer-load]', error);
-      currentShell?.removeAttribute('aria-busy');
-      const message = currentShell?.querySelector<HTMLElement>('[data-library-maker-error]');
+
+      // Loader failures leave the origin shell in place; constructor/renderer
+      // failures can happen after it was replaced with the maker host. Restore
+      // the exact originating screen before surfacing the retryable error.
+      if (!currentShell?.isConnected) {
+        if (origin === 'ideas') this.renderIdeas();
+        else this.renderLibrary();
+      }
+      const recoveryShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
+      recoveryShell?.removeAttribute('aria-busy');
+      const message = recoveryShell?.querySelector<HTMLElement>('[data-library-maker-error]');
       if (message) {
         message.textContent = this.copy.studioUnavailable;
         message.hidden = false;
