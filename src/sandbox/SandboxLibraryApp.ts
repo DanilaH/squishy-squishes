@@ -241,6 +241,7 @@ export class SandboxLibraryApp {
   public dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.cancelPendingMakerStart();
     this.pendingReplacement?.resolve(null);
     this.pendingReplacement = null;
     this.currentMaker?.dispose();
