@@ -41,6 +41,7 @@ export const bootstrapSquishyApp = async (
   options: SquishyBootstrapOptions = {},
 ): Promise<SquishyAppHandle> => {
   const runtime = await (options.createRuntime ?? createSquishyPlatformRuntime)();
+  document.documentElement.lang = runtime.language === 'ru' ? 'ru' : 'en';
   markStartup('platformReady');
   document.body.dataset.releasePlatform = runtime.kind;
   document.body.dataset.releaseBuild = import.meta.env.PROD ? 'production' : 'development';
