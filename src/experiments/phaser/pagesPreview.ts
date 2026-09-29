@@ -46,21 +46,20 @@ document.documentElement.lang = normalizeLanguage(navigator.language);
 const makerRenderer = createReviewMakerRendererLoader('pages');
 
 /** Phaser's renderer needs WebGL2; probe once per page instead of allocating a throwaway context on every maker entry. */
-let phaserSupport: boolean | null = null;
+let phaserSupportConfirmed = false;
 const canStartPhaser = (): boolean => {
-  if (phaserSupport !== null) return phaserSupport;
+  if (phaserSupportConfirmed) return true;
   const probe = document.createElement('canvas');
   try {
     const gl = probe.getContext('webgl2');
-    if (!gl) {
-      phaserSupport = false;
-      return false;
-    }
+    if (!gl) return false;
     gl.getExtension('WEBGL_lose_context')?.loseContext();
-    phaserSupport = true;
+    // Success is stable enough to memoize. A null/throw may be transient
+    // (temporary context pressure), so failure remains retryable on the next
+    // explicit maker attempt instead of poisoning the whole session.
+    phaserSupportConfirmed = true;
     return true;
   } catch {
-    phaserSupport = false;
     return false;
   }
 };
