@@ -9,6 +9,7 @@ import {
   type SquishyIdea,
 } from './ideas';
 import { renderLibraryThumbnail, releasePagesLibraryMaterialLighting } from './libraryThumbnail';
+import { captureModalReturnFocus, focusModal, restoreModalFocus, trapModalTab } from './modalFocus';
 import { getSquishyTitle } from './titles';
 import type { SandboxDraft, SavedSquishy } from './types';
 
@@ -205,6 +206,7 @@ export class SandboxLibraryApp {
   private currentMaker: SandboxApp | null = null;
   private pendingReplacement: PendingReplacement | null = null;
   private pendingDeleteId: string | null = null;
+  private modalReturnFocus: HTMLElement | null = null;
   private activityBlocked = false;
   private disposed = false;
 
@@ -218,6 +220,7 @@ export class SandboxLibraryApp {
     this.libraryCapacity = options.libraryCapacity;
     this.muted = options.muted;
     this.root.addEventListener('click', this.handleClick, { signal: this.abortController.signal });
+    this.root.addEventListener('keydown', this.handleKeyDown, { signal: this.abortController.signal });
     this.renderLibrary();
   }
 
@@ -459,7 +462,7 @@ export class SandboxLibraryApp {
         <button class="sandbox-library-modal__cancel" type="button" data-library-replace-cancel>${this.copy.cancel}</button>
       </div>
     `;
-    this.root.append(overlay);
+    this.openModal(overlay);
     this.renderVisibleThumbnails(overlay);
   }
 
@@ -480,9 +483,25 @@ export class SandboxLibraryApp {
         </div>
       </div>
     `;
-    this.root.append(overlay);
+    this.openModal(overlay);
     this.renderVisibleThumbnails(overlay);
   }
+
+  private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    const replace = this.root.querySelector<HTMLElement>('[data-library-replace-overlay]');
+    const deleteOverlay = this.root.querySelector<HTMLElement>('[data-library-delete-overlay]');
+    const overlay = replace ?? deleteOverlay;
+    const dialog = overlay?.querySelector<HTMLElement>('[role="dialog"]') ?? null;
+    if (!overlay || !dialog) return;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (replace) this.cancelReplacement();
+      else this.cancelDelete();
+      return;
+    }
+    trapModalTab(event, dialog);
+  };
 
   private readonly handleClick = (event: MouseEvent): void => {
     if (this.disposed || this.activityBlocked) return;
@@ -563,7 +582,7 @@ export class SandboxLibraryApp {
       this.library = [...result.library];
       this.completedRecipeIds = [...result.completedRecipeIds];
       this.pendingReplacement = null;
-      overlay?.remove();
+      this.closeModal(false);
       if (pending.ideaId) this.renderIdeaCompletion(pending.ideaId, previousCompleted);
       pending.resolve(result.savedSquishy);
     } catch (error: unknown) {
@@ -578,7 +597,7 @@ export class SandboxLibraryApp {
     const pending = this.pendingReplacement;
     if (!pending) return;
     this.pendingReplacement = null;
-    this.root.querySelector('[data-library-replace-overlay]')?.remove();
+    this.closeModal(true);
     pending.resolve(null);
   }
 
@@ -590,6 +609,7 @@ export class SandboxLibraryApp {
     try {
       this.library = [...await this.options.onDeleteSquishy(targetId)];
       this.pendingDeleteId = null;
+      this.closeModal(false);
       this.renderLibrary();
     } catch (error: unknown) {
       console.error('[squishy:library-delete]', error);
@@ -601,7 +621,22 @@ export class SandboxLibraryApp {
 
   private cancelDelete(): void {
     this.pendingDeleteId = null;
-    this.root.querySelector('[data-library-delete-overlay]')?.remove();
+    this.closeModal(true);
+  }
+
+  private openModal(overlay: HTMLElement): void {
+    this.closeModal(false);
+    this.modalReturnFocus = captureModalReturnFocus();
+    this.root.append(overlay);
+    const dialog = overlay.querySelector<HTMLElement>('[role="dialog"]');
+    if (dialog) focusModal(dialog);
+  }
+
+  private closeModal(restore: boolean): void {
+    this.root.querySelector('[data-library-replace-overlay], [data-library-delete-overlay]')?.remove();
+    const returnFocus = this.modalReturnFocus;
+    this.modalReturnFocus = null;
+    if (restore) restoreModalFocus(returnFocus);
   }
 
   private async unlockShelfExpansion(): Promise<void> {
