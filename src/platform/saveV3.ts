@@ -232,7 +232,18 @@ export const loadSaveV3WithMigration = async (
       if (await hasLegacySave(storage, onError)) {
         return migrateLegacySave(storage, repository, onError);
       }
-      return createDefaultSaveV3();
+
+      const fallback = createDefaultSaveV3();
+      try {
+        // The original bytes are already quarantined above. Repair the primary
+        // key immediately so a read-only session does not re-enter the same
+        // corruption path on every launch.
+        await repository.write(fallback);
+        await repository.flush();
+      } catch (repairError: unknown) {
+        onError(repairError);
+      }
+      return fallback;
     }
   }
 
