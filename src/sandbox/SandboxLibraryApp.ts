@@ -69,6 +69,7 @@ interface LibraryCopy {
   readonly rewardAction: string;
   readonly rewardExpanded: string;
   readonly rewardUnavailable: string;
+  readonly studioLoading: string;
   readonly studioUnavailable: string;
 }
 
@@ -106,6 +107,7 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     rewardAction: 'WATCH AD · +2 SLOTS',
     rewardExpanded: 'Shelf expanded · 10 slots',
     rewardUnavailable: 'No shelf change. Try again when you want.',
+    studioLoading: 'Opening the studio…',
     studioUnavailable: 'The studio could not start. Try again or use another browser.',
   },
   ru: {
@@ -140,6 +142,7 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     rewardAction: 'РЕКЛАМА · +2 МЕСТА',
     rewardExpanded: 'Полка расширена · 10 мест',
     rewardUnavailable: 'Полка не изменилась. Можно попробовать позже.',
+    studioLoading: 'Открываем студию…',
     studioUnavailable: 'Не удалось открыть студию. Попробуй ещё раз или открой игру в другом браузере.',
   },
 };
@@ -440,6 +443,12 @@ export class SandboxLibraryApp {
     const startToken = ++this.makerStartToken;
     const currentShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
     currentShell?.setAttribute('aria-busy', 'true');
+    const loadingMessage = currentShell?.querySelector<HTMLElement>('[data-library-maker-error]');
+    if (loadingMessage) {
+      loadingMessage.textContent = this.copy.studioLoading;
+      loadingMessage.hidden = false;
+      loadingMessage.classList.remove('is-error');
+    }
     try {
       const makerRendererOptions = await this.resolveMakerRendererOptions();
       if (this.disposed || startToken !== this.makerStartToken || !currentShell?.isConnected) return;
@@ -471,6 +480,7 @@ export class SandboxLibraryApp {
       if (message) {
         message.textContent = this.copy.studioUnavailable;
         message.hidden = false;
+        message.classList.add('is-error');
       }
     } finally {
     }
