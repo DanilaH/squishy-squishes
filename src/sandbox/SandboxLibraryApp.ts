@@ -305,7 +305,7 @@ export class SandboxLibraryApp {
             </section>
           ` : ''}
           ${this.rewardMessage ? `<p class="sandbox-library-reward-message" data-library-reward-message aria-live="polite">${this.rewardMessage}</p>` : ''}
-          <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite"></p>
+          <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>
         `}
       </main>
     `;
@@ -464,7 +464,10 @@ export class SandboxLibraryApp {
       console.error('[squishy:maker-renderer-load]', error);
       currentShell?.removeAttribute('aria-busy');
       const message = currentShell?.querySelector<HTMLElement>('[data-library-maker-error]');
-      if (message) message.textContent = this.copy.studioUnavailable;
+      if (message) {
+        message.textContent = this.copy.studioUnavailable;
+        message.hidden = false;
+      }
     } finally {
       this.makerStarting = false;
     }
