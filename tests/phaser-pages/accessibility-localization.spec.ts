@@ -169,3 +169,23 @@ test('maker dialog stays modal and immutable while platform activity is blocked'
   await expect(overlay).toBeHidden();
 });
 
+test.describe('reduced motion', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('CSS motion collapses without disabling the interactive UI', async ({ page }) => {
+    await page.goto(PAGES_URL);
+    await expect(page.locator('[data-sandbox-library]')).toBeVisible();
+    const motion = await page.locator('[data-library-new]').first().evaluate((button) => ({
+      reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
+      transition: getComputedStyle(button).transitionDuration,
+      animation: getComputedStyle(button).animationDuration,
+    }));
+    expect(motion.reduced).toBe(true);
+    expect(motion.transition).toMatch(/^0(?:\.0+)?0*1m?s$|^0\.001s$/);
+    expect(motion.animation).toMatch(/^0(?:\.0+)?0*1m?s$|^0\.001s$/);
+
+    await page.locator('[data-library-new]').first().click();
+    await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+  });
+});
+
