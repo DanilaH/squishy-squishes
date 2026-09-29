@@ -15,6 +15,7 @@ import './jellyUiPreview.css';
 import './jellyTypographyPreview.css';
 import { preloadJellyUi, preloadMakerJellyUi } from './jellyUiPreload';
 import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
+import { preloadReviewVisualProfile } from './reviewVisualProfile';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
 import { getGameCopy, normalizeLanguage } from '../../i18n';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../../platform/runtime';
@@ -101,7 +102,10 @@ const canStartPhaser = (): boolean => {
 
 // Session-reachable UI images decode before the first playable Library frame.
 root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
-void preloadJellyUi().then((ready) => {
+void Promise.all([preloadJellyUi(), preloadReviewVisualProfile().then(() => true).catch((error: unknown) => {
+  console.warn('[squishy:pages] Hall preload failed; the fallback Library can still start.', error);
+  return false;
+})]).then(([ready]) => {
   if (ready) root.dataset.jellyUiReady = '';
   return bootstrapSquishyApp(root, {
     createRuntime: createPagesRuntime,
