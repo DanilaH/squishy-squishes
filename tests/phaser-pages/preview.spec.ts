@@ -199,7 +199,7 @@ test('renderer init failure restores the originating Library with a retryable er
   await expect(library).not.toHaveAttribute('aria-busy', 'true');
 });
 
-test('stalled optional Studio art cannot block the maker renderer', async ({ page }) => {
+test('stalled Studio art keeps maker hidden until the full environment is ready', async ({ page }) => {
   let releaseDecor!: () => void;
   let markDecorSeen!: () => void;
   const decorGate = new Promise<void>((resolve) => { releaseDecor = resolve; });
@@ -212,13 +212,16 @@ test('stalled optional Studio art cannot block the maker renderer', async ({ pag
   });
 
   await openPreview(page);
+  const library = page.locator('[data-sandbox-library]');
   await page.locator('[data-library-new]').first().click();
   await decorSeen;
 
-  const canvas = page.locator('[data-sandbox-canvas]');
-  await expect(canvas).toHaveAttribute('data-phaser-ready', 'true', { timeout: 5_000 });
+  await expect(page.locator('[data-sandbox-canvas]')).toHaveCount(0);
+  await expect(library).toBeVisible();
 
   releaseDecor();
+  const canvas = page.locator('[data-sandbox-canvas]');
+  await expect(canvas).toHaveAttribute('data-phaser-ready', 'true', { timeout: 5_000 });
   await expect(page.locator('[data-sandbox-app]')).toHaveClass(/studio-env-active/, { timeout: 5_000 });
 });
 
