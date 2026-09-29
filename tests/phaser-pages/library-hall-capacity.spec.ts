@@ -40,10 +40,14 @@ test('eight persisted toys page repeatedly without duplicate rooms, leaks or ina
     }, SAVE_KEY);
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
+    await expect.poll(() => page.locator('.sandbox-library-card:visible canvas[data-library-rendered="true"]').count()).toBe(2);
+    const initialRendered = await page.locator('canvas[data-library-rendered="true"]').count();
+    expect(initialRendered, 'Hall must not eagerly raster all hidden rooms').toBeLessThan(8);
     for (let cycle = 0; cycle < 5; cycle += 1) {
       for (let room = 1; room <= 4; room += 1) {
         await expect(page.locator('[data-library-hall-page]')).toHaveText(`${room} / 4`);
         await expect(page.locator('.sandbox-library-card:visible')).toHaveCount(2);
+        await expect.poll(() => page.locator('.sandbox-library-card:visible canvas[data-library-rendered="true"]').count()).toBe(2);
         await expect(page.locator('.library-hall-vacant')).toHaveCount(0);
         await expect(page.locator('.library-hall-scene')).toHaveCount(1);
         await expect(page.locator('.library-hall-nav')).toHaveCount(1);
