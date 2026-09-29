@@ -14,6 +14,8 @@ on:
       - 'src/experiments/phaser/PhaserDeformableVolume.ts'
       - 'src/experiments/phaser/PhaserSquishCandidate.ts'
       - 'src/experiments/phaser/pagesPreview.ts'
+      - 'src/squish/shaders.ts'
+      - 'src/experiments/phaser/reviewVisualProfile.ts'
       - 'src/experiments/phaser/studioEnvironmentPreview.ts'
       - 'src/experiments/phaser/studioEnvironmentPreview.css'
       - 'src/sandbox/PhaserSquishSurface.ts'
