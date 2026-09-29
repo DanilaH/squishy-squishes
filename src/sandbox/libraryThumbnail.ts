@@ -14,6 +14,7 @@ const SHAPE_PADDING = 30;
 // retain their existing pixels and the same saved V3 document representation.
 let pagesMaterialLighting = false;
 export const enablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = true; };
+export const disablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = false; };
 type PagesRenderer = (context: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512) => boolean;
 let pagesRenderer: PagesRenderer | null = null;
 let pagesRelease: (() => void) | null = null;
@@ -22,6 +23,11 @@ export const registerPagesLibraryMaterialRenderer = (render: PagesRenderer, rele
   pagesRelease = release;
 };
 export const releasePagesLibraryMaterialLighting = (): void => { pagesRelease?.(); };
+export const unregisterPagesLibraryMaterialRenderer = (): void => {
+  pagesRelease?.();
+  pagesRenderer = null;
+  pagesRelease = null;
+};
 
 const buildShapePath = (
   context: CanvasRenderingContext2D,
