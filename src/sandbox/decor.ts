@@ -58,7 +58,7 @@ type PagesDecorArt = {
   accessory: (context: CanvasRenderingContext2D, accessory: AccessoryId, width: number, height: number, shapeId?: ShapeId) => void;
 };
 let pagesDecorArt: PagesDecorArt | null = null;
-/** Only the /phaser/ entrypoint opts into the new authored transparent art. */
+/** Only the owner-reviewed Phaser profile opts into the authored transparent art. */
 export const registerPagesDecorArt = (renderer: PagesDecorArt): void => { pagesDecorArt = renderer; };
 export const unregisterPagesDecorArt = (): void => { pagesDecorArt = null; };
 
