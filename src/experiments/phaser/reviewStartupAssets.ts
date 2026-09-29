@@ -3,10 +3,6 @@ import { preloadReviewVisualProfile } from './reviewVisualProfile';
 
 const STARTUP_ART_BUDGET_MS = 1800;
 
-const delay = (ms: number): Promise<void> => new Promise((resolve) => {
-  globalThis.setTimeout(resolve, ms);
-});
-
 /**
  * Give first-screen authored art a bounded head start without letting an
  * optional image stall the playable Library indefinitely. Late successful
@@ -23,8 +19,19 @@ export const prepareReviewFirstPaint = async (
     console.warn(`[squishy:${scope}] Hall preload failed; the fallback Library can still start.`, error);
   });
 
-  await Promise.race([
-    Promise.all([jelly, hall]).then(() => undefined),
-    delay(STARTUP_ART_BUDGET_MS),
-  ]);
+  let budgetTimer = 0;
+  const budget = new Promise<void>((resolve) => {
+    budgetTimer = globalThis.setTimeout(() => {
+      budgetTimer = 0;
+      resolve();
+    }, STARTUP_ART_BUDGET_MS);
+  });
+  try {
+    await Promise.race([
+      Promise.all([jelly, hall]).then(() => undefined),
+      budget,
+    ]);
+  } finally {
+    if (budgetTimer) globalThis.clearTimeout(budgetTimer);
+  }
 };
