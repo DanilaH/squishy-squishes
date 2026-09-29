@@ -10,8 +10,8 @@ import type { SavedSquishy } from './types';
 const THUMBNAIL_SIZE = 256;
 const SHAPE_PADDING = 30;
 
-// Opt-in only for the owner-reviewed Phaser profile (Pages + isolated
-// Yandex DRAFT). Ordinary production keeps its existing pixels and V3 format.
+// Enabled by the owner-reviewed profile shared by production, Pages review
+// and the isolated Yandex DRAFT. Explicit non-profile callers keep the legacy fallback.
 let pagesMaterialLighting = false;
 export const enablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = true; };
 export const disablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = false; };
@@ -239,9 +239,8 @@ export const renderLibraryThumbnail = (
   toy: SavedSquishy,
   outputSize: 256 | 512 = pagesMaterialLighting ? 512 : 256,
 ): void => {
-  // Only the isolated Pages Hall opts into 2x backing resolution. A 256px
-  // override keeps the benchmark control real, while Yandex stays byte-for-byte
-  // on its original 256px rendering path.
+  // The accepted Hall profile uses a 2x backing resolution. A 256px override
+  // remains available for explicit benchmark/fallback callers.
   const rasterScale = pagesMaterialLighting && outputSize === 512 ? 2 : 1;
   canvas.width = THUMBNAIL_SIZE * rasterScale;
   canvas.height = THUMBNAIL_SIZE * rasterScale;
@@ -269,7 +268,7 @@ export const renderLibraryThumbnail = (
       drawAccessoryGraphic(accessoryContext, toy.decor.accessory, 180, 120, toy.shapeId);
       const drawWidth = 112;
       const drawHeight = 75;
-      // Seat the Pages-only crown above the inflated paw, not behind its tips.
+      // Seat the owner-profile crown above the inflated paw, not behind its tips.
       const crownLift = pagesMaterialLighting && outputSize === 512 && toy.shapeId === 'paw' && toy.decor.accessory === 'crown' ? 7 : 0;
       context.drawImage(accessoryCanvas, anchorX - drawWidth * 0.5, anchorY - drawHeight * 0.9 - crownLift, drawWidth, drawHeight);
     }
@@ -286,7 +285,7 @@ export const renderLibraryThumbnail = (
 
   context.save();
   // The legacy purple drop shadow made a conspicuous violet halo around
-  // Pages chrome/pearl. Retain its pixels ONLY in the ordinary/Yandex path.
+  // chrome/pearl. Retain it only in the explicit non-profile fallback.
   context.shadowColor = pagesMaterialLighting ? 'rgba(82, 63, 42, 0.13)' : 'rgba(69, 47, 89, 0.18)';
   context.shadowBlur = pagesMaterialLighting ? 12 : 18;
   context.shadowOffsetY = pagesMaterialLighting ? 7 : 10;
@@ -328,8 +327,8 @@ export const renderLibraryThumbnail = (
   context.save();
   buildShapePath(context, toy, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   context.lineWidth = 4;
-  // Keep the ordinary/Yandex thumbnails untouched; Pages uses the real milk
-  // palette rim rather than a legacy aqua jelly or violet pearlescent halo.
+  // The accepted profile uses the real milk palette rim rather than the legacy
+  // aqua Jelly / violet pearlescent fallback halo.
   const milkRim = getPalette('milk').rim.map((channel) => Math.round(channel * 255)).join(',');
   context.strokeStyle = pagesMaterialLighting
     ? toy.materialId === 'chrome' ? 'rgba(66,60,53,0.40)' : `rgba(${milkRim},0.29)`

@@ -1,6 +1,5 @@
-// Both visual environments are removable Phaser review layers.
-// Main production remains unchanged; Pages and the isolated Yandex DRAFT share
-// this owner-reviewed profile so visual acceptance can exercise one renderer.
+// Pages keeps the same owner-reviewed profile now used by production and the
+// isolated Yandex DRAFT, while retaining review-only probes and storage isolation.
 import './pagesPreview';
 import { installReviewVisualProfile } from './reviewVisualProfile';
 

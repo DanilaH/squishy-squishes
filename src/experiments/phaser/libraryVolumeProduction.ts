@@ -4,8 +4,8 @@ import { renderNeutralVolumeAlbedo } from './libraryVolumeAlbedo';
 import { releaseVolumeMesh, renderVolumeMesh } from './libraryVolumeMesh';
 
 /** Owner-reviewed Hall: static 512px mesh snapshots, one reusable offscreen WebGL2
- * context, no per-card context or animation. Review Pages and isolated Yandex
- * DRAFT share this renderer. The preexisting thumbnail draws the accessory
+ * context, no per-card context or animation. Production, review Pages and the
+ * isolated Yandex DRAFT share this renderer. The preexisting thumbnail draws the accessory
  * BEHIND the body; omit it here to prevent a duplicate bow/ears. */
 export const renderPagesVolumeThumbnail = (
   destination: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512,

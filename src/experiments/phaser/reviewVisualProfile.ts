@@ -21,8 +21,8 @@ export const preloadReviewVisualProfile = (): Promise<void> => preloadLibraryHal
 
 /**
  * Registers the owner-reviewed Hall/Studio appearance before the first Library
- * paint and mounts its passive room layers. It is shared by Pages and the
- * isolated Yandex DRAFT so both exercise the same reviewed renderer profile.
+ * paint and mounts its passive room layers. Production web/Yandex, Pages
+ * review and the isolated Yandex DRAFT now exercise this same accepted profile.
  */
 export const installReviewVisualProfile = (root: HTMLElement): (() => void) => {
   enablePagesLibraryMaterialLighting();
