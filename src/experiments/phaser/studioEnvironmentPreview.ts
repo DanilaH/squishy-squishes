@@ -192,7 +192,11 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     if (disposed || prepareStarted || !root.querySelector('.sandbox-shell')) return;
     prepareStarted = true;
     void preloadStudioEnvironmentAssets().then((texture) => {
-      if (disposed || !texture) return;
+      if (disposed) return;
+      if (!texture) {
+        prepareStarted = false;
+        return;
+      }
       deskTexture = texture;
       decoded = true;
       root.dataset.studioEnvReady = '';
