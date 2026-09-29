@@ -65,6 +65,7 @@ const loadMakerRendererOptions = (): Promise<MakerRendererOptions> => {
 
 const warmMakerRendererAfterFirstPaint = (): void => {
   const warm = (): void => {
+    if (!canStartPhaser()) return;
     void loadMakerRendererOptions().catch((error: unknown) => {
       console.warn('[squishy:pages] Idle Phaser warmup failed; maker entry will retry.', error);
     });
