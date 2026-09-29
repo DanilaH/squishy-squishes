@@ -69,6 +69,16 @@ test('corrupt V3 without a legacy source falls back safely without discarding re
 
   expect(state).toEqual(createDefaultSaveV3());
   expect(values.get(SAVE_V3_RECOVERY_STORAGE_KEY)).toBe(corrupt);
-  expect(values.get(SAVE_V3_STORAGE_KEY)).toBe(corrupt);
+  expect(JSON.parse(values.get(SAVE_V3_STORAGE_KEY) ?? 'null')).toEqual(createDefaultSaveV3());
   expect(errors).toHaveLength(1);
+
+  const secondErrors: unknown[] = [];
+  const second = await loadSaveV3WithMigration(
+    storage,
+    createSaveV3Repository(storage),
+    (error) => secondErrors.push(error),
+  );
+  expect(second).toEqual(createDefaultSaveV3());
+  expect(secondErrors).toEqual([]);
+  expect(values.get(SAVE_V3_RECOVERY_STORAGE_KEY)).toBe(corrupt);
 });
