@@ -108,3 +108,21 @@ test('failed idle Phaser warmup can retry on real maker entry', async ({ page })
   await expect(page.locator('[data-library-maker-error]')).toHaveCount(0);
 });
 
+test('failed first Hall art request falls back to Library and retries in-place', async ({ page }) => {
+  let pedestalRequests = 0;
+  await page.route(/pedestal-.*\.webp$/, async (route) => {
+    pedestalRequests += 1;
+    if (pedestalRequests === 1) {
+      await route.abort('connectionfailed');
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto('/phaser/');
+  const library = page.locator('[data-sandbox-library]');
+  await expect(library).toBeVisible();
+  await expect(library).toHaveClass(/is-library-hall/, { timeout: 6_000 });
+  expect(pedestalRequests).toBeGreaterThanOrEqual(2);
+});
+
