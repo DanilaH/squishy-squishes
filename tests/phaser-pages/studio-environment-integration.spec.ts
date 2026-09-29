@@ -112,10 +112,11 @@ for (const view of views) {
     try {
       await page.goto('/phaser/');
       await expect(page.locator('#app')).toHaveAttribute('data-jelly-ui-ready', '');
-      await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '');
+      await expect(page.locator('#app')).not.toHaveAttribute('data-studio-env-ready', '');
       await page.locator('[data-library-new]').first().click();
       const shell = page.locator('[data-sandbox-app]');
       await expect(shell).toHaveAttribute('data-stage', 'shape');
+      await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '', { timeout: 8_000 });
       await expect(shell).toHaveClass(/studio-env-active/);
       await expect(shell.locator('[data-studio-desk]')).toHaveAttribute('data-studio-desk', '');
       await check(page, `${view.name}/shape`);
