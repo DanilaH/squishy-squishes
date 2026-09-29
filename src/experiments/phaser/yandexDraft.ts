@@ -46,16 +46,28 @@ if (!root) throw new Error('Missing #app root.');
 type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
 let makerRendererPromise: Promise<MakerRendererOptions> | null = null;
 const loadMakerRendererOptions = (): Promise<MakerRendererOptions> => {
-  makerRendererPromise ??= import('../../sandbox/PhaserSquishSurface').then<MakerRendererOptions>(({ PhaserSquishSurface }) => ({
-    rendererBackend: 'phaser',
-    makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
-      new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
-  }));
+  if (!makerRendererPromise) {
+    makerRendererPromise = import('../../sandbox/PhaserSquishSurface')
+      .then<MakerRendererOptions>(({ PhaserSquishSurface }) => ({
+        rendererBackend: 'phaser',
+        makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
+          new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
+      }))
+      .catch((error: unknown) => {
+        // A transient chunk/network failure must not poison all future maker opens.
+        makerRendererPromise = null;
+        throw error;
+      });
+  }
   return makerRendererPromise;
 };
 
 const warmMakerRendererAfterFirstPaint = (): void => {
-  const warm = (): void => { void loadMakerRendererOptions(); };
+  const warm = (): void => {
+    void loadMakerRendererOptions().catch((error: unknown) => {
+      console.warn('[squishy:draft] Idle Phaser warmup failed; maker entry will retry.', error);
+    });
+  };
   const requestIdle = (window as Window & { requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number }).requestIdleCallback;
   if (typeof requestIdle === 'function') requestIdle(warm, { timeout: 1800 });
   else globalThis.setTimeout(warm, 900);
