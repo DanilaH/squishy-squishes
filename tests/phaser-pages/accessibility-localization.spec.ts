@@ -141,3 +141,31 @@ test('Library delete dialog traps focus, Escape restores the delete button', asy
   await expect(trigger).toBeFocused();
   await expect(page.locator('[data-library-toy="a11y-toy"]')).toBeVisible();
 });
+
+test('maker dialog stays modal and immutable while platform activity is blocked', async ({ page }) => {
+  await page.goto(PAGES_URL);
+  await page.locator('[data-library-new]').first().click();
+  await page.locator('button[data-shape="heart"]').click();
+  await page.locator('[data-action="exit-craft"]').click();
+
+  const shell = page.locator('[data-sandbox-app]');
+  const overlay = page.locator('[data-exit-overlay]');
+  const stay = page.locator('[data-action="exit-cancel"]');
+  const leave = page.locator('[data-action="exit-confirm"]');
+  await expect(overlay).toBeVisible();
+  await expect(stay).toBeFocused();
+
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })));
+  await expect(shell).toHaveAttribute('aria-busy', 'true');
+
+  await page.keyboard.press('Escape');
+  await expect(overlay).toBeVisible();
+  await page.keyboard.press('Shift+Tab');
+  await expect(leave).toBeFocused();
+
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
+  await expect(shell).toHaveAttribute('aria-busy', 'false');
+  await page.keyboard.press('Escape');
+  await expect(overlay).toBeHidden();
+});
+
