@@ -580,6 +580,12 @@ export class SandboxLibraryApp {
     const dialog = overlay?.querySelector<HTMLElement>('[role="dialog"]') ?? null;
     if (!overlay || !dialog) return;
 
+    if (overlay.getAttribute('aria-busy') === 'true') {
+      if (event.key === 'Escape') event.preventDefault();
+      else trapModalTab(event, dialog);
+      return;
+    }
+
     if (event.key === 'Escape') {
       event.preventDefault();
       if (replace) this.cancelReplacement();
@@ -663,7 +669,8 @@ export class SandboxLibraryApp {
     const pending = this.pendingReplacement;
     if (!pending) return;
     const overlay = this.root.querySelector<HTMLElement>('[data-library-replace-overlay]');
-    overlay?.setAttribute('aria-busy', 'true');
+    if (!overlay || overlay.getAttribute('aria-busy') === 'true') return;
+    this.setModalBusy(overlay, true);
     try {
       const previousCompleted = this.completedRecipeIds;
       const result = await this.options.onReplaceSquishy(targetId, pending.draft, pending.ideaId);
@@ -675,8 +682,8 @@ export class SandboxLibraryApp {
       pending.resolve(result.savedSquishy);
     } catch (error: unknown) {
       console.error('[squishy:library-replace]', error);
-      overlay?.removeAttribute('aria-busy');
-      const message = overlay?.querySelector<HTMLElement>('[data-library-modal-error]');
+      this.setModalBusy(overlay, false);
+      const message = overlay.querySelector<HTMLElement>('[data-library-modal-error]');
       if (message) message.textContent = this.copy.saveFailed;
     }
   }
@@ -693,7 +700,8 @@ export class SandboxLibraryApp {
     const targetId = this.pendingDeleteId;
     if (!targetId) return;
     const overlay = this.root.querySelector<HTMLElement>('[data-library-delete-overlay]');
-    overlay?.setAttribute('aria-busy', 'true');
+    if (!overlay || overlay.getAttribute('aria-busy') === 'true') return;
+    this.setModalBusy(overlay, true);
     try {
       this.library = [...await this.options.onDeleteSquishy(targetId)];
       this.pendingDeleteId = null;
@@ -701,8 +709,8 @@ export class SandboxLibraryApp {
       this.renderLibrary();
     } catch (error: unknown) {
       console.error('[squishy:library-delete]', error);
-      overlay?.removeAttribute('aria-busy');
-      const message = overlay?.querySelector<HTMLElement>('[data-library-modal-error]');
+      this.setModalBusy(overlay, false);
+      const message = overlay.querySelector<HTMLElement>('[data-library-modal-error]');
       if (message) message.textContent = this.copy.saveFailed;
     }
   }
@@ -725,6 +733,12 @@ export class SandboxLibraryApp {
     const returnFocus = this.modalReturnFocus;
     this.modalReturnFocus = null;
     if (restore) restoreModalFocus(returnFocus);
+  }
+
+  private setModalBusy(overlay: HTMLElement, busy: boolean): void {
+    if (busy) overlay.setAttribute('aria-busy', 'true');
+    else overlay.removeAttribute('aria-busy');
+    for (const button of overlay.querySelectorAll<HTMLButtonElement>('button')) button.disabled = busy;
   }
 
   private async unlockShelfExpansion(): Promise<void> {
