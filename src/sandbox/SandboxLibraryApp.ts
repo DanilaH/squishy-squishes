@@ -215,7 +215,6 @@ export class SandboxLibraryApp {
   private loadedMakerRendererOptions: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'> | null = null;
   private makerRendererLoad: Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>> | null = null;
   private makerStartToken = 0;
-  private makerStarting = false;
   private activityBlocked = false;
   private disposed = false;
 
@@ -438,7 +437,6 @@ export class SandboxLibraryApp {
   private async startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): Promise<void> {
     if (this.disposed) return;
     const startToken = ++this.makerStartToken;
-    this.makerStarting = true;
     const currentShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
     currentShell?.setAttribute('aria-busy', 'true');
     try {
@@ -474,13 +472,11 @@ export class SandboxLibraryApp {
         message.hidden = false;
       }
     } finally {
-      if (startToken === this.makerStartToken) this.makerStarting = false;
     }
   }
 
   private cancelPendingMakerStart(): void {
     this.makerStartToken += 1;
-    this.makerStarting = false;
   }
 
   private async handleSaveRequest(draft: SandboxDraft): Promise<SavedSquishy | null> {
