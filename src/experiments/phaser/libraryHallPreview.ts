@@ -45,9 +45,11 @@ export const mountLibraryHallPreview = (root: HTMLElement): void => {
       stand.setAttribute('aria-hidden', 'true');
       grid.append(stand);
     }
+    const nav = shell.querySelector<HTMLElement>('.library-hall-nav');
     const prev = shell.querySelector<HTMLButtonElement>('[data-library-hall-prev]');
     const next = shell.querySelector<HTMLButtonElement>('[data-library-hall-next]');
     const counter = shell.querySelector<HTMLOutputElement>('[data-library-hall-page]');
+    nav?.toggleAttribute('data-single-room', pages === 1);
     if (prev) prev.disabled = room === 0;
     if (next) next.disabled = room === pages - 1;
     if (counter) counter.textContent = `${room + 1} / ${pages}`;
