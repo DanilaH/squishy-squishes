@@ -461,7 +461,19 @@ class VolumeMeshRenderer {
 }
 
 let shared: VolumeMeshRenderer | null = null;
+let unavailable = false;
+
+const flatVolumeFallback = (flat: HTMLCanvasElement): HTMLCanvasElement => {
+  const output = document.createElement('canvas');
+  output.width = SIZE;
+  output.height = SIZE;
+  output.getContext('2d')?.drawImage(flat, 0, 0);
+  output.dataset.volumeRenderer = 'mesh-unavailable';
+  return output;
+};
+
 export const renderVolumeMesh = (toy: SavedSquishy, flat: HTMLCanvasElement): HTMLCanvasElement => {
+  if (unavailable) return flatVolumeFallback(flat);
   try {
     shared ??= new VolumeMeshRenderer();
     return shared.render(toy, flat);
@@ -469,12 +481,12 @@ export const renderVolumeMesh = (toy: SavedSquishy, flat: HTMLCanvasElement): HT
     console.warn('Isolated 3D volume review unavailable; displaying the flat control.', error);
     shared?.dispose();
     shared = null;
-    const output = document.createElement('canvas');
-    output.width = SIZE;
-    output.height = SIZE;
-    output.getContext('2d')?.drawImage(flat, 0, 0);
-    output.dataset.volumeRenderer = 'mesh-unavailable';
-    return output;
+    unavailable = true;
+    return flatVolumeFallback(flat);
   }
 };
-export const releaseVolumeMesh = (): void => { shared?.dispose(); shared = null; };
+export const releaseVolumeMesh = (): void => {
+  shared?.dispose();
+  shared = null;
+  unavailable = false;
+};
