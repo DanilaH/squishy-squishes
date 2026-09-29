@@ -5,11 +5,6 @@ import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
 type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
 type ReviewScope = 'pages' | 'draft';
 
-interface IdleWindow extends Window {
-  requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
-  cancelIdleCallback?: (handle: number) => void;
-}
-
 export interface ReviewMakerRendererLoader {
   load(): Promise<MakerRendererOptions>;
   scheduleWarm(canWarm?: () => boolean): () => void;
@@ -47,8 +42,6 @@ export const createReviewMakerRendererLoader = (scope: ReviewScope): ReviewMaker
     let cancelled = false;
     let timeoutHandle = 0;
     let idleHandle = 0;
-    const idleWindow = window as IdleWindow;
-
     const warm = (): void => {
       timeoutHandle = 0;
       idleHandle = 0;
@@ -58,8 +51,8 @@ export const createReviewMakerRendererLoader = (scope: ReviewScope): ReviewMaker
       });
     };
 
-    if (typeof idleWindow.requestIdleCallback === 'function') {
-      idleHandle = idleWindow.requestIdleCallback(warm, { timeout: 1800 });
+    if (typeof window.requestIdleCallback === 'function') {
+      idleHandle = window.requestIdleCallback(warm, { timeout: 1800 });
     } else {
       timeoutHandle = globalThis.setTimeout(warm, 900);
     }
@@ -67,7 +60,7 @@ export const createReviewMakerRendererLoader = (scope: ReviewScope): ReviewMaker
     return () => {
       cancelled = true;
       if (timeoutHandle) globalThis.clearTimeout(timeoutHandle);
-      if (idleHandle && typeof idleWindow.cancelIdleCallback === 'function') idleWindow.cancelIdleCallback(idleHandle);
+      if (idleHandle && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleHandle);
       timeoutHandle = 0;
       idleHandle = 0;
     };
