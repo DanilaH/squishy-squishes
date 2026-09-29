@@ -47,8 +47,11 @@ type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePha
 let makerRendererPromise: Promise<MakerRendererOptions> | null = null;
 const loadMakerRendererOptions = (): Promise<MakerRendererOptions> => {
   if (!makerRendererPromise) {
-    makerRendererPromise = import('../../sandbox/PhaserSquishSurface')
-      .then<MakerRendererOptions>(({ PhaserSquishSurface }) => ({
+    makerRendererPromise = Promise.all([
+      import('../../sandbox/PhaserSquishSurface'),
+      preloadStudioEnvironmentAssets(),
+    ])
+      .then<MakerRendererOptions>(([{ PhaserSquishSurface }]) => ({
         rendererBackend: 'phaser',
         makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
           new PhaserSquishSurface(canvas, onMetrics, audio, callbacks, true),
@@ -76,7 +79,7 @@ const warmMakerRendererAfterFirstPaint = (): void => {
 const disposeReviewVisualProfile = installReviewVisualProfile(root);
 root.innerHTML = `<main class="lab-shell"><section class="recipe-panel" role="status">${normalizeLanguage(navigator.language) === 'ru' ? 'ЗАГРУЖАЕМ МАСТЕРСКУЮ…' : 'PREPARING THE STUDIO…'}</section></main>`;
 
-void Promise.all([preloadJellyUi(), preloadStudioEnvironmentAssets()]).then(() => bootstrapSquishyApp(root, {
+void preloadJellyUi().then(() => bootstrapSquishyApp(root, {
   createRuntime: createDraftRuntime,
   loadMakerRendererOptions,
 })).then((handle) => {
