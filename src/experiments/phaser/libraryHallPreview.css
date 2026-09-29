@@ -1,4 +1,4 @@
-/* Isolated Phaser Pages hall: source art is behind real DOM controls/canvases. */
+/* Owner-reviewed Phaser Hall (review Pages + isolated Yandex DRAFT): source art stays behind real DOM controls/canvases. */
 #app .sandbox-library-shell.is-library-hall {
   position: relative;
   display: flex;
