@@ -42,15 +42,22 @@ const createPagesRuntime = async (): Promise<SquishyPlatformRuntime> => {
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Missing #app root.');
 
-/** Phaser's renderer needs WebGL2; do not leave an unusable maker mounted if it is absent. */
+/** Phaser's renderer needs WebGL2; probe once per page instead of allocating a throwaway context on every maker entry. */
+let phaserSupport: boolean | null = null;
 const canStartPhaser = (): boolean => {
+  if (phaserSupport !== null) return phaserSupport;
   const probe = document.createElement('canvas');
   try {
     const gl = probe.getContext('webgl2');
-    if (!gl) return false;
+    if (!gl) {
+      phaserSupport = false;
+      return false;
+    }
     gl.getExtension('WEBGL_lose_context')?.loseContext();
+    phaserSupport = true;
     return true;
   } catch {
+    phaserSupport = false;
     return false;
   }
 };
