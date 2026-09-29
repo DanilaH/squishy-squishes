@@ -5,6 +5,8 @@ import { decodeAppearanceDocument } from '../sandbox/appearance';
 import { createEmptyDecorDocument, decodeDecorDocument, encodeDecorDocument } from '../sandbox/decor';
 import type { SavedSquishy } from '../sandbox/types';
 import {
+  LEGACY_DISCOVERED_STORAGE_KEY,
+  PREVIOUS_SAVE_STORAGE_KEY,
   SAVE_STORAGE_KEY as SAVE_V2_STORAGE_KEY,
   createSaveRepository as createSaveV2Repository,
   loadSaveWithLegacyMigration,
@@ -12,6 +14,7 @@ import {
 } from './save';
 
 export const SAVE_V3_STORAGE_KEY = 'squishy.save.v3';
+export const SAVE_V3_RECOVERY_STORAGE_KEY = 'squishy.save.v3.corrupt';
 export const DEFAULT_LIBRARY_CAPACITY = 8;
 export const MAX_LIBRARY_CAPACITY = 24;
 
@@ -160,6 +163,53 @@ export const migrateSaveV2ToV3 = (legacy: SaveStateV2, updatedAt = Date.now()): 
   updatedAt,
 });
 
+const hasLegacySave = async (
+  storage: StorageAdapter,
+  onError: (error: unknown) => void,
+): Promise<boolean> => {
+  for (const key of [SAVE_V2_STORAGE_KEY, PREVIOUS_SAVE_STORAGE_KEY, LEGACY_DISCOVERED_STORAGE_KEY]) {
+    try {
+      if (await storage.getItem(key) !== null) return true;
+    } catch (error: unknown) {
+      onError(error);
+      return false;
+    }
+  }
+  return false;
+};
+
+const preserveCorruptV3 = async (
+  storage: StorageAdapter,
+  raw: string,
+  onError: (error: unknown) => void,
+): Promise<void> => {
+  try {
+    await storage.setItem(SAVE_V3_RECOVERY_STORAGE_KEY, raw);
+  } catch (error: unknown) {
+    onError(error);
+  }
+};
+
+const migrateLegacySave = async (
+  storage: StorageAdapter,
+  repository: JsonStorageRepository<SaveStateV3>,
+  onError: (error: unknown) => void,
+): Promise<SaveStateV3> => {
+  const legacyRepository = createSaveV2Repository(storage);
+  const legacyState = await loadSaveWithLegacyMigration(storage, legacyRepository, onError);
+  const migrated = migrateSaveV2ToV3(legacyState);
+
+  try {
+    await repository.write(migrated);
+    await repository.flush();
+    await storage.removeItem(SAVE_V2_STORAGE_KEY);
+  } catch (error: unknown) {
+    onError(error);
+  }
+
+  return migrated;
+};
+
 export const loadSaveV3WithMigration = async (
   storage: StorageAdapter,
   repository: JsonStorageRepository<SaveStateV3>,
@@ -178,23 +228,15 @@ export const loadSaveV3WithMigration = async (
       return await repository.load();
     } catch (error: unknown) {
       onError(error);
+      await preserveCorruptV3(storage, currentRaw, onError);
+      if (await hasLegacySave(storage, onError)) {
+        return migrateLegacySave(storage, repository, onError);
+      }
       return createDefaultSaveV3();
     }
   }
 
-  const legacyRepository = createSaveV2Repository(storage);
-  const legacyState = await loadSaveWithLegacyMigration(storage, legacyRepository, onError);
-  const migrated = migrateSaveV2ToV3(legacyState);
-
-  try {
-    await repository.write(migrated);
-    await repository.flush();
-    await storage.removeItem(SAVE_V2_STORAGE_KEY);
-  } catch (error: unknown) {
-    onError(error);
-  }
-
-  return migrated;
+  return migrateLegacySave(storage, repository, onError);
 };
 
 const createSquishyId = (): string => {
