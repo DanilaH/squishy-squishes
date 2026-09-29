@@ -21,6 +21,7 @@ export interface PhaserSandboxCallbacks extends Pick<PhaserStudioGestureHost,
  */
 export class PhaserSquishSurface {
   private readonly game: Phaser.Game;
+  private readonly gl: WebGL2RenderingContext;
   private scene: Phaser.Scene | null = null;
   private squish: PhaserSquishCandidate | null = null;
   private bridge: PhaserStudioGestureBridge | null = null;
@@ -61,6 +62,7 @@ export class PhaserSquishSurface {
       premultipliedAlpha: true, powerPreference: 'high-performance',
     });
     if (!gl) throw new Error('Phaser studio requires WebGL2.');
+    this.gl = gl;
     const owner = this;
     class StudioScene extends Phaser.Scene {
       constructor() { super({ key: 'SquishyRealStudioScene' }); }
@@ -105,18 +107,29 @@ export class PhaserSquishSurface {
         owner.callbacks.onFrame();
       }
     }
-    this.game = new Phaser.Game({
-      type: Phaser.WEBGL, parent: canvas.parentElement, canvas,
-      context: gl as unknown as CanvasRenderingContext2D,
-      width: Math.max(1, canvas.clientWidth), height: Math.max(1, canvas.clientHeight),
-      transparent: true, scale: { mode: Phaser.Scale.NONE },
-      render: { antialias: true, premultipliedAlpha: true },
-      audio: { noAudio: true }, scene: [StudioScene],
-    });
-    // The stage's responsive CSS owns the displayed square playfield. Phaser's
-    // RESIZE mode instead follows the taller parent and vertically squashes art.
-    this.resizeObserver = new ResizeObserver(() => this.syncCanvasSize());
-    this.resizeObserver.observe(canvas);
+    let game: Phaser.Game | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    try {
+      game = new Phaser.Game({
+        type: Phaser.WEBGL, parent: canvas.parentElement, canvas,
+        context: gl as unknown as CanvasRenderingContext2D,
+        width: Math.max(1, canvas.clientWidth), height: Math.max(1, canvas.clientHeight),
+        transparent: true, scale: { mode: Phaser.Scale.NONE },
+        render: { antialias: true, premultipliedAlpha: true },
+        audio: { noAudio: true }, scene: [StudioScene],
+      });
+      this.game = game;
+      // The stage's responsive CSS owns the displayed square playfield. Phaser's
+      // RESIZE mode instead follows the taller parent and vertically squashes art.
+      resizeObserver = new ResizeObserver(() => this.syncCanvasSize());
+      this.resizeObserver = resizeObserver;
+      resizeObserver.observe(canvas);
+    } catch (error: unknown) {
+      resizeObserver?.disconnect();
+      game?.destroy(true);
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      throw error;
+    }
   }
 
   /** Keep the WebGL backbuffer and simulation projection in the CSS playfield's aspect ratio. */
@@ -279,6 +292,7 @@ export class PhaserSquishSurface {
     this.resizeObserver.disconnect();
     this.cleanupScene();
     this.game.destroy(true);
+    this.gl.getExtension('WEBGL_lose_context')?.loseContext();
     delete this.canvas.dataset.phaserReady;
     delete this.canvas.dataset.phaserVolume;
     delete this.canvas.dataset.squishBodyOffsetX;
