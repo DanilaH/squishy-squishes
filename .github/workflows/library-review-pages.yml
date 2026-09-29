@@ -10,8 +10,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-review-pr-59
+  cancel-in-progress: true
 
 jobs:
   publish-review-preview:
