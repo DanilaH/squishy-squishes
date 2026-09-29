@@ -60,6 +60,7 @@ type PagesDecorArt = {
 let pagesDecorArt: PagesDecorArt | null = null;
 /** Only the /phaser/ entrypoint opts into the new authored transparent art. */
 export const registerPagesDecorArt = (renderer: PagesDecorArt): void => { pagesDecorArt = renderer; };
+export const unregisterPagesDecorArt = (): void => { pagesDecorArt = null; };
 
 const eyeIdSet = new Set<string>(EYE_STYLE_IDS);
 const mouthIdSet = new Set<string>(MOUTH_STYLE_IDS);
