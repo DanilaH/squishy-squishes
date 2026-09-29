@@ -13,7 +13,7 @@ import '../../sandbox-polish-01.css';
 import './candyStudioPreview.css';
 import './jellyUiPreview.css';
 import './jellyTypographyPreview.css';
-import { preloadJellyUi } from './jellyUiPreload';
+import { preloadJellyUi, preloadMakerJellyUi } from './jellyUiPreload';
 import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
 import { installReviewVisualProfile } from './reviewVisualProfile';
 import { bootstrapSquishyApp } from '../../app/bootstrap';
@@ -50,6 +50,7 @@ const loadMakerRendererOptions = (): Promise<MakerRendererOptions> => {
     makerRendererPromise = Promise.all([
       import('../../sandbox/PhaserSquishSurface'),
       preloadStudioEnvironmentAssets(),
+      preloadMakerJellyUi(),
     ])
       .then<MakerRendererOptions>(([{ PhaserSquishSurface }]) => ({
         rendererBackend: 'phaser',
