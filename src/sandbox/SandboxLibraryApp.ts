@@ -739,6 +739,16 @@ export class SandboxLibraryApp {
     if (busy) overlay.setAttribute('aria-busy', 'true');
     else overlay.removeAttribute('aria-busy');
     for (const button of overlay.querySelectorAll<HTMLButtonElement>('button')) button.disabled = busy;
+
+    const dialog = overlay.querySelector<HTMLElement>('[role="dialog"]');
+    if (!dialog) return;
+    if (busy) {
+      dialog.tabIndex = -1;
+      dialog.focus();
+    } else {
+      dialog.removeAttribute('tabindex');
+      focusModal(dialog);
+    }
   }
 
   private async unlockShelfExpansion(): Promise<void> {
