@@ -34,6 +34,8 @@ import {
   getDecorFrame,
   hasSurfaceDecor,
   renderSurfaceDecor,
+  renderSurfaceFace,
+  renderSurfaceStickers,
   type AccessoryId,
   type EyeStyleId,
   type MouthStyleId,
@@ -366,6 +368,8 @@ export class SandboxApp {
   private readonly audio = new SquishyAudio();
   private readonly appearanceCanvas = document.createElement('canvas');
   private readonly appearanceContext: CanvasRenderingContext2D;
+  private readonly faceCanvas = document.createElement('canvas');
+  private readonly faceContext: CanvasRenderingContext2D;
   private readonly copy: SandboxCopy;
 
   private stage: SandboxStage;
@@ -417,6 +421,11 @@ export class SandboxApp {
     const appearanceContext = this.appearanceCanvas.getContext('2d');
     if (!appearanceContext) throw new Error('Sandbox appearance requires Canvas 2D.');
     this.appearanceContext = appearanceContext;
+    this.faceCanvas.width = APPEARANCE_TEXTURE_SIZE;
+    this.faceCanvas.height = APPEARANCE_TEXTURE_SIZE;
+    const faceContext = this.faceCanvas.getContext('2d');
+    if (!faceContext) throw new Error('Sandbox face overlay requires Canvas 2D.');
+    this.faceContext = faceContext;
 
     root.innerHTML = this.renderShell();
     this.shell = this.requireElement<HTMLElement>('[data-sandbox-app]');
@@ -455,13 +464,13 @@ export class SandboxApp {
             this.authoredStrokeColor = this.paintColor;
             this.authoredPoints = [point];
             drawAppearanceStamp(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, point);
-            this.scheduleTextureUpload();
+            this.uploadAppearanceNow();
           },
           paintSegment: (from, to) => {
             if (this.appearanceLimitReached || this.paintTool === 'fill' || this.authoredPoints.length >= 320) return;
             drawAppearanceSegment(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, from, to);
             this.authoredPoints.push(to);
-            this.scheduleTextureUpload();
+            this.uploadAppearanceNow();
           },
           paintEnd: () => {
             if (!this.appearanceLimitReached && this.paintTool !== 'fill') this.finishPaintStroke();
@@ -1490,14 +1499,30 @@ export class SandboxApp {
 
   private uploadAppearanceNow(): void {
     const appearance = this.draft.appearance;
-    if (appearance.strokes.length === 0 && appearance.mixins.length === 0 && !hasSurfaceDecor(this.draft.decor)) this.renderer.setAppearanceTexture(null);
+    const hasMaterialDecor = this.options.rendererBackend === 'phaser'
+      ? this.draft.decor.stickers.length > 0
+      : hasSurfaceDecor(this.draft.decor);
+    if (appearance.strokes.length === 0 && appearance.mixins.length === 0 && !hasMaterialDecor) this.renderer.setAppearanceTexture(null);
     else this.renderer.setAppearanceTexture(this.appearanceCanvas);
+  }
+
+  private uploadFaceNow(): void {
+    if (this.options.rendererBackend !== 'phaser') return;
+    const hasFace = this.draft.decor.eyes !== null || this.draft.decor.mouth !== null || this.draft.decor.blush;
+    (this.renderer as PhaserSquishSurface).setFaceTexture(hasFace ? this.faceCanvas : null);
   }
 
   private replayAndUpload(): void {
     replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS });
-    renderSurfaceDecor(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
+    if (this.options.rendererBackend === 'phaser') {
+      renderSurfaceStickers(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
+      this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
+      renderSurfaceFace(this.faceContext, this.draft.decor, getShape(this.draft.shapeId));
+    } else {
+      renderSurfaceDecor(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
+    }
     this.uploadAppearanceNow();
+    this.uploadFaceNow();
     this.refreshRigidMixins();
     this.updateAppearanceDataset();
   }
