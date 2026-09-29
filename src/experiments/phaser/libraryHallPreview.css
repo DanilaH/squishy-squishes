@@ -152,6 +152,9 @@
   font-weight: 900;
   font-size: 13px;
 }
+#app .library-hall-nav[data-single-room] {
+  visibility: hidden;
+}
 #app .library-hall-nav button {
   width: 44px;
   height: 44px;
