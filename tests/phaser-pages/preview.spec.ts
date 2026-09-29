@@ -202,3 +202,26 @@ test('renderer init failure restores the originating Library with a retryable er
   await expect(library).not.toHaveAttribute('aria-busy', 'true');
 });
 
+test('stalled optional Studio art cannot block the maker renderer', async ({ page }) => {
+  let releaseDecor!: () => void;
+  let markDecorSeen!: () => void;
+  const decorGate = new Promise<void>((resolve) => { releaseDecor = resolve; });
+  const decorSeen = new Promise<void>((resolve) => { markDecorSeen = resolve; });
+
+  await page.route(/studio-decor-left-.*\.png$/, async (route) => {
+    markDecorSeen();
+    await decorGate;
+    await route.continue();
+  });
+
+  await openPreview(page);
+  await page.locator('[data-library-new]').first().click();
+  await decorSeen;
+
+  const canvas = page.locator('[data-sandbox-canvas]');
+  await expect(canvas).toHaveAttribute('data-phaser-ready', 'true', { timeout: 5_000 });
+
+  releaseDecor();
+  await expect(page.locator('[data-sandbox-app]')).toHaveClass(/studio-env-active/, { timeout: 5_000 });
+});
+
