@@ -84,28 +84,25 @@ test('slow lazy Phaser load cannot override newer Library navigation', async ({ 
   await expect(page.locator('[data-sandbox-maker-host]')).toHaveCount(0);
 });
 
-test('failed idle Phaser warmup can retry on real maker entry', async ({ page }) => {
+test('idle warmup never imports Phaser before real maker intent', async ({ page }) => {
   let chunkRequests = 0;
-  let markFirstFailure!: () => void;
-  const firstFailure = new Promise<void>((resolve) => { markFirstFailure = resolve; });
+  let markChunkSeen!: () => void;
+  const chunkSeen = new Promise<void>((resolve) => { markChunkSeen = resolve; });
 
   await page.route(/PhaserSquishSurface-.*\.js$/, async (route) => {
     chunkRequests += 1;
-    if (chunkRequests === 1) {
-      markFirstFailure();
-      await route.abort('connectionfailed');
-      return;
-    }
+    markChunkSeen();
     await route.continue();
   });
 
   await openPreview(page);
-  await firstFailure;
+  await page.waitForTimeout(2_000);
+  expect(chunkRequests, 'idle Library must not speculate the Phaser module').toBe(0);
 
   await page.locator('[data-library-new]').first().click();
+  await chunkSeen;
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-  expect(chunkRequests).toBeGreaterThanOrEqual(2);
-  await expect(page.locator('[data-library-maker-error]')).toHaveCount(0);
+  expect(chunkRequests).toBe(1);
 });
 
 test('failed first Hall art request falls back to Library and retries in-place', async ({ page }) => {
