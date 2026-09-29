@@ -6,4 +6,7 @@ import { installReviewVisualProfile } from './reviewVisualProfile';
 
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('Missing #app root.');
-installReviewVisualProfile(root, { volumeProbe: true });
+installReviewVisualProfile(root);
+if (new URLSearchParams(location.search).get('volume-probe') === '1') {
+  void import('./libraryVolumeReview').then(({ mountLibraryVolumeReview }) => mountLibraryVolumeReview());
+}
