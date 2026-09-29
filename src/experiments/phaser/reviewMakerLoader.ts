@@ -6,10 +6,11 @@ type MakerRendererOptions = Pick<SandboxAppOptions, 'rendererBackend' | 'makePha
 type ReviewScope = 'pages' | 'draft' | 'production';
 
 const waitForMakerArt = async (): Promise<void> => {
-  // Furniture is part of the scene, not progressive decoration. Keep the
-  // player on the previous screen until the full Studio environment is decoded.
-  const studio = await preloadStudioEnvironmentAssets();
-  if (!studio) throw new Error('Studio environment art is not ready; retry maker entry.');
+  // Furniture is part of the normal scene, not progressive decoration. Keep the
+  // player on the previous screen while authored Studio art is still loading.
+  // A genuine decode/network failure may still fall back to the original Studio
+  // rather than trapping the player outside the maker forever.
+  await preloadStudioEnvironmentAssets();
   await preloadMakerJellyUi();
 };
 
