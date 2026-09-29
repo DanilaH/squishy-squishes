@@ -180,9 +180,15 @@ test.describe('reduced motion', () => {
       transition: getComputedStyle(button).transitionDuration,
       animation: getComputedStyle(button).animationDuration,
     }));
+    const durationMs = (value: string): number => {
+      const first = value.split(',')[0]?.trim() ?? '0s';
+      if (first.endsWith('ms')) return Number.parseFloat(first);
+      if (first.endsWith('s')) return Number.parseFloat(first) * 1000;
+      return Number.POSITIVE_INFINITY;
+    };
     expect(motion.reduced).toBe(true);
-    expect(motion.transition).toMatch(/^0(?:\.0+)?0*1m?s$|^0\.001s$/);
-    expect(motion.animation).toMatch(/^0(?:\.0+)?0*1m?s$|^0\.001s$/);
+    expect(durationMs(motion.transition)).toBeLessThanOrEqual(1);
+    expect(durationMs(motion.animation)).toBeLessThanOrEqual(1);
 
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
