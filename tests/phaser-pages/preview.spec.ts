@@ -126,3 +126,49 @@ test('failed first Hall art request falls back to Library and retries in-place',
   expect(pedestalRequests).toBeGreaterThanOrEqual(2);
 });
 
+test('delete modal wins over a pending lazy maker navigation', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('squishy.phaser-pages-preview.squishy.save.v3', JSON.stringify({
+      version: 3,
+      library: [{
+        id: 'race-delete-toy',
+        createdAt: 1,
+        shapeId: 'heart',
+        materialId: 'soft',
+        appearance: { v: 1, strokes: [], mixins: [] },
+        decor: { v: 1 },
+      }],
+      libraryCapacity: 8,
+      completedRecipeIds: [],
+      unlockedRewardIds: [],
+      totalCrafts: 1,
+      updatedAt: 1,
+    }));
+  });
+
+  let releaseChunk!: () => void;
+  let markChunkSeen!: () => void;
+  const chunkGate = new Promise<void>((resolve) => { releaseChunk = resolve; });
+  const chunkSeen = new Promise<void>((resolve) => { markChunkSeen = resolve; });
+  await page.route(/PhaserSquishSurface-.*\.js$/, async (route) => {
+    markChunkSeen();
+    await chunkGate;
+    await route.continue();
+  });
+
+  await openPreview(page);
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
+  await page.locator('[data-library-new]').first().click();
+  await chunkSeen;
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('aria-busy', 'true');
+
+  await page.locator('[data-library-delete-id]').first().click();
+  const modal = page.locator('[data-library-delete-overlay]');
+  await expect(modal).toBeVisible();
+
+  releaseChunk();
+  await page.waitForTimeout(150);
+  await expect(modal).toBeVisible();
+  await expect(page.locator('[data-sandbox-maker-host]')).toHaveCount(0);
+});
+
