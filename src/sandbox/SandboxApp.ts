@@ -302,6 +302,14 @@ const PAINT_COLORS = [
   0xf8f1df, 0xffb6c8, 0x8fd3ff, 0xb7f2cf, 0xb9a0ff, 0xff6f61,
   0x48bfe3, 0xb8e34a, 0xd94f9d, 0x2f8f83, 0x6d3a8a, 0x9a6b52,
 ] as const;
+const PAINT_COLOR_LABELS: Readonly<Record<SandboxLanguage, readonly string[]>> = {
+  en: ['Orchid', 'Turquoise', 'Pink', 'Green', 'Peach', 'Yellow', 'Ivory', 'Rose', 'Sky blue', 'Mint', 'Lavender', 'Coral', 'Cyan', 'Lime', 'Magenta', 'Teal', 'Purple', 'Brown'],
+  ru: ['Орхидея', 'Бирюзовый', 'Розовый', 'Зелёный', 'Персиковый', 'Жёлтый', 'Слоновая кость', 'Нежно-розовый', 'Голубой', 'Мятный', 'Лавандовый', 'Коралловый', 'Лазурный', 'Лаймовый', 'Малиновый', 'Морская волна', 'Фиолетовый', 'Коричневый'],
+};
+const BRUSH_SIZE_LABELS: Readonly<Record<SandboxLanguage, readonly string[]>> = {
+  en: ['Small brush', 'Medium brush', 'Large brush'],
+  ru: ['Маленькая кисть', 'Средняя кисть', 'Большая кисть'],
+};
 const BRUSH_SIZES = [18, 34, 56] as const;
 const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti'];
 const MIX_DISTANCE_FOR_COMPLETE_PX = 1_650;
@@ -539,10 +547,10 @@ export class SandboxApp {
       </button>
     `).join('');
     const paintColors = PAINT_COLORS.map((color, index) => `
-      <button class="sandbox-swatch" type="button" data-paint-color="${color}" aria-label="${this.copy.colorLabel} ${index + 1}" aria-pressed="${index === 0}" style="--swatch:#${color.toString(16).padStart(6, '0')}"></button>
+      <button class="sandbox-swatch" type="button" data-paint-color="${color}" aria-label="${PAINT_COLOR_LABELS[this.options.language][index]}" aria-pressed="${index === 0}" style="--swatch:#${color.toString(16).padStart(6, '0')}"></button>
     `).join('');
-    const brushSizes = BRUSH_SIZES.map((size) => `
-      <button type="button" data-brush-size="${size}" aria-pressed="${size === this.brushSize}">${size === 18 ? 'S' : size === 34 ? 'M' : 'L'}</button>
+    const brushSizes = BRUSH_SIZES.map((size, index) => `
+      <button type="button" data-brush-size="${size}" aria-label="${BRUSH_SIZE_LABELS[this.options.language][index]}" title="${BRUSH_SIZE_LABELS[this.options.language][index]}" aria-pressed="${size === this.brushSize}">${size === 18 ? 'S' : size === 34 ? 'M' : 'L'}</button>
     `).join('');
     const mixins = MIXIN_IDS.map((id, index) => `
       <button class="sandbox-mixin" type="button" data-mixin="${id}" aria-pressed="${index === 0}">

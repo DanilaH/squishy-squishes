@@ -22,7 +22,9 @@ test.describe('Russian maker localization', () => {
     await expect(page.locator('button[data-shape="paw"]')).not.toContainText('Paw');
 
     await page.locator('[data-action="shape-continue"]').click();
-    await expect(page.locator('[data-paint-color]').first()).toHaveAttribute('aria-label', 'Цвет 1');
+    await expect(page.locator('[data-paint-color]').first()).toHaveAttribute('aria-label', 'Орхидея');
+    await expect(page.locator('[data-paint-color]').last()).toHaveAttribute('aria-label', 'Коричневый');
+    await expect(page.locator('[data-brush-size="18"]')).toHaveAttribute('aria-label', 'Маленькая кисть');
     await page.locator('[data-action="paint-continue"]').click();
     await expect(page.locator('[data-mixin="glitter"]')).toContainText('Блёстки');
     await expect(page.locator('[data-mixin="pearls"]')).toContainText('Жемчужины');

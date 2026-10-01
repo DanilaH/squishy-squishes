@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   browser-qa:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -31,8 +31,12 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Build and run release browser QA
-        run: npm run qa:browser:build
+      - name: Build and check production QA targets
+        run: npm run release:check
+      - name: Compare production UI with reviewed visual baselines
+        run: npm run qa:visual
+      - name: Run release browser QA
+        run: npm run qa:browser
       - name: Upload passing migration baseline evidence
         if: success() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4

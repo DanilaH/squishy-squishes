@@ -1,5 +1,4 @@
-/* Deliberately isolated to the Phaser Pages preview. This is a small visual
-   direction test for Shape and Finish, not a production-wide UI pack. */
+/* Accepted Shape/Finish styling shared by production, Pages review and Yandex DRAFT. */
 .sandbox-shell[data-stage="shape"],
 .sandbox-shell[data-stage="finish"] {
   --candy-ink: #49345f;

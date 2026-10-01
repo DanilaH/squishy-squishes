@@ -2,7 +2,7 @@
 
 A compact, touch-first freeform squishy maker for Yandex Games. [Play the GitHub Pages build](https://danilah.github.io/squishy-squishes/).
 
-**Product baseline:** S0–S6 freeform sandbox plus two polish passes (PR #29). Phaser Pages UI/Studio work was subsequently merged in PRs #54 and #56 as an **isolated preview**, not an automatic Yandex entrypoint cutover. Check the current source and preview workflows for the exact running implementation; old phase-plan status labels are historical.
+**Current production:** freeform sandbox with the accepted Library Hall, warm Studio and lazy Phaser 4 maker (PR #59), followed by Squeeze, first-paint and furniture-preload polish (PR #60). Production web/Yandex retain Save V3; `/phaser/` review and Yandex DRAFT are isolated test entrypoints. Modules under `src/experiments/phaser/` include production dependencies despite their historical names.
 
 `Library → New Squishy → Shape → Paint → Mix-ins → Mix → Decorate → Finish/Save → Squeeze`
 
@@ -14,18 +14,24 @@ A compact, touch-first freeform squishy maker for Yandex Games. [Play the GitHub
 
 ## Development
 
-Node.js >=20.19.0:
+Node.js 24 (CI baseline; manifest minimum >=20.19.0):
 
 ```bash
-npm install
+npm ci
+npx playwright install --with-deps chromium
 npm run dev
 npm run release:check
 npm run qa:browser
+npm run qa:visual
 ```
 
 `release:check` runs strict TypeScript, the authored-image tooling smoke test, a Pages build, a Yandex build and the shared-kit upload-root audit plus Squishy-specific SDK/debug/base-path checks. GitHub Actions runs the release and browser QA gates on PRs. `npm run build:yandex && npm run verify:yandex` produces/checks `dist-yandex/`; CI packages the *contents* at the ZIP root.
 
-The kit is pinned to reviewed commit `797b5689767e9dc1059514e0446479e054bf1352` (not `main`). Its Phaser bootstrap is for **new Phaser projects**, not a drop-in replacement for this existing game; engine-neutral production mechanisms were adopted selectively, and the existing game has a separately gated Phaser migration.
+`qa:visual` compares 30 reviewed Linux Chromium UI snapshots (Library, Ideas, Paint, Decor and Finish; RU/EN; 320px portrait, 844px landscape and 1440px desktop). Canvas rendering is hidden only during snapshot capture so physics/GPU noise cannot hide UI regressions; existing functional/renderer tests still verify the toy itself. Use the locked Playwright version, wait for self-hosted fonts and keep reduced motion enabled. Review actual/diff images before intentionally regenerating via `npm run qa:visual:update`; never update baselines merely to silence a failure. Visual comparison runs in Release Browser QA CI. Initial cross-machine CI verification is separate from local validation.
+
+The maker keeps all stage controls visible without page or nested-tray scrolling. Shared control/theme/type/room-motion styles live in `src/app/styles`; old jelly CSS entrypoints are compatibility imports.
+
+The kit is pinned to reviewed commit `797b5689767e9dc1059514e0446479e054bf1352` (not `main`). Its Phaser bootstrap is for **new Phaser projects**, not a drop-in replacement for this existing game; engine-neutral production mechanisms were adopted selectively, and the existing game now uses the production Phaser maker while retaining its own platform, save and audio contracts.
 
 ## Authored art
 

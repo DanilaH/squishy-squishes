@@ -1,6 +1,6 @@
 # Documentation map — Squishy Squishes
 
-**Updated 2026-09-20.** Start with [`../AGENTS.md`](../AGENTS.md) and current code/tests. A filename containing `PLAN`, `REVIEW` or `PASS` does **not** imply current scope or approval.
+**Updated 2026-10-01.** Start with [`../AGENTS.md`](../AGENTS.md) and current code/tests. A filename containing `PLAN`, `REVIEW` or `PASS` does **not** imply current scope or approval.
 
 ## Working on the current game
 
@@ -9,9 +9,13 @@
 | Freeform maker / saved toys | [`SANDBOX_PIVOT_01_MASTER_PLAN.md`](SANDBOX_PIVOT_01_MASTER_PLAN.md), [`SANDBOX_PIVOT_S2_LIBRARY.md`](SANDBOX_PIVOT_S2_LIBRARY.md) | SaveState V3; no recipe/XP content gating. Verify milestones against code/merged PRs. |
 | Faces, stickers, accessories | [`SANDBOX_PIVOT_S3_DECOR.md`](SANDBOX_PIVOT_S3_DECOR.md), [`SANDBOX_PIVOT_01_ASSET_PLAN.md`](SANDBOX_PIVOT_01_ASSET_PLAN.md) | Player-created decor, not background mascots. |
 | Authored art / Studio | [`RUNTIME_ASSETS.md`](RUNTIME_ASSETS.md), [`STUDIO_ENVIRONMENT_EXECUTION_V7.md`](STUDIO_ENVIRONMENT_EXECUTION_V7.md) | The v7 brief is historical execution guidance; compare with merged Studio implementation. Keep approved source/provenance and real-browser QA. |
-| Technical decisions | [`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md), [`../AGENTS.md`](../AGENTS.md) | Phaser cutover is scoped, reversible and not an automatic Yandex release. |
-| Phaser preview / migration | [`PHASER_LANDSCAPE_MIGRATION_PLAN.md`](PHASER_LANDSCAPE_MIGRATION_PLAN.md), [`PHASER_BOOTSTRAP_ADOPTION.md`](PHASER_BOOTSTRAP_ADOPTION.md) | The migration-plan filename is historical: a landscape redesign is **not** authorized by it. |
+| Technical decisions | [`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md), [`../AGENTS.md`](../AGENTS.md) | Production cutover merged in #59; #60 preserves six polish invariants. Hosted Yandex release acceptance is separate. |
+| Phaser preview / migration | [`PHASER_LANDSCAPE_MIGRATION_PLAN.md`](PHASER_LANDSCAPE_MIGRATION_PLAN.md), [`PHASER_BOOTSTRAP_ADOPTION.md`](PHASER_BOOTSTRAP_ADOPTION.md) | Migration plans are historical; production now uses Phaser. A landscape redesign remains a separate product decision. |
 | QA / release | [`../README.md`](../README.md), [Release Check](../.github/workflows/release-check.yml), [browser QA](../.github/workflows/release-browser-qa.yml) | Browser CI is not real-phone or hosted Yandex DRAFT approval. |
+
+## Latest independent review
+
+[`PROJECT_REVIEW_2026-10-01.md`](PROJECT_REVIEW_2026-10-01.md) records the browser review, scoped polish, verification limits and improvement priorities. It is evidence and recommendations, not authorization for a redesign.
 
 ## Historical material and recovery
 
