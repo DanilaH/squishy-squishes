@@ -1,3 +1,4 @@
+import { cardPagerMarkup, showCardPage } from './cardPages';
 import { getShape } from '../game/shapes';
 import { SandboxApp, type SandboxAppOptions, type SandboxLanguage } from './SandboxApp';
 import {
@@ -331,7 +332,7 @@ export class SandboxLibraryApp {
       const done = completed.has(idea.id);
       const mixin = getIdeaMixinLabel(idea, this.options.language);
       return `
-        <button class="sandbox-idea-card${done ? ' is-complete' : ''}" type="button" data-idea-id="${escapeAttribute(idea.id)}" style="--idea-color:#${idea.paintColor.toString(16).padStart(6, '0')}">
+        <button class="sandbox-idea-card${done ? ' is-complete' : ''}" type="button" data-card-page-item data-idea-id="${escapeAttribute(idea.id)}" style="--idea-color:#${idea.paintColor.toString(16).padStart(6, '0')}">
           <span class="sandbox-idea-card__top">
             <span class="sandbox-idea-card__shape">${getIdeaShapeLabel(idea, this.options.language)}</span>
             ${done ? `<strong>✓ ${this.copy.completed}</strong>` : ''}
@@ -351,7 +352,7 @@ export class SandboxLibraryApp {
     }).join('');
 
     this.root.innerHTML = `
-      <main class="sandbox-library-shell sandbox-ideas-shell${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-ideas data-stage="ideas" data-ideas-count="${SQUISHY_IDEAS.length}" data-completed-count="${this.completedRecipeIds.length}">
+      <main class="sandbox-library-shell sandbox-ideas-shell${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-ideas data-card-pages data-stage="ideas" data-ideas-count="${SQUISHY_IDEAS.length}" data-completed-count="${this.completedRecipeIds.length}">
         <header class="sandbox-library-topbar">
           <strong>${this.copy.studio}</strong>
           <button class="sandbox-sound" type="button" data-library-mute aria-pressed="${this.muted}">${this.muted ? this.copy.muted : this.copy.sound}</button>
@@ -363,9 +364,11 @@ export class SandboxLibraryApp {
           <p>${this.copy.ideasHint}</p>
         </section>
         <section class="sandbox-ideas-grid" aria-label="${this.copy.ideasTitle}">${cards}</section>
+        ${cardPagerMarkup(this.options.language)}
         <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>
       </main>
     `;
+    showCardPage(this.root.querySelector<HTMLElement>('[data-sandbox-ideas]')!);
   }
 
   private renderIdeaGuideMarkup(idea: SquishyIdea): string {
@@ -533,23 +536,25 @@ export class SandboxLibraryApp {
     overlay.className = 'sandbox-library-modal sandbox-library-modal--replace';
     overlay.dataset.libraryReplaceOverlay = '';
     overlay.innerHTML = `
-      <div class="sandbox-library-modal__sheet" role="dialog" aria-modal="true" aria-labelledby="library-replace-title">
+      <div class="sandbox-library-modal__sheet" data-card-pages role="dialog" aria-modal="true" aria-labelledby="library-replace-title">
         <span class="sandbox-library-modal__eyebrow">${this.library.length} / ${this.libraryCapacity}</span>
         <h2 id="library-replace-title">${this.copy.replaceTitle}</h2>
         <p>${this.copy.replaceHint}</p>
         <div class="sandbox-library-replace-grid">
           ${this.library.map((toy) => `
-            <button class="sandbox-library-replace-card" type="button" data-library-replace-id="${escapeAttribute(toy.id)}">
+            <button class="sandbox-library-replace-card" type="button" data-card-page-item data-library-replace-id="${escapeAttribute(toy.id)}">
               <canvas data-library-thumbnail="${escapeAttribute(toy.id)}" aria-hidden="true"></canvas>
               <strong>${this.toyLabel(toy)}</strong>
               <span>${this.copy.replaceAction}</span>
             </button>
           `).join('')}
         </div>
+        ${cardPagerMarkup(this.options.language)}
         <p class="sandbox-library-modal__error" data-library-modal-error aria-live="polite"></p>
         <button class="sandbox-library-modal__cancel" type="button" data-library-replace-cancel>${this.copy.cancel}</button>
       </div>
     `;
+    showCardPage(overlay.querySelector<HTMLElement>('[data-card-pages]')!);
     this.openModal(overlay);
     this.renderVisibleThumbnails(overlay);
   }
@@ -630,6 +635,11 @@ export class SandboxLibraryApp {
     if (target.hasAttribute('data-library-expand-reward')) {
       this.cancelPendingMakerStart();
       void this.unlockShelfExpansion();
+      return;
+    }
+    if (target.hasAttribute('data-card-page-step')) {
+      const scope = target.closest<HTMLElement>('[data-card-pages]');
+      if (scope) showCardPage(scope, Number(scope.dataset.cardPage ?? 0) + Number(target.dataset.cardPageStep));
       return;
     }
     if (target.hasAttribute('data-library-ideas')) {

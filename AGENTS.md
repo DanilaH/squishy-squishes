@@ -10,6 +10,10 @@ Phaser loads on maker intent, outside the initial Library JS path. It owns the v
 
 Production retains `squishy.save.v3`. `/phaser/` review and Yandex DRAFT use separate storage namespaces. `?appearanceProbe=1` is an isolated diagnostic route, not the production visual profile. A local or CI Yandex DRAFT test does not establish hosted SDK/ads or real-phone acceptance.
 
+## Interface contract
+
+The owner explicitly requires **no scrolling** in the game interface: no page scroll and no nested control trays. Keep all current-stage controls visible. Use the shared production styles in `src/app/styles`; historical jelly CSS entrypoints forward there for preview compatibility. Keep secondary controls calm and readable, reserve golden artwork for primary actions, and preserve 44px Paint hit areas even when visible color dots are smaller.
+
 ## Current polish invariants
 
 - Squeeze follows the pointer modestly; retain bounded whole-body travel and local tap/poke rebound.
@@ -39,4 +43,4 @@ Use `npm run asset:prepare -- <source> <public/assets/name.webp> [options]` for 
 
 ## Review and release
 
-Create a feature branch and PR; independently inspect the diff. Run `npm run release:check` (includes asset smoke, strict TS, both builds and upload-root audit) and `npm run qa:browser`. Check EN/RU, portrait/short-landscape/desktop, outside-to-inside Paint, saved toy reload and Finish click-through. Merge only after passing PR gates; verify post-merge workflows and actual Pages deployment before claiming the new version is live. A browser QA pass does not replace the player's tactile phone acceptance.
+Create a feature branch and PR; independently inspect the diff. Run `npm run release:check` (includes asset smoke, strict TS, both builds and upload-root audit), `npm run qa:browser` and `npm run qa:visual`. Check EN/RU, portrait/short-landscape/desktop, outside-to-inside Paint, saved toy reload and Finish click-through. Merge only after passing PR gates; verify post-merge workflows and actual Pages deployment before claiming the new version is live. A browser QA pass does not replace the player's tactile phone acceptance.

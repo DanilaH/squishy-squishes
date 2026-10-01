@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 for (const locale of ['ru-RU', 'en-US']) {
-  for (const viewport of [{ width: 320, height: 568 }, { width: 844, height: 390 }]) {
+  for (const viewport of [{ width: 320, height: 568 }, { width: 844, height: 390 }, { width: 568, height: 320 }, { width: 667, height: 375 }]) {
     test(`paint tray shares its grid at ${viewport.width}px in ${locale}`, async ({ browser, baseURL }) => {
       const context = await browser.newContext({ viewport, locale, baseURL });
       const page = await context.newPage();
@@ -10,6 +10,12 @@ for (const locale of ['ru-RU', 'en-US']) {
         await page.locator('[data-library-new]').first().click();
         await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
         await page.locator('[data-action="shape-continue"]').click();
+        for (const swatch of await page.locator('.sandbox-swatch').all()) {
+          const rect = await swatch.boundingBox();
+          expect(rect!.width).toBe(44);
+          expect(rect!.height).toBe(44);
+        }
+        await expect(page.getByRole('button', { name: locale === 'ru-RU' ? 'Бирюзовый' : 'Turquoise', exact: true })).toBeVisible();
         const tools = await page.locator('.sandbox-paint-tools').boundingBox();
         const actions = await page.locator('[data-panel="paint"] .sandbox-tool-row--actions').boundingBox();
         expect(tools).not.toBeNull();
@@ -19,6 +25,8 @@ for (const locale of ['ru-RU', 'en-US']) {
         for (const button of await page.locator('[data-panel="paint"] .sandbox-tool-row button').all()) {
           const box = await button.boundingBox();
           expect(box).not.toBeNull();
+          expect(box!.width).toBeGreaterThanOrEqual(44);
+          expect(box!.height).toBeGreaterThanOrEqual(44);
           expect(box!.x).toBeGreaterThanOrEqual(0);
           expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
           expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);

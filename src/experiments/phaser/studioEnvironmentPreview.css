@@ -131,8 +131,8 @@
 /* One workshop at every step: reserve the same heading, playfield and control
    tracks so changing panels never shifts the toy, tabletop or floor. */
 #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
-  --studio-controls-height: clamp(202px, 31dvh, 276px);
-  grid-template-rows: 38px 88px minmax(0, 1fr) var(--studio-controls-height) 20px;
+  --studio-controls-height: clamp(260px, 33dvh, 300px);
+  grid-template-rows: 44px 88px minmax(0, 1fr) var(--studio-controls-height) 20px;
   gap: 4px;
 }
 #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy {
@@ -204,8 +204,8 @@
 }
 @media (max-height: 740px) and (orientation: portrait) {
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
-    --studio-controls-height: clamp(198px, 33dvh, 242px);
-    grid-template-rows: 36px 76px minmax(0, 1fr) var(--studio-controls-height) 18px;
+    --studio-controls-height: 260px;
+    grid-template-rows: 44px 76px minmax(0, 1fr) var(--studio-controls-height) 18px;
   }
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-stage='shape'] .sandbox-shape {
     min-height: 56px !important;
@@ -221,8 +221,8 @@
    heading; every step gets identical stage padding, including Decor. */
 @media (max-height: 520px) and (orientation: landscape) {
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
-    grid-template-columns: minmax(280px, .9fr) minmax(390px, 1.1fr);
-    grid-template-rows: 38px minmax(0, 1fr) 18px;
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    grid-template-rows: 44px minmax(0, 1fr) 18px;
   }
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy {
     position: absolute;
@@ -276,7 +276,7 @@
 }
 @media (max-height: 620px) and (orientation: portrait) {
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
-    --studio-controls-height: clamp(210px, 37dvh, 232px);
+    --studio-controls-height: 260px;
   }
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-panel--decor {
     gap: 3px;

@@ -1,0 +1,3 @@
+/* Capture UI and room art without GPU physics. Do not mask large canvas bounds:
+   Finish uses a viewport-sized render buffer extending beneath the controls. */
+canvas { visibility: hidden !important; }

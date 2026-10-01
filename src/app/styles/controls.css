@@ -1,0 +1,147 @@
+/* Shared production controls. Fit the viewport; never introduce a scroll tray. */
+#app[data-jelly-ui-ready] {
+  --ui-gap: 8px;
+  --ui-gap-tight: 4px;
+  --ui-touch: 44px;
+  --ui-secondary-ink: #56375f;
+  --ui-secondary-surface: #fff7ed;
+  --ui-secondary-edge: #c7a9bc;
+}
+#app[data-jelly-ui-ready] :is(.sandbox-sound, .sandbox-library-ideas,
+  .sandbox-panel .sandbox-secondary, .sandbox-library-modal__cancel,
+  .sandbox-exit-dialog .sandbox-secondary, .sandbox-decor-tabs > button) {
+  background: var(--ui-secondary-surface);
+  border: 1px solid var(--ui-secondary-edge);
+  box-shadow: 0 2px 0 rgba(103, 66, 99, .14);
+  color: var(--ui-secondary-ink);
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+  filter: none;
+  font-weight: 850;
+}
+#app[data-jelly-ui-ready] :is(.sandbox-sound, .sandbox-tool-row button,
+  .sandbox-decor-tabs > button, .sandbox-decor-toggle) {
+  min-height: var(--ui-touch) !important;
+}
+#app[data-jelly-ui-ready] .sandbox-decor-choice {
+  min-height: var(--ui-touch) !important;
+}
+#app[data-jelly-ui-ready] .sandbox-decor-tabs > button[aria-selected='true'] {
+  background: #f2deed;
+  border-color: #84508f;
+  box-shadow: inset 0 0 0 1px #84508f;
+}
+#app[data-jelly-ui-ready] .sandbox-palette-grid {
+  grid-template-columns: repeat(9, var(--ui-touch));
+  gap: var(--ui-gap-tight);
+}
+#app[data-jelly-ui-ready] .sandbox-swatch {
+  width: var(--ui-touch);
+  height: var(--ui-touch);
+  min-width: var(--ui-touch) !important;
+  min-height: var(--ui-touch) !important;
+}
+#app[data-jelly-ui-ready] .sandbox-paint-tools {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) repeat(3, var(--ui-touch));
+  gap: var(--ui-gap-tight);
+}
+#app[data-jelly-ui-ready] .sandbox-decor-choice small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.1;
+}
+#app[data-jelly-ui-ready] .sandbox-mixin small {
+  display: block;
+  font-size: 10px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+#app[data-jelly-ui-ready] .sandbox-topbar { gap: var(--ui-gap); }
+@media (max-width: 520px) {
+  #app[data-jelly-ui-ready] .sandbox-palette-grid { grid-template-columns: repeat(6, var(--ui-touch)); }
+  #app[data-jelly-ui-ready] .sandbox-topbar strong { font-size: 10px; letter-spacing: .1em; }
+  #app[data-jelly-ui-ready] .sandbox-sound { padding-inline: 8px; font-size: 12px; }
+}
+@media (max-width: 700px) and (max-height: 520px) and (orientation: landscape) {
+  #app[data-jelly-ui-ready] .sandbox-shell {
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    grid-template-rows: 44px minmax(0, 1fr) 18px;
+    column-gap: var(--ui-gap);
+  }
+  #app[data-jelly-ui-ready] .sandbox-canvas { min-width: 0; min-height: 0; }
+  #app[data-jelly-ui-ready] .sandbox-palette-grid { grid-template-columns: repeat(6, var(--ui-touch)); }
+  #app[data-jelly-ui-ready] .sandbox-panel { gap: var(--ui-gap-tight); }
+  #app[data-jelly-ui-ready] .sandbox-decor-tabs { gap: var(--ui-gap-tight); }
+  #app[data-jelly-ui-ready] .sandbox-decor-tabs > button { font-size: 12px; gap: 2px; }
+}
+@media (max-height: 350px) and (orientation: landscape) {
+  #app[data-jelly-ui-ready] .sandbox-decor-section { gap: 2px; }
+  #app[data-jelly-ui-ready] .sandbox-decor-section > label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    overflow: hidden;
+  }
+}
+
+/* Override the old room-specific compact sizes without clipping its fixed tray. */
+#app[data-jelly-ui-ready][data-studio-env-ready] .sandbox-shell.studio-env-active
+  :is(.sandbox-sound, .sandbox-tool-row button, .sandbox-decor-tabs > button,
+      .sandbox-decor-choice, .sandbox-decor-toggle) {
+  min-height: var(--ui-touch) !important;
+}
+#app[data-jelly-ui-ready] .sandbox-paint-tools button { font-size: 11px; }
+#app[data-jelly-ui-ready] .sandbox-controls { min-width: 0; }
+@media (max-width: 700px) and (max-height: 520px) and (orientation: landscape) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active { column-gap: 8px; }
+  #app[data-jelly-ui-ready][data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-panel { gap: 4px; }
+}
+/* Keep the painted dot compact while its actual hit area remains 44px. */
+#app[data-jelly-ui-ready] .sandbox-swatch {
+  position: relative;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+#app[data-jelly-ui-ready] .sandbox-swatch::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 3px solid #fff9ef;
+  background: var(--swatch);
+  box-shadow: 0 0 0 1px rgba(65,45,82,.18);
+  pointer-events: none;
+}
+#app[data-jelly-ui-ready] .sandbox-swatch[aria-pressed='true']::before {
+  box-shadow: 0 0 0 3px #84508f;
+}
+@media (max-width: 360px), (max-width: 600px) and (orientation: landscape) {
+  #app[data-jelly-ui-ready] .sandbox-shell .sandbox-paint-tools [data-paint-tool] {
+    padding-inline: 2px;
+    font-size: 11px;
+  }
+  #app[data-jelly-ui-ready] .sandbox-shell .sandbox-paint-tools [data-paint-tool]::before { display: none; }
+}
+@media (max-height: 620px) and (orientation: portrait) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active {
+    --studio-controls-height: 248px;
+    grid-template-rows: 44px 56px minmax(0, 1fr) var(--studio-controls-height) 18px;
+  }
+  #app[data-studio-env-ready] .studio-env-decor { width: min(148px, 64cqh); }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-decor-section > label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    overflow: hidden;
+  }
+}
+/* Thumbnail pixels are decorative; the enclosing play button owns input. */
+#app .is-library-hall .sandbox-library-card__canvas { pointer-events: none; }
+#app .is-library-hall :is(.sandbox-library-topbar, .sandbox-library-heading) { z-index: 3; }
+@media (max-height: 350px) and (orientation: landscape) {
+  #app .is-library-hall :is(.sandbox-library-card, .library-hall-vacant) { height: 28dvh; }
+  #app .is-library-hall .library-hall-stage .sandbox-library-grid { padding-bottom: 32px; }
+}

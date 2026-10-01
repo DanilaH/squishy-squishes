@@ -1,0 +1,82 @@
+[data-card-pages] [data-card-page-item][hidden] { display: none !important; }
+.card-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+.card-pager button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #c7a9bc;
+  border-radius: 14px;
+  background: #fff7ed;
+  color: #56375f;
+  font: inherit;
+  font-size: 24px;
+  cursor: pointer;
+}
+.card-pager button:disabled { opacity: .4; cursor: default; }
+.card-pager button:focus-visible { outline: 3px solid #84508f; outline-offset: 2px; }
+.card-pager output { min-width: 52px; text-align: center; font-weight: 800; }
+#app .sandbox-ideas-shell {
+  height: 100dvh;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+}
+#app .sandbox-ideas-grid {
+  min-height: 0;
+  margin: 0 auto;
+  padding: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+#app .sandbox-idea-card { min-height: 0; padding: 8px; gap: 4px; }
+#app .sandbox-idea-card__hero { gap: 6px; }
+#app .sandbox-idea-card__preview { width: 36px; height: 36px; flex-basis: 36px; }
+#app .sandbox-idea-card__preview svg { width: 30px; height: 30px; }
+#app .sandbox-idea-card__name { font-size: 12px; }
+#app .sandbox-idea-card__copy { gap: 4px; }
+#app .sandbox-ideas-heading { gap: 4px; }
+#app .sandbox-ideas-heading p { font-size: 11px; }
+#app .sandbox-library-modal__sheet { overflow: hidden; }
+#app .sandbox-library-replace-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#app .sandbox-library-replace-card canvas { width: min(100%, 90px); margin-inline: auto; }
+#app .sandbox-library-modal .card-pager { margin-top: 8px; }
+@media (max-height: 520px) and (orientation: landscape) {
+  #app .sandbox-ideas-heading {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    text-align: left;
+    align-items: center;
+  }
+  #app .sandbox-ideas-heading .sandbox-library-ideas--back { grid-row: 1 / 3; }
+  #app .sandbox-ideas-heading > span { grid-column: 2; }
+  #app .sandbox-ideas-heading h1 { grid-column: 2; grid-row: 2; font-size: 24px; }
+  #app .sandbox-ideas-heading p { display: none; }
+  #app .sandbox-ideas-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
+  #app .sandbox-idea-card__hero { flex-direction: column; align-items: flex-start; }
+  #app .sandbox-library-modal__sheet { padding: 10px; }
+  #app .sandbox-library-modal__sheet h2 { font-size: 22px; }
+  #app .sandbox-library-modal__sheet > p { margin-bottom: 6px; font-size: 11px; }
+  #app .sandbox-library-replace-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  #app .sandbox-library-replace-card canvas { width: min(100%, 56px); }
+  #app .sandbox-library-replace-card { padding: 4px; }
+  #app .sandbox-library-modal__cancel { margin-top: 6px; }
+  #app .sandbox-library-modal__error { margin: 2px 0 !important; }
+  #app .sandbox-library-delete-preview { width: 72px; height: 72px; margin: 0 auto; }
+}
+.sandbox-library-modal__error:empty { display: none; }
+@media (max-height: 620px) and (orientation: portrait) {
+  #app .sandbox-library-modal__sheet { padding: 10px; }
+  #app .sandbox-library-modal__sheet h2 { font-size: 22px; margin-block: 2px; }
+  #app .sandbox-library-modal__sheet > p { margin-bottom: 6px; font-size: 11px; }
+  #app .sandbox-library-replace-card canvas { width: 48px; }
+  #app .sandbox-library-replace-card { padding: 4px; }
+  #app .sandbox-library-modal__cancel { margin-top: 6px; }
+  #app .sandbox-library-modal__error { margin: 2px 0 !important; }
+}
