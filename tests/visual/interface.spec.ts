@@ -17,7 +17,8 @@ for (const locale of ['ru-RU', 'en-US']) {
             y: document.documentElement.scrollHeight > innerHeight,
           }))).toEqual({ x: false, y: false });
           // Test the UI/room separately from GPU physics and canvas rasterization.
-          await expect(page).toHaveScreenshot(`${locale}-${viewport.width}-${stage}.png`, {
+          // Keep the test failing, but collect every stage diff in one CI run.
+          await expect.soft(page).toHaveScreenshot(`${locale}-${viewport.width}-${stage}.png`, {
             // The Finish canvas extends beneath UI; masking its bounds would
             // erase the very controls this regression must inspect.
             stylePath: fileURLToPath(new URL('./snapshot.css', import.meta.url)),
