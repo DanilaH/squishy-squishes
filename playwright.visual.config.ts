@@ -25,8 +25,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
     launchOptions: {
       // Match the reviewed grayscale text rasterization regardless of the
-      // runner's LCD/subpixel defaults. Keep baselines and diff thresholds intact.
-      args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-lcd-text'],
+      // runner's LCD/subpixel and font hinting defaults. Keep baselines and diff
+      // thresholds intact; these flags affect only the screenshot browser.
+      args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-lcd-text', '--font-render-hinting=none'],
     },
   },
   webServer: {
