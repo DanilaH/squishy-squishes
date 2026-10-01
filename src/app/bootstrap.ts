@@ -26,7 +26,7 @@ export interface SquishyAppHandle {
   dispose(): Promise<void>;
 }
 
-/** Optional candidate seams. The normal entry passes no options and never imports Phaser. */
+/** Renderer seams: production supplies the lazy Phaser loader; diagnostics can use the raw surface. */
 export interface SquishyBootstrapOptions {
   readonly makerRendererOptions?: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
   readonly loadMakerRendererOptions?: () => Promise<Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>>;

@@ -1,0 +1,30 @@
+/* Passive room dust: small composited layers, never animated game canvases or furniture. */
+.library-hall-scene::after,
+.studio-env-stage-art::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  top: 16%;
+  width: 90px;
+  height: 130px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 20%, #fff8df 0 2px, transparent 3px),
+    radial-gradient(circle at 75% 48%, #fff8df 0 1px, transparent 2px),
+    radial-gradient(circle at 38% 85%, #fff8df 0 1.5px, transparent 2.5px);
+  animation: room-dust-drift 12s ease-in-out infinite;
+}
+.studio-env-stage-art::after { left: auto; right: 12%; animation-delay: -5s; }
+@keyframes room-dust-drift {
+  0%, 100% { transform: translate3d(0, 8px, 0); opacity: .15; }
+  50% { transform: translate3d(12px, -10px, 0); opacity: .55; }
+}
+#app[data-room-motion-paused] .library-hall-scene::after,
+#app[data-room-motion-paused] .studio-env-stage-art::after,
+.is-blocked .library-hall-scene::after,
+.is-blocked .studio-env-stage-art::after { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .library-hall-scene::after,
+  .studio-env-stage-art::after { display: none; animation: none; }
+}
+

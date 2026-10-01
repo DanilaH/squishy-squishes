@@ -1,24 +1,29 @@
 # Squishy Squishes — agent contract
 
-## Current product and entrypoints (20 September 2026)
+## Current product and entrypoints (1 October 2026)
 
-Squishy Squishes is a freeform, touch-first squishy maker, **not** the retired recipe/XP progression game. The S0–S6 sandbox and polish work are complete; later Phaser Pages, jelly UI and warm Studio changes have also been merged as **isolated preview work** (PRs #54 and #56). Do not confuse the `/phaser/` Pages preview with an approved replacement of the original production/Yandex entrypoints, and do not restore recipe-gated progression.
+Squishy Squishes is a freeform, touch-first squishy maker. Production Phaser cutover was merged in PR #59 (`1346f19`); PR #60 (`8be5103`) added Squeeze, first-paint and Studio-preload polish. Normal web and Yandex entrypoints now install the accepted Hall/Studio profile through `src/main.ts`, `reviewVisualProfile.ts` and `reviewMakerLoader.ts`. Despite their historical `experiments/review/preview` names, these modules are production dependencies.
 
-Player path: `Library → New Squishy → Shape → Paint → Mix-ins → Mix → Decorate → Finish/Save → Squeeze`.
+Player path: `Library → New Squishy → Shape → Paint → Mix-ins → Mix → Decorate → Finish/Save → Squeeze`. Do not restore recipe/XP gating.
 
-Start with [`docs/README.md`](docs/README.md) to distinguish current source-of-truth documents from historical evidence. Read `docs/SANDBOX_PIVOT_01_MASTER_PLAN.md`, `docs/SANDBOX_PIVOT_01_ASSET_PLAN.md`, `docs/SANDBOX_PIVOT_S3_DECOR.md`, `docs/PROJECT_DECISIONS.md` and `docs/RUNTIME_ASSETS.md` as needed. `docs/IMPLEMENTATION_ROADMAP.md` is historical and its S5/S6 status labels are stale; do not use its timeline as the active backlog. The former dark-lab `docs/ART_DIRECTION.md` predates the accepted warm Studio environment and is **not** the current art reference. Use the actual approved Studio source/merged sprites and real-browser evidence for new art; never treat a generated presentation or a candidate PNG as a tested game asset. Historical recipe/XP documents are evidence only.
+Phaser loads on maker intent, outside the initial Library JS path. It owns the visible WebGL2 renderer, frame loop and playfield input. Reuse `SquishSimulation`, original shape boundaries and the existing platform runtime; offscreen appearance baking and frame-coordinated 2D overlays remain. Preserve portrait-first responsive layout, transparent compositing and drop shadows. No forced rotation gate or second renderer.
 
-## Scoped Phaser migration authorization
+Production retains `squishy.save.v3`. `/phaser/` review and Yandex DRAFT use separate storage namespaces. `?appearanceProbe=1` is an isolated diagnostic route, not the production visual profile. A local or CI Yandex DRAFT test does not establish hosted SDK/ads or real-phone acceptance.
 
-The user approved migration of the **existing** game to Phaser 4 first, **without** changing its portrait-first responsive layout, graphics or gameplay as part of the engine cutover. Landscape redesign and a portrait rotation gate are separate future decisions. The reviewed roadmap is `docs/PHASER_LANDSCAPE_MIGRATION_PLAN.md` (filename historical). This authorization permits Phaser work in isolated migration/preview entrypoints; neither the old experimental PR #31 nor later merged preview art/UI automatically authorizes a production/Yandex cutover.
+## Current polish invariants
 
-Required order: freeze regression fixtures and visual/interaction baselines; extract the single physics implementation while the old renderer still runs; build a separate Phaser candidate; port original GLSL/shape fields/appearance, gestures and full sandbox; validate saves, audio, analytics, ads and Yandex DRAFT; then cut over reversibly. Phaser owns the visible WebGL2 render context, scene frame loop and playfield input. Existing DOM Library/controls, portrait-first CSS, offscreen appearance baking and existing visible 2D decor layers may remain with explicit ownership; visible overlay updates must ultimately follow the Phaser frame, not an independent RAF. Preserve transparent compositing and drop shadows.
+- Squeeze follows the pointer modestly; retain bounded whole-body travel and local tap/poke rebound.
+- Draw volume sidewall backing before the front surface to avoid stretch stripes.
+- Composite eyes/mouth/blush after body material lighting.
+- The first Paint stroke must render before pointer-up, including live uncommitted appearance content.
+- Normal Studio entry waits for decoded furniture. Genuine asset failure retains a usable fallback.
+- Hall thumbnails are eager. Do not restore the obsolete `data-library-rendered` marker.
 
-Do not copy the bootstrap's landscape-only viewport preset or portrait gate. Generate its reference into an empty temporary directory, compare and adopt kit contracts selectively, reuse **one** existing Yandex platform runtime and V3 repository. Do not merge #31 wholesale, add a second game renderer, duplicate physics, change save/ad semantics or treat browser emulation as proof of real-device touch. Prior to a production switch, verify the exact candidate on a real phone and hosted Yandex DRAFT; retain a rollback build that reads unchanged V3 data.
+Start with `docs/README.md` and current code/tests. Historical migration plans describe the path to cutover, not an outstanding migration. `docs/IMPLEMENTATION_ROADMAP.md` and old recipe/dark-lab art documents are historical. Keep new fixes scoped to observed behavior; advanced appendage grabbing and source-art margin cleanup are deferred ideas, not release blockers.
 
 ## Non-negotiable runtime boundaries
 
-- Strict TypeScript, Vite, one deformable WebGL2 renderer, a single parameterized shader and generic deformation; do not introduce React, per-shape physics or a second on-screen WebGL game. On `main` before cutover, keep the existing raw `SquishSurface` and its entrypoint unchanged apart from independently gated refactors. Phaser integration is permitted only under the scoped migration workflow above.
+- Strict TypeScript, Vite, one deformable WebGL2 renderer, a single parameterized shader and generic deformation; do not introduce React, per-shape physics or a second on-screen WebGL game. Production uses the lazy Phaser maker; the raw `SquishSurface` remains for diagnostic/legacy paths. Do not revert production to it.
 - `src/game/shapes.ts` owns the canonical boundary used by hit testing, field, UV rendering and previews. Content remains free to create; optional Ideas never gate it.
 - SaveState V3 and existing IDs/migration are durable. Library has 8 free slots and one optional rewarded expansion to 10. Do not alter save, reward or ad cadence for an infrastructure/asset task.
 - `PlatformRuntime.activity` remains the sole source of aggregated blockers. New audio/input/loading code must respect it.

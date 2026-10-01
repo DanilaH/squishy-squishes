@@ -1,4 +1,4 @@
-/* Pages-only feel; composited toy motion never animates the podium, furniture or controls. */
+/* Shared Hall transitions; owner overrides disable idle canvas motion. Furniture and controls stay still. */
 @keyframes library-toy-idle {
   0%, 16%, 88%, 100% { translate: 0 0; filter: brightness(1); }
   49% { translate: 0 -1.6px; filter: brightness(1.012); }

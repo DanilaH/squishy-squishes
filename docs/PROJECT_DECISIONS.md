@@ -1,21 +1,20 @@
-# Squishy infrastructure decisions — 2026-09-16
+# Squishy infrastructure decisions — 2026-10-01
 
-## Scoped migration decision — approved after the original engine-neutral integration
+## Current production — 1 October 2026
 
-The user explicitly approved moving the **existing Squishy game** to Phaser 4 first and considering landscape **later**. The earlier no-Phaser decision below describes the reviewed raw-WebGL baseline; it is **superseded only on dedicated Phaser migration branches**, not automatically on production `main`. Read the [reviewed current-layout migration roadmap](https://github.com/DanilaH/squishy-squishes/blob/docs/phaser-landscape-migration-plan/docs/PHASER_LANDSCAPE_MIGRATION_PLAN.md) and its independent-review companion before implementing. Its historical filename must not be interpreted as a landscape mandate.
+PR #59 (`1346f19`) switched normal web/Yandex to the accepted Hall/Studio profile and lazy Phaser maker. PR #60 (`8be5103`) tightened body follow, added tap/poke, placed sidewall behind the front, separated face from material lighting, fixed live first-stroke upload and made normal Studio entry await furniture decoding. Genuine asset failure still falls back. Save V3 and production storage keys are unchanged.
 
-- Preserve portrait-first UI, existing DOM controls, transparent squishy canvas/CSS effects, gameplay, UV and decor layers. No forced rotation gate, fixed landscape sizing, UI pack or visual redesign. Landscape is a subsequent product project.
-- Phaser owns the single visible WebGL2 squishy renderer, scene/frame update and playfield input. Reuse original shaders and one authoritative physics implementation; keep offscreen Canvas 2D baking. Existing visible 2D accessory/pearl overlays may remain only with explicit ownership and Phaser-frame updates.
-- Generate the pinned `bootstrap/yandex-phaser` into an **empty temporary reference project** and compare its contracts. Reuse existing Yandex runtime, activity coordinator, storage V3, ad policy, analytics and current 5 MiB build audit; do not duplicate them or import the template's portrait gate / landscape-only policy.
-- Do not merge experimental PR #31 as a complete migration. Keep the old production entrypoint until parity tests, real touch and hosted Yandex DRAFT on the exact candidate pass. Preserve a rollback build and old V3 readability.
+`src/main.ts` installs `reviewVisualProfile` and passes `reviewMakerLoader` to bootstrap. Historical `experiments`, `review` and `preview` names do not imply that these modules are isolated from production. Phaser remains outside initial Library JS. `/phaser/` and Yandex DRAFT retain separate storage namespaces; the appearance probe remains diagnostic.
 
-## Historical engine-neutral integration decisions (still applicable except the scoped engine prohibition above)
+Keep one authoritative physics implementation, the canonical shape boundaries, existing DOM controls and activity-coordinated WebAudio. Preserve portrait-first layout; landscape redesign and advanced appendage grabbing are separate decisions. Browser gates do not replace real-phone feel or hosted Yandex SDK acceptance. See `AGENTS.md` for current invariants.
+
+## Historical engine-neutral integration (current production summary takes precedence)
 
 This file originally adapted the reviewed `mini-games-kit` revision `797b5689767e9dc1059514e0446479e054bf1352` to an **existing raw WebGL2 game**. That was not, at the time, a Phaser migration.
 
 | Bootstrap mechanism | Squishy decision and evidence / acceptance |
 | --- | --- |
-| Phaser 4.2.1 scene and sound wiring | **Originally not adopted; superseded for the approved migration only.** Preserve existing deformation and activity-coordinated WebAudio; Phaser must not own a second sound lifecycle. |
+| Phaser 4.2.1 scene and sound wiring | **Now adopted for the production renderer.** Preserve existing deformation and activity-coordinated WebAudio; Phaser must not own a second sound lifecycle. |
 | Strict TS/Vite and dual production builds | **Already present.** Keep Pages `base` separate from the relative Yandex base and run both in CI. |
 | Real Yandex SDK vs local mock, activity blockers and ads | **Already present** in `src/platform/runtime.ts` and shared kit adapter. Do not replace project save/ad policy with template defaults. |
 | Semantic Game Ready | Existing app creates the Library synchronously before `runtime.markReady()`. This integration records the shell construction and ready handoff with `StartupTimeline` but does **not** claim a real-device first-paint measurement. Defer readiness changes until hosted DRAFT/mobile evidence and tests are available. |

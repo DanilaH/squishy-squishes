@@ -20,6 +20,7 @@ import './libraryHallGrounding.css';
 import './libraryHallAccess.css';
 import './libraryHallOwnerReview.css';
 import './libraryHallPerspectiveFloor.css';
+import './roomAtmosphere.css';
 
 /** Decode the Hall's small first-screen art before the playable Library mounts. */
 export const preloadReviewVisualProfile = (): Promise<void> => preloadLibraryHallAssets();

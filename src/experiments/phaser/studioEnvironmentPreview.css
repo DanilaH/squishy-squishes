@@ -1,4 +1,4 @@
-/* Pages-only environment. All artwork is noninteractive and remains behind the real canvas/UI. */
+/* Shared production/review environment. Artwork stays noninteractive behind the real canvas/UI. */
 /* The jelly UI stylesheet uses #app[data-jelly-ui-ready] .sandbox-shell[data-stage],
    so the environment selector must outrank its background shorthand. */
 #app[data-studio-env-ready] .sandbox-shell.studio-env-active {

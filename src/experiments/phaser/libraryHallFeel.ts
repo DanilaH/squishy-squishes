@@ -1,9 +1,10 @@
 import './libraryHallFeel.css';
 
-/** Pages-only Hall motion. DOM state owns transitions; no RAF, timers or extra GPU contexts. */
+/** Shared Hall motion. DOM state owns transitions; no RAF, timers or extra GPU contexts. */
 export const mountLibraryHallFeel = (root: HTMLElement): (() => void) => {
   const listeners = new AbortController();
   const signal = listeners.signal;
+  root.toggleAttribute('data-room-motion-paused', document.hidden);
   let lastCount: number | null = null;
   let lastRoom: string | null = null;
   let shell: HTMLElement | null = null;
@@ -47,6 +48,7 @@ export const mountLibraryHallFeel = (root: HTMLElement): (() => void) => {
   });
   inspect();
   document.addEventListener('visibilitychange', () => {
+    root.toggleAttribute('data-room-motion-paused', document.hidden);
     shell?.classList.toggle('is-library-hidden', document.hidden);
     if (document.hidden) clearInteraction();
   }, { signal });
@@ -70,6 +72,7 @@ export const mountLibraryHallFeel = (root: HTMLElement): (() => void) => {
   return () => {
     observer.disconnect();
     listeners.abort();
+    root.removeAttribute('data-room-motion-paused');
     clearInteraction();
     shell?.classList.remove('is-library-hidden', 'library-hall-interacting');
   };

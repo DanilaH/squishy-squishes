@@ -2,7 +2,7 @@
 
 A compact, touch-first freeform squishy maker for Yandex Games. [Play the GitHub Pages build](https://danilah.github.io/squishy-squishes/).
 
-**Product baseline:** S0–S6 freeform sandbox plus two polish passes (PR #29). Phaser Pages UI/Studio work was subsequently merged in PRs #54 and #56 as an **isolated preview**, not an automatic Yandex entrypoint cutover. Check the current source and preview workflows for the exact running implementation; old phase-plan status labels are historical.
+**Current production:** freeform sandbox with the accepted Library Hall, warm Studio and lazy Phaser 4 maker (PR #59), followed by Squeeze, first-paint and furniture-preload polish (PR #60). Production web/Yandex retain Save V3; `/phaser/` review and Yandex DRAFT are isolated test entrypoints. Modules under `src/experiments/phaser/` include production dependencies despite their historical names.
 
 `Library → New Squishy → Shape → Paint → Mix-ins → Mix → Decorate → Finish/Save → Squeeze`
 
@@ -14,10 +14,11 @@ A compact, touch-first freeform squishy maker for Yandex Games. [Play the GitHub
 
 ## Development
 
-Node.js >=20.19.0:
+Node.js 24 (CI baseline; manifest minimum >=20.19.0):
 
 ```bash
-npm install
+npm ci
+npx playwright install --with-deps chromium
 npm run dev
 npm run release:check
 npm run qa:browser
@@ -25,7 +26,7 @@ npm run qa:browser
 
 `release:check` runs strict TypeScript, the authored-image tooling smoke test, a Pages build, a Yandex build and the shared-kit upload-root audit plus Squishy-specific SDK/debug/base-path checks. GitHub Actions runs the release and browser QA gates on PRs. `npm run build:yandex && npm run verify:yandex` produces/checks `dist-yandex/`; CI packages the *contents* at the ZIP root.
 
-The kit is pinned to reviewed commit `797b5689767e9dc1059514e0446479e054bf1352` (not `main`). Its Phaser bootstrap is for **new Phaser projects**, not a drop-in replacement for this existing game; engine-neutral production mechanisms were adopted selectively, and the existing game has a separately gated Phaser migration.
+The kit is pinned to reviewed commit `797b5689767e9dc1059514e0446479e054bf1352` (not `main`). Its Phaser bootstrap is for **new Phaser projects**, not a drop-in replacement for this existing game; engine-neutral production mechanisms were adopted selectively, and the existing game now uses the production Phaser maker while retaining its own platform, save and audio contracts.
 
 ## Authored art
 

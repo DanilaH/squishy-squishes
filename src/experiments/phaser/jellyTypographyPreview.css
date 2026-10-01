@@ -141,3 +141,34 @@
     font-size: 12px;
   }
 }
+
+/* A common tool tray keeps tools and actions on the same horizontal grid. */
+#app[data-jelly-ui-ready] [data-panel='paint'] {
+  width: min(100%, 420px);
+  margin-inline: auto;
+}
+#app[data-jelly-ui-ready] .sandbox-paint-tools {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) repeat(3, minmax(32px, .6fr));
+  gap: 8px;
+}
+#app[data-jelly-ui-ready] .sandbox-paint-tools button {
+  min-width: 0;
+  padding-inline: 3px;
+}
+#app[data-jelly-ui-ready] [data-panel='paint'] .sandbox-tool-row--actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 1.4fr);
+  gap: 8px;
+}
+#app[data-jelly-ui-ready] [data-panel='paint'] .sandbox-tool-row--actions button {
+  min-width: 0;
+  margin-left: 0;
+  padding-inline: 3px;
+}
+
+/* Keep long trays from stretching the primary button artwork into a strip. */
+#app[data-jelly-ui-ready] .sandbox-panel :is([data-action='decor-continue'], [data-action='mix-continue']) {
+  justify-self: center;
+  width: min(188px, 100%);
+}
