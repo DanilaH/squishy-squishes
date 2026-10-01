@@ -1,0 +1,55 @@
+name: Hosted Pages release verification
+on:
+  push:
+    branches: [qa/hosted-pages-2026-10-01]
+    paths: [.github/workflows/hosted-pages-verification.yml]
+permissions:
+  contents: read
+jobs:
+  hosted-pages:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify the actual published release assets
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const response = await fetch('https://danilah.github.io/squishy-squishes/');
+          assert.equal(response.status, 200);
+          const html = await response.text();
+          assert.ok(html.includes('index-DSEKa5k1.js'), 'Wrong deployed JS');
+          assert.ok(html.includes('index-BVj08TEe.css'), 'Wrong deployed CSS');
+          console.log('Published assets match production commit 562960bd32dbca4f39185e5039e9f46921c89872');
+          JS
+      - name: Run existing production tests against live Pages, without a local server
+        run: |
+          cat > playwright.hosted.config.ts <<'TS'
+          import config from './playwright.release.config';
+          export default {
+            ...config,
+            retries: 0,
+            use: {
+              ...config.use,
+              baseURL: 'https://danilah.github.io',
+              screenshot: 'on' as const,
+              launchOptions: { args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
+            },
+            webServer: undefined,
+          };
+          TS
+          npx playwright test --config=playwright.hosted.config.ts tests/release/production-cutover.spec.ts tests/release/room-polish.spec.ts tests/release/card-pages.spec.ts --grep-invert 'production Yandex entry'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hosted-pages-release-evidence
+          path: |
+            test-results
+            playwright-report
+          retention-days: 14
