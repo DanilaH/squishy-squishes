@@ -67,3 +67,13 @@
 - Отдельный повтор новых pagination/replacement сценариев: **6 passed**, в том числе сохранность первых семи слотов после замены восьмого.
 
 Галерея итогового интерфейса: `/workspace/review-artifacts/gallery.html`; снимки Ideas, полной Library и выбора слота — `/workspace/review-artifacts/card-pages-gallery.html`. Сборки и browser suites проверены локально. GitHub CI, hosted Yandex и настоящий телефон здесь не объявляются проверенными.
+
+## Recovery of PR #61 and CI blockers
+
+The recovered branch had advanced from `19e62de7` to `435e7940`. Pages run `36896993173` failed only because its localization assertion still expected «Цвет 1» while the reviewed UI used «Орхидея». Commit `435e7940` aligns that assertion and adds checks for the last color and the small brush; no input, rendering or storage behavior changes.
+
+Release Browser QA run `36896993345` passed all 69 functional tests but rejected four Ideas snapshots (RU/EN at 320×568 and 844×390). Expected/actual/diff images from artifact `11179039859` were inspected in full, including enlarged text crops. The observed differences are text rasterization and small text-metric shifts on the Ubuntu 24.04 Chromium runner; card arrangement, content, pagination, viewport containment and button hierarchy are intact. The other 26 reviewed UI baselines are retained.
+
+Disabling LCD text reduced the mismatch but did not resolve it (`36908717289`); disabling font hinting additionally changed previously passing Library snapshots (`36909584139`). Both experimental flags were removed. Only the four individually reviewed Ideas baselines were aligned to the original, unmodified CI Chromium captures. No screenshot masks, comparison threshold, retries or assertions were relaxed. Future intentional baseline updates must still inspect actual/diff images.
+
+Release Browser QA now builds and audits both production targets, compares UI snapshots, then runs the same functional browser suite. This exposes visual failures earlier while retaining every PR gate. Local `release:check` and staged `pages:build` passed in the recovery workspace. Local browser installation was blocked by the download environment; browser/visual acceptance is performed on GitHub runners. Merge and live Pages acceptance remain conditional on the final head's successful checks and actual deployment.

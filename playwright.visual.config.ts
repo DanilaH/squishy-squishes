@@ -23,12 +23,7 @@ export default defineConfig({
     colorScheme: 'light',
     deviceScaleFactor: 1,
     trace: 'retain-on-failure',
-    launchOptions: {
-      // Match the reviewed grayscale text rasterization regardless of the
-      // runner's LCD/subpixel and font hinting defaults. Keep baselines and diff
-      // thresholds intact; these flags affect only the screenshot browser.
-      args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-lcd-text', '--font-render-hinting=none'],
-    },
+    launchOptions: { args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
   },
   webServer: {
     command: 'node scripts/serve-release-qa.mjs',
