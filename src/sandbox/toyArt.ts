@@ -46,7 +46,10 @@ export const drawToyAccessory = (ctx: CanvasRenderingContext2D, id: AccessoryId,
   } else {
     const w = width * (icon ? .88 : .68);
     const h = Math.min(height * (icon ? .86 : .62), w * sh / sw);
-    const y = height * (icon ? .5 : .92) - h * (icon ? .5 : 1);
+    // Rounded ear roots sit slightly below the nominal seat, as the previous
+    // drawn ears did; measured from the unmasked heart/mochi review captures.
+    const seat = id === 'bunny-ears' ? .98 : id === 'cat-ears' ? .95 : .92;
+    const y = height * (icon ? .5 : seat) - h * (icon ? .5 : 1);
     if (shapeId === 'heart' && id !== 'crown' && !icon) {
       // Paired roots straddle the heart cleft without stretching either ear.
       ctx.drawImage(image, sx, sy, sw / 2, sh, width / 2 - w / 2 - width * .08, y, w / 2, h);
