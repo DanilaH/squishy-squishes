@@ -1,0 +1,90 @@
+name: Hosted playful toy verification
+on:
+  push:
+    branches: [qa/hosted-playful-toy]
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify actual published assets
+        run: |
+          node --input-type=module <<'NODE'
+          const origin = 'https://danilah.github.io';
+          const response = await fetch(origin + '/squishy-squishes/?verify=9e33624fdd8677ac461a945a6d8bcc2ad6c4e81c', { cache: 'no-store' });
+          if (!response.ok) throw Error('Live entry returned ' + response.status);
+          const html = await response.text();
+          for (const asset of ['/squishy-squishes/assets/index-DOySihc3.js', '/squishy-squishes/assets/index-BsrIH4fb.css']) {
+            if (!html.includes(asset)) throw Error('Published HTML is not the reviewed build: ' + asset);
+            const file = await fetch(origin + asset);
+            if (!file.ok || (await file.arrayBuffer()).byteLength < 1000) throw Error('Missing live asset: ' + asset);
+            console.log('Verified live asset', asset);
+          }
+          NODE
+      - name: Run actual hosted journeys without a local server
+        run: |
+          cat > playwright.hosted-playful.config.ts <<'EOF'
+          import { defineConfig } from '@playwright/test';
+          export default defineConfig({
+            testDir: './tests/release',
+            testMatch: ['playful-tools.spec.ts', 'playful-audio.spec.ts', 'hosted-sway.spec.ts'],
+            timeout: 45000, expect: { timeout: 6000 }, workers: 1, retries: 0,
+            reporter: 'line',
+            use: { baseURL: 'https://danilah.github.io', headless: true, screenshot: 'only-on-failure', trace: 'retain-on-failure' }
+          });
+          EOF
+          cat > tests/release/hosted-sway.spec.ts <<'EOF'
+          import { expect, test } from '@playwright/test';
+          import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+          import { createEmptyDecorDocument } from '../../src/sandbox/decor';
+          test('published bow actually sways after release and settles at its seat', async ({ page }) => {
+            await page.setViewportSize({ width: 390, height: 844 });
+            await page.goto('/squishy-squishes/');
+            await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
+              ...createDefaultSaveV3(), totalCrafts: 1, library: [{
+                id: 'live-sway', createdAt: 1700000000000, shapeId: 'dumpling', materialId: 'soft',
+                appearance: { v: 1, strokes: [], mixins: [] },
+                decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', accessory: 'bow' }
+              }]
+            });
+            await page.reload(); await page.locator('[data-library-play-id="live-sway"]').click();
+            const rect = (await page.locator('[data-sandbox-canvas]').boundingBox())!;
+            const x = rect.x + rect.width / 2, y = rect.y + rect.height / 2;
+            await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 40, y + 25, { steps: 12 });
+            await page.evaluate(() => {
+              const values: number[] = [];
+              (window as unknown as { swayValues: number[] }).swayValues = values;
+              const started = performance.now();
+              const sample = () => {
+                values.push(Number(document.querySelector('[data-sandbox-accessory]')?.getAttribute('data-accessory-sway')));
+                if (performance.now() - started < 1200) requestAnimationFrame(sample);
+                else (window as unknown as { swayDone: boolean }).swayDone = true;
+              };
+              requestAnimationFrame(sample);
+            });
+            await page.mouse.up();
+            await expect.poll(() => page.evaluate(() => (window as unknown as { swayDone: boolean }).swayDone)).toBe(true);
+            const values = await page.evaluate(() => (window as unknown as { swayValues: number[] }).swayValues);
+            expect(Math.max(...values.map(Math.abs))).toBeGreaterThan(.001);
+            expect(values.at(-1)).toBe(0);
+            await page.screenshot({ path: 'migration-baseline-evidence/live-dumpling-bow-settled.png' });
+          });
+          EOF
+          npx playwright test --config=playwright.hosted-playful.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hosted-playful-toy-evidence
+          path: |
+            migration-baseline-evidence
+            test-results
+          retention-days: 14
