@@ -2,4 +2,6 @@
    Finish uses a viewport-sized render buffer extending beneath the controls. */
 canvas { visibility: hidden !important; }
 /* Choice art is stable Canvas 2D UI, so include it in the regression baseline. */
-canvas.toy-choice-art { visibility: visible !important; }
+/* Inactive Decor panels reserve layout through visibility:hidden. Their art
+   must inherit that state instead of leaking into the active panel capture. */
+canvas.toy-choice-art { visibility: inherit !important; }

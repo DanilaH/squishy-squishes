@@ -4,7 +4,7 @@ import {
   APPEARANCE_TEXTURE_SIZE,
   replayAppearanceDocument,
 } from './appearance';
-import { drawAccessoryGraphic, getDecorFrame, renderSurfaceDecor } from './decor';
+import { drawSeatedAccessories, renderSurfaceDecor } from './decor';
 import type { SavedSquishy } from './types';
 
 const THUMBNAIL_SIZE = 256;
@@ -252,28 +252,6 @@ export const renderLibraryThumbnail = (
   context.clearRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 
   const shape = getShape(toy.shapeId);
-  if (toy.decor.accessory) {
-    const frame = getDecorFrame(shape, toy.decor.accessory);
-    const localX = frame.headAnchor.u * 2 - 1;
-    const localY = (frame.headAnchor.v + frame.headSeatOffsetV) * 2 - 1;
-    const scale = Math.min(THUMBNAIL_SIZE, THUMBNAIL_SIZE) * 0.5 - SHAPE_PADDING;
-    const anchorX = THUMBNAIL_SIZE * 0.5 + localX * scale;
-    const anchorY = THUMBNAIL_SIZE * 0.5 - localY * scale;
-    const accessoryCanvas = document.createElement('canvas');
-    accessoryCanvas.width = 180 * rasterScale;
-    accessoryCanvas.height = 120 * rasterScale;
-    const accessoryContext = accessoryCanvas.getContext('2d');
-    if (accessoryContext) {
-      accessoryContext.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
-      drawAccessoryGraphic(accessoryContext, toy.decor.accessory, 180, 120, toy.shapeId);
-      const drawWidth = 112;
-      const drawHeight = 75;
-      // Seat the owner-profile crown above the inflated paw, not behind its tips.
-      const crownLift = pagesMaterialLighting && outputSize === 512 && toy.shapeId === 'paw' && toy.decor.accessory === 'crown' ? 7 : 0;
-      context.drawImage(accessoryCanvas, anchorX - drawWidth * 0.5, anchorY - drawHeight * 0.9 - crownLift, drawWidth, drawHeight);
-    }
-  }
-
   // One shared WebGL2 renderer snapshots the *actual* Studio material once per
   // card. The Canvas2D approximation remains a functional lost-WebGL fallback.
   if (pagesMaterialLighting) delete canvas.dataset.libraryRenderer;
@@ -335,4 +313,9 @@ export const renderLibraryThumbnail = (
     : toy.materialId === 'jelly' ? 'rgba(66,159,161,0.38)' : 'rgba(118,80,141,0.22)';
   context.stroke();
   context.restore();
+  if (toy.decor.accessory) {
+    const scale = THUMBNAIL_SIZE * .5 - SHAPE_PADDING;
+    drawSeatedAccessories(context, shape, toy.decor.accessory,
+      (u, v) => [THUMBNAIL_SIZE / 2 + (u * 2 - 1) * scale, THUMBNAIL_SIZE / 2 - (v * 2 - 1) * scale], 112, 75);
+  }
 };

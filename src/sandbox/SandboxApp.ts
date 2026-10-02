@@ -1,7 +1,8 @@
+import { getAccessorySeats } from './accessorySeats';
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
 import { drawToyMixIn } from './toyMixins';
-import { hasShapeRelief, shapeReliefSvg } from './shapeRelief';
+import { drawShapeRelief, hasShapeRelief, shapeReliefSvg } from './shapeRelief';
 import { MATERIALS, getMaterial, getPalette, type MaterialId } from '../game/content';
 import { SquishyAudio } from '../game/SquishyAudio';
 import { SHAPES, getShape, isPointInsideShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
@@ -34,6 +35,7 @@ import {
   STICKER_IDS,
   createStickerPlacement,
   drawAccessoryGraphic,
+  drawAccessoryPiece,
   estimateDecorBytes,
   getDecorFrame,
   hasSurfaceDecor,
@@ -349,6 +351,7 @@ export class SandboxApp {
   private readonly canvas: HTMLCanvasElement;
   private readonly accessoryCanvas: HTMLCanvasElement;
   private readonly accessoryContext: CanvasRenderingContext2D;
+  private readonly accessorySecond = document.createElement('canvas');
   private readonly rigidMixinCanvas: HTMLCanvasElement;
   private readonly rigidMixinContext: CanvasRenderingContext2D;
   private readonly pearlSprite = createPearlSprite();
@@ -390,8 +393,8 @@ export class SandboxApp {
   private uploadFrame = 0;
   private accessoryFrame = 0;
   private rigidMixinFrame = 0;
-  private accessoryRestU = 0;
-  private accessoryRestV = 0;
+  private accessoryRestU = [0, 0];
+  private accessoryRestV = [0, 0];
   private muted = false;
   private activityBlocked = false;
   private placementAnimation: Animation | null = null;
@@ -455,6 +458,11 @@ export class SandboxApp {
     const accessoryContext = this.accessoryCanvas.getContext('2d');
     if (!accessoryContext) throw new Error('Sandbox accessory overlay requires Canvas 2D.');
     this.accessoryContext = accessoryContext;
+    this.accessorySecond.width = 180; this.accessorySecond.height = 120;
+    this.accessorySecond.className = 'sandbox-accessory-layer';
+    this.accessorySecond.setAttribute('aria-hidden', 'true');
+    this.accessorySecond.dataset.accessoryPart = 'right'; this.accessorySecond.hidden = true;
+    this.accessoryCanvas.after(this.accessorySecond);
     this.rigidMixinCanvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-rigid-mixins]');
     const rigidMixinContext = this.rigidMixinCanvas.getContext('2d');
     if (!rigidMixinContext) throw new Error('Sandbox rigid mix-in overlay requires Canvas 2D.');
@@ -1073,7 +1081,7 @@ export class SandboxApp {
       return;
     }
     this.draft = { ...this.draft, appearance: next };
-    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId });
+    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
     this.scheduleTextureUpload();
     this.refreshRigidMixins();
     this.updateAppearanceDataset();
@@ -1417,10 +1425,11 @@ export class SandboxApp {
 
   private refreshAccessoryGraphic(): void {
     const accessory = this.draft.decor.accessory;
-    this.accessoryRestU = 0;
-    this.accessoryRestV = 0;
+    this.accessoryRestU = [0, 0];
+    this.accessoryRestV = [0, 0];
     if (!accessory) {
       this.accessoryCanvas.hidden = true;
+      this.accessorySecond.hidden = true;
       this.accessoryCanvas.removeAttribute('data-accessory-id');
       if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);
       this.accessoryFrame = 0;
@@ -1428,7 +1437,13 @@ export class SandboxApp {
     }
     this.accessoryCanvas.hidden = false;
     this.accessoryCanvas.dataset.accessoryId = accessory;
-    drawAccessoryGraphic(this.accessoryContext, accessory, this.accessoryCanvas.width, this.accessoryCanvas.height, this.draft.shapeId);
+    const seats = getAccessorySeats(getShape(this.draft.shapeId), accessory);
+    drawAccessoryPiece(this.accessoryContext, accessory, 180, 120, seats[0]!.side);
+    this.accessorySecond.hidden = seats.length < 2;
+    if (seats[1]) {
+      const ctx = this.accessorySecond.getContext('2d');
+      if (ctx) drawAccessoryPiece(ctx, accessory, 180, 120, seats[1].side);
+    }
     if (this.accessoryFrame === 0 && this.options.rendererBackend !== 'phaser') this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
   }
 
@@ -1437,62 +1452,66 @@ export class SandboxApp {
       this.accessoryFrame = 0;
       return;
     }
-    const frame = getDecorFrame(getShape(this.draft.shapeId), this.draft.decor.accessory);
-    // Project the actual accessory seat through the deformed mesh. The previous
-    // anchor+offset extrapolation was only locally linear and visibly detached
-    // crown/bow under strong full-screen pulls.
-    const seatV = Math.min(1, Math.max(0, frame.headAnchor.v + frame.headSeatOffsetV));
-    const seat = this.renderer.projectUvToCanvas(frame.headAnchor.u, seatV);
-    const left = this.renderer.projectUvToCanvas(frame.headAnchor.u - frame.headBasisU, seatV);
-    const right = this.renderer.projectUvToCanvas(frame.headAnchor.u + frame.headBasisU, seatV);
-    const down = this.renderer.projectUvToCanvas(frame.headAnchor.u, Math.max(0, seatV - frame.headBasisV));
-    const basisU = { x: right.x - left.x, y: right.y - left.y };
-    const basisV = { x: down.x - seat.x, y: down.y - seat.y };
-    const lengthU = Math.max(0.001, Math.hypot(basisU.x, basisU.y));
-    const lengthV = Math.max(0.001, Math.hypot(basisV.x, basisV.y));
-    if (this.accessoryRestU <= 0) this.accessoryRestU = lengthU;
-    if (this.accessoryRestV <= 0) this.accessoryRestV = lengthV;
-    const clampRatio = (value: number): number => Math.min(1.35, Math.max(0.72, value));
-    const ratioU = clampRatio(lengthU / this.accessoryRestU);
-    const ratioV = clampRatio(lengthV / this.accessoryRestV);
-    const normUx = basisU.x / lengthU;
-    const normUy = basisU.y / lengthU;
-    // Head gear is rigid: it follows the deformed attachment point, but must not
-    // inherit arbitrary mesh shear or a near-vertical tangent during an extreme
-    // full-screen pull. A modest tilt still sells the deformation.
-    const rawAngle = Math.atan2(normUy, normUx);
-    const angle = Math.min(Math.PI / 6, Math.max(-Math.PI / 6, rawAngle));
-    const cosAngle = Math.cos(angle);
-    const sinAngle = Math.sin(angle);
-    const rigidScale = Math.min(1.12, Math.max(0.90, Math.sqrt(ratioU * ratioV)));
-    const a = cosAngle * rigidScale;
-    const b = sinAngle * rigidScale;
-    const c = -sinAngle * rigidScale;
-    const d = cosAngle * rigidScale;
-    const canvasRect = this.canvas.getBoundingClientRect();
-    const stageRect = this.canvas.parentElement?.getBoundingClientRect();
-    if (stageRect) {
-      const anchorX = canvasRect.left - stageRect.left + seat.x;
-      const anchorY = canvasRect.top - stageRect.top + seat.y;
-      const width = this.accessoryCanvas.offsetWidth || 160;
-      const height = this.accessoryCanvas.offsetHeight || 107;
-      // Pages' live overlay previously left the broad crown/bow visibly hovering
-      // even after the shared surface anchor was correct in Hall. Seat only these
-      // Phaser preview assets a few pixels deeper; ordinary/Yandex keeps the
-      // established overlay position.
-      const liveSeatFactor = this.options.rendererBackend === 'phaser'
-        ? (this.draft.decor.accessory === 'crown' ? 0.80 : this.draft.decor.accessory === 'bow' ? 0.87 : 0.92)
-        : 0.92;
-      this.accessoryCanvas.style.left = (anchorX - width * 0.5).toFixed(2) + 'px';
-      this.accessoryCanvas.style.top = (anchorY - height * liveSeatFactor).toFixed(2) + 'px';
-      // Rotate/scale around the exact attachment point. A fixed 92% origin made
-      // crown/bow orbit away from the deformed head because their reviewed
-      // seating factors are intentionally lower than the generic accessory seat.
-      this.accessoryCanvas.style.transformOrigin = `50% ${(liveSeatFactor * 100).toFixed(1)}%`;
-      this.accessoryCanvas.style.transform = 'matrix(' + [a, b, c, d].map((value) => value.toFixed(4)).join(',') + ',0,0)';
-      this.accessoryCanvas.dataset.accessoryAnchorX = anchorX.toFixed(2);
-      this.accessoryCanvas.dataset.accessoryAnchorY = anchorY.toFixed(2);
-      this.accessoryCanvas.dataset.accessoryMatrix = [a, b, c, d].map((value) => value.toFixed(4)).join(',');
+    const seats = getAccessorySeats(getShape(this.draft.shapeId), this.draft.decor.accessory);
+    for (let piece = 0; piece < seats.length; piece++) {
+      const accessoryCanvas = piece === 0 ? this.accessoryCanvas : this.accessorySecond;
+      const frame = getDecorFrame(getShape(this.draft.shapeId), this.draft.decor.accessory, seats[piece]!.side);
+      // Project the actual accessory seat through the deformed mesh. The previous
+      // anchor+offset extrapolation was only locally linear and visibly detached
+      // crown/bow under strong full-screen pulls.
+      const seatV = Math.min(1, Math.max(0, frame.headAnchor.v + frame.headSeatOffsetV));
+      const seat = this.renderer.projectUvToCanvas(frame.headAnchor.u, seatV);
+      const left = this.renderer.projectUvToCanvas(frame.headAnchor.u - frame.headBasisU, seatV);
+      const right = this.renderer.projectUvToCanvas(frame.headAnchor.u + frame.headBasisU, seatV);
+      const down = this.renderer.projectUvToCanvas(frame.headAnchor.u, Math.max(0, seatV - frame.headBasisV));
+      const basisU = { x: right.x - left.x, y: right.y - left.y };
+      const basisV = { x: down.x - seat.x, y: down.y - seat.y };
+      const lengthU = Math.max(0.001, Math.hypot(basisU.x, basisU.y));
+      const lengthV = Math.max(0.001, Math.hypot(basisV.x, basisV.y));
+      if (this.accessoryRestU[piece]! <= 0) this.accessoryRestU[piece] = lengthU;
+      if (this.accessoryRestV[piece]! <= 0) this.accessoryRestV[piece] = lengthV;
+      const clampRatio = (value: number): number => Math.min(1.35, Math.max(0.72, value));
+      const ratioU = clampRatio(lengthU / this.accessoryRestU[piece]!);
+      const ratioV = clampRatio(lengthV / this.accessoryRestV[piece]!);
+      const normUx = basisU.x / lengthU;
+      const normUy = basisU.y / lengthU;
+      // Head gear is rigid: it follows the deformed attachment point, but must not
+      // inherit arbitrary mesh shear or a near-vertical tangent during an extreme
+      // full-screen pull. A modest tilt still sells the deformation.
+      const rawAngle = Math.atan2(normUy, normUx);
+      const angle = Math.min(Math.PI / 6, Math.max(-Math.PI / 6, rawAngle)) + frame.headAngle;
+      const cosAngle = Math.cos(angle);
+      const sinAngle = Math.sin(angle);
+      const rigidScale = Math.min(1.12, Math.max(0.90, Math.sqrt(ratioU * ratioV)));
+      const a = cosAngle * rigidScale;
+      const b = sinAngle * rigidScale;
+      const c = -sinAngle * rigidScale;
+      const d = cosAngle * rigidScale;
+      const canvasRect = this.canvas.getBoundingClientRect();
+      const stageRect = this.canvas.parentElement?.getBoundingClientRect();
+      if (stageRect) {
+        const anchorX = canvasRect.left - stageRect.left + seat.x;
+        const anchorY = canvasRect.top - stageRect.top + seat.y;
+        const width = accessoryCanvas.offsetWidth || 160;
+        const height = accessoryCanvas.offsetHeight || 107;
+        // Pages' live overlay previously left the broad crown/bow visibly hovering
+        // even after the shared surface anchor was correct in Hall. Seat only these
+        // Phaser preview assets a few pixels deeper; ordinary/Yandex keeps the
+        // established overlay position.
+        const liveSeatFactor = this.options.rendererBackend === 'phaser'
+          ? (this.draft.decor.accessory === 'crown' ? 0.80 : this.draft.decor.accessory === 'bow' ? 0.87 : 0.92)
+          : 0.92;
+        accessoryCanvas.style.left = (anchorX - width * 0.5).toFixed(2) + 'px';
+        accessoryCanvas.style.top = (anchorY - height * liveSeatFactor).toFixed(2) + 'px';
+        // Rotate/scale around the exact attachment point. A fixed 92% origin made
+        // crown/bow orbit away from the deformed head because their reviewed
+        // seating factors are intentionally lower than the generic accessory seat.
+        accessoryCanvas.style.transformOrigin = `50% ${(liveSeatFactor * 100).toFixed(1)}%`;
+        accessoryCanvas.style.transform = 'matrix(' + [a, b, c, d].map((value) => value.toFixed(4)).join(',') + ',0,0)';
+        accessoryCanvas.dataset.accessoryAnchorX = anchorX.toFixed(2);
+        accessoryCanvas.dataset.accessoryAnchorY = anchorY.toFixed(2);
+        accessoryCanvas.dataset.accessoryMatrix = [a, b, c, d].map((value) => value.toFixed(4)).join(',');
+      }
     }
     if (this.options.rendererBackend !== 'phaser') this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
   };
@@ -1585,15 +1604,16 @@ export class SandboxApp {
 
   private uploadFaceNow(): void {
     if (this.options.rendererBackend !== 'phaser') return;
-    const hasFace = this.draft.decor.eyes !== null || this.draft.decor.mouth !== null || this.draft.decor.blush;
+    const hasFace = hasShapeRelief(this.draft.shapeId) || hasSurfaceDecor(this.draft.decor);
     (this.renderer as PhaserSquishSurface).setFaceTexture(hasFace ? this.faceCanvas : null);
   }
 
   private replayAndUpload(): void {
-    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId });
+    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
     if (this.options.rendererBackend === 'phaser') {
-      renderSurfaceStickers(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
       this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
+      drawShapeRelief(this.faceContext, this.draft.shapeId);
+      renderSurfaceStickers(this.faceContext, this.draft.decor, getShape(this.draft.shapeId));
       renderSurfaceFace(this.faceContext, this.draft.decor, getShape(this.draft.shapeId));
     } else {
       renderSurfaceDecor(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));

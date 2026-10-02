@@ -9,6 +9,12 @@ import type { AccessoryId, DecorDocumentV1, DecorFrame, StickerId } from './deco
  * IDs and V3 documents retain their original meaning. */
 const TAU = Math.PI * 2;
 const INK = '#503e50';
+const stickerColors = [
+  ['#ffe5e7', '#fda3c8', '#d660a0'],
+  ['#effff7', '#8fdec4', '#409b9b'],
+  ['#fffbdc', '#f6d078', '#bd893d'],
+  ['#f5edff', '#c5a5f2', '#8861be'],
+] as const;
 const S = APPEARANCE_TEXTURE_SIZE;
 const point = (p: { u: number; v: number }): [number, number] => [p.u * S, (1 - p.v) * S];
 const gradient = (ctx: CanvasRenderingContext2D, top: string, mid: string, bottom: string, height: number): CanvasGradient => {
@@ -71,20 +77,22 @@ const blush = (ctx: CanvasRenderingContext2D, p: { u: number; v: number }): void
   ctx.fillStyle = g; ctx.fillRect(-17, -17, 34, 34);
   ctx.restore();
 };
-const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number): void => {
+const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number, variant = 0): void => {
   const r = size * .5;
+  const base = { heart: 0, flower: 1, star: 2, sparkle: 3 }[id];
+  const colors = stickerColors[(base + variant) % stickerColors.length]!;
   ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.shadowColor = 'rgba(61,42,45,.25)'; ctx.shadowBlur = 1.5; ctx.shadowOffsetY = 1.2;
   if (id === 'heart') {
-    drawToyMixIn(ctx, 'hearts', r);
+    drawToyMixIn(ctx, 'hearts', r, 0, 0, colors);
   } else if (id === 'star') {
-    drawPearlStar(ctx, r);
+    drawPearlStar(ctx, r, 0, [colors[0], colors[1], colors[0], colors[1], colors[2]]);
   } else if (id === 'flower') {
     for (let i = 0; i < 5; i++) {
       const a = i * TAU / 5 - Math.PI / 2;
       const x = Math.cos(a) * r * .46, y = Math.sin(a) * r * .46;
       const g = ctx.createRadialGradient(x - r * .12, y - r * .16, 0, x, y, r * .5);
-      g.addColorStop(0, '#fff1f5'); g.addColorStop(.45, '#f6bad9'); g.addColorStop(1, '#bf7dad');
+      g.addColorStop(0, colors[0]); g.addColorStop(.45, colors[1]); g.addColorStop(1, colors[2]);
       ctx.beginPath(); ctx.ellipse(x, y, r * .46, r * .32, a, 0, TAU);
       ctx.fillStyle = g; ctx.fill();
       ctx.strokeStyle = 'rgba(255,236,246,.7)'; ctx.lineWidth = Math.max(.6, r * .05); ctx.stroke();
@@ -97,7 +105,7 @@ const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number): vo
     ctx.quadraticCurveTo(r * .14, r * .14, 0, r);
     ctx.quadraticCurveTo(-r * .14, r * .14, -r, 0);
     ctx.quadraticCurveTo(-r * .14, -r * .14, 0, -r); ctx.closePath();
-    ctx.fillStyle = gradient(ctx, '#fffce7', '#ffe7a8', '#cf9aca', r); ctx.fill();
+    ctx.fillStyle = gradient(ctx, colors[0], colors[1], colors[2], r); ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,244,.85)'; ctx.lineWidth = Math.max(.6, r * .07); ctx.stroke();
   }
   ctx.restore();
@@ -127,7 +135,7 @@ export const renderPagesSurfaceStickers = (
     ctx.save();
     if (Math.abs(x - faceX) < 42 && Math.abs(y - faceY) < 35) ctx.globalAlpha = .55;
     ctx.translate(x, y); ctx.rotate(placed.r / 255 * TAU);
-    sticker(ctx, ids[placed.t] ?? 'heart', placed.s);
+    sticker(ctx, ids[placed.t] ?? 'heart', placed.s, (placed.x * 3 + placed.y * 7 + placed.r) % 4);
     ctx.restore();
   }
 };

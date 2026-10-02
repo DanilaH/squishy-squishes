@@ -177,3 +177,16 @@
   line-height: 1.12;
   overflow-wrap: anywhere;
 }
+
+/* Body (4), rigid fillers (5), then head gear (6). Never intercept paint. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-accessory-layer { z-index: 6; }
+
+/* Every tab shares the same grid slot. Invisible panels reserve the largest
+   content size, keeping tabs/CTA and the playfield still through tab changes. */
+#app[data-jelly-ui-ready] .sandbox-panel--decor { grid-template-rows: auto auto auto; }
+#app[data-jelly-ui-ready] .sandbox-panel--decor > .sandbox-decor-tabs { grid-area: 1 / 1; }
+#app[data-jelly-ui-ready] .sandbox-panel--decor > .sandbox-decor-section { grid-area: 2 / 1; }
+#app[data-jelly-ui-ready] .sandbox-panel--decor > .sandbox-decor-section[hidden] {
+  display: grid !important; visibility: hidden; pointer-events: none;
+}
+#app[data-jelly-ui-ready] .sandbox-panel--decor > [data-action='decor-continue'] { grid-area: 3 / 1; }

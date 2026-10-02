@@ -144,3 +144,28 @@ this dependency graph. Candidate, Yandex DRAFT and path-filtered Hall review
 remain unchanged. Local `release:check`, `pages:qa`, `qa:browser` and `qa:visual`
 remain available. This reduces duplicate runner work; wall-clock improvement
 must be measured because the old duplicate jobs also ran concurrently.
+
+
+## Owner Decor corrections — 2 October 2026
+
+Owner phone review exposed live Paint covering paw pads, then restoring them
+on the next appearance replay. Production now keeps molded detail in the
+existing clean face UV layer, above live pigment, with no saved strokes added.
+Head gear is composited above the body in Studio/Squeeze and every Hall renderer,
+including lost-WebGL fallback. Shared per-mold seats put bows on a tilted upper
+shoulder and seat each ear/horn separately. The right piece mirrors the same
+left authored piece; both roots follow their own projected surface point. No
+new art IDs, save fields, physics or renderer lifecycle.
+
+Sticker hues vary deterministically from existing placement bytes, so a saved
+sticker keeps its color on reload. Flower choice is mint; the pearl/gold and
+pink objects retain their molded highlights. Decor tabs share one content grid
+slot; invisible panels reserve the largest content size, so tab/CTA/playfield
+geometry remains steady without scrolling or smaller 44px controls.
+
+Visual review caught a floating dumpling crown in the first passed capture.
+Its final root sits inside the pinched contour; strawberry crown also uses
+an interior root. The seat test includes crown containment for all eight molds.
+The four initial Decor snapshot failures were hidden-panel art exposed by the
+snapshot stylesheet's forced visibility. Inheriting panel visibility preserves
+all 30 existing baselines; no image or comparison threshold was changed.

@@ -1,3 +1,4 @@
+import { getAccessorySeats, type AccessorySeat } from './accessorySeats';
 import { getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
 
@@ -51,6 +52,7 @@ export interface DecorFrame {
   readonly headBasisU: number;
   readonly headBasisV: number;
   readonly headSeatOffsetV: number;
+  readonly headAngle: number;
 }
 
 type PagesDecorArt = {
@@ -219,7 +221,7 @@ export const estimateDecorBytes = (decor: DecorDocumentV1): number =>
 export const hasSurfaceDecor = (decor: DecorDocumentV1): boolean =>
   decor.eyes !== null || decor.mouth !== null || decor.blush || decor.stickers.length > 0;
 
-export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | null = null): DecorFrame => {
+export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | null = null, side: AccessorySeat['side'] = 'whole'): DecorFrame => {
   let minX = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
@@ -291,16 +293,18 @@ export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | n
   }
   const anchorY = getShapeTopAtX(shape, headX) - height * .025;
   const headSeatOffsetV = (headSeatY - anchorY) * 0.5;
+  const seat = pagesDecorArt && accessory ? getAccessorySeats(shape, accessory).find(p => p.side === side) ?? getAccessorySeats(shape, accessory)[0] : undefined;
   return {
     eyesLeft: toUv(centerX - eyeDx, eyeY),
     eyesRight: toUv(centerX + eyeDx, eyeY),
     mouth: toUv(centerX, mouthY),
     blushLeft: toUv(centerX - blushDx, blushY),
     blushRight: toUv(centerX + blushDx, blushY),
-    headAnchor: toUv(headX, anchorY),
+    headAnchor: seat ? { u: seat.u, v: seat.v } : toUv(headX, anchorY),
     headBasisU: clamp(width * 0.11 * 0.5, 0.055, 0.12),
     headBasisV: clamp(height * 0.09 * 0.5, 0.045, 0.10),
-    headSeatOffsetV,
+    headSeatOffsetV: seat ? 0 : headSeatOffsetV,
+    headAngle: seat?.angle ?? 0,
   };
 };
 
@@ -608,4 +612,29 @@ export const drawAccessoryGraphic = (
     }
   }
   context.restore();
+};
+
+/** One half of the approved art, mirrored from the same left ear/horn. */
+export const drawAccessoryPiece = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, side: AccessorySeat['side']): void => {
+  if (side === 'whole') { drawAccessoryGraphic(ctx, id, width, height); return; }
+  const source = document.createElement('canvas'); source.width = 180; source.height = 120;
+  const sourceContext = source.getContext('2d'); if (!sourceContext) return;
+  drawAccessoryGraphic(sourceContext, id, 180, 120);
+  ctx.clearRect(0, 0, width, height); ctx.save();
+  ctx.translate(width / 2, height * .92); ctx.scale(side === 'right' ? -1 : 1, 1);
+  // Root of the left piece is at x=58.5 in the 180px authored logical frame.
+  ctx.drawImage(source, 0, 0, 90, 120, -58.5 * width / 180, -height * .92, width / 2, height);
+  ctx.restore();
+};
+
+/** Shared front-facing Hall/fallback composition, after the body. */
+export const drawSeatedAccessories = (ctx: CanvasRenderingContext2D, shape: ShapeDefinition, id: AccessoryId, project: (u: number, v: number) => readonly [number, number], width: number, height: number): void => {
+  for (const seat of getAccessorySeats(shape, id)) {
+    const source = document.createElement('canvas'); source.width = 360; source.height = 240;
+    const drawing = source.getContext('2d'); if (!drawing) continue;
+    drawing.scale(2, 2); drawAccessoryPiece(drawing, id, 180, 120, seat.side);
+    const [x, y] = project(seat.u, seat.v);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(seat.angle);
+    ctx.drawImage(source, -width / 2, -height * (id === 'bow' ? .87 : id === 'crown' ? .80 : .92), width, height); ctx.restore();
+  }
 };

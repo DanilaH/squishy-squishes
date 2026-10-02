@@ -1,6 +1,6 @@
 import { getShape } from '../../game/shapes';
 import { getMaterial, getPalette } from '../../game/content';
-import { drawAccessoryGraphic, getDecorFrame } from '../../sandbox/decor';
+import { drawSeatedAccessories } from '../../sandbox/decor';
 import type { SavedSquishy } from '../../sandbox/types';
 
 /** Lab-only curved geometry. Exactly one disposable offscreen WebGL2 context
@@ -428,22 +428,9 @@ class VolumeMeshRenderer {
     output.height = SIZE;
     const context = output.getContext('2d');
     if (!context) throw new Error('3D review output canvas unavailable');
-    if (toy.decor.accessory) {
-      const frame = getDecorFrame(getShape(toy.shapeId), toy.decor.accessory);
-      const x = 128 + (frame.headAnchor.u * 2 - 1) * 98;
-      const y = 128 - ((frame.headAnchor.v + frame.headSeatOffsetV) * 2 - 1) * 98;
-      const accessory = document.createElement('canvas');
-      accessory.width = 360;
-      accessory.height = 240;
-      const accessoryContext = accessory.getContext('2d');
-      if (accessoryContext) {
-        accessoryContext.setTransform(2, 0, 0, 2, 0, 0);
-        drawAccessoryGraphic(accessoryContext, toy.decor.accessory, 180, 120, toy.shapeId);
-        // Hall is front-facing, so accessory art uses the same authored frame.
-        context.drawImage(accessory, (x - 56) * 2, (y - 67.5) * 2, 224, 150);
-      }
-    }
     context.drawImage(this.canvas, 0, 0);
+    if (toy.decor.accessory) drawSeatedAccessories(context, getShape(toy.shapeId), toy.decor.accessory,
+      (u, v) => [(128 + (u * 2 - 1) * 98) * 2, (128 - (v * 2 - 1) * 98) * 2], 224, 150);
     output.dataset.volumeRenderer = 'inflated-mesh-512';
     return output;
   }

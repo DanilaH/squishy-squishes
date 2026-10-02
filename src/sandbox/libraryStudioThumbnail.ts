@@ -1,3 +1,4 @@
+import { drawSeatedAccessories } from './decor';
 import { getMaterial, getPalette } from '../game/content';
 import { createShapeField, getShape, type ShapeId } from '../game/shapes';
 import { SquishSimulation } from '../squish/SquishSimulation';
@@ -244,6 +245,8 @@ class StudioThumbnailRenderer {
     // Nothing animated or WebGL-backed remains attached to an exhibit.
     // The destination has a 1x or 2x transform; draw in 256 logical units.
     destination.drawImage(this.canvas, 0, 0, LOGICAL_SIZE, LOGICAL_SIZE);
+    if (toy.decor.accessory) drawSeatedAccessories(destination, getShape(toy.shapeId), toy.decor.accessory,
+      (u, v) => [128 + (u * 2 - 1) * 102.4, 128 - (v * 2 - 1) * 102.4], 112, 75);
   }
 
   public dispose(): void {

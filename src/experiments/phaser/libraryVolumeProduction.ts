@@ -5,18 +5,14 @@ import { releaseVolumeMesh, renderVolumeMesh } from './libraryVolumeMesh';
 
 /** Owner-reviewed Hall: static 512px mesh snapshots, one reusable offscreen WebGL2
  * context, no per-card context or animation. Production, review Pages and the
- * isolated Yandex DRAFT share this renderer. The preexisting thumbnail draws the accessory
- * BEHIND the body; omit it here to prevent a duplicate bow/ears. */
+ * isolated Yandex DRAFT share this renderer. Accessories are composited once,
+ * in front of the body, using the same per-mold seats as Studio. */
 export const renderPagesVolumeThumbnail = (
   destination: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512,
 ): boolean => {
   if (snapshotSize !== 512) return renderStudioLibraryThumbnail(destination, toy, snapshotSize);
   const source = renderNeutralVolumeAlbedo(toy);
-  const withoutAccessory: SavedSquishy = {
-    ...toy,
-    decor: { ...toy.decor, accessory: null },
-  };
-  const volume = renderVolumeMesh(withoutAccessory, source);
+  const volume = renderVolumeMesh(toy, source);
   if (volume.dataset.volumeRenderer === 'mesh-unavailable') {
     // The source art is not a successful volume render. The mesh renderer has
     // already released its failed context and memoized the fallback for this

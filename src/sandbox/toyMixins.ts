@@ -19,14 +19,14 @@ const sphere = (ctx: CanvasRenderingContext2D, r: number, foam: boolean): void =
 };
 
 /** Same small material drawing in the tray, UV bake and transient placement cue. */
-export const drawToyMixIn = (ctx: CanvasRenderingContext2D, id: MixInId, r: number, variation = 0, depth = 0): void => {
+export const drawToyMixIn = (ctx: CanvasRenderingContext2D, id: MixInId, r: number, variation = 0, depth = 0, heartColors: readonly [string, string, string] = ['#ffe5e7', '#fda3c8', '#d660a0']): void => {
   if (id === 'stars') { drawPearlStar(ctx, r, depth); return; }
   ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.globalAlpha *= 1 - depth * .25;
   if (id === 'pearls' || id === 'foam') sphere(ctx, r, id === 'foam');
   else if (id === 'hearts') {
-    ctx.translate(0, r * .1); heart(ctx, r); ctx.fillStyle = '#ad527c'; ctx.fill(); ctx.translate(0, -r * .1);
+    ctx.translate(0, r * .1); heart(ctx, r); ctx.fillStyle = heartColors[2]; ctx.fill(); ctx.translate(0, -r * .1);
     heart(ctx, r); const g = ctx.createLinearGradient(-r, -r, r, r);
-    g.addColorStop(0, '#ffe5e7'); g.addColorStop(.4, '#fda3c8'); g.addColorStop(1, '#d660a0');
+    g.addColorStop(0, heartColors[0]); g.addColorStop(.4, heartColors[1]); g.addColorStop(1, heartColors[2]);
     ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = 'rgba(255,230,244,.8)'; ctx.lineWidth = Math.max(.6, r * .07); ctx.stroke();
     ctx.beginPath(); ctx.ellipse(-r * .34, -r * .25, r * .26, r * .12, -.45, 0, TAU); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.fill();
   } else if (id === 'confetti') {
