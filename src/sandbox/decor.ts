@@ -1,3 +1,4 @@
+import { REST_FACE, type FaceReaction } from './toyReactions';
 import { getAccessorySeats, type AccessorySeat } from './accessorySeats';
 import { getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
@@ -57,7 +58,7 @@ export interface DecorFrame {
 
 type PagesDecorArt = {
   render: (context: CanvasRenderingContext2D, decor: DecorDocumentV1, shape: ShapeDefinition, frame: DecorFrame) => void;
-  renderFace: (context: CanvasRenderingContext2D, decor: DecorDocumentV1, shape: ShapeDefinition, frame: DecorFrame) => void;
+  renderFace: (context: CanvasRenderingContext2D, decor: DecorDocumentV1, shape: ShapeDefinition, frame: DecorFrame, reaction?: FaceReaction) => void;
   renderStickers: (context: CanvasRenderingContext2D, decor: DecorDocumentV1, shape: ShapeDefinition, frame: DecorFrame) => void;
   accessory: (context: CanvasRenderingContext2D, accessory: AccessoryId, width: number, height: number, shapeId?: ShapeId) => void;
 };
@@ -455,9 +456,10 @@ export const renderSurfaceFace = (
   context: CanvasRenderingContext2D,
   decor: DecorDocumentV1,
   shape: ShapeDefinition,
+  reaction: FaceReaction = REST_FACE,
 ): void => {
   const frame = getDecorFrame(shape);
-  if (pagesDecorArt) { pagesDecorArt.renderFace(context, decor, shape, frame); return; }
+  if (pagesDecorArt) { pagesDecorArt.renderFace(context, decor, shape, frame, reaction); return; }
   if (decor.eyes) {
     drawEye(context, decor.eyes, frame.eyesLeft);
     drawEye(context, decor.eyes, frame.eyesRight);

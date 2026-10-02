@@ -1,3 +1,4 @@
+import type { MaterialId } from './content';
 import { ContinuousNoiseTexture, type ContinuousNoiseTextureProfile } from '@danilah/mini-games-kit/audio';
 import type { PresentationTier } from './presentation';
 
@@ -91,15 +92,18 @@ export class SquishyAudio {
   private pourRequestId = 0;
   private stageCompleteToneIndex = 0;
   private muted = false;
+  private blocked = false;
+  private material: MaterialId = 'soft';
+  private lastBeadAt = -1;
   private lastToyPlacementAt = -1;
   private disposed = false;
 
   public async prime(): Promise<void> {
-    if (this.disposed) return;
+    if (this.disposed || this.blocked) return;
     if (!this.context) {
       const context = new AudioContext();
       const master = context.createGain();
-      master.gain.value = this.muted ? 0 : 0.68;
+      master.gain.value = this.muted || this.blocked ? 0 : 0.68;
       master.connect(context.destination);
 
       this.context = context;
@@ -112,8 +116,22 @@ export class SquishyAudio {
     if (this.context.state !== 'running') await this.context.resume();
   }
 
+  public setMaterial(material: MaterialId): void { this.material = material; }
+
+  public setActivityBlocked(blocked: boolean): void {
+    this.blocked = blocked;
+    if (blocked) { this.tactile?.update(0, 0); this.stopPour(); }
+    this.setMuted(this.muted);
+  }
+
   public updateTactile(progress: number, velocity: number): void {
-    this.tactile?.update(progress, velocity);
+    if (this.blocked) return;
+    const softness = this.material === 'marshmallow' ? .52 : this.material === 'jelly' ? 1 : .78;
+    this.tactile?.update(progress * softness, velocity * softness);
+    if ((this.material === 'pearl' || this.material === 'chrome') && velocity > .12 && progress > .04) {
+      const now = this.context?.currentTime ?? 0;
+      if (now - this.lastBeadAt > .22) { this.lastBeadAt = now; this.playToyPlacement('stars'); }
+    }
   }
 
   public releaseTactile(intensity = 0): void {
@@ -124,7 +142,7 @@ export class SquishyAudio {
   public setMuted(muted: boolean): void {
     this.muted = muted;
     if (!this.context || !this.master) return;
-    this.master.gain.setTargetAtTime(muted ? 0 : 0.68, this.context.currentTime, 0.025);
+    this.master.gain.setTargetAtTime(muted || this.blocked ? 0 : 0.68, this.context.currentTime, 0.025);
   }
 
   public startPour(kind: PourKind): void {
@@ -139,7 +157,7 @@ export class SquishyAudio {
 
   /** Quiet one-shot craft feedback; uses the same mute/context lifecycle. */
   public playToyPlacement(kind: 'bow' | 'stars'): void {
-    if (!this.context || !this.master || this.context.state !== 'running' || this.muted) return;
+    if (!this.context || !this.master || this.context.state !== 'running' || this.muted || this.blocked) return;
     const now = this.context.currentTime;
     if (now - this.lastToyPlacementAt < .09) return;
     this.lastToyPlacementAt = now;
@@ -157,7 +175,7 @@ export class SquishyAudio {
   }
 
   public playStageComplete(weight = 0.5): void {
-    if (!this.context || !this.master || this.context.state !== 'running' || this.muted) return;
+    if (!this.context || !this.master || this.context.state !== 'running' || this.muted || this.blocked) return;
     const strength = clamp01(weight);
     const pitch = STAGE_COMPLETE_PITCH[this.stageCompleteToneIndex % STAGE_COMPLETE_PITCH.length]!;
     this.stageCompleteToneIndex = (this.stageCompleteToneIndex + 1) % STAGE_COMPLETE_PITCH.length;
@@ -183,7 +201,7 @@ export class SquishyAudio {
   }
 
   public playReveal(tier: PresentationTier): void {
-    if (!this.context || !this.master || this.context.state !== 'running' || this.muted) return;
+    if (!this.context || !this.master || this.context.state !== 'running' || this.muted || this.blocked) return;
     const profile = revealProfiles[tier];
     const now = this.context.currentTime;
 
@@ -247,7 +265,7 @@ export class SquishyAudio {
   }
 
   public playCollect(tier: PresentationTier): void {
-    if (!this.context || !this.master || this.context.state !== 'running' || this.muted) return;
+    if (!this.context || !this.master || this.context.state !== 'running' || this.muted || this.blocked) return;
     const profile = collectProfiles[tier];
     const now = this.context.currentTime;
     const oscillator = this.context.createOscillator();
@@ -286,7 +304,7 @@ export class SquishyAudio {
   private async startPourAsync(kind: PourKind, requestId: number): Promise<void> {
     await this.prime();
     if (requestId !== this.pourRequestId) return;
-    if (!this.context || !this.master || !this.noiseBuffer || this.muted || this.disposed) return;
+    if (!this.context || !this.master || !this.noiseBuffer || this.muted || this.blocked || this.disposed) return;
 
     this.stopActivePour();
 
@@ -328,18 +346,19 @@ export class SquishyAudio {
   }
 
   private playReleasePlop(intensity: number): void {
-    if (!this.context || !this.master || this.context.state !== 'running' || this.muted) return;
+    if (!this.context || !this.master || this.context.state !== 'running' || this.muted || this.blocked) return;
 
     const strength = clamp01(intensity);
     const now = this.context.currentTime;
-    const duration = 0.11 + strength * 0.055;
+    const pitch = this.material === 'jelly' ? 1.35 : this.material === 'marshmallow' ? .8 : this.material === 'pearl' ? 1.65 : 1;
+    const duration = (0.11 + strength * 0.055) * (this.material === 'marshmallow' ? 1.25 : 1);
     const oscillator = this.context.createOscillator();
     const filter = this.context.createBiquadFilter();
     const gain = this.context.createGain();
 
     oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(104 - strength * 16, now);
-    oscillator.frequency.exponentialRampToValueAtTime(58, now + duration);
+    oscillator.frequency.setValueAtTime((104 - strength * 16) * pitch, now);
+    oscillator.frequency.exponentialRampToValueAtTime(58 * pitch, now + duration);
     filter.type = 'lowpass';
     filter.frequency.setValueAtTime(260, now);
     filter.Q.setValueAtTime(0.7, now);

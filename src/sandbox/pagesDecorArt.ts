@@ -1,3 +1,4 @@
+import { REST_FACE, type FaceReaction } from './toyReactions';
 import { drawToyMixIn } from './toyMixins';
 import { drawPearlStar } from './pearlStars';
 import { drawToyAccessory } from './toyArt';
@@ -38,9 +39,11 @@ const bead = (ctx: CanvasRenderingContext2D, x: number, y: number, radius = 8.6)
   ctx.beginPath(); ctx.arc(x + radius * .35, y + radius * .27, radius * .115, 0, TAU); ctx.fill();
   ctx.restore();
 };
-const eye = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['eyes']>, p: { u: number; v: number }): void => {
+const eye = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['eyes']>, p: { u: number; v: number }, reaction: FaceReaction = REST_FACE): void => {
   const [x, y] = point(p);
-  if (style === 'dot') { bead(ctx, x, y); return; }
+  ctx.save(); ctx.translate(x, y);
+  ctx.scale(1 + reaction.squeeze * .08, 1 - reaction.squeeze * .62); ctx.translate(-x, -y);
+  if (style === 'dot') { bead(ctx, x, y); ctx.restore(); return; }
   ctx.save();
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.strokeStyle = INK; ctx.lineWidth = 3.6;
@@ -48,11 +51,13 @@ const eye = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['
   if (style === 'happy') { ctx.moveTo(x - 8, y + 1); ctx.bezierCurveTo(x - 5, y - 7, x + 5, y - 7, x + 8, y + 1); }
   else { ctx.moveTo(x - 8, y); ctx.quadraticCurveTo(x, y + 4.5, x + 8, y); }
   ctx.stroke();
-  ctx.restore();
+  ctx.restore(); ctx.restore();
 };
-const mouth = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['mouth']>, p: { u: number; v: number }): void => {
+const mouth = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['mouth']>, p: { u: number; v: number }, reaction: FaceReaction = REST_FACE): void => {
   const [x, y] = point(p);
-  ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.save(); ctx.translate(x, y);
+  ctx.scale(1 + reaction.delight * .18, 1 - reaction.squeeze * .22 + reaction.delight * .22); ctx.translate(-x, -y);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   if (style === 'o') {
     ctx.beginPath(); ctx.ellipse(x, y + 2, 5.4, 6.8, 0, 0, TAU);
     ctx.fillStyle = '#73516c'; ctx.fill(); ctx.strokeStyle = '#4b384f'; ctx.lineWidth = 2; ctx.stroke();
@@ -141,11 +146,11 @@ export const renderPagesSurfaceStickers = (
 };
 
 export const renderPagesSurfaceFace = (
-  ctx: CanvasRenderingContext2D, decor: DecorDocumentV1, _shape: ShapeDefinition, frame: DecorFrame,
+  ctx: CanvasRenderingContext2D, decor: DecorDocumentV1, _shape: ShapeDefinition, frame: DecorFrame, reaction: FaceReaction = REST_FACE,
 ): void => {
   if (decor.blush) { blush(ctx, frame.blushLeft); blush(ctx, frame.blushRight); }
-  if (decor.eyes) { eye(ctx, decor.eyes, frame.eyesLeft); eye(ctx, decor.eyes, frame.eyesRight); }
-  if (decor.mouth) mouth(ctx, decor.mouth, frame.mouth);
+  if (decor.eyes) { eye(ctx, decor.eyes, frame.eyesLeft, reaction); eye(ctx, decor.eyes, frame.eyesRight, reaction); }
+  if (decor.mouth) mouth(ctx, decor.mouth, frame.mouth, reaction);
 };
 
 export const renderPagesSurfaceDecor = (
