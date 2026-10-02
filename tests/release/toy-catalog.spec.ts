@@ -28,6 +28,9 @@ for (const locale of ['ru-RU', 'en-US']) {
       await mkdir('migration-baseline-evidence', { recursive: true });
       await page.screenshot({ path: `migration-baseline-evidence/catalog-${locale}-hall.png` });
       for (const accessory of ACCESSORY_IDS) {
+        // A hosted reload can finish before the asynchronous Hall mount. Wait
+        // before choosing a room, otherwise the first click can skip the toy.
+        await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
         const play = page.locator(`[data-library-play-id="catalog-${accessory}"]`);
         for (let room = 0; room < 3 && !await play.isVisible(); room++) await page.locator('[data-library-hall-next]').click();
         await expect(play).toBeVisible();
