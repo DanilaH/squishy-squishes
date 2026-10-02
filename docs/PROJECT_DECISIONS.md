@@ -197,3 +197,10 @@ Heart/flower/star/dot stamps each produce one existing pigment stroke, with the
 same budget, eraser, Undo and V1/V3 serialization; there are no new saved IDs.
 Rainbow strokes and the optional idea bank remain deferred. No physical
 constants, progression, slot limits or renderer architecture change.
+
+Actual first browser captures passed nine new tool/reaction cases. Visual review
+inspected both failed Paint actual/diff pairs (EN 320, RU 844): the Brush menu
+indicator and small text raster differences, with unchanged geometry. Only those
+two baselines are aligned; 28 remain unchanged and the threshold is retained.
+The mobile stamp chooser uses two rows to avoid splitting Russian words. Review
+also caught and fixed eraser segments being suppressed after choosing a stamp.
