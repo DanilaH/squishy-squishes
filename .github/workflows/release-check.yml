@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -17,6 +18,9 @@ permissions:
 
 jobs:
   release-check:
+    outputs:
+      build-artifact-id: ${{ steps.shared-build.outputs.artifact-id }}
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,6 +34,24 @@ jobs:
         run: npm ci
       - name: Validate Pages and Yandex builds
         run: npm run release:check
+      - name: Build and stage the isolated Pages preview once
+        run: npm run pages:build:app
+      - name: Package shared build with source identity and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ci-build
+          tar -czf ci-build/release-build.tar.gz dist dist-yandex
+          printf '%s\n' "$GITHUB_SHA" > ci-build/source-sha
+          (cd ci-build && sha256sum release-build.tar.gz > SHA256SUMS)
+      - name: Upload the exact build for QA and deployment
+        id: shared-build
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-build-${{ github.run_attempt }}
+          path: ci-build/*
+          if-no-files-found: error
+          retention-days: 7
       - name: Package Yandex archive
         run: |
           cd dist-yandex
@@ -38,5 +60,165 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: squishy-squishes-yandex
+          overwrite: true
           path: squishy-squishes-yandex.zip
           if-no-files-found: error
+
+  browser-qa:
+    needs: release-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Download this run's shared build
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
+          merge-multiple: true
+          path: ci-build
+      - name: Verify source identity and restore the exact build
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat ci-build/source-sha)" = "$GITHUB_SHA"
+          (cd ci-build && sha256sum --check SHA256SUMS)
+          tar -xzf ci-build/release-build.tar.gz
+          test -f dist/index.html
+          test -f dist/phaser/index.html
+          test -f dist-yandex/index.html
+      - name: Compare production UI with reviewed visual baselines
+        run: npm run qa:visual
+      - name: Run release browser QA
+        run: npm run qa:browser
+      - name: Upload passing migration baseline evidence
+        if: success() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: phaser-m0-old-engine-evidence
+          overwrite: true
+          path: migration-baseline-evidence/*.png
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-browser-qa-failure
+          overwrite: true
+          path: |
+            playwright-report
+            test-results
+            migration-baseline-evidence
+          if-no-files-found: ignore
+          retention-days: 14
+
+  pages-preview:
+    needs: release-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Download this run's shared build
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
+          merge-multiple: true
+          path: ci-build
+      - name: Verify source identity and restore the exact build
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat ci-build/source-sha)" = "$GITHUB_SHA"
+          (cd ci-build && sha256sum --check SHA256SUMS)
+          tar -xzf ci-build/release-build.tar.gz
+          test -f dist/index.html
+          test -f dist/phaser/index.html
+          test -f dist-yandex/index.html
+      - name: Test the shared staged Pages tree, including touch gestures
+        run: npx playwright test --config=playwright.phaser-pages.config.ts
+      - name: Upload Shape and Finish visual review snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phaser-candy-ui-screenshots
+          overwrite: true
+          path: test-results/**/candy-*.png
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phaser-pages-failure
+          overwrite: true
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+  build-and-deploy:
+    needs: [release-check, browser-qa, pages-preview]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout verified source
+        uses: actions/checkout@v5
+      - name: Download this run's shared build
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
+          merge-multiple: true
+          path: ci-build
+      - name: Verify source identity and restore the exact build
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat ci-build/source-sha)" = "$GITHUB_SHA"
+          (cd ci-build && sha256sum --check SHA256SUMS)
+          tar -xzf ci-build/release-build.tar.gz
+          test -f dist/index.html
+          test -f dist/phaser/index.html
+          test -f dist-yandex/index.html
+      - name: Publish the verified tree only while its source is current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          current_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ "$current_main" != "$GITHUB_SHA" ]; then
+            echo "Skipping stale deployment; main has advanced."
+            exit 0
+          fi
+          publish_dir="$(mktemp -d "$RUNNER_TEMP/squishy-pages.XXXXXX")"
+          cp -a dist/. "$publish_dir/"
+          git -C "$publish_dir" init --initial-branch=gh-pages
+          git -C "$publish_dir" config user.name "github-actions[bot]"
+          git -C "$publish_dir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          touch "$publish_dir/.nojekyll"
+          git -C "$publish_dir" add -A
+          git -C "$publish_dir" commit -m "Deploy ${GITHUB_SHA}"
+          git fetch "$publish_dir" gh-pages
+          git push origin FETCH_HEAD:refs/heads/gh-pages --force

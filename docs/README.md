@@ -11,7 +11,7 @@
 | Authored art / Studio | [`RUNTIME_ASSETS.md`](RUNTIME_ASSETS.md), [`STUDIO_ENVIRONMENT_EXECUTION_V7.md`](STUDIO_ENVIRONMENT_EXECUTION_V7.md) | The v7 brief is historical execution guidance; compare with merged Studio implementation. Keep approved source/provenance and real-browser QA. |
 | Technical decisions | [`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md), [`../AGENTS.md`](../AGENTS.md) | Production cutover merged in #59; #60 preserves six polish invariants. Hosted Yandex release acceptance is separate. |
 | Phaser preview / migration | [`PHASER_LANDSCAPE_MIGRATION_PLAN.md`](PHASER_LANDSCAPE_MIGRATION_PLAN.md), [`PHASER_BOOTSTRAP_ADOPTION.md`](PHASER_BOOTSTRAP_ADOPTION.md) | Migration plans are historical; production now uses Phaser. A landscape redesign remains a separate product decision. |
-| QA / release | [`../README.md`](../README.md), [Release Check](../.github/workflows/release-check.yml), [browser QA](../.github/workflows/release-browser-qa.yml) | Browser CI is not real-phone or hosted Yandex DRAFT approval. |
+| QA / release | [`../README.md`](../README.md), [build, browser QA and deployment](../.github/workflows/release-check.yml) | Browser CI is not real-phone or hosted Yandex DRAFT approval. |
 
 ## Latest independent review
 

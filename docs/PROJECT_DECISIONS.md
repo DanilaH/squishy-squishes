@@ -115,3 +115,32 @@ Reference research: common bao/dumpling and fruit toy categories in the independ
 and [strawberry listing](https://dumplingsquishy.co/fr/products/strawberry-squishy).
 These are category/silhouette references, not measured popularity rankings or
 copied art. All contours and molded detail vectors are authored in this repository.
+
+
+## Shared CI builds and gated Pages publication — 2 October 2026
+
+Release Check owns the production build, Yandex audit and staged Pages preview.
+Its immutable `release-build` artifact contains both tested roots in a tar archive,
+with the workflow source SHA and SHA-256 checksum. `browser-qa` and `pages-preview`
+restore that exact artifact by its producer job output ID in parallel; the latter runs the unchanged Pages
+Playwright suite without rebuilding. Production browser and visual commands,
+all assertions, baselines, retries and single-worker settings are unchanged.
+The check job names remain `release-check`, `browser-qa` and `pages-preview`.
+
+`build-and-deploy` is now a dependent job in that same workflow. It requires all
+three jobs to succeed, runs only for main push/manual dispatch, verifies the
+artifact identity/checksum, and publishes its exact `dist` without Node, Chromium
+or another test/build pass. A main-head guard prevents rerunning an older source
+from overwriting a newer release. It retains the existing gh-pages publication
+mechanism and `Deploy <source SHA>` provenance; write permission is job-local.
+
+Build archives use an attempt-specific name and immutable artifact ID. Failed-job
+reruns consume the successful producer's output; full reruns produce a new ID.
+Existing diagnostic/distribution names overwrite their previous copy within that
+same run, avoiding upload-name collisions without selecting a different build.
+
+The separate duplicate browser, Pages QA and deploy workflows are superseded by
+this dependency graph. Candidate, Yandex DRAFT and path-filtered Hall review
+remain unchanged. Local `release:check`, `pages:qa`, `qa:browser` and `qa:visual`
+remain available. This reduces duplicate runner work; wall-clock improvement
+must be measured because the old duplicate jobs also ran concurrently.
