@@ -1,0 +1,61 @@
+name: Hosted Pages release verification
+on:
+  push:
+    branches: [qa/hosted-toy-catalog-2026-10-02]
+    paths: [.github/workflows/hosted-pages-verification.yml]
+permissions:
+  contents: read
+jobs:
+  hosted-pages:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Wait for and verify the actual published release assets
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          let html = '';
+          for (let attempt = 0; attempt < 80; attempt++) {
+            const response = await fetch('https://danilah.github.io/squishy-squishes/', { cache: 'no-store' });
+            if (response.ok) html = await response.text();
+            if (html.includes('index-DI_p7jMB.js') && html.includes('index-C2KUG8cI.css')) break;
+            console.log(`Waiting for the new Pages release: ${attempt + 1}/80`);
+            await new Promise((resolve) => setTimeout(resolve, 15000));
+          }
+          assert.ok(html.includes('index-DI_p7jMB.js'), 'Wrong deployed JS');
+          assert.ok(html.includes('index-C2KUG8cI.css'), 'Wrong deployed CSS');
+          console.log('Published assets match production commit aa9ba2e005b466510f1e34dbe69f9183b1ab2edd');
+          JS
+      - name: Run existing production tests against live Pages, without a local server
+        run: |
+          cat > playwright.hosted.config.ts <<'TS'
+          import config from './playwright.release.config';
+          export default {
+            ...config,
+            retries: 0,
+            use: {
+              ...config.use,
+              baseURL: 'https://danilah.github.io',
+              screenshot: 'on' as const,
+              launchOptions: { args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
+            },
+            webServer: undefined,
+          };
+          TS
+          npx playwright test --config=playwright.hosted.config.ts tests/release/production-cutover.spec.ts tests/release/room-polish.spec.ts tests/release/card-pages.spec.ts tests/release/toy-polish.spec.ts tests/release/toy-catalog.spec.ts --grep-invert 'production Yandex entry'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hosted-toy-catalog-evidence
+          path: |
+            migration-baseline-evidence
+            test-results
+            playwright-report
+          retention-days: 14
