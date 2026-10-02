@@ -36,6 +36,16 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
       for (let n = 0; n < 38; n++) await page.mouse.move(x + (n % 2 ? -55 : 55), y, { steps: 2 });
       await page.mouse.up();
       await page.locator('[data-action="mix-continue"]').click();
+      if (locale === 'en-US' && viewport.width === 320) {
+        const pixels = await page.locator('[data-sticker-icon]').evaluateAll(icons => icons.map(el => {
+          const canvas = el as HTMLCanvasElement;
+          return [...canvas.getContext('2d')!.getImageData(48, 20, 1, 1).data];
+        }));
+        expect(pixels[0]![0]!).toBeGreaterThan(pixels[0]![1]! + 4); // Pink heart.
+        expect(pixels[1]![0]!).toBeGreaterThan(pixels[1]![2]! + 4); // Gold star.
+        expect(pixels[2]![1]!).toBeGreaterThan(pixels[2]![0]! + 4); // Mint flower.
+        expect(pixels[3]![2]!).toBeGreaterThan(pixels[3]![1]! + 4); // Lilac sparkle.
+      }
       const tabs = page.locator('.sandbox-decor-tabs'), next = page.locator('[data-action="decor-continue"]');
       const before = { tabs: await tabs.boundingBox(), next: await next.boundingBox(), body: await body.boundingBox() };
       for (const section of ['face', 'stickers', 'accessory', 'face']) {
@@ -84,13 +94,22 @@ test('paw pads remain intact throughout a live stroke and adding sprinkles', asy
       return pixel[3]! > 150 && pixel[0]! > pixel[1]! + 35 ? { index, pixel } : null;
     }).filter(Boolean);
   });
-  expect(pads).toHaveLength(1);
+  expect(pads.length).toBeGreaterThan(0);
   const checkPad = async (): Promise<void> => {
-    expect(await page.evaluate(index => [...(window as Window & { reliefCanvases: HTMLCanvasElement[] }).reliefCanvases[index]!.getContext('2d')!.getImageData(99, 61, 1, 1).data], pads[0]!.index)).toEqual(pads[0]!.pixel);
+    for (const pad of pads) expect(await page.evaluate(index => [...(window as Window & { reliefCanvases: HTMLCanvasElement[] }).reliefCanvases[index]!.getContext('2d')!.getImageData(99, 61, 1, 1).data], pad!.index)).toEqual(pad!.pixel);
   };
   const box = (await page.locator('[data-sandbox-canvas]').boundingBox())!;
-  await page.mouse.move(box.x + box.width * .35, box.y + box.height * .3); await page.mouse.down();
-  await page.mouse.move(box.x + box.width * .65, box.y + box.height * .3, { steps: 15 });
+  const transform = await page.locator('[data-sandbox-canvas]').evaluate(el => {
+    const style = getComputedStyle(el);
+    return { radius: parseFloat(style.getPropertyValue('--squish-radius-ratio')) || .34,
+      offset: parseFloat(style.getPropertyValue('--squish-center-offset-y')) || 0 };
+  });
+  const radius = Math.min(box.width, box.height) * transform.radius;
+  const x = box.x + box.width / 2 + (99 / 256 * 2 - 1) * radius;
+  const y = box.y + box.height / 2 - ((1 - 61 / 256) * 2 - 1 + transform.offset) * radius;
+  await page.locator('[data-brush-size="56"]').click();
+  await page.mouse.move(x - 8, y); await page.mouse.down();
+  await page.mouse.move(x + 8, y, { steps: 10 });
   await checkPad(); // Before pointer-up, the user's reported failure.
   await page.mouse.up(); await checkPad();
   await page.locator('[data-action="paint-continue"]').click();

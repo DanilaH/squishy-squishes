@@ -1604,16 +1604,16 @@ export class SandboxApp {
 
   private uploadFaceNow(): void {
     if (this.options.rendererBackend !== 'phaser') return;
-    const hasFace = hasShapeRelief(this.draft.shapeId) || this.draft.decor.eyes !== null || this.draft.decor.mouth !== null || this.draft.decor.blush;
+    const hasFace = hasShapeRelief(this.draft.shapeId) || hasSurfaceDecor(this.draft.decor);
     (this.renderer as PhaserSquishSurface).setFaceTexture(hasFace ? this.faceCanvas : null);
   }
 
   private replayAndUpload(): void {
     replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
     if (this.options.rendererBackend === 'phaser') {
-      renderSurfaceStickers(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
       this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
       drawShapeRelief(this.faceContext, this.draft.shapeId);
+      renderSurfaceStickers(this.faceContext, this.draft.decor, getShape(this.draft.shapeId));
       renderSurfaceFace(this.faceContext, this.draft.decor, getShape(this.draft.shapeId));
     } else {
       renderSurfaceDecor(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));

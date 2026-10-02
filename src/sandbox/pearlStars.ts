@@ -12,23 +12,23 @@ const starPath = (context: CanvasRenderingContext2D, radius: number): void => {
 
 /** One shared molded, pearlescent star for the tray and authored UV texture.
  * Depth is presentation derived from existing placement bytes, never save data. */
-export const drawPearlStar = (context: CanvasRenderingContext2D, radius: number, depth = 0): void => {
+export const drawPearlStar = (context: CanvasRenderingContext2D, radius: number, depth = 0, colors?: readonly [string, string, string, string, string]): void => {
   context.save();
   context.globalAlpha *= 1 - depth * .38;
   context.lineJoin = 'round';
   // Lower bevel conveys thickness without a floating sticker drop shadow.
   context.translate(0, radius * .12);
   starPath(context, radius);
-  context.fillStyle = '#895080';
+  context.fillStyle = colors?.[4] ?? '#895080';
   context.fill();
   context.translate(0, -radius * .12);
   starPath(context, radius);
   const pearl = context.createLinearGradient(-radius, -radius, radius, radius);
-  pearl.addColorStop(0, '#fff0c4');
-  pearl.addColorStop(.32, '#eac583');
-  pearl.addColorStop(.56, '#e7a6cd');
-  pearl.addColorStop(.78, '#b4a5df');
-  pearl.addColorStop(1, '#b875aa');
+  pearl.addColorStop(0, colors?.[0] ?? '#fff0c4');
+  pearl.addColorStop(.32, colors?.[1] ?? '#eac583');
+  pearl.addColorStop(.56, colors?.[2] ?? '#e7a6cd');
+  pearl.addColorStop(.78, colors?.[3] ?? '#b4a5df');
+  pearl.addColorStop(1, colors?.[4] ?? '#b875aa');
   context.fillStyle = pearl;
   context.fill();
   context.strokeStyle = `rgba(255,255,244,${.8 - depth * .3})`;
