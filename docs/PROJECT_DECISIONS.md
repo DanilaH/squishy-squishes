@@ -169,3 +169,15 @@ an interior root. The seat test includes crown containment for all eight molds.
 The four initial Decor snapshot failures were hidden-panel art exposed by the
 snapshot stylesheet's forced visibility. Inheriting panel visibility preserves
 all 30 existing baselines; no image or comparison threshold was changed.
+
+## Playful toy direction — 3 October 2026 (owner local date)
+
+The owner approved the direction and asked to preserve all brainstormed ideas.
+[`PLAYFUL_POLISH_PLAN.md`](PLAYFUL_POLISH_PLAN.md) is the current source for this
+topic: nearest iteration is reactive faces, pleasant audio, bounded accessory
+motion, coordinated palettes and stamps. Subsequent creation/collection polish
+and the complete optional idea bank are recorded separately. This documentation
+does not start implementation or make every idea an outstanding release task.
+Audit existing features before adding them. Runtime, tactile, save, progression
+and no-scroll contracts remain; ideas needing new persisted data or interaction
+require a separate compatibility decision.
