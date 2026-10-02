@@ -19,16 +19,16 @@ export const drawPearlStar = (context: CanvasRenderingContext2D, radius: number,
   // Lower bevel conveys thickness without a floating sticker drop shadow.
   context.translate(0, radius * .12);
   starPath(context, radius);
-  context.fillStyle = '#bd87ac';
+  context.fillStyle = '#895080';
   context.fill();
   context.translate(0, -radius * .12);
   starPath(context, radius);
   const pearl = context.createLinearGradient(-radius, -radius, radius, radius);
-  pearl.addColorStop(0, '#fffbe8');
-  pearl.addColorStop(.32, '#fff0cd');
-  pearl.addColorStop(.56, '#f6cde4');
-  pearl.addColorStop(.78, '#d9d7fa');
-  pearl.addColorStop(1, '#cfa2c9');
+  pearl.addColorStop(0, '#fff0c4');
+  pearl.addColorStop(.32, '#eac583');
+  pearl.addColorStop(.56, '#e7a6cd');
+  pearl.addColorStop(.78, '#b4a5df');
+  pearl.addColorStop(1, '#b875aa');
   context.fillStyle = pearl;
   context.fill();
   context.strokeStyle = `rgba(255,255,244,${.8 - depth * .3})`;
@@ -36,7 +36,7 @@ export const drawPearlStar = (context: CanvasRenderingContext2D, radius: number,
   context.stroke();
   // A small soft highlight, with less contrast for pieces deeper in the gel.
   const gleam = context.createRadialGradient(-radius * .22, -radius * .36, 0, -radius * .22, -radius * .36, radius * .55);
-  gleam.addColorStop(0, `rgba(255,255,255,${.85 - depth * .45})`);
+  gleam.addColorStop(0, `rgba(255,255,255,${.65 - depth * .35})`);
   gleam.addColorStop(1, 'rgba(255,255,255,0)');
   context.fillStyle = gleam;
   context.fill();

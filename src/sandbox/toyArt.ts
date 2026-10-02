@@ -35,7 +35,7 @@ export const drawPuffyBow = (context: CanvasRenderingContext2D, width: number, h
   context.shadowColor = 'rgba(108, 45, 76, .26)';
   context.shadowBlur = height * .025;
   context.shadowOffsetY = height * .018;
-  context.drawImage(bow, 12, 68, 232, 120, width * .16, height * .43, width * .68, height * .48);
+  context.drawImage(bow, 12, 68, 232, 120, width * .16, height * .53, width * .68, height * .48);
   context.restore();
   return true;
 };

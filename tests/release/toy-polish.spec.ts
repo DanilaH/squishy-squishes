@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+import { createDefaultSaveV3, decodeSaveStateV3 } from '../../src/platform/saveV3';
 import { createBodyFillStroke, createMixInPlacement } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
@@ -26,6 +26,7 @@ for (const locale of ['ru-RU', 'en-US']) {
         ...toy.save, library: [toy.sample], totalCrafts: 1,
       })), { sample, save: createDefaultSaveV3() });
       await page.reload();
+      await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
       const savedBefore = await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library));
       await mkdir('migration-baseline-evidence', { recursive: true });
       await page.screenshot({ path: `migration-baseline-evidence/toy-sample-${locale}-hall.png` });
@@ -86,6 +87,8 @@ test('real creation saves pearl stars and bow, with reduced motion and WebP fall
   for (const dx of [-25, 0, 25]) await page.mouse.click(x + dx, y + 15);
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-mixin-count', '3');
   await expect(page.locator('.toy-star-sprinkle')).toHaveCount(0);
+  await mkdir('migration-baseline-evidence', { recursive: true });
+  await page.screenshot({ path: 'migration-baseline-evidence/toy-sample-mixins-320.png' });
   await page.locator('[data-action="mixin-continue"]').click();
   await page.mouse.move(x, y); await page.mouse.down();
   for (let n = 0; n < 38; n++) await page.mouse.move(x + (n % 2 ? -55 : 55), y, { steps: 2 });
@@ -101,7 +104,8 @@ test('real creation saves pearl stars and bow, with reduced motion and WebP fall
   await page.screenshot({ path: 'migration-baseline-evidence/toy-sample-created-320.png' });
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!).library[0]);
+  const raw = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!));
+  const saved = decodeSaveStateV3(raw).library[0]!;
   expect(saved.materialId).toBe('jelly');
   expect(saved.appearance.mixins).toHaveLength(3);
   expect(saved.decor.accessory).toBe('bow');
