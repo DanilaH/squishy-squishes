@@ -13,6 +13,14 @@
 | Phaser preview / migration | [`PHASER_LANDSCAPE_MIGRATION_PLAN.md`](PHASER_LANDSCAPE_MIGRATION_PLAN.md), [`PHASER_BOOTSTRAP_ADOPTION.md`](PHASER_BOOTSTRAP_ADOPTION.md) | Migration plans are historical; production now uses Phaser. A landscape redesign remains a separate product decision. |
 | QA / release | [`../README.md`](../README.md), [build, browser QA and deployment](../.github/workflows/release-check.yml) | Browser CI is not real-phone or hosted Yandex DRAFT approval. |
 
+## Current improvement direction
+
+[`PLAYFUL_POLISH_PLAN.md`](PLAYFUL_POLISH_PLAN.md) records the owner's 3 October
+2026 discussion: reactive faces, sound, accessory motion, palettes and stamps
+as the nearest iteration, plus the complete optional idea bank. This is a saved
+product plan; the owner has started the nearest iteration. The full optional
+idea bank is not a release checklist.
+
 ## Latest independent review
 
 [`PROJECT_REVIEW_2026-10-01.md`](PROJECT_REVIEW_2026-10-01.md) records the browser review, scoped polish, verification limits and improvement priorities. It is evidence and recommendations, not authorization for a redesign.

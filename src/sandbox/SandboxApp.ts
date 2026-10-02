@@ -1,3 +1,5 @@
+import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp, type PaintStampId } from './creativeTools';
+import { REST_FACE, faceReaction, accessorySway, type FaceReaction } from './toyReactions';
 import { getAccessorySeats } from './accessorySeats';
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
@@ -25,6 +27,7 @@ import {
   type AppearanceDocumentV1,
   type AppearancePoint,
   type AppearanceStrokeMode,
+  decodeAppearancePoints,
   type MixInId,
 } from './appearance';
 import {
@@ -375,6 +378,16 @@ export class SandboxApp {
   private draft: SandboxDraft = createSandboxDraft();
   private savedSquishy: SavedSquishy | null;
   private paintTool: PaintTool = 'paint';
+  private paintStampId: PaintStampId | null = null;
+  private toolsOpen = false;
+  private toolsReturnFocus: HTMLElement | null = null;
+  private readonly reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  private reaction: FaceReaction = REST_FACE;
+  private reactionKey = '0:0';
+  private gestureActive = false;
+  private gestureStrength = 0;
+  private releaseStrength = 0;
+  private releasedAt = -Infinity;
   private paintColor: number = PAINT_COLORS[0];
   private brushSize: number = BRUSH_SIZES[1];
   private selectedMixIn: MixInId = 'glitter';
@@ -483,6 +496,7 @@ export class SandboxApp {
       ? options.makePhaserRenderer!(this.canvas, this.handleMetrics, this.audio, {
           paintStamp: (point) => {
             if (this.appearanceLimitReached) return;
+            if (this.paintStampId && this.paintTool === 'paint') { this.applyPaintStamp(point); return; }
             if (this.paintTool === 'fill') {
               this.applyPaintFill(point);
               return;
@@ -494,7 +508,7 @@ export class SandboxApp {
             this.uploadAppearanceNow();
           },
           paintSegment: (from, to) => {
-            if (this.appearanceLimitReached || this.paintTool === 'fill' || this.authoredPoints.length >= 320) return;
+            if (this.appearanceLimitReached || this.paintStampId || this.paintTool === 'fill' || this.authoredPoints.length >= 320) return;
             drawAppearanceSegment(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, from, to);
             this.authoredPoints.push(to);
             this.uploadAppearanceNow();
@@ -519,6 +533,7 @@ export class SandboxApp {
             this.shell.dataset.mixProgress = progress.toFixed(3);
           },
           onFrame: () => {
+            this.updateToyReaction();
             if (!this.rigidMixinCanvas.hidden) this.updateRigidMixinOverlay();
             if (!this.accessoryCanvas.hidden) this.updateAccessoryOverlay();
           },
@@ -539,6 +554,8 @@ export class SandboxApp {
   public setActivityBlocked(blocked: boolean): void {
     if (this.disposed) return;
     this.activityBlocked = blocked;
+    this.audio.setActivityBlocked(blocked);
+    if (blocked && this.toolsOpen) this.setToolsOpen(false);
     if (blocked) this.clearPlacementFeedback();
     this.shell.classList.toggle('is-blocked', blocked);
     this.shell.setAttribute('aria-busy', String(blocked));
@@ -634,7 +651,7 @@ export class SandboxApp {
           <div class="sandbox-panel" data-panel="paint">
             <div class="sandbox-palette-grid">${paintColors}</div>
             <div class="sandbox-tool-row sandbox-paint-tools">
-              <button type="button" data-paint-tool="paint" aria-pressed="true">${this.copy.brush}</button>
+              <button type="button" data-paint-tool="paint" aria-haspopup="dialog" aria-pressed="true">${this.copy.brush} ▾</button>
               <button type="button" data-paint-tool="erase" aria-pressed="false">${this.copy.eraser}</button>
               <button type="button" data-paint-tool="fill" aria-pressed="false">${this.copy.fill}</button>
               ${brushSizes}
@@ -698,6 +715,17 @@ export class SandboxApp {
           </div>
         </section>
         <div class="sandbox-status" data-sandbox-status aria-live="polite"></div>
+        <div class="sandbox-tools-overlay" data-tools-overlay hidden>
+          <section class="sandbox-tools-dialog" role="dialog" aria-modal="true" aria-labelledby="tools-title">
+            <strong id="tools-title">${this.options.language === 'ru' ? 'Краски и штампы' : 'Colors & stamps'}</strong>
+            <div class="sandbox-theme-choices">${CREATIVE_PALETTES.map(theme => `<button type="button" data-paint-theme="${theme.id}"><span>${theme.colors.map(c => `<i style="background:#${c.toString(16).padStart(6, '0')}"></i>`).join('')}</span>${theme[this.options.language]}</button>`).join('')}</div>
+            <div class="sandbox-stamp-choices">
+              <button type="button" data-paint-stamp="none">${this.copy.brush}</button>
+              ${PAINT_STAMPS.map(stamp => `<button type="button" data-paint-stamp="${stamp.id}"><span aria-hidden="true">${stamp.icon}</span>${stamp[this.options.language]}</button>`).join('')}
+            </div>
+            <button class="sandbox-secondary" type="button" data-action="tools-close">${this.copy.done}</button>
+          </section>
+        </div>
         <div class="sandbox-exit-overlay" data-exit-overlay hidden>
           <section class="sandbox-exit-dialog" role="dialog" aria-modal="true" aria-labelledby="sandbox-exit-title">
             <strong id="sandbox-exit-title">${this.copy.exitTitle}</strong>
@@ -715,6 +743,7 @@ export class SandboxApp {
   private bindEvents(): void {
     const signal = this.abortController.signal;
     this.root.addEventListener('click', this.handleClick, { signal });
+    this.root.addEventListener('pointerdown', () => { if (!this.activityBlocked) void this.audio.prime().catch(() => {}); }, { signal });
     this.root.addEventListener('keydown', this.handleKeyDown, { signal });
     if (this.options.rendererBackend !== 'phaser') {
       this.canvas.addEventListener('pointerdown', this.handlePointerDown, { signal });
@@ -738,6 +767,36 @@ export class SandboxApp {
       return;
     }
 
+    if (target.dataset.action === 'tools-close') { this.setToolsOpen(false); return; }
+    const theme = CREATIVE_PALETTES.find(t => t.id === target.dataset.paintTheme);
+    if (theme) {
+      const grid = this.requireElement<HTMLElement>('.sandbox-palette-grid');
+      const buttons = [...grid.querySelectorAll<HTMLButtonElement>('[data-paint-color]')];
+      const colors: readonly number[] = theme.colors;
+      for (const button of buttons) button.classList.toggle('is-theme-color', colors.includes(Number(button.dataset.paintColor)));
+      for (const color of [...colors, ...PAINT_COLORS.filter(c => !colors.includes(c))]) {
+        const button = buttons.find(b => Number(b.dataset.paintColor) === color);
+        if (button) grid.append(button);
+      }
+      this.paintColor = theme.colors[0];
+      this.updatePressed('[data-paint-color]', 'paintColor', String(this.paintColor));
+      this.shell.dataset.paintTheme = theme.id;
+      this.status.textContent = theme[this.options.language];
+      this.setToolsOpen(false); return;
+    }
+    const stamp = target.dataset.paintStamp;
+    if (stamp !== undefined && (stamp === 'none' || PAINT_STAMPS.some(s => s.id === stamp))) {
+      this.paintStampId = stamp === 'none' ? null : stamp as PaintStampId;
+      this.paintTool = 'paint';
+      const brush = this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]');
+      const selected = PAINT_STAMPS.find(s => s.id === stamp);
+      brush.textContent = `${selected?.icon ?? this.copy.brush} ▾`;
+      brush.setAttribute('aria-label', selected?.[this.options.language] ?? this.copy.brush);
+      this.shell.dataset.paintStamp = stamp;
+      this.updatePressed('[data-paint-tool]', 'paintTool', 'paint');
+      this.setToolsOpen(false); return;
+    }
+
     const paintColor = target.dataset.paintColor;
     if (paintColor) {
       this.paintColor = Number(paintColor);
@@ -751,8 +810,14 @@ export class SandboxApp {
 
     const paintTool = target.dataset.paintTool as PaintTool | undefined;
     if (paintTool === 'paint' || paintTool === 'erase' || paintTool === 'fill') {
+      const wasBrush = this.paintTool === 'paint';
       this.paintTool = paintTool;
+      if (paintTool === 'paint' && !wasBrush) {
+        this.paintStampId = null;
+        this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]').textContent = `${this.copy.brush} ▾`;
+      }
       this.updatePressed('[data-paint-tool]', 'paintTool', paintTool);
+      if (paintTool === 'paint' && wasBrush) this.setToolsOpen(true);
       return;
     }
 
@@ -864,6 +929,12 @@ export class SandboxApp {
       return;
     }
 
+    if (this.toolsOpen) {
+      const dialog = this.requireElement<HTMLElement>('[data-tools-overlay] [role="dialog"]');
+      if (event.key === 'Escape') { event.preventDefault(); this.setToolsOpen(false); return; }
+      if (trapModalTab(event, dialog)) return;
+    }
+
     if (this.exitConfirmOpen) {
       const dialog = this.root.querySelector<HTMLElement>('[data-exit-overlay] [role="dialog"]');
       if (event.key === 'Escape') {
@@ -897,6 +968,7 @@ export class SandboxApp {
     if (this.stage === 'paint') {
       if (this.authoredPointerId !== null || this.appearanceLimitReached) return;
       const point = this.renderer.clientPointToAppearanceUv(event.clientX, event.clientY);
+      if (this.paintStampId && this.paintTool === 'paint') { if (point) this.applyPaintStamp(point); event.preventDefault(); return; }
       if (this.paintTool === 'fill') {
         if (point) this.applyPaintFill(point);
         event.preventDefault();
@@ -1010,6 +1082,54 @@ export class SandboxApp {
     }
     if (event.pointerId === this.mixPointerId) this.mixPointerId = null;
   };
+
+  private setToolsOpen(open: boolean): void {
+    if (open === this.toolsOpen) return;
+    this.toolsOpen = open;
+    this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]').setAttribute('aria-expanded', String(open));
+    const overlay = this.requireElement<HTMLElement>('[data-tools-overlay]');
+    overlay.hidden = !open;
+    if (open) {
+      this.toolsReturnFocus = captureModalReturnFocus();
+      focusModal(this.requireElement<HTMLElement>('[data-tools-overlay] [role="dialog"]'));
+    } else restoreModalFocus(this.toolsReturnFocus);
+    this.syncInteractivity();
+  }
+
+  private applyPaintStamp(point: AppearancePoint): void {
+    if (!this.paintStampId || this.appearanceLimitReached) return;
+    const shape = getShape(this.draft.shapeId);
+    if (!isPointInsideShape(shape, point.u * 2 - 1, point.v * 2 - 1)) return;
+    const stroke = createPaintStamp(this.paintStampId, this.paintColor, this.brushSize, point);
+    const next = { ...this.draft.appearance, strokes: [...this.draft.appearance.strokes, stroke] };
+    if (next.strokes.length > MAX_APPEARANCE_STROKES || estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
+      this.setAppearanceLimitReached(true); return;
+    }
+    this.draft = { ...this.draft, appearance: next };
+    const points = decodeAppearancePoints(stroke.p);
+    if (points[0]) drawAppearanceStamp(this.appearanceContext, 0, stroke.c, stroke.s, points[0]);
+    for (let i = 1; i < points.length; i++) drawAppearanceSegment(this.appearanceContext, 0, stroke.c, stroke.s, points[i - 1]!, points[i]!);
+    this.uploadAppearanceNow(); this.updateAppearanceDataset();
+    this.audio.playToyPlacement('stars');
+  }
+
+  private updateToyReaction(): void {
+    if (this.disposed || this.options.rendererBackend !== 'phaser') return;
+    const enabled = !this.activityBlocked && !this.toolsOpen && !this.exitConfirmOpen && !this.reducedMotion.matches
+      && (this.stage === 'finish' || this.stage === 'squeeze' || this.stage === 'mix');
+    const next = enabled ? faceReaction(this.gestureStrength, this.gestureActive ? -1 : performance.now() - this.releasedAt) : REST_FACE;
+    const key = `${next.squeeze}:${next.delight}`;
+    if (key === this.reactionKey) return;
+    this.reaction = next; this.reactionKey = key;
+    this.shell.dataset.faceReaction = key;
+    // Preserve relief/stickers in the same front UV layer; repaint only on a
+    // quantized expression change, not every frame or throughout an idle scene.
+    this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
+    drawShapeRelief(this.faceContext, this.draft.shapeId);
+    renderSurfaceStickers(this.faceContext, this.draft.decor, getShape(this.draft.shapeId));
+    renderSurfaceFace(this.faceContext, this.draft.decor, getShape(this.draft.shapeId), next);
+    this.uploadFaceNow();
+  }
 
   private finishPaintStroke(): void {
     if (this.authoredPoints.length === 0) return;
@@ -1479,7 +1599,9 @@ export class SandboxApp {
       // inherit arbitrary mesh shear or a near-vertical tangent during an extreme
       // full-screen pull. A modest tilt still sells the deformation.
       const rawAngle = Math.atan2(normUy, normUx);
-      const angle = Math.min(Math.PI / 6, Math.max(-Math.PI / 6, rawAngle)) + frame.headAngle;
+      const sway = this.activityBlocked || this.reducedMotion.matches ? 0 : accessorySway(performance.now() - this.releasedAt, this.releaseStrength, piece);
+      const angle = Math.min(Math.PI / 6, Math.max(-Math.PI / 6, rawAngle)) + frame.headAngle + sway;
+      accessoryCanvas.dataset.accessorySway = sway.toFixed(4);
       const cosAngle = Math.cos(angle);
       const sinAngle = Math.sin(angle);
       const rigidScale = Math.min(1.12, Math.max(0.90, Math.sqrt(ratioU * ratioV)));
@@ -1532,12 +1654,15 @@ export class SandboxApp {
       pearlescence: material.pearlescence,
       cloudiness: material.cloudiness,
     };
+    this.audio.setMaterial(this.draft.materialId);
     this.renderer.setMaterial(style);
     this.shell.dataset.material = materialId;
   }
 
   private setStage(next: SandboxStage): void {
     this.clearPlacementFeedback();
+    if (this.toolsOpen) this.setToolsOpen(false);
+    this.releasedAt = -Infinity; this.gestureStrength = 0; this.gestureActive = false;
     this.stage = next;
     this.shell.dataset.stage = next;
     const details = this.stageCopy(next);
@@ -1570,7 +1695,7 @@ export class SandboxApp {
   }
 
   private syncInteractivity(): void {
-    const blocked = this.activityBlocked || this.exitConfirmOpen;
+    const blocked = this.activityBlocked || this.exitConfirmOpen || this.toolsOpen;
     if (blocked) this.clearPlacementFeedback();
     if (this.options.rendererBackend === 'phaser') {
       (this.renderer as PhaserSquishSurface).setStudioStage(this.stage, this.decorSection);
@@ -1614,7 +1739,7 @@ export class SandboxApp {
       this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
       drawShapeRelief(this.faceContext, this.draft.shapeId);
       renderSurfaceStickers(this.faceContext, this.draft.decor, getShape(this.draft.shapeId));
-      renderSurfaceFace(this.faceContext, this.draft.decor, getShape(this.draft.shapeId));
+      renderSurfaceFace(this.faceContext, this.draft.decor, getShape(this.draft.shapeId), this.reaction);
     } else {
       renderSurfaceDecor(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
     }
@@ -1668,6 +1793,11 @@ export class SandboxApp {
 
   private readonly handleMetrics = (metrics: SquishMetrics): void => {
     if (!this.shell || this.disposed) return;
+    if (this.gestureActive && !metrics.active && this.gestureStrength > .05) {
+      this.releasedAt = performance.now(); this.releaseStrength = this.gestureStrength;
+    }
+    this.gestureActive = metrics.active;
+    this.gestureStrength = metrics.active ? Math.min(1, Math.max(metrics.pressDepth * 2, metrics.compression * 3, metrics.maxDisplacement * 1.5)) : 0;
     this.shell.dataset.sandboxSqueezes = String(metrics.squeezes);
     this.shell.dataset.fps = String(Math.round(metrics.fps));
     this.shell.dataset.squishMaxDisplacement = metrics.maxDisplacement.toFixed(3);

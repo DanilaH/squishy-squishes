@@ -169,3 +169,31 @@ an interior root. The seat test includes crown containment for all eight molds.
 The four initial Decor snapshot failures were hidden-panel art exposed by the
 snapshot stylesheet's forced visibility. Inheriting panel visibility preserves
 all 30 existing baselines; no image or comparison threshold was changed.
+
+## Playful toy direction — 3 October 2026 (owner local date)
+
+The owner approved the direction and asked to preserve all brainstormed ideas.
+[`PLAYFUL_POLISH_PLAN.md`](PLAYFUL_POLISH_PLAN.md) is the current source for this
+topic: nearest iteration is reactive faces, pleasant audio, bounded accessory
+motion, coordinated palettes and stamps. Subsequent creation/collection polish
+and the complete optional idea bank are recorded separately. This documentation
+does not start implementation or make every idea an outstanding release task.
+Audit existing features before adding them. Runtime, tactile, save, progression
+and no-scroll contracts remain; ideas needing new persisted data or interaction
+require a separate compatibility decision.
+
+
+## Playful feedback implementation — 3 October 2026
+
+The owner requested development of the nearest iteration. Reactive faces and
+accessory sway read existing metrics on the Phaser update tick. Face texture
+uploads occur only at quantized expression changes; relief and stickers remain
+in the clean front layer. Reduced motion/activity blockers suppress reactions.
+Material audio reuses SquishyAudio and the existing ContinuousNoiseTexture.
+
+The selected Brush button opens a compact focus-trapped tools dialog. Four
+themes reorder/highlight the same 18 colors without recoloring the document.
+Heart/flower/star/dot stamps each produce one existing pigment stroke, with the
+same budget, eraser, Undo and V1/V3 serialization; there are no new saved IDs.
+Rainbow strokes and the optional idea bank remain deferred. No physical
+constants, progression, slot limits or renderer architecture change.
