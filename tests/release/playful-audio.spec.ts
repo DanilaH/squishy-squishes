@@ -42,7 +42,11 @@ test('material release tones differ, stay quiet and respect mute', async ({ page
   });
   const releases: number[] = [];
   for (const material of ['marshmallow', 'jelly', 'pearl']) {
-    await page.reload(); await page.locator(`[data-library-play-id="${material}"]`).click();
+    await page.reload();
+    await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
+    const play = page.locator(`[data-library-play-id="${material}"]`);
+    if (!await play.isVisible()) await page.locator('[data-library-hall-next]').click();
+    await play.click();
     const box = (await page.locator('[data-sandbox-canvas]').boundingBox())!;
     const x = box.x + box.width / 2, y = box.y + box.height / 2;
     await page.mouse.move(x, y); await page.mouse.down();

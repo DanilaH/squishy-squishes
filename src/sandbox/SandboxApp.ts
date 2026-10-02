@@ -1119,7 +1119,7 @@ export class SandboxApp {
 
   private updateToyReaction(): void {
     if (this.disposed || this.options.rendererBackend !== 'phaser') return;
-    const enabled = !this.activityBlocked && !this.toolsOpen && !this.exitConfirmOpen && !this.reducedMotion.matches
+    const enabled = (this.draft.decor.eyes !== null || this.draft.decor.mouth !== null) && !this.activityBlocked && !this.toolsOpen && !this.exitConfirmOpen && !this.reducedMotion.matches
       && (this.stage === 'finish' || this.stage === 'squeeze' || this.stage === 'mix');
     const next = enabled ? faceReaction(this.gestureStrength, this.gestureActive ? -1 : performance.now() - this.releasedAt) : REST_FACE;
     const key = `${next.squeeze}:${next.delight}`;
@@ -1448,6 +1448,10 @@ export class SandboxApp {
     this.setExitConfirmOpen(false);
     this.setAppearanceLimitReached(false);
     this.draft = createSandboxDraft();
+    this.paintStampId = null;
+    this.updatePressed('[data-paint-stamp]', 'paintStamp', 'none');
+    const brush = this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]');
+    brush.textContent = `${this.copy.brush} ▾`; brush.setAttribute('aria-label', this.copy.brush);
     this.paintTool = 'paint';
     this.paintColor = PAINT_COLORS[0];
     this.brushSize = BRUSH_SIZES[1];
@@ -1658,7 +1662,7 @@ export class SandboxApp {
       pearlescence: material.pearlescence,
       cloudiness: material.cloudiness,
     };
-    this.audio.setMaterial(this.draft.materialId);
+    this.audio.setMaterial(materialId);
     this.renderer.setMaterial(style);
     this.shell.dataset.material = materialId;
   }
