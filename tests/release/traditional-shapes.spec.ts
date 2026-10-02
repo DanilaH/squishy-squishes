@@ -94,7 +94,24 @@ for (const locale of ['ru-RU', 'en-US']) {
           expect(rect!.x).toBeGreaterThanOrEqual(0);
           expect(rect!.x + rect!.width).toBeLessThanOrEqual(viewport.width + 1);
           expect(rect!.y + rect!.height).toBeLessThanOrEqual(viewport.height + 1);
-          expect(await choice.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+          // The established selection badge is intentionally outside the button.
+          // Audit actual text/icons, while tray/page overflow stays strict below.
+          const content = await choice.evaluate(el => {
+            const button = el.getBoundingClientRect();
+            const children = [...el.children].map(child => {
+              const bounds = child.getBoundingClientRect();
+              return { text: child.textContent, client: child.clientWidth, scroll: child.scrollWidth,
+                contained: bounds.left >= button.left - 1 && bounds.right <= button.right + 1 };
+            });
+            const range = document.createRange(); range.selectNodeContents(el);
+            const text = range.getBoundingClientRect();
+            return { children, textContained: text.left >= button.left - 1 && text.right <= button.right + 1 };
+          });
+          expect(content.textContained, JSON.stringify(content)).toBe(true);
+          for (const child of content.children) {
+            expect(child.contained, JSON.stringify(content)).toBe(true);
+            expect(child.scroll <= child.client + 1, JSON.stringify(content)).toBe(true);
+          }
         }
         expect(await panel.evaluate(el => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
         expect(await page.evaluate(() => ({ x: document.documentElement.scrollWidth > innerWidth, y: document.documentElement.scrollHeight > innerHeight }))).toEqual({ x: false, y: false });
