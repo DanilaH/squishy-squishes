@@ -163,3 +163,7 @@
 
 /* Visually hidden labels must remain inside their tray scroll geometry. */
 .sandbox-decor-section { position: relative; }
+@media (max-height: 350px) and (orientation: landscape) {
+  /* Two choice rows plus blush fit the tray; retain each 44px hit area. */
+  .sandbox-decor-choice .toy-choice-art { width: auto; height: 24px; max-height: 24px; }
+}

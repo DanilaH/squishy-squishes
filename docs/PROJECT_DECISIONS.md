@@ -82,4 +82,6 @@ Canvas 2D choice art. Other 24 snapshots are retained byte-for-byte; the
 0.002 threshold is unchanged. The snapshot stylesheet now includes choice
 canvases while continuing to hide the GPU surface. Full unmasked toy captures
 are a separate catalog check. Compact hidden section labels have explicit
-local anchors so they cannot enlarge tray scroll geometry.
+local anchors so they cannot enlarge tray scroll geometry. At ≤350px landscape
+height, choice previews are 24px tall so both 44px rows and blush fit the
+136px face tray (28px previews produced two 47.09px rows).
