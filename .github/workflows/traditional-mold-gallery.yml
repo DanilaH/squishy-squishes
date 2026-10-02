@@ -1,0 +1,32 @@
+name: Traditional mold visual review
+on:
+  push:
+    branches: [qa/traditional-mold-gallery-2026-10-02]
+    paths: [.github/workflows/traditional-mold-gallery.yml]
+permissions:
+  contents: read
+jobs:
+  gallery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run release:check
+      - name: Real mold, accessory attachment, squeeze and no-scroll review
+        run: npx playwright test --config=playwright.release.config.ts tests/release/traditional-shapes.spec.ts --retries=0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: traditional-mold-gallery
+          path: |
+            migration-baseline-evidence/mold*.png
+            test-results
+            playwright-report
+          retention-days: 14
+          if-no-files-found: error
