@@ -78,6 +78,7 @@
   #app[data-jelly-ui-ready] .sandbox-decor-section { gap: 2px; }
   #app[data-jelly-ui-ready] .sandbox-decor-section > label {
     position: absolute;
+    top: 0; left: 0;
     width: 1px;
     height: 1px;
     clip-path: inset(50%);
@@ -132,6 +133,7 @@
   #app[data-studio-env-ready] .studio-env-decor { width: min(148px, 64cqh); }
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-decor-section > label {
     position: absolute;
+    top: 0; left: 0;
     width: 1px;
     height: 1px;
     clip-path: inset(50%);
@@ -158,3 +160,6 @@
   background-size: contain; background-repeat: no-repeat;
   pointer-events: none;
 }
+
+/* Visually hidden labels must remain inside their tray scroll geometry. */
+.sandbox-decor-section { position: relative; }

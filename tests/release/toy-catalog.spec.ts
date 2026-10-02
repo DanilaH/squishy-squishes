@@ -28,7 +28,10 @@ for (const locale of ['ru-RU', 'en-US']) {
       await mkdir('migration-baseline-evidence', { recursive: true });
       await page.screenshot({ path: `migration-baseline-evidence/catalog-${locale}-hall.png` });
       for (const accessory of ACCESSORY_IDS) {
-        await page.locator(`[data-library-play-id="catalog-${accessory}"]`).click();
+        const play = page.locator(`[data-library-play-id="catalog-${accessory}"]`);
+        for (let room = 0; room < 3 && !await play.isVisible(); room++) await page.locator('[data-library-hall-next]').click();
+        await expect(play).toBeVisible();
+        await play.click();
         await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
         const overlay = page.locator('[data-sandbox-accessory]');
         await expect(overlay).toHaveAttribute('data-accessory-id', accessory);
