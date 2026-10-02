@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 19410)
-Total output lines: 1673
-
 import { drawPearlStar } from './pearlStars';
 import { MATERIALS, getMaterial, getPalette, type MaterialId } from '../game/content';
 import { SquishyAudio } from '../game/SquishyAudio';
@@ -570,7 +567,602 @@ export class SandboxApp {
     const paintColors = PAINT_COLORS.map((color, index) => `
       <button class="sandbox-swatch" type="button" data-paint-color="${color}" aria-label="${PAINT_COLOR_LABELS[this.options.language][index]}" aria-pressed="${index === 0}" style="--swatch:#${color.toString(16).padStart(6, '0')}"></button>
     `).join('');
-    c…7410 tokens truncated… }
+    const brushSizes = BRUSH_SIZES.map((size, index) => `
+      <button type="button" data-brush-size="${size}" aria-label="${BRUSH_SIZE_LABELS[this.options.language][index]}" title="${BRUSH_SIZE_LABELS[this.options.language][index]}" aria-pressed="${size === this.brushSize}">${size === 18 ? 'S' : size === 34 ? 'M' : 'L'}</button>
+    `).join('');
+    const mixins = MIXIN_IDS.map((id, index) => `
+      <button class="sandbox-mixin" type="button" data-mixin="${id}" aria-pressed="${index === 0}">
+        <span>${id === 'stars' ? '<canvas class="toy-choice-art" data-pearl-star-icon width="96" height="56" aria-hidden="true"></canvas>' : mixinGlyph(id)}</span><small>${mixinLabels[id]}</small>
+      </button>
+    `).join('');
+    const materials = MATERIALS.map((material) => `
+      <button class="sandbox-material" type="button" data-material="${material.id}" aria-pressed="${material.id === 'soft'}">
+        <span class="sandbox-material__orb sandbox-material__orb--${material.id}"></span>
+        <span>${this.copy[material.id]}</span>
+      </button>
+    `).join('');
+    const eyeGlyph = (id: EyeStyleId): string => id === 'dot' ? '••' : id === 'happy' ? '⌒⌒' : '﹏﹏';
+    const mouthGlyph = (id: MouthStyleId): string => id === 'smile' ? '⌣' : id === 'o' ? '○' : 'ω';
+    const stickerGlyph = (id: StickerId): string => id === 'heart' ? '♥' : id === 'star' ? '★' : id === 'flower' ? '✿' : '✦';
+    const accessoryGlyph = (id: AccessoryId): string => id === 'cat-ears' ? '▲ ▲' : id === 'bunny-ears' ? '∩ ∩' : id === 'horns' ? '△ △' : id === 'bow' ? '⋈' : '♛';
+    const eyes = [null, ...EYE_STYLE_IDS].map((id) => `
+      <button class="sandbox-decor-choice" type="button" data-decor-eyes="${id ?? 'none'}" aria-pressed="${id === null}">
+        <span>${id ? eyeGlyph(id) : '—'}</span><small>${id ? decorLabels.eyes[id] : this.copy.none}</small>
+      </button>
+    `).join('');
+    const mouths = [null, ...MOUTH_STYLE_IDS].map((id) => `
+      <button class="sandbox-decor-choice" type="button" data-decor-mouth="${id ?? 'none'}" aria-pressed="${id === null}">
+        <span>${id ? mouthGlyph(id) : '—'}</span><small>${id ? decorLabels.mouths[id] : this.copy.none}</small>
+      </button>
+    `).join('');
+    const stickers = STICKER_IDS.map((id) => `
+      <button class="sandbox-decor-choice" type="button" data-decor-sticker="${id}" aria-pressed="${id === this.selectedSticker}">
+        <span>${stickerGlyph(id)}</span><small>${decorLabels.stickers[id]}</small>
+      </button>
+    `).join('');
+    const accessories = [null, ...ACCESSORY_IDS].map((id) => `
+      <button class="sandbox-decor-choice" type="button" data-decor-accessory="${id ?? 'none'}" aria-pressed="${id === null}">
+        <span>${id === 'bow' ? '<canvas class="toy-choice-art" data-bow-icon width="180" height="120" aria-hidden="true"></canvas>' : id ? accessoryGlyph(id) : '—'}</span><small>${id ? decorLabels.accessories[id] : this.copy.none}</small>
+      </button>
+    `).join('');
+
+    return `
+      <main class="sandbox-shell" data-sandbox-app data-stage="${this.stage}" data-shape="${this.draft.shapeId}" data-material="soft" data-sandbox-squeezes="0">
+        <header class="sandbox-topbar">
+          <strong data-sandbox-brand>${this.copy.studio}</strong>
+          <button class="sandbox-sound" type="button" data-action="stage-back" hidden>← ${this.copy.back}</button>
+          <button class="sandbox-sound sandbox-exit-craft" type="button" data-action="exit-craft" hidden>${this.copy.exit}</button>
+          <button class="sandbox-sound" type="button" data-action="mute" aria-pressed="${this.muted}">${this.muted ? this.copy.muted : this.copy.sound}</button>
+        </header>
+
+        <section class="sandbox-copy">
+          <span data-sandbox-step></span>
+          <h1 data-sandbox-title></h1>
+          <p data-sandbox-hint></p>
+        </section>
+
+        <section class="sandbox-stage" aria-label="${this.copy.workbenchLabel}">
+          <div class="sandbox-glow" aria-hidden="true"></div>
+          <canvas class="sandbox-accessory-layer" data-sandbox-accessory aria-hidden="true" hidden></canvas>
+          <canvas class="sandbox-canvas" data-sandbox-canvas aria-label="${this.copy.squishyLabel}"></canvas>
+          <canvas class="sandbox-rigid-mixin-layer" data-sandbox-rigid-mixins aria-hidden="true" hidden></canvas>
+        </section>
+
+        <section class="sandbox-controls">
+          <div class="sandbox-panel" data-panel="shape">${shapes}<button class="sandbox-primary sandbox-panel__wide" type="button" data-action="shape-continue">${this.copy.next}</button></div>
+
+          <div class="sandbox-panel" data-panel="paint">
+            <div class="sandbox-palette-grid">${paintColors}</div>
+            <div class="sandbox-tool-row sandbox-paint-tools">
+              <button type="button" data-paint-tool="paint" aria-pressed="true">${this.copy.brush}</button>
+              <button type="button" data-paint-tool="erase" aria-pressed="false">${this.copy.eraser}</button>
+              <button type="button" data-paint-tool="fill" aria-pressed="false">${this.copy.fill}</button>
+              ${brushSizes}
+            </div>
+            <div class="sandbox-tool-row sandbox-tool-row--actions">
+              <button type="button" data-action="paint-undo">${this.copy.undo}</button>
+              <button type="button" data-action="paint-clear">${this.copy.clear}</button>
+              <button class="sandbox-primary" type="button" data-action="paint-continue">${this.copy.next}</button>
+            </div>
+          </div>
+
+          <div class="sandbox-panel" data-panel="mixins">
+            <div class="sandbox-mixin-grid">${mixins}</div>
+            <div class="sandbox-tool-row sandbox-tool-row--actions">
+              <button type="button" data-action="mixin-undo">${this.copy.undo}</button>
+              <button type="button" data-action="mixin-clear">${this.copy.clear}</button>
+              <button class="sandbox-primary" type="button" data-action="mixin-continue">${this.copy.next}</button>
+            </div>
+          </div>
+
+          <div class="sandbox-panel sandbox-panel--center" data-panel="mix">
+            <div class="sandbox-mix-progress" aria-hidden="true"><span data-mix-progress-fill></span></div>
+            <button class="sandbox-primary sandbox-panel__wide" type="button" data-action="mix-continue" disabled>${this.copy.next}</button>
+          </div>
+
+          <div class="sandbox-panel sandbox-panel--decor" data-panel="decor">
+            <div class="sandbox-decor-tabs" role="tablist" aria-label="${this.copy.decorCategories}">
+              <button type="button" role="tab" id="decor-tab-face" aria-controls="decor-panel-face" aria-selected="true" tabindex="0" data-decor-section="face">☺ <span>${this.copy.face}</span></button>
+              <button type="button" role="tab" id="decor-tab-stickers" aria-controls="decor-panel-stickers" aria-selected="false" tabindex="-1" data-decor-section="stickers">✦ <span>${this.copy.stickers}</span></button>
+              <button type="button" role="tab" id="decor-tab-accessory" aria-controls="decor-panel-accessory" aria-selected="false" tabindex="-1" data-decor-section="accessory">♛ <span>${this.copy.head}</span></button>
+            </div>
+            <div class="sandbox-decor-section" role="tabpanel" id="decor-panel-face" aria-labelledby="decor-tab-face" data-decor-panel="face">
+              <label>${this.copy.eyes}</label><div class="sandbox-decor-grid sandbox-decor-grid--four">${eyes}</div>
+              <label>${this.copy.mouth}</label><div class="sandbox-decor-grid sandbox-decor-grid--four">${mouths}</div>
+              <button class="sandbox-decor-toggle" type="button" data-action="decor-blush" aria-pressed="false">● ● <span>${this.copy.blush}</span></button>
+            </div>
+            <div class="sandbox-decor-section" role="tabpanel" id="decor-panel-stickers" aria-labelledby="decor-tab-stickers" data-decor-panel="stickers" hidden>
+              <div class="sandbox-decor-grid sandbox-decor-grid--four">${stickers}</div>
+              <p class="sandbox-decor-tip">${decorLabels.stickerTip}</p>
+              <div class="sandbox-tool-row sandbox-tool-row--actions"><button type="button" data-action="decor-undo">${this.copy.undo}</button><button type="button" data-action="decor-clear">${this.copy.clear}</button></div>
+            </div>
+            <div class="sandbox-decor-section" role="tabpanel" id="decor-panel-accessory" aria-labelledby="decor-tab-accessory" data-decor-panel="accessory" hidden>
+              <div class="sandbox-decor-grid sandbox-decor-grid--three">${accessories}</div>
+            </div>
+            <button class="sandbox-primary sandbox-panel__wide" type="button" data-action="decor-continue">${this.copy.next}</button>
+          </div>
+
+          <div class="sandbox-panel" data-panel="finish">
+            <div class="sandbox-material-grid">${materials}</div>
+            <div class="sandbox-finish-actions"><button class="sandbox-secondary" type="button" data-action="finish-back">${this.copy.back}</button><button class="sandbox-primary" type="button" data-action="save">${this.copy.save}</button></div>
+          </div>
+
+          <div class="sandbox-panel sandbox-panel--center" data-panel="home">
+            <button class="sandbox-primary sandbox-panel__wide" type="button" data-action="play-saved">${this.copy.play}</button>
+            <button class="sandbox-secondary sandbox-panel__wide" type="button" data-action="new">${this.copy.newSquishy}</button>
+          </div>
+
+          <div class="sandbox-panel sandbox-panel--center" data-panel="squeeze">
+            <button class="sandbox-secondary" type="button" data-action="home">${this.copy.done}</button>
+            <button class="sandbox-primary" type="button" data-action="new">${this.copy.newSquishy}</button>
+          </div>
+        </section>
+        <div class="sandbox-status" data-sandbox-status aria-live="polite"></div>
+        <div class="sandbox-exit-overlay" data-exit-overlay hidden>
+          <section class="sandbox-exit-dialog" role="dialog" aria-modal="true" aria-labelledby="sandbox-exit-title">
+            <strong id="sandbox-exit-title">${this.copy.exitTitle}</strong>
+            <p>${this.copy.exitHint}</p>
+            <div>
+              <button class="sandbox-secondary" type="button" data-action="exit-cancel">${this.copy.stay}</button>
+              <button class="sandbox-exit-danger" type="button" data-action="exit-confirm">${this.copy.leave}</button>
+            </div>
+          </section>
+        </div>
+      </main>
+    `;
+  }
+
+  private bindEvents(): void {
+    const signal = this.abortController.signal;
+    this.root.addEventListener('click', this.handleClick, { signal });
+    this.root.addEventListener('keydown', this.handleKeyDown, { signal });
+    if (this.options.rendererBackend !== 'phaser') {
+      this.canvas.addEventListener('pointerdown', this.handlePointerDown, { signal });
+      this.canvas.addEventListener('pointermove', this.handlePointerMove, { signal });
+      this.canvas.addEventListener('pointerup', this.handlePointerEnd, { signal });
+      this.canvas.addEventListener('pointercancel', this.handlePointerEnd, { signal });
+    }
+  }
+
+  private readonly handleClick = (event: MouseEvent): void => {
+    if (this.activityBlocked || this.saving) return;
+    const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
+    if (!target) return;
+
+    const shapeId = target.dataset.shape as ShapeId | undefined;
+    if (shapeId && SHAPES.some((shape) => shape.id === shapeId)) {
+      this.draft = { ...this.draft, shapeId };
+      this.applyDraftToRenderer();
+      this.updatePressed('[data-shape]', 'shape', shapeId);
+      return;
+    }
+
+    const paintColor = target.dataset.paintColor;
+    if (paintColor) {
+      this.paintColor = Number(paintColor);
+      // Colour selection exits Eraser, but keeps Fill selected so choosing a new
+      // bucket colour does not silently switch tools underneath the player.
+      if (this.paintTool === 'erase') this.paintTool = 'paint';
+      this.updatePressed('[data-paint-color]', 'paintColor', paintColor);
+      this.updatePressed('[data-paint-tool]', 'paintTool', this.paintTool);
+      return;
+    }
+
+    const paintTool = target.dataset.paintTool as PaintTool | undefined;
+    if (paintTool === 'paint' || paintTool === 'erase' || paintTool === 'fill') {
+      this.paintTool = paintTool;
+      this.updatePressed('[data-paint-tool]', 'paintTool', paintTool);
+      return;
+    }
+
+    const brushSize = target.dataset.brushSize;
+    if (brushSize) {
+      this.brushSize = Number(brushSize);
+      this.updatePressed('[data-brush-size]', 'brushSize', brushSize);
+      return;
+    }
+
+    const mixin = target.dataset.mixin as MixInId | undefined;
+    if (mixin && MIXIN_IDS.includes(mixin)) {
+      this.selectedMixIn = mixin;
+      this.updatePressed('[data-mixin]', 'mixin', mixin);
+      return;
+    }
+
+    const decorSection = target.dataset.decorSection as DecorSection | undefined;
+    if (decorSection === 'face' || decorSection === 'stickers' || decorSection === 'accessory') {
+      this.setDecorSection(decorSection);
+      return;
+    }
+
+    const decorEyes = target.dataset.decorEyes;
+    if (decorEyes !== undefined) {
+      const eyes = decorEyes === 'none' ? null : decorEyes as EyeStyleId;
+      if (eyes === null || EYE_STYLE_IDS.includes(eyes)) {
+        this.draft = { ...this.draft, decor: { ...this.draft.decor, eyes } };
+        this.replayAndUpload();
+        this.updateDecorUi();
+      }
+      return;
+    }
+
+    const decorMouth = target.dataset.decorMouth;
+    if (decorMouth !== undefined) {
+      const mouth = decorMouth === 'none' ? null : decorMouth as MouthStyleId;
+      if (mouth === null || MOUTH_STYLE_IDS.includes(mouth)) {
+        this.draft = { ...this.draft, decor: { ...this.draft.decor, mouth } };
+        this.replayAndUpload();
+        this.updateDecorUi();
+      }
+      return;
+    }
+
+    const decorSticker = target.dataset.decorSticker as StickerId | undefined;
+    if (decorSticker && STICKER_IDS.includes(decorSticker)) {
+      this.selectedSticker = decorSticker;
+      this.updatePressed('[data-decor-sticker]', 'decorSticker', decorSticker);
+      return;
+    }
+
+    const decorAccessory = target.dataset.decorAccessory;
+    if (decorAccessory !== undefined) {
+      const accessory = decorAccessory === 'none' ? null : decorAccessory as AccessoryId;
+      if (accessory === null || ACCESSORY_IDS.includes(accessory)) {
+        this.draft = { ...this.draft, decor: { ...this.draft.decor, accessory } };
+        this.refreshAccessoryGraphic();
+        if (accessory === 'bow') this.playPlacementFeedback(this.accessoryCanvas, 'bow');
+        this.updateDecorUi();
+      }
+      return;
+    }
+
+    const materialId = target.dataset.material as MaterialId | undefined;
+    if (materialId && MATERIALS.some((material) => material.id === materialId)) {
+      this.draft = { ...this.draft, materialId };
+      this.applyMaterial(materialId);
+      this.replayAndUpload();
+      this.updatePressed('[data-material]', 'material', materialId);
+      return;
+    }
+
+    const action = target.dataset.action;
+    if (action === 'stage-back') this.goBack();
+    else if (action === 'exit-craft') this.requestCraftExit();
+    else if (action === 'exit-cancel') this.setExitConfirmOpen(false);
+    else if (action === 'exit-confirm') this.confirmCraftExit();
+    else if (action === 'shape-continue') this.setStage('paint');
+    else if (action === 'paint-continue') this.setStage('mixins');
+    else if (action === 'paint-undo') this.undoPaint();
+    else if (action === 'paint-clear') this.clearPaint();
+    else if (action === 'mixin-continue') this.beginMix();
+    else if (action === 'mixin-undo') this.undoMixin();
+    else if (action === 'mixin-clear') this.clearMixins();
+    else if (action === 'mix-continue' && this.mixDistance >= MIX_DISTANCE_FOR_COMPLETE_PX) this.setStage('decor');
+    else if (action === 'decor-blush') { this.draft = { ...this.draft, decor: { ...this.draft.decor, blush: !this.draft.decor.blush } }; this.replayAndUpload(); this.updateDecorUi(); }
+    else if (action === 'decor-undo') this.undoSticker();
+    else if (action === 'decor-clear') this.clearStickers();
+    else if (action === 'decor-continue') this.setStage('finish');
+    else if (action === 'finish-back') this.setStage('decor');
+    else if (action === 'save') void this.saveDraft();
+    else if (action === 'play-saved') this.openSavedForSqueeze();
+    else if (action === 'new') this.startNew();
+    else if (action === 'home') {
+      if (this.options.onExitToLibrary) this.options.onExitToLibrary();
+      else this.setStage(this.savedSquishy ? 'home' : 'shape');
+    }
+    else if (action === 'mute') this.toggleMuted();
+  };
+
+  private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    if (this.activityBlocked || this.saving) {
+      const dialog = this.exitConfirmOpen
+        ? this.root.querySelector<HTMLElement>('[data-exit-overlay] [role="dialog"]')
+        : null;
+      if (event.key === 'Escape' && dialog) event.preventDefault();
+      else if (dialog) trapModalTab(event, dialog);
+      return;
+    }
+
+    if (this.exitConfirmOpen) {
+      const dialog = this.root.querySelector<HTMLElement>('[data-exit-overlay] [role="dialog"]');
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.setExitConfirmOpen(false);
+        return;
+      }
+      if (dialog && trapModalTab(event, dialog)) return;
+    }
+
+    const tab = event.target instanceof HTMLElement ? event.target.closest<HTMLButtonElement>('[role="tab"][data-decor-section]') : null;
+    if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = [...this.root.querySelectorAll<HTMLButtonElement>('[role="tab"][data-decor-section]')];
+    const index = tabs.indexOf(tab);
+    if (index < 0) return;
+    event.preventDefault();
+    const nextIndex = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? tabs.length - 1
+        : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    const next = tabs[nextIndex];
+    const section = next?.dataset.decorSection as DecorSection | undefined;
+    if (!next || !section) return;
+    this.setDecorSection(section);
+    next.focus();
+  };
+
+  private readonly handlePointerDown = (event: PointerEvent): void => {
+    if (this.activityBlocked) return;
+    if (this.stage === 'paint') {
+      if (this.authoredPointerId !== null || this.appearanceLimitReached) return;
+      const point = this.renderer.clientPointToAppearanceUv(event.clientX, event.clientY);
+      if (this.paintTool === 'fill') {
+        if (point) this.applyPaintFill(point);
+        event.preventDefault();
+        return;
+      }
+      this.authoredPointerId = event.pointerId;
+      this.authoredPoints = [];
+      this.authoredStrokeMode = this.paintTool === 'erase' ? 1 : 0;
+      this.authoredStrokeColor = this.paintColor;
+      if (point) {
+        this.authoredPoints = [point];
+        drawAppearanceStamp(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, point);
+        this.scheduleTextureUpload();
+      }
+      try { this.canvas.setPointerCapture(event.pointerId); } catch { /* unavailable */ }
+      event.preventDefault();
+      return;
+    }
+
+    if (this.stage === 'mixins') {
+      if (this.authoredPointerId !== null) return;
+      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
+      if (!point) return;
+      this.authoredPointerId = event.pointerId;
+      this.lastMixinClientX = event.clientX;
+      this.lastMixinClientY = event.clientY;
+      this.addMixinAt(point);
+      try { this.canvas.setPointerCapture(event.pointerId); } catch { /* unavailable */ }
+      event.preventDefault();
+      return;
+    }
+
+    if (this.stage === 'decor' && this.decorSection === 'stickers') {
+      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
+      if (!point || this.draft.decor.stickers.length >= MAX_DECOR_STICKERS) return;
+      const placement = createStickerPlacement(this.selectedSticker, point, this.draft.decor.stickers.length);
+      this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers: [...this.draft.decor.stickers, placement] } };
+      this.replayAndUpload();
+      this.updateDecorUi();
+      event.preventDefault();
+      return;
+    }
+
+    if (this.stage === 'mix') {
+      this.mixPointerId = event.pointerId;
+      this.mixLastX = event.clientX;
+      this.mixLastY = event.clientY;
+    }
+  };
+
+  private readonly handlePointerMove = (event: PointerEvent): void => {
+    if (this.activityBlocked) return;
+    if (this.stage === 'paint' && event.pointerId === this.authoredPointerId) {
+      const point = this.renderer.clientPointToAppearanceUv(event.clientX, event.clientY);
+      if (!point) {
+        if (this.authoredPoints.length > 0) {
+          this.finishPaintStroke();
+          this.authoredPoints = [];
+        }
+        return;
+      }
+      const previous = this.authoredPoints[this.authoredPoints.length - 1];
+      if (!previous) {
+        this.authoredPoints = [point];
+        drawAppearanceStamp(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, point);
+        this.scheduleTextureUpload();
+        event.preventDefault();
+        return;
+      }
+      if (Math.hypot(point.u - previous.u, point.v - previous.v) < 0.004) return;
+      drawAppearanceSegment(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, previous, point);
+      this.authoredPoints.push(point);
+      this.scheduleTextureUpload();
+      event.preventDefault();
+      return;
+    }
+
+    if (this.stage === 'mixins' && event.pointerId === this.authoredPointerId) {
+      const distance = Math.hypot(event.clientX - this.lastMixinClientX, event.clientY - this.lastMixinClientY);
+      if (distance < MIXIN_SPACING_PX) return;
+      const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
+      if (!point) return;
+      this.lastMixinClientX = event.clientX;
+      this.lastMixinClientY = event.clientY;
+      this.addMixinAt(point);
+      event.preventDefault();
+      return;
+    }
+
+    if (this.stage === 'mix' && event.pointerId === this.mixPointerId) {
+      const distance = Math.hypot(event.clientX - this.mixLastX, event.clientY - this.mixLastY);
+      this.mixLastX = event.clientX;
+      this.mixLastY = event.clientY;
+      if (distance <= 0 || distance > 160) return;
+      this.mixDistance += distance;
+      const progress = clamp01(this.mixDistance / MIX_DISTANCE_FOR_COMPLETE_PX);
+      this.mixProgressFill.style.transform = `scaleX(${progress})`;
+      this.mixContinueButton.disabled = progress < 1;
+      this.status.textContent = progress >= 1 ? this.copy.mixReady : this.copy.mixMore;
+      this.shell.dataset.mixProgress = progress.toFixed(3);
+    }
+  };
+
+  private readonly handlePointerEnd = (event: PointerEvent): void => {
+    if (event.pointerId === this.authoredPointerId) {
+      if (this.stage === 'paint') this.finishPaintStroke();
+      this.authoredPointerId = null;
+      this.authoredPoints = [];
+      try { this.canvas.releasePointerCapture(event.pointerId); } catch { /* already released */ }
+      event.preventDefault();
+    }
+    if (event.pointerId === this.mixPointerId) this.mixPointerId = null;
+  };
+
+  private finishPaintStroke(): void {
+    if (this.authoredPoints.length === 0) return;
+    if (this.draft.appearance.strokes.length >= MAX_APPEARANCE_STROKES) {
+      this.setAppearanceLimitReached(true);
+      this.replayAndUpload();
+      return;
+    }
+    const stroke = createAppearanceStroke(
+      this.authoredStrokeMode,
+      this.authoredStrokeColor,
+      this.brushSize,
+      this.authoredPoints,
+    );
+    const next: AppearanceDocumentV1 = {
+      ...this.draft.appearance,
+      strokes: [...this.draft.appearance.strokes, stroke],
+    };
+    if (estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
+      this.setAppearanceLimitReached(true);
+      this.replayAndUpload();
+      return;
+    }
+    this.draft = { ...this.draft, appearance: next };
+    this.updateAppearanceDataset();
+  }
+
+  private applyPaintFill(point: AppearancePoint): void {
+    if (this.appearanceLimitReached) return;
+    const localX = point.u * 2 - 1;
+    const localY = point.v * 2 - 1;
+    if (!isPointInsideShape(getShape(this.draft.shapeId), localX, localY)) return;
+    const strokesWithoutFill = this.draft.appearance.strokes.filter((stroke) => !isBodyFillStroke(stroke));
+    if (strokesWithoutFill.length >= MAX_APPEARANCE_STROKES) {
+      this.setAppearanceLimitReached(true);
+      return;
+    }
+    const stroke = createBodyFillStroke(this.paintColor);
+    const next: AppearanceDocumentV1 = {
+      ...this.draft.appearance,
+      // Keep Fill as the latest action so Undo removes it first. The replay
+      // pipeline renders the recognized Fill stroke underneath ordinary paint.
+      strokes: [...strokesWithoutFill, stroke],
+    };
+    if (estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
+      this.setAppearanceLimitReached(true);
+      return;
+    }
+    this.draft = { ...this.draft, appearance: next };
+    this.replayAndUpload();
+  }
+
+  private addMixinAt(point: AppearancePoint): void {
+    if (this.appearanceLimitReached) return;
+    if (this.draft.appearance.mixins.length >= MAX_MIXIN_PLACEMENTS) {
+      this.setAppearanceLimitReached(true);
+      return;
+    }
+    const index = this.draft.appearance.mixins.length;
+    const size = 10 + ((index * 7 + this.selectedMixIn.length * 3) % 13);
+    const rotation = ((index * 37 + this.selectedMixIn.length * 19) % 255) / 255;
+    const placement = createMixInPlacement(this.selectedMixIn, point, size, rotation);
+    const next: AppearanceDocumentV1 = {
+      ...this.draft.appearance,
+      mixins: [...this.draft.appearance.mixins, placement],
+    };
+    if (estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
+      this.setAppearanceLimitReached(true);
+      return;
+    }
+    this.draft = { ...this.draft, appearance: next };
+    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId });
+    this.scheduleTextureUpload();
+    this.refreshRigidMixins();
+    this.updateAppearanceDataset();
+    if (this.selectedMixIn === 'stars') {
+      this.showStarSprinkle(point);
+    }
+  }
+
+  private playPlacementFeedback(element: HTMLElement, kind: 'bow' | 'stars'): void {
+    if (this.activityBlocked || this.exitConfirmOpen) return;
+    this.audio.playToyPlacement(kind);
+    this.clearPlacementFeedback();
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Animate individual scale, leaving the live mesh-projection matrix intact.
+    this.placementAnimation = element.animate([
+      { scale: kind === 'bow' ? '.84' : '.88', opacity: .75 },
+      { scale: '1.06', opacity: 1, offset: .55 },
+      { scale: '1', opacity: 1 },
+    ], { duration: 260, easing: 'ease-out' });
+  }
+
+  private clearPlacementFeedback(): void {
+    this.placementAnimation?.cancel();
+    this.placementAnimation = null;
+    this.sprinkle?.remove();
+    this.sprinkle = null;
+  }
+
+  private showStarSprinkle(point: AppearancePoint): void {
+    this.clearPlacementFeedback();
+    this.audio.playToyPlacement('stars');
+    if (this.activityBlocked || this.exitConfirmOpen || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const center = this.renderer.projectUvToCanvas(point.u, point.v);
+    const rect = this.canvas.getBoundingClientRect();
+    const stage = this.canvas.parentElement;
+    if (!stage) return;
+    const stageRect = stage.getBoundingClientRect();
+    const sprinkle = document.createElement('span');
+    sprinkle.className = 'toy-star-sprinkle';
+    sprinkle.setAttribute('aria-hidden', 'true');
+    sprinkle.style.backgroundImage = `url(${this.starSprinkleImage})`;
+    sprinkle.style.left = `${rect.left - stageRect.left + center.x}px`;
+    sprinkle.style.top = `${rect.top - stageRect.top + center.y}px`;
+    stage.append(sprinkle);
+    this.sprinkle = sprinkle;
+    const animation = sprinkle.animate([
+      { transform: 'translate(-50%, -150%) scale(.6)', opacity: 0 },
+      { transform: 'translate(-50%, -80%) scale(1)', opacity: .85, offset: .35 },
+      { transform: 'translate(-50%, -50%) scale(.85)', opacity: 0 },
+    ], { duration: 320, easing: 'ease-out' });
+    this.placementAnimation = animation;
+    animation.onfinish = () => {
+      sprinkle.remove();
+      if (this.sprinkle === sprinkle) this.sprinkle = null;
+    };
+  }
+
+  private undoPaint(): void {
+    if (this.draft.appearance.strokes.length === 0) return;
+    this.setAppearanceLimitReached(false);
+    this.draft = {
+      ...this.draft,
+      appearance: { ...this.draft.appearance, strokes: this.draft.appearance.strokes.slice(0, -1) },
+    };
+    this.replayAndUpload();
+  }
+
+  private clearPaint(): void {
+    this.setAppearanceLimitReached(false);
+    this.draft = { ...this.draft, appearance: { ...this.draft.appearance, strokes: [] } };
+    this.replayAndUpload();
+  }
+
+  private undoMixin(): void {
+    if (this.draft.appearance.mixins.length === 0) return;
+    this.setAppearanceLimitReached(false);
+    this.draft = {
+      ...this.draft,
+      appearance: { ...this.draft.appearance, mixins: this.draft.appearance.mixins.slice(0, -1) },
+    };
+    this.replayAndUpload();
+  }
 
   private clearMixins(): void {
     this.setAppearanceLimitReached(false);
