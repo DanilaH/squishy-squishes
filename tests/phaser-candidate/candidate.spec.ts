@@ -34,10 +34,10 @@ test('M2: Phaser owns one transparent WebGL2 canvas and actually draws the origi
   await testInfo.attach('phaser-candidate-desktop', { body: shot, contentType: 'image/png' });
 });
 
-test('M2: all six canonical shapes/materials and a real drag/release work with shared physics', async ({ page }) => {
+test('M2: all eight canonical shapes and six materials and a real drag/release work with shared physics', async ({ page }) => {
   await page.setViewportSize({ width: 1100, height: 760 });
   await openCandidate(page);
-  for (const shape of ['heart', 'mochi', 'peach', 'mushroom', 'paw', 'soft-square']) {
+  for (const shape of ['heart', 'mochi', 'peach', 'mushroom', 'paw', 'soft-square', 'dumpling', 'strawberry']) {
     await page.locator(`[data-candidate-shape="${shape}"]`).click();
     await expect(page.locator('[data-candidate-stage]')).toHaveAttribute('data-shape', shape);
   }

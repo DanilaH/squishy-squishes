@@ -282,6 +282,10 @@ export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | n
     headSeatY = Math.min(getShapeTopAtX(shape, headX - spread), getShapeTopAtX(shape, headX + spread)) - height * .03;
   } else if (pagesDecorArt && (shape.id === 'dumpling' || shape.id === 'paw' || shape.id === 'strawberry')) {
     headSeatY = getShapeTopAtX(shape, headX) - height * .025 + accessorySeatBias;
+    if (accessory === 'crown' && shape.id !== 'dumpling') {
+      const spread = width * .17;
+      headSeatY = Math.max(getShapeTopAtX(shape, headX - spread), getShapeTopAtX(shape, headX + spread)) - height * .025 + accessorySeatBias;
+    }
   }
   const anchorY = getShapeTopAtX(shape, headX) - height * .025;
   const headSeatOffsetV = (headSeatY - anchorY) * 0.5;
