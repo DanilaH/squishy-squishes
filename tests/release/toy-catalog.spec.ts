@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+import { createDefaultSaveV3, decodeSaveStateV3 } from '../../src/platform/saveV3';
 import { createBodyFillStroke, createMixInPlacement, type MixInId } from '../../src/sandbox/appearance';
 import { ACCESSORY_IDS, EYE_STYLE_IDS, MOUTH_STYLE_IDS, createEmptyDecorDocument } from '../../src/sandbox/decor';
 
@@ -11,13 +11,15 @@ for (const locale of ['ru-RU', 'en-US']) {
     const page = await context.newPage();
     try {
       const mixins: MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti'];
-      const shapes = ['mochi', 'heart', 'square', 'paw', 'mushroom'] as const;
+      const shapes = ['mochi', 'heart', 'soft-square', 'paw', 'mushroom'] as const;
       const toys = ACCESSORY_IDS.map((accessory, n) => ({
         id: `catalog-${accessory}`, createdAt: 1700000000000 + n, shapeId: shapes[n], materialId: 'jelly',
         appearance: { v: 1, strokes: [createBodyFillStroke(n % 2 ? 0xb88de9 : 0xff79a8)],
           mixins: mixins.map((id, k) => createMixInPlacement(id, { u: .30 + k % 3 * .2, v: .40 + Math.floor(k / 3) * .2 }, 24, k / 6)) },
         decor: { ...createEmptyDecorDocument(), eyes: EYE_STYLE_IDS[n % 3], mouth: MOUTH_STYLE_IDS[n % 3], blush: true, accessory },
       }));
+      // Validate fixtures through the production codec before browser injection.
+      decodeSaveStateV3({ ...createDefaultSaveV3(), library: toys, totalCrafts: 5 });
       await page.goto('/squishy-squishes/');
       await page.evaluate((library) => localStorage.setItem('squishy.save.v3', JSON.stringify({ ...library.save, library: library.toys, totalCrafts: 5 })), { save: createDefaultSaveV3(), toys });
       await page.reload();
@@ -87,7 +89,11 @@ test('actual face and catalog choices stay visible on short phone screens', asyn
         expect(rect!.y + rect!.height).toBeLessThanOrEqual(viewport.height + 1);
         expect(await button.evaluate((el) => el.scrollWidth <= el.clientWidth + 2)).toBe(true);
       }
-      expect(await panel.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+      const bounds = await panel.evaluate((el) => ({
+        client: el.clientHeight, scroll: el.scrollHeight, rect: el.getBoundingClientRect().toJSON(),
+        children: [...el.children].map((child) => ({ tag: child.tagName, rect: child.getBoundingClientRect().toJSON(), position: getComputedStyle(child).position })),
+      }));
+      expect(bounds.scroll <= bounds.client + 1, JSON.stringify({ viewport, section, bounds })).toBe(true);
       await page.screenshot({ path: `migration-baseline-evidence/catalog-choices-${section}-${viewport.width}.png` });
     }
   }

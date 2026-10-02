@@ -29,6 +29,6 @@ jobs:
           path: |
             tests/visual/*-snapshots
             migration-baseline-evidence
-            test-results
-            playwright-report
+            test-results/**/*.png
+            test-results/**/error-context.md
           retention-days: 14
