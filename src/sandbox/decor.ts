@@ -279,10 +279,12 @@ export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | n
   const headX = centerX + (accessory === 'bow' && (shape.id === 'dumpling' || shape.id === 'strawberry') ? width * .17 : 0);
   if (pagesDecorArt && paired) {
     const spread = width * (shape.id === 'heart' ? .21 : .17);
-    headSeatY = Math.min(getShapeTopAtX(shape, headX - spread), getShapeTopAtX(shape, headX + spread)) - height * .03;
+    // The rounded authored roots end above their alpha crop. Embed the soft
+    // bases slightly into the skin: reviewed captures otherwise showed a gap.
+    headSeatY = Math.min(getShapeTopAtX(shape, headX - spread), getShapeTopAtX(shape, headX + spread)) - height * .075;
   } else if (pagesDecorArt && (shape.id === 'dumpling' || shape.id === 'paw' || shape.id === 'strawberry')) {
     headSeatY = getShapeTopAtX(shape, headX) - height * .025 + accessorySeatBias;
-    if (accessory === 'crown' && shape.id !== 'dumpling') {
+    if (accessory === 'crown' && shape.id !== 'dumpling' || accessory === 'bow' && shape.id === 'paw') {
       const spread = width * .17;
       headSeatY = Math.max(getShapeTopAtX(shape, headX - spread), getShapeTopAtX(shape, headX + spread)) - height * .025 + accessorySeatBias;
     }
