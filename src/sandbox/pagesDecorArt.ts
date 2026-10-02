@@ -80,22 +80,25 @@ const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number): vo
   } else if (id === 'star') {
     drawPearlStar(ctx, r);
   } else if (id === 'flower') {
-    ctx.fillStyle = gradient(ctx, '#fff2f2', '#edb6d3', '#cb8eae', r);
     for (let i = 0; i < 5; i++) {
       const a = i * TAU / 5 - Math.PI / 2;
-      ctx.beginPath(); ctx.ellipse(Math.cos(a) * r * .49, Math.sin(a) * r * .49, r * .42, r * .29, a, 0, TAU); ctx.fill();
+      const x = Math.cos(a) * r * .46, y = Math.sin(a) * r * .46;
+      const g = ctx.createRadialGradient(x - r * .12, y - r * .16, 0, x, y, r * .5);
+      g.addColorStop(0, '#fff1f5'); g.addColorStop(.45, '#f6bad9'); g.addColorStop(1, '#bf7dad');
+      ctx.beginPath(); ctx.ellipse(x, y, r * .46, r * .32, a, 0, TAU);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,236,246,.7)'; ctx.lineWidth = Math.max(.6, r * .05); ctx.stroke();
     }
-    ctx.beginPath(); ctx.arc(0, 0, r * .31, 0, TAU);
-    ctx.fillStyle = '#ffdfa4'; ctx.fill();
-  } else {
-    ctx.strokeStyle = '#fff7d7'; ctx.lineWidth = Math.max(2.5, r * .24);
-    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, -r); ctx.lineTo(0, r);
-    ctx.moveTo(-r * .48, -r * .48); ctx.lineTo(r * .48, r * .48);
-    ctx.moveTo(r * .48, -r * .48); ctx.lineTo(-r * .48, r * .48); ctx.stroke();
-  }
-  if (id !== 'sparkle') {
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-    if (id === 'flower') { ctx.strokeStyle = 'rgba(255,250,243,.83)'; ctx.lineWidth = 1.25; ctx.stroke(); }
+    drawToyMixIn(ctx, 'pearls', r * .28);
+  } else {
+    ctx.beginPath(); ctx.moveTo(0, -r);
+    ctx.quadraticCurveTo(r * .14, -r * .14, r, 0);
+    ctx.quadraticCurveTo(r * .14, r * .14, 0, r);
+    ctx.quadraticCurveTo(-r * .14, r * .14, -r, 0);
+    ctx.quadraticCurveTo(-r * .14, -r * .14, 0, -r); ctx.closePath();
+    ctx.fillStyle = gradient(ctx, '#fffce7', '#ffe7a8', '#cf9aca', r); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,244,.85)'; ctx.lineWidth = Math.max(.6, r * .07); ctx.stroke();
   }
   ctx.restore();
 };

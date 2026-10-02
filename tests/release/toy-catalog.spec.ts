@@ -52,3 +52,43 @@ test('all accessory formats failing keeps the existing collection usable', async
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
 });
+
+test('actual face and catalog choices stay visible on short phone screens', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto('/squishy-squishes/');
+  await page.locator('[data-library-new]').first().click();
+  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-action="paint-continue"]').click();
+  await mkdir('migration-baseline-evidence', { recursive: true });
+  await page.screenshot({ path: 'migration-baseline-evidence/catalog-choices-mixins-320.png' });
+  await page.locator('[data-action="mixin-continue"]').click();
+  const box = await page.locator('[data-sandbox-canvas]').boundingBox();
+  if (!box) throw new Error('Missing mixing surface');
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  await page.mouse.move(x, y); await page.mouse.down();
+  for (let n = 0; n < 38; n++) await page.mouse.move(x + (n % 2 ? -55 : 55), y, { steps: 2 });
+  await page.mouse.up();
+  await page.locator('[data-action="mix-continue"]').click();
+  for (let n = 0; n < 3; n++) {
+    await page.locator(`[data-decor-eyes="${EYE_STYLE_IDS[n]}"]`).click();
+    await page.locator(`[data-decor-mouth="${MOUTH_STYLE_IDS[n]}"]`).click();
+    await page.screenshot({ path: `migration-baseline-evidence/catalog-face-${n}-320.png` });
+  }
+  for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }]) {
+    await page.setViewportSize(viewport);
+    for (const section of ['face', 'stickers', 'accessory']) {
+      await page.locator(`[data-decor-section="${section}"]`).click();
+      const panel = page.locator(`[data-decor-panel="${section}"]`);
+      for (const button of await panel.getByRole('button').all()) {
+        const rect = await button.boundingBox();
+        expect(rect).not.toBeNull();
+        expect(rect!.x).toBeGreaterThanOrEqual(0);
+        expect(rect!.x + rect!.width).toBeLessThanOrEqual(viewport.width + 1);
+        expect(rect!.y + rect!.height).toBeLessThanOrEqual(viewport.height + 1);
+        expect(await button.evaluate((el) => el.scrollWidth <= el.clientWidth + 2)).toBe(true);
+      }
+      expect(await panel.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+      await page.screenshot({ path: `migration-baseline-evidence/catalog-choices-${section}-${viewport.width}.png` });
+    }
+  }
+});
