@@ -162,3 +162,10 @@ sticker keeps its color on reload. Flower choice is mint; the pearl/gold and
 pink objects retain their molded highlights. Decor tabs share one content grid
 slot; invisible panels reserve the largest content size, so tab/CTA/playfield
 geometry remains steady without scrolling or smaller 44px controls.
+
+Visual review caught a floating dumpling crown in the first passed capture.
+Its final root sits inside the pinched contour; strawberry crown also uses
+an interior root. The seat test includes crown containment for all eight molds.
+The four initial Decor snapshot failures were hidden-panel art exposed by the
+snapshot stylesheet's forced visibility. Inheriting panel visibility preserves
+all 30 existing baselines; no image or comparison threshold was changed.

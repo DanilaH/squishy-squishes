@@ -11,8 +11,8 @@ const seats: Record<ShapeId, { bow: readonly [number, number]; pair: readonly [n
   peach: { bow: [-.25, -.38], pair: [-.27, .27], crown: -.09 },
   mushroom: { bow: [-.29, -.40], pair: [-.32, .32], crown: 0 },
   paw: { bow: [-.28, -.58], pair: [-.36, .36], crown: 0 },
-  dumpling: { bow: [-.27, -.42], pair: [-.31, .31], crown: .06 },
-  strawberry: { bow: [-.28, -.48], pair: [-.31, .31], crown: .08 },
+  dumpling: { bow: [-.27, -.42], pair: [-.31, .31], crown: -.045 },
+  strawberry: { bow: [-.28, -.48], pair: [-.31, .31], crown: .035 },
 };
 export const getAccessorySeats = (shape: ShapeDefinition, id: AccessoryId): readonly AccessorySeat[] => {
   const xs = shape.boundary.map(p => p.x), ys = shape.boundary.map(p => p.y);

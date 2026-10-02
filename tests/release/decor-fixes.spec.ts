@@ -13,7 +13,7 @@ test('every mold has separate mirrored shoulder roots and a tilted side bow', ()
     expect(bow.angle).toBeLessThan(0);
     expect(ears[0]!.u).toBeLessThan(ears[1]!.u);
     expect(ears.map(s => s.side)).toEqual(['left', 'right']);
-    for (const root of [...ears, bow]) expect(isPointInsideShape(shape, root.u * 2 - 1, root.v * 2 - 1)).toBe(true);
+    for (const root of [...ears, bow, ...getAccessorySeats(shape, 'crown')]) expect(isPointInsideShape(shape, root.u * 2 - 1, root.v * 2 - 1)).toBe(true);
   }
 });
 
