@@ -1,6 +1,7 @@
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
 import { drawToyMixIn } from './toyMixins';
+import { hasShapeRelief, shapeReliefSvg } from './shapeRelief';
 import { MATERIALS, getMaterial, getPalette, type MaterialId } from '../game/content';
 import { SquishyAudio } from '../game/SquishyAudio';
 import { SHAPES, getShape, isPointInsideShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
@@ -284,6 +285,8 @@ const SHAPE_LABELS: Readonly<Record<SandboxLanguage, Readonly<Record<ShapeId, st
     peach: 'Peach',
     mushroom: 'Mushroom',
     paw: 'Paw',
+    dumpling: 'Dumpling',
+    strawberry: 'Strawberry',
   },
   ru: {
     'soft-square': 'Кубик',
@@ -292,6 +295,8 @@ const SHAPE_LABELS: Readonly<Record<SandboxLanguage, Readonly<Record<ShapeId, st
     peach: 'Персик',
     mushroom: 'Грибочек',
     paw: 'Лапка',
+    dumpling: 'Дамплинг',
+    strawberry: 'Клубничка',
   },
 };
 
@@ -335,7 +340,7 @@ const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
 const shapeSvg = (shape: ShapeDefinition): string => {
   const points = shape.boundary.map((point) => `${50 + point.x * 42},${50 - point.y * 42}`).join(' ');
-  return `<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${points}" /></svg>`;
+  return `<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${points}" />${shapeReliefSvg(shape.id)}</svg>`;
 };
 
 export class SandboxApp {
@@ -720,6 +725,7 @@ export class SandboxApp {
     if (shapeId && SHAPES.some((shape) => shape.id === shapeId)) {
       this.draft = { ...this.draft, shapeId };
       this.applyDraftToRenderer();
+      this.replayAndUpload();
       this.updatePressed('[data-shape]', 'shape', shapeId);
       return;
     }
@@ -1067,7 +1073,7 @@ export class SandboxApp {
       return;
     }
     this.draft = { ...this.draft, appearance: next };
-    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId });
+    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId });
     this.scheduleTextureUpload();
     this.refreshRigidMixins();
     this.updateAppearanceDataset();
@@ -1570,7 +1576,7 @@ export class SandboxApp {
     const hasMaterialDecor = this.options.rendererBackend === 'phaser'
       ? this.draft.decor.stickers.length > 0
       : hasSurfaceDecor(this.draft.decor);
-    if (!hasLiveStroke && appearance.strokes.length === 0 && appearance.mixins.length === 0 && !hasMaterialDecor) {
+    if (!hasLiveStroke && appearance.strokes.length === 0 && appearance.mixins.length === 0 && !hasMaterialDecor && !hasShapeRelief(this.draft.shapeId)) {
       this.renderer.setAppearanceTexture(null);
     } else {
       this.renderer.setAppearanceTexture(this.appearanceCanvas);
@@ -1584,7 +1590,7 @@ export class SandboxApp {
   }
 
   private replayAndUpload(): void {
-    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId });
+    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId });
     if (this.options.rendererBackend === 'phaser') {
       renderSurfaceStickers(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
       this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);

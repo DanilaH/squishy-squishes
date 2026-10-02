@@ -167,3 +167,6 @@
   /* Two choice rows plus blush fit the tray; retain each 44px hit area. */
   .sandbox-decor-choice .toy-choice-art { width: auto; height: 24px; max-height: 24px; }
 }
+#app[data-jelly-ui-ready] .sandbox-panel[data-panel='shape'] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}

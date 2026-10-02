@@ -51,7 +51,7 @@ export const renderNeutralVolumeAlbedo = (toy: SavedSquishy): HTMLCanvasElement 
   const authoredContext = authored.getContext('2d');
   if (!authoredContext) throw new Error('Unlit volume authored-art context unavailable');
   authoredContext.setTransform(2, 0, 0, 2, 0, 0);
-  replayAppearanceDocument(authoredContext, toy.appearance, { materialId: toy.materialId });
+  replayAppearanceDocument(authoredContext, toy.appearance, { materialId: toy.materialId, shapeId: toy.shapeId });
   renderSurfaceDecor(authoredContext, toy.decor, shape);
   context.save();
   context.clip(path);

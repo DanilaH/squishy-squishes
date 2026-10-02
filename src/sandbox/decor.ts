@@ -1,4 +1,4 @@
-import type { ShapeDefinition, ShapeId } from '../game/shapes';
+import { getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
 
 export const MAX_DECOR_STICKERS = 12;
@@ -234,10 +234,11 @@ export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | n
   const height = Math.max(0.3, maxY - minY);
   const centerX = (minX + maxX) * 0.5;
   const centerY = (minY + maxY) * 0.5;
-  const eyeY = centerY + height * 0.085;
+  const faceY = centerY + (shape.id === 'dumpling' ? -height * .085 : shape.id === 'paw' ? -height * .045 : shape.id === 'strawberry' ? -height * .02 : 0);
+  const eyeY = faceY + height * 0.085;
   const eyeDx = width * 0.135;
-  const mouthY = centerY - height * 0.075;
-  const blushY = centerY - height * 0.015;
+  const mouthY = faceY - height * 0.075;
+  const blushY = faceY - height * 0.015;
   const blushDx = width * 0.225;
 
   // Attach head accessories to the actual upper contour at the horizontal center.
@@ -258,7 +259,6 @@ export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | n
     if (t >= 0 && t <= 1) topBoundaryY = Math.max(topBoundaryY, a.y + (b.y - a.y) * t);
   }
   const headSurfaceY = Number.isFinite(topBoundaryY) ? topBoundaryY : maxY;
-  const headY = headSurfaceY - height * 0.025;
   // Keep the accessory's familiar visual seat near the top of the shape, but derive
   // deformation from a real surface point. The offset is replayed along the live
   // projected vertical basis, so concave shapes do not float or swallow accessories.
@@ -270,17 +270,28 @@ export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | n
   const accessorySeatBias = accessory === 'crown'
     ? -height * 0.026
     : accessory === 'bow' ? -height * 0.012 : 0;
-  const headSeatY = (centeredHeartGear
+  let headSeatY = (centeredHeartGear
     ? headSurfaceY + height * 0.13
     : maxY - height * 0.055) + accessorySeatBias;
-  const headSeatOffsetV = (headSeatY - headY) * 0.5;
+  // Paired pieces rest on the two shoulders, rather than floating above a
+  // rounded crown or the gaps between toes. Center gear keeps its own seat.
+  const paired = accessory === 'cat-ears' || accessory === 'bunny-ears' || accessory === 'horns';
+  const headX = centerX + (accessory === 'bow' && (shape.id === 'dumpling' || shape.id === 'strawberry') ? width * .17 : 0);
+  if (pagesDecorArt && paired) {
+    const spread = width * (shape.id === 'heart' ? .21 : .17);
+    headSeatY = Math.min(getShapeTopAtX(shape, headX - spread), getShapeTopAtX(shape, headX + spread)) - height * .03;
+  } else if (pagesDecorArt && (shape.id === 'dumpling' || shape.id === 'paw' || shape.id === 'strawberry')) {
+    headSeatY = getShapeTopAtX(shape, headX) - height * .025 + accessorySeatBias;
+  }
+  const anchorY = getShapeTopAtX(shape, headX) - height * .025;
+  const headSeatOffsetV = (headSeatY - anchorY) * 0.5;
   return {
     eyesLeft: toUv(centerX - eyeDx, eyeY),
     eyesRight: toUv(centerX + eyeDx, eyeY),
     mouth: toUv(centerX, mouthY),
     blushLeft: toUv(centerX - blushDx, blushY),
     blushRight: toUv(centerX + blushDx, blushY),
-    headAnchor: toUv(centerX, headY),
+    headAnchor: toUv(headX, anchorY),
     headBasisU: clamp(width * 0.11 * 0.5, 0.055, 0.12),
     headBasisV: clamp(height * 0.09 * 0.5, 0.045, 0.10),
     headSeatOffsetV,

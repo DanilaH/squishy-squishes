@@ -82,6 +82,8 @@ const RU_SHAPES: Readonly<Record<ShapeId, string>> = {
   peach: 'Персик',
   mushroom: 'Грибочек',
   paw: 'Лапка',
+  dumpling: 'Дамплинг',
+  strawberry: 'Клубничка',
 };
 
 const RU_PALETTES: Readonly<Record<PaletteId, string>> = {

@@ -1,4 +1,4 @@
-export type ShapeId = 'soft-square' | 'heart' | 'mochi' | 'peach' | 'mushroom' | 'paw';
+export type ShapeId = 'soft-square' | 'heart' | 'mochi' | 'peach' | 'mushroom' | 'paw' | 'dumpling' | 'strawberry';
 
 export interface ShapePoint {
   readonly x: number;
@@ -17,7 +17,6 @@ const HEART_POINTS = 128;
 const MOCHI_POINTS = 112;
 const PEACH_POINTS = 128;
 const MUSHROOM_SIDE_POINTS = 72;
-const PAW_PALM_POINTS = 76;
 
 const createSoftSquareBoundary = (): readonly ShapePoint[] =>
   Array.from({ length: SOFT_SQUARE_POINTS }, (_, index) => {
@@ -131,52 +130,54 @@ const createMushroomBoundary = (): readonly ShapePoint[] => {
 };
 
 const createPawBoundary = (): readonly ShapePoint[] => {
-  // Build actual rounded toe lobes instead of a sinusoidal/scalloped top. Deep valleys
-  // between the lobes are intentional: they are what keeps the silhouette reading as a
-  // paw rather than a crown once the 16x16 deformation grid starts moving it.
-  const toes = [
-    { x: -0.57, y: 0.30, rx: 0.155, ry: 0.23 },
-    { x: -0.19, y: 0.32, rx: 0.16, ry: 0.285 },
-    { x: 0.19, y: 0.32, rx: 0.16, ry: 0.285 },
-    { x: 0.57, y: 0.30, rx: 0.155, ry: 0.23 },
+  // Overlapping soft lobes form one continuous palm with four short, plump
+  // toes. Radial union keeps the same generic mesh and canonical hit boundary.
+  const lobes = [
+    { x: 0, y: -0.23, rx: 0.70, ry: 0.64 },
+    { x: -0.57, y: 0.24, rx: 0.245, ry: 0.275 },
+    { x: -0.20, y: 0.43, rx: 0.235, ry: 0.32 },
+    { x: 0.20, y: 0.43, rx: 0.235, ry: 0.32 },
+    { x: 0.57, y: 0.24, rx: 0.245, ry: 0.275 },
   ] as const;
-  const top: ShapePoint[] = [{ x: -0.8, y: 0.04 }, { x: -0.74, y: 0.18 }];
-
-  for (let toeIndex = 0; toeIndex < toes.length; toeIndex += 1) {
-    const toe = toes[toeIndex]!;
-    const samples = 18;
-    for (let index = 0; index <= samples; index += 1) {
-      const angle = Math.PI - (index / samples) * Math.PI;
-      top.push({
-        x: toe.x + Math.cos(angle) * toe.rx,
-        y: toe.y + Math.sin(angle) * toe.ry,
-      });
+  const points = Array.from({ length: 192 }, (_, index) => {
+    const angle = index / 192 * TAU;
+    const x = Math.cos(angle), y = Math.sin(angle);
+    let radius = 0;
+    for (const lobe of lobes) {
+      const a = (x / lobe.rx) ** 2 + (y / lobe.ry) ** 2;
+      const b = -2 * (x * lobe.x / lobe.rx ** 2 + y * lobe.y / lobe.ry ** 2);
+      const c = (lobe.x / lobe.rx) ** 2 + (lobe.y / lobe.ry) ** 2 - 1;
+      const discriminant = b * b - 4 * a * c;
+      if (discriminant >= 0) radius = Math.max(radius, (-b + Math.sqrt(discriminant)) / (2 * a));
     }
-    const next = toes[toeIndex + 1];
-    if (next) {
-      top.push({
-        x: (toe.x + toe.rx + next.x - next.rx) * 0.5,
-        y: 0.15,
-      });
-    }
-  }
-  top.push({ x: 0.74, y: 0.18 }, { x: 0.8, y: 0.04 });
-
-  const lowerPalm = Array.from({ length: PAW_PALM_POINTS }, (_, index) => {
-    const angle = -((index + 1) / (PAW_PALM_POINTS + 1)) * Math.PI;
-    return {
-      x: 0.8 * Math.cos(angle),
-      y: -0.04 + 0.72 * Math.sin(angle),
-    };
+    return { x: x * radius, y: y * radius };
   });
-
-  return normalizeBoundary([
-    ...top,
-    { x: 0.8, y: -0.04 },
-    ...lowerPalm,
-    { x: -0.8, y: -0.04 },
-  ], 0.94);
+  return normalizeBoundary(points);
 };
+
+type CubicSegment = readonly [ShapePoint, ShapePoint, ShapePoint, ShapePoint];
+const sampleCubicBoundary = (segments: readonly CubicSegment[]): readonly ShapePoint[] =>
+  normalizeBoundary(segments.flatMap(([a, b, c, d]) => Array.from({ length: 20 }, (_, index) => {
+    const t = index / 20, s = 1 - t;
+    return { x: s ** 3 * a.x + 3 * s * s * t * b.x + 3 * s * t * t * c.x + t ** 3 * d.x,
+      y: s ** 3 * a.y + 3 * s * s * t * b.y + 3 * s * t * t * c.y + t ** 3 * d.y };
+  })));
+
+const createDumplingBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
+  [{ x: -.12, y: .69 }, { x: -.26, y: .84 }, { x: -.15, y: .98 }, { x: 0, y: .98 }],
+  [{ x: 0, y: .98 }, { x: .18, y: 1.01 }, { x: .27, y: .81 }, { x: .14, y: .67 }],
+  [{ x: .14, y: .67 }, { x: .55, y: .65 }, { x: .91, y: .36 }, { x: .94, y: -.03 }],
+  [{ x: .94, y: -.03 }, { x: .98, y: -.60 }, { x: .54, y: -.81 }, { x: 0, y: -.81 }],
+  [{ x: 0, y: -.81 }, { x: -.54, y: -.81 }, { x: -.98, y: -.60 }, { x: -.94, y: -.03 }],
+  [{ x: -.94, y: -.03 }, { x: -.91, y: .36 }, { x: -.55, y: .65 }, { x: -.12, y: .69 }],
+]);
+
+const createStrawberryBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
+  [{ x: 0, y: .58 }, { x: .35, y: .83 }, { x: .83, y: .69 }, { x: .86, y: .31 }],
+  [{ x: .86, y: .31 }, { x: .89, y: -.12 }, { x: .34, y: -.86 }, { x: 0, y: -.94 }],
+  [{ x: 0, y: -.94 }, { x: -.34, y: -.86 }, { x: -.89, y: -.12 }, { x: -.86, y: .31 }],
+  [{ x: -.86, y: .31 }, { x: -.83, y: .69 }, { x: -.35, y: .83 }, { x: 0, y: .58 }],
+]);
 
 export const SHAPES: readonly ShapeDefinition[] = [
   { id: 'soft-square', label: 'Soft Cube', boundary: createSoftSquareBoundary() },
@@ -185,6 +186,8 @@ export const SHAPES: readonly ShapeDefinition[] = [
   { id: 'peach', label: 'Peach Puff', boundary: createPeachBoundary() },
   { id: 'mushroom', label: 'Mushroom', boundary: createMushroomBoundary() },
   { id: 'paw', label: 'Paw', boundary: createPawBoundary() },
+  { id: 'dumpling', label: 'Dumpling', boundary: createDumplingBoundary() },
+  { id: 'strawberry', label: 'Strawberry', boundary: createStrawberryBoundary() },
 ] as const;
 
 const SELECTOR_SHAPE_IDS = new Set<ShapeId>(['soft-square', 'heart']);
@@ -197,6 +200,18 @@ const shapeById: Readonly<Record<ShapeId, ShapeDefinition>> = Object.fromEntries
 ) as Readonly<Record<ShapeId, ShapeDefinition>>;
 
 export const getShape = (id: ShapeId): ShapeDefinition => shapeById[id];
+
+/** Upper skin at a horizontal body coordinate, shared by all decoration seats. */
+export const getShapeTopAtX = (shape: ShapeDefinition, x: number): number => {
+  let top = Number.NEGATIVE_INFINITY;
+  for (let index = 0; index < shape.boundary.length; index++) {
+    const a = shape.boundary[index]!, b = shape.boundary[(index + 1) % shape.boundary.length]!;
+    if (x < Math.min(a.x, b.x) - 1e-6 || x > Math.max(a.x, b.x) + 1e-6) continue;
+    if (Math.abs(b.x - a.x) < 1e-6) top = Math.max(top, a.y, b.y);
+    else { const t = (x - a.x) / (b.x - a.x); top = Math.max(top, a.y + (b.y - a.y) * t); }
+  }
+  return top;
+};
 
 export const isPointInsideShape = (
   shape: ShapeDefinition,

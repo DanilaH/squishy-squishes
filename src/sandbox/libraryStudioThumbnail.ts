@@ -5,6 +5,7 @@ import { fragmentShaderSource, vertexShaderSource } from '../squish/shaders';
 import { APPEARANCE_TEXTURE_SIZE, replayAppearanceDocument } from './appearance';
 import { renderSurfaceDecor, hasSurfaceDecor } from './decor';
 import type { SavedSquishy } from './types';
+import { hasShapeRelief } from './shapeRelief';
 
 /** An on-demand, single-context static snapshot of the actual Studio shader.
  * This is Pages-only; the original Canvas2D thumbnail remains the fallback.
@@ -181,11 +182,11 @@ class StudioThumbnailRenderer {
       this.lastShape = toy.shapeId;
     }
     const hasAppearance = toy.appearance.strokes.length > 0 ||
-      toy.appearance.mixins.length > 0 || hasSurfaceDecor(toy.decor);
+      toy.appearance.mixins.length > 0 || hasSurfaceDecor(toy.decor) || hasShapeRelief(toy.shapeId);
     if (hasAppearance) {
       // Flatten rigid pearl mix-ins only in the static thumbnail; Studio's live
       // squeeze scene draws those separately, but a saved decoration must not vanish.
-      replayAppearanceDocument(this.appearanceContext, toy.appearance, { materialId: toy.materialId });
+      replayAppearanceDocument(this.appearanceContext, toy.appearance, { materialId: toy.materialId, shapeId: toy.shapeId });
       renderSurfaceDecor(this.appearanceContext, toy.decor, getShape(toy.shapeId));
     }
     gl.activeTexture(gl.TEXTURE1);

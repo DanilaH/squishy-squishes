@@ -1,12 +1,12 @@
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
-const SHAPES = ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw'] as const;
+const SHAPES = ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw', 'dumpling', 'strawberry'] as const;
 
 // Visual review companion: capture all silhouettes with the SAME genuinely
 // completed/saved appearance. The test does not generate fake art or bypass
 // the real Studio save flow, and never changes the production SaveState codec.
-test('chrome and holo volume follow all six saved shape boundaries', async ({ page }, info) => {
+test('chrome and holo volume follow all eight saved shape boundaries', async ({ page }, info) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto('/phaser/');
   await page.locator('[data-library-new]').first().click();
@@ -40,9 +40,9 @@ test('chrome and holo volume follow all six saved shape boundaries', async ({ pa
       localStorage.setItem(key, JSON.stringify(save));
     }, { material, shapes: SHAPES });
     await page.reload();
-    await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
+    await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', String(SHAPES.length));
     await expect(page.locator('[data-library-hall-stage]')).toBeVisible();
-    // Hall thumbnails are eager again: audit all six native canvases directly.
+    // Hall thumbnails are eager: audit every native canvas directly.
     // Room navigation below remains presentation/paging coverage only.
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', '1');
 
@@ -63,10 +63,11 @@ test('chrome and holo volume follow all six saved shape boundaries', async ({ pa
       if (!output.png) throw new Error(`Empty ${material}/${shape} thumbnail`);
       await writeFile(info.outputPath(`library-hall-shape-${material}-${shape}-512.png`), Buffer.from(output.png, 'base64'));
     }
-    for (let pageNumber = 1; pageNumber <= 3; pageNumber += 1) {
+    const rooms = Math.ceil(SHAPES.length / 2);
+    for (let pageNumber = 1; pageNumber <= rooms; pageNumber += 1) {
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(pageNumber));
       await page.screenshot({ path: info.outputPath(`library-hall-shapes-${material}-page-${pageNumber}.png`), animations: 'disabled' });
-      if (pageNumber < 3) await page.locator('[data-library-hall-next]').click();
+      if (pageNumber < rooms) await page.locator('[data-library-hall-next]').click();
     }
     if (material === 'chrome') await page.setViewportSize({ width: 390, height: 844 });
   }

@@ -167,6 +167,8 @@ const RU_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
   peach: 'Персик',
   mushroom: 'Грибочек',
   paw: 'Лапка',
+  dumpling: 'Дамплинг',
+  strawberry: 'Клубничка',
 };
 
 const EN_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
@@ -176,6 +178,8 @@ const EN_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
   peach: 'Peach',
   mushroom: 'Mushroom',
   paw: 'Paw',
+  dumpling: 'Dumpling',
+  strawberry: 'Strawberry',
 };
 
 const RU_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {

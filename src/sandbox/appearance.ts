@@ -1,5 +1,7 @@
 import { drawToyMixIn } from './toyMixins';
 import type { MaterialId } from '../game/content';
+import type { ShapeId } from '../game/shapes';
+import { drawShapeRelief } from './shapeRelief';
 export const APPEARANCE_TEXTURE_SIZE = 256;
 export const APPEARANCE_TARGET_BYTES = 6_000;
 export const MAX_APPEARANCE_STROKES = 96;
@@ -267,7 +269,7 @@ const drawMixIn = (context: CanvasRenderingContext2D, placement: MixInPlacementV
 export const replayAppearanceDocument = (
   context: CanvasRenderingContext2D,
   document: AppearanceDocumentV1,
-  options: { readonly excludeMixIns?: readonly MixInId[]; readonly materialId?: MaterialId } = {},
+  options: { readonly excludeMixIns?: readonly MixInId[]; readonly materialId?: MaterialId; readonly shapeId?: ShapeId } = {},
 ): void => {
   context.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
   // Fill is stored as an ordinary V1 stroke for rollback compatibility, but it
@@ -286,6 +288,7 @@ export const replayAppearanceDocument = (
       drawAppearanceSegment(context, stroke.m, stroke.c, stroke.s, points[index - 1]!, points[index]!);
     }
   }
+  if (options.shapeId) drawShapeRelief(context, options.shapeId);
   const excludedMixIns = new Set(options.excludeMixIns ?? []);
   for (const mixin of document.mixins) {
     if (!excludedMixIns.has(getMixInId(mixin))) drawMixIn(context, mixin, options.materialId);
