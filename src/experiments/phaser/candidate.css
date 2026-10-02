@@ -27,6 +27,11 @@ body { overscroll-behavior: none; }
   gap: 6px;
 }
 .phaser-candidate-shell .sandbox-panel { align-items: center; }
+/* Eight text-only choices fit one row on desktop; retain two rows on phones. */
+.phaser-candidate-shell .sandbox-panel[aria-label="Shape choices"] { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+@media (max-width: 620px) {
+  .phaser-candidate-shell .sandbox-panel[aria-label="Shape choices"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 .phaser-candidate-shell .sandbox-shape { min-height: 48px !important; }
 .phaser-candidate-shell .sandbox-material-grid { grid-column: 1 / -1; }
 .phaser-candidate-shell .sandbox-panel--center { width: 100%; max-width: none; }
