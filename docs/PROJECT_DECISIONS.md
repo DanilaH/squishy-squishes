@@ -75,3 +75,11 @@ AVIF → WebP → existing procedural accessory on failure. Masters and exact
 prompts/budgets live in assets-src/toy-polish. Catalog tests capture unmasked
 Hall/Squeeze samples in EN/RU and verify existing V3 collection is unchanged.
 Real-phone tactile and taste acceptance remains the owner's next check.
+
+Visual review: six Decor snapshots (EN/RU × 320/844/1440) were individually
+inspected against the originals after replacing glyph previews with stable
+Canvas 2D choice art. Other 24 snapshots are retained byte-for-byte; the
+0.002 threshold is unchanged. The snapshot stylesheet now includes choice
+canvases while continuing to hide the GPU surface. Full unmasked toy captures
+are a separate catalog check. Compact hidden section labels have explicit
+local anchors so they cannot enlarge tray scroll geometry.

@@ -38,7 +38,7 @@ export const preloadToyArt = (): Promise<void> => {
 
 export const drawToyAccessory = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, shapeId?: ShapeId, icon = false): boolean => {
   const image = images.get(id); if (!image) return false;
-  ctx.save(); ctx.shadowColor = 'rgba(108,45,76,.22)'; ctx.shadowBlur = height * .025; ctx.shadowOffsetY = height * .018;
+  ctx.save(); ctx.shadowColor = id === 'bow' ? 'rgba(108,45,76,.26)' : 'rgba(108,45,76,.22)'; ctx.shadowBlur = height * .025; ctx.shadowOffsetY = height * .018;
   const [sx, sy, sw, sh] = assets[id].crop;
   if (id === 'bow') {
     // Preserve the owner-approved bow pixels and logical seat.
@@ -55,4 +55,3 @@ export const drawToyAccessory = (ctx: CanvasRenderingContext2D, id: AccessoryId,
   }
   ctx.restore(); return true;
 };
-export const drawPuffyBow = (ctx: CanvasRenderingContext2D, width: number, height: number, icon = false): boolean => drawToyAccessory(ctx, 'bow', width, height, undefined, icon);

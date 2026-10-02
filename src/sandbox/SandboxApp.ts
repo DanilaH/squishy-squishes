@@ -338,7 +338,6 @@ const shapeSvg = (shape: ShapeDefinition): string => {
   return `<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${points}" /></svg>`;
 };
 
-
 export class SandboxApp {
   private readonly abortController = new AbortController();
   private readonly shell: HTMLElement;
@@ -572,8 +571,6 @@ export class SandboxApp {
         <span>${this.copy[material.id]}</span>
       </button>
     `).join('');
-
-
 
     const eyes = [null, ...EYE_STYLE_IDS].map((id) => `
       <button class="sandbox-decor-choice" type="button" data-decor-eyes="${id ?? 'none'}" aria-pressed="${id === null}">
