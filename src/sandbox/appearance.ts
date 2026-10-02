@@ -1,4 +1,4 @@
-import { drawPearlStar } from './pearlStars';
+import { drawToyMixIn } from './toyMixins';
 import type { MaterialId } from '../game/content';
 export const APPEARANCE_TEXTURE_SIZE = 256;
 export const APPEARANCE_TARGET_BYTES = 6_000;
@@ -249,28 +249,6 @@ export const drawAppearanceSegment = (
   }
 };
 
-const drawStar = (context: CanvasRenderingContext2D, radius: number): void => {
-  context.beginPath();
-  for (let index = 0; index < 10; index += 1) {
-    const angle = -Math.PI / 2 + (index / 10) * Math.PI * 2;
-    const r = index % 2 === 0 ? radius : radius * 0.44;
-    const x = Math.cos(angle) * r;
-    const y = Math.sin(angle) * r;
-    if (index === 0) context.moveTo(x, y);
-    else context.lineTo(x, y);
-  }
-  context.closePath();
-};
-
-const drawHeart = (context: CanvasRenderingContext2D, radius: number): void => {
-  const r = radius;
-  context.beginPath();
-  context.moveTo(0, r * 0.82);
-  context.bezierCurveTo(r * 1.08, r * 0.18, r * 0.92, -r * 0.76, 0, -r * 0.28);
-  context.bezierCurveTo(-r * 0.92, -r * 0.76, -r * 1.08, r * 0.18, 0, r * 0.82);
-  context.closePath();
-};
-
 const drawMixIn = (context: CanvasRenderingContext2D, placement: MixInPlacementV1, materialId?: MaterialId): void => {
   const id = getMixInId(placement);
   const x = (placement.x / 255) * APPEARANCE_TEXTURE_SIZE;
@@ -281,38 +259,8 @@ const drawMixIn = (context: CanvasRenderingContext2D, placement: MixInPlacementV
   context.translate(x, y);
   context.rotate(rotation);
 
-  if (id === 'glitter') {
-    context.fillStyle = 'rgba(255, 247, 185, 0.92)';
-    drawStar(context, radius * 0.72);
-    context.fill();
-  } else if (id === 'stars') {
-    const depth = materialId === 'jelly' ? ((placement.x * 7 + placement.y * 3 + placement.r) % 5) / 4 : 0;
-    drawPearlStar(context, radius, depth);
-  } else if (id === 'foam') {
-    context.fillStyle = 'rgba(244, 249, 255, 0.92)';
-    context.beginPath();
-    context.arc(0, 0, radius, 0, Math.PI * 2);
-    context.fill();
-    context.strokeStyle = 'rgba(167, 199, 226, 0.55)';
-    context.lineWidth = Math.max(1, radius * 0.12);
-    context.stroke();
-  } else if (id === 'pearls') {
-    const gradient = context.createRadialGradient(-radius * 0.28, -radius * 0.3, 0, 0, 0, radius);
-    gradient.addColorStop(0, 'rgba(255,255,255,0.98)');
-    gradient.addColorStop(0.46, 'rgba(236,229,255,0.94)');
-    gradient.addColorStop(1, 'rgba(171,201,231,0.86)');
-    context.fillStyle = gradient;
-    context.beginPath();
-    context.arc(0, 0, radius, 0, Math.PI * 2);
-    context.fill();
-  } else if (id === 'hearts') {
-    context.fillStyle = 'rgba(255, 116, 165, 0.92)';
-    drawHeart(context, radius);
-    context.fill();
-  } else {
-    context.fillStyle = placement.r % 2 === 0 ? 'rgba(99,230,226,0.9)' : 'rgba(213,140,255,0.9)';
-    context.fillRect(-radius * 0.8, -radius * 0.28, radius * 1.6, radius * 0.56);
-  }
+  const depth = materialId === 'jelly' ? ((placement.x * 7 + placement.y * 3 + placement.r) % 5) / 4 : 0;
+  drawToyMixIn(context, id, radius, placement.r, depth);
   context.restore();
 };
 

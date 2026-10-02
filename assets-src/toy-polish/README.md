@@ -22,3 +22,32 @@ AVIF failure retries WebP; total failure keeps the existing procedural bow.
 Consumer reconstructs the fixed prepared canvas (alpha bounds x16..239, y72..183)
 inside the established accessory extent, preserving its projection/seat geometry.
 Stars remain procedural, authored in pearlStars.ts; no external source or new save IDs.
+
+## Catalog extension — 2 October 2026
+
+Built-in imagegen, transparent output; generated masters retained unchanged. Rejected halo variants were not shipped. Existing bow unchanged. All four additions are startup-required for saved V3 toys, with AVIF → WebP → procedural fallback. Per image: 256×256, decoded RGBA proxy 262144 bytes; total extra decoded proxy 1 MiB. `asset:prepare --canvas=256 --padding=16`, existing alpha preserved.
+
+| File | WebP bytes | AVIF bytes |
+| --- | ---: | ---: |
+| cat-ears | 6612 | 4136 |
+| bunny-ears | 9888 | 5715 |
+| horns | 6988 | 4450 |
+| crown | 10954 | 7357 |
+
+Exact accepted prompts:
+
+### cat-ears
+
+Use case: stylized-concept. Asset type: transparent game accessory sprite. Subject: A pair of short rounded kitten ears, warm ivory outer silicone and recessed blush pink inner ears. Two separate symmetrical ears, no headband, no animal head, no fur. Soft triangular tips, visibly thick rounded molded edges. Style: premium tactile kawaii squishy craft toy, puffy molded soft silicone, subtle satin gloss and wide softbox highlight upper left, gentle dimensional shading. Camera: straight front view, near orthographic, symmetrical, flat horizontal seating baseline, entire object isolated and centered with clear empty margin. Genuine transparent background; no floor, no background shadow, no body, no face, no hands, no packaging, no lettering, no outlines, no hard plastic look. Readable when displayed at 70px. Color and softness should match a blush pink puffy silicone bow.
+
+### bunny-ears
+
+A two short bunny ears, warm white with pink inset, symmetrical upright pair. Puffy molded silicone toy accessory. Wide landscape sprite, front orthographic view. Soft dimensional shading contained inside object, no rim light, no backlight, no bloom. Opaque object with clean contour. Die-cut isolated object on fully transparent empty background with zero opacity outside edges. No ground, cast shadow, glow or translucent haze. Like a small game inventory asset.
+
+### horns
+
+Use case: stylized-concept. Asset type: transparent game accessory sprite. Subject: A pair of tiny curved lilac silicone toy horns. Two separate symmetrical horns, curving gently outward and up, rounded safe tips, chunky bases, lavender pink pearlescent coloring. Cute playful toy, not menacing. Style: premium tactile kawaii squishy craft toy, puffy molded soft silicone, subtle satin gloss and wide softbox highlight upper left, gentle dimensional shading. Camera: straight front view, near orthographic, symmetrical, flat horizontal seating baseline, entire object isolated and centered with clear empty margin. Genuine transparent background; no floor, no background shadow, no body, no face, no hands, no packaging, no lettering, no outlines, no hard plastic look. Readable when displayed at 70px. Color and softness should match a blush pink puffy silicone bow.
+
+### crown
+
+A a small five point rounded golden crown with pink heart jewel. Puffy molded silicone toy accessory. Wide landscape sprite, front orthographic view. Soft dimensional shading contained inside object, no rim light, no backlight, no bloom. Opaque object with clean contour. Die-cut isolated object on fully transparent empty background with zero opacity outside edges. No ground, cast shadow, glow or translucent haze. Like a small game inventory asset.

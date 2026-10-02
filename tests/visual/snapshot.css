@@ -1,3 +1,5 @@
 /* Capture UI and room art without GPU physics. Do not mask large canvas bounds:
    Finish uses a viewport-sized render buffer extending beneath the controls. */
 canvas { visibility: hidden !important; }
+/* Choice art is stable Canvas 2D UI, so include it in the regression baseline. */
+canvas.toy-choice-art { visibility: visible !important; }

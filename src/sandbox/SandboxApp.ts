@@ -1,5 +1,6 @@
-import { drawPuffyBow } from './toyArt';
-import { drawPearlStar } from './pearlStars';
+import { drawToyAccessory } from './toyArt';
+import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
+import { drawToyMixIn } from './toyMixins';
 import { MATERIALS, getMaterial, getPalette, type MaterialId } from '../game/content';
 import { SquishyAudio } from '../game/SquishyAudio';
 import { SHAPES, getShape, isPointInsideShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
@@ -325,19 +326,8 @@ const createPearlSprite = (): HTMLCanvasElement => {
   canvas.height = 64;
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Pearl sprite requires Canvas 2D.');
-  const radius = 30;
-  const gradient = context.createRadialGradient(23, 22, 1, 32, 32, radius);
-  gradient.addColorStop(0, 'rgba(255,255,255,0.99)');
-  gradient.addColorStop(0.44, 'rgba(238,232,255,0.97)');
-  gradient.addColorStop(0.78, 'rgba(202,216,242,0.94)');
-  gradient.addColorStop(1, 'rgba(146,178,214,0.90)');
-  context.fillStyle = gradient;
-  context.beginPath();
-  context.arc(32, 32, radius, 0, Math.PI * 2);
-  context.fill();
-  context.strokeStyle = 'rgba(255,255,255,0.48)';
-  context.lineWidth = 1.5;
-  context.stroke();
+  context.translate(32, 32);
+  drawToyMixIn(context, 'pearls', 30);
   return canvas;
 };
 
@@ -346,15 +336,6 @@ const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 const shapeSvg = (shape: ShapeDefinition): string => {
   const points = shape.boundary.map((point) => `${50 + point.x * 42},${50 - point.y * 42}`).join(' ');
   return `<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${points}" /></svg>`;
-};
-
-const mixinGlyph = (id: MixInId): string => {
-  if (id === 'glitter') return '✦';
-  if (id === 'stars') return '★';
-  if (id === 'foam') return '○';
-  if (id === 'pearls') return '◉';
-  if (id === 'hearts') return '♥';
-  return '▰';
 };
 
 export class SandboxApp {
@@ -410,7 +391,7 @@ export class SandboxApp {
   private activityBlocked = false;
   private placementAnimation: Animation | null = null;
   private sprinkle: HTMLElement | null = null;
-  private starSprinkleImage = '';
+  private readonly sprinkleImages = new Map<MixInId, string>();
   private appearanceLimitReached = false;
   private exitConfirmOpen = false;
   private exitReturnFocus: HTMLElement | null = null;
@@ -442,18 +423,26 @@ export class SandboxApp {
 
     root.innerHTML = this.renderShell();
     this.shell = this.requireElement<HTMLElement>('[data-sandbox-app]');
-    const starIcon = this.root.querySelector<HTMLCanvasElement>('[data-pearl-star-icon]');
-    const starContext = starIcon?.getContext('2d');
-    if (starContext) {
-      for (const [x, y, radius, angle] of [[28, 34, 13, -.25], [50, 23, 17, .2], [71, 37, 12, .4]] as const) {
-        starContext.save(); starContext.translate(x, y); starContext.rotate(angle);
-        drawPearlStar(starContext, radius); starContext.restore();
+    for (const icon of this.root.querySelectorAll<HTMLCanvasElement>('[data-mixin-icon]')) {
+      const ctx = icon.getContext('2d'); const id = icon.dataset.mixinIcon as MixInId;
+      if (!ctx) continue;
+      for (const [x, y, radius, angle, variation] of [[28, 34, 13, -.25, 0], [50, 23, 17, .2, 1], [71, 37, 12, .4, 2]] as const) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(angle); drawToyMixIn(ctx, id, radius, variation); ctx.restore();
       }
+      this.sprinkleImages.set(id, icon.toDataURL());
     }
-    if (starIcon) this.starSprinkleImage = starIcon.toDataURL();
-    const bowIcon = this.root.querySelector<HTMLCanvasElement>('[data-bow-icon]');
-    const bowContext = bowIcon?.getContext('2d');
-    if (bowContext && !drawPuffyBow(bowContext, 180, 120, true)) drawAccessoryGraphic(bowContext, 'bow', 180, 120);
+    for (const icon of this.root.querySelectorAll<HTMLCanvasElement>('[data-accessory-icon]')) {
+      const ctx = icon.getContext('2d'); const id = icon.dataset.accessoryIcon as AccessoryId;
+      if (ctx && !drawToyAccessory(ctx, id, 180, 120, undefined, true)) drawAccessoryGraphic(ctx, id, 180, 120);
+    }
+    for (const icon of this.root.querySelectorAll<HTMLCanvasElement>('[data-face-icon]')) {
+      const ctx = icon.getContext('2d');
+      if (ctx) drawPagesFaceChoice(ctx, icon.dataset.faceIcon as 'eyes' | 'mouth', icon.dataset.faceStyle as EyeStyleId | MouthStyleId, icon.width, icon.height);
+    }
+    for (const icon of this.root.querySelectorAll<HTMLCanvasElement>('[data-sticker-icon]')) {
+      const ctx = icon.getContext('2d');
+      if (ctx) drawPagesStickerChoice(ctx, icon.dataset.stickerIcon as StickerId, icon.width, icon.height);
+    }
     this.canvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-canvas]');
     this.accessoryCanvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-accessory]');
     this.accessoryCanvas.width = 180;
@@ -573,7 +562,7 @@ export class SandboxApp {
     `).join('');
     const mixins = MIXIN_IDS.map((id, index) => `
       <button class="sandbox-mixin" type="button" data-mixin="${id}" aria-pressed="${index === 0}">
-        <span>${id === 'stars' ? '<canvas class="toy-choice-art" data-pearl-star-icon width="96" height="56" aria-hidden="true"></canvas>' : mixinGlyph(id)}</span><small>${mixinLabels[id]}</small>
+        <span><canvas class="toy-choice-art" data-mixin-icon="${id}" width="96" height="56" aria-hidden="true"></canvas></span><small>${mixinLabels[id]}</small>
       </button>
     `).join('');
     const materials = MATERIALS.map((material) => `
@@ -582,28 +571,25 @@ export class SandboxApp {
         <span>${this.copy[material.id]}</span>
       </button>
     `).join('');
-    const eyeGlyph = (id: EyeStyleId): string => id === 'dot' ? '••' : id === 'happy' ? '⌒⌒' : '﹏﹏';
-    const mouthGlyph = (id: MouthStyleId): string => id === 'smile' ? '⌣' : id === 'o' ? '○' : 'ω';
-    const stickerGlyph = (id: StickerId): string => id === 'heart' ? '♥' : id === 'star' ? '★' : id === 'flower' ? '✿' : '✦';
-    const accessoryGlyph = (id: AccessoryId): string => id === 'cat-ears' ? '▲ ▲' : id === 'bunny-ears' ? '∩ ∩' : id === 'horns' ? '△ △' : id === 'bow' ? '⋈' : '♛';
+
     const eyes = [null, ...EYE_STYLE_IDS].map((id) => `
       <button class="sandbox-decor-choice" type="button" data-decor-eyes="${id ?? 'none'}" aria-pressed="${id === null}">
-        <span>${id ? eyeGlyph(id) : '—'}</span><small>${id ? decorLabels.eyes[id] : this.copy.none}</small>
+        <span>${id ? `<canvas class="toy-choice-art" data-face-icon="eyes" data-face-style="${id}" width="96" height="56" aria-hidden="true"></canvas>` : '—'}</span><small>${id ? decorLabels.eyes[id] : this.copy.none}</small>
       </button>
     `).join('');
     const mouths = [null, ...MOUTH_STYLE_IDS].map((id) => `
       <button class="sandbox-decor-choice" type="button" data-decor-mouth="${id ?? 'none'}" aria-pressed="${id === null}">
-        <span>${id ? mouthGlyph(id) : '—'}</span><small>${id ? decorLabels.mouths[id] : this.copy.none}</small>
+        <span>${id ? `<canvas class="toy-choice-art" data-face-icon="mouth" data-face-style="${id}" width="96" height="56" aria-hidden="true"></canvas>` : '—'}</span><small>${id ? decorLabels.mouths[id] : this.copy.none}</small>
       </button>
     `).join('');
     const stickers = STICKER_IDS.map((id) => `
       <button class="sandbox-decor-choice" type="button" data-decor-sticker="${id}" aria-pressed="${id === this.selectedSticker}">
-        <span>${stickerGlyph(id)}</span><small>${decorLabels.stickers[id]}</small>
+        <span><canvas class="toy-choice-art" data-sticker-icon="${id}" width="96" height="56" aria-hidden="true"></canvas></span><small>${decorLabels.stickers[id]}</small>
       </button>
     `).join('');
     const accessories = [null, ...ACCESSORY_IDS].map((id) => `
       <button class="sandbox-decor-choice" type="button" data-decor-accessory="${id ?? 'none'}" aria-pressed="${id === null}">
-        <span>${id === 'bow' ? '<canvas class="toy-choice-art" data-bow-icon width="180" height="120" aria-hidden="true"></canvas>' : id ? accessoryGlyph(id) : '—'}</span><small>${id ? decorLabels.accessories[id] : this.copy.none}</small>
+        <span>${id ? `<canvas class="toy-choice-art" data-accessory-icon="${id}" width="180" height="120" aria-hidden="true"></canvas>` : '—'}</span><small>${id ? decorLabels.accessories[id] : this.copy.none}</small>
       </button>
     `).join('');
 
@@ -811,7 +797,7 @@ export class SandboxApp {
       if (accessory === null || ACCESSORY_IDS.includes(accessory)) {
         this.draft = { ...this.draft, decor: { ...this.draft.decor, accessory } };
         this.refreshAccessoryGraphic();
-        if (accessory === 'bow') this.playPlacementFeedback(this.accessoryCanvas, 'bow');
+        if (accessory) this.playPlacementFeedback(this.accessoryCanvas, 'bow');
         this.updateDecorUi();
       }
       return;
@@ -1085,9 +1071,7 @@ export class SandboxApp {
     this.scheduleTextureUpload();
     this.refreshRigidMixins();
     this.updateAppearanceDataset();
-    if (this.selectedMixIn === 'stars') {
-      this.showStarSprinkle(point);
-    }
+    this.showMixinSprinkle(point);
   }
 
   private playPlacementFeedback(element: HTMLElement, kind: 'bow' | 'stars'): void {
@@ -1110,7 +1094,7 @@ export class SandboxApp {
     this.sprinkle = null;
   }
 
-  private showStarSprinkle(point: AppearancePoint): void {
+  private showMixinSprinkle(point: AppearancePoint): void {
     this.clearPlacementFeedback();
     this.audio.playToyPlacement('stars');
     if (this.activityBlocked || this.exitConfirmOpen || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1122,7 +1106,7 @@ export class SandboxApp {
     const sprinkle = document.createElement('span');
     sprinkle.className = 'toy-star-sprinkle';
     sprinkle.setAttribute('aria-hidden', 'true');
-    sprinkle.style.backgroundImage = `url(${this.starSprinkleImage})`;
+    sprinkle.style.backgroundImage = `url(${this.sprinkleImages.get(this.selectedMixIn) ?? ''})`;
     sprinkle.style.left = `${rect.left - stageRect.left + center.x}px`;
     sprinkle.style.top = `${rect.top - stageRect.top + center.y}px`;
     stage.append(sprinkle);

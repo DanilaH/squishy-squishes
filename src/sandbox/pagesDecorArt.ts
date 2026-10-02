@@ -1,4 +1,6 @@
-import { drawPuffyBow } from './toyArt';
+import { drawToyMixIn } from './toyMixins';
+import { drawPearlStar } from './pearlStars';
+import { drawToyAccessory } from './toyArt';
 import type { ShapeDefinition, ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE } from './appearance';
 import type { AccessoryId, DecorDocumentV1, DecorFrame, StickerId } from './decor';
@@ -6,7 +8,7 @@ import type { AccessoryId, DecorDocumentV1, DecorFrame, StickerId } from './deco
 /** Shared production decor profile. Studio, Squeeze and Hall share these pixels;
  * IDs and V3 documents retain their original meaning. */
 const TAU = Math.PI * 2;
-const INK = '#514253';
+const INK = '#503e50';
 const S = APPEARANCE_TEXTURE_SIZE;
 const point = (p: { u: number; v: number }): [number, number] => [p.u * S, (1 - p.v) * S];
 const gradient = (ctx: CanvasRenderingContext2D, top: string, mid: string, bottom: string, height: number): CanvasGradient => {
@@ -16,7 +18,7 @@ const gradient = (ctx: CanvasRenderingContext2D, top: string, mid: string, botto
   g.addColorStop(1, bottom);
   return g;
 };
-const bead = (ctx: CanvasRenderingContext2D, x: number, y: number, radius = 9.5): void => {
+const bead = (ctx: CanvasRenderingContext2D, x: number, y: number, radius = 8.6): void => {
   ctx.save();
   const g = ctx.createRadialGradient(x - 3, y - 4, 1, x, y, radius + 1);
   g.addColorStop(0, '#776476');
@@ -35,10 +37,10 @@ const eye = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['
   if (style === 'dot') { bead(ctx, x, y); return; }
   ctx.save();
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.strokeStyle = INK; ctx.lineWidth = 5;
+  ctx.strokeStyle = INK; ctx.lineWidth = 3.6;
   ctx.beginPath();
-  if (style === 'happy') ctx.arc(x, y + 3, 10, Math.PI * 1.10, Math.PI * 1.90);
-  else { ctx.moveTo(x - 9, y); ctx.quadraticCurveTo(x, y + 6, x + 9, y); }
+  if (style === 'happy') { ctx.moveTo(x - 8, y + 1); ctx.bezierCurveTo(x - 5, y - 7, x + 5, y - 7, x + 8, y + 1); }
+  else { ctx.moveTo(x - 8, y); ctx.quadraticCurveTo(x, y + 4.5, x + 8, y); }
   ctx.stroke();
   ctx.restore();
 };
@@ -46,14 +48,14 @@ const mouth = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1
   const [x, y] = point(p);
   ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   if (style === 'o') {
-    ctx.beginPath(); ctx.ellipse(x, y + 2, 6.8, 8.8, 0, 0, TAU);
+    ctx.beginPath(); ctx.ellipse(x, y + 2, 5.4, 6.8, 0, 0, TAU);
     ctx.fillStyle = '#73516c'; ctx.fill(); ctx.strokeStyle = '#4b384f'; ctx.lineWidth = 2; ctx.stroke();
     ctx.beginPath(); ctx.ellipse(x - 1.5, y - 1, 2.1, 1.4, -.2, 0, TAU);
     ctx.fillStyle = 'rgba(255,235,248,.9)'; ctx.fill();
   } else {
-    ctx.strokeStyle = INK; ctx.lineWidth = 4.6; ctx.beginPath();
-    if (style === 'smile') { ctx.moveTo(x - 13, y - 2); ctx.quadraticCurveTo(x, y + 18, x + 13, y - 2); }
-    else { ctx.moveTo(x - 12, y - 2); ctx.quadraticCurveTo(x - 7, y + 9, x, y + 2); ctx.quadraticCurveTo(x + 7, y + 9, x + 12, y - 2); }
+    ctx.strokeStyle = INK; ctx.lineWidth = 3.3; ctx.beginPath();
+    if (style === 'smile') { ctx.moveTo(x - 11, y - 1); ctx.bezierCurveTo(x - 7, y + 9, x + 7, y + 9, x + 11, y - 1); }
+    else { ctx.moveTo(x - 10, y - 1); ctx.quadraticCurveTo(x - 5, y + 7, x, y + 1); ctx.quadraticCurveTo(x + 5, y + 7, x + 10, y - 1); }
     ctx.stroke();
   }
   ctx.restore();
@@ -61,11 +63,12 @@ const mouth = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1
 const blush = (ctx: CanvasRenderingContext2D, p: { u: number; v: number }): void => {
   const [x, y] = point(p);
   ctx.save();
-  const g = ctx.createRadialGradient(x, y, 1, x, y, 16);
-  g.addColorStop(0, 'rgba(232,116,145,.26)');
-  g.addColorStop(.48, 'rgba(244,137,165,.14)');
-  g.addColorStop(1, 'rgba(244,137,165,0)');
-  ctx.fillStyle = g; ctx.fillRect(x - 16, y - 16, 32, 32);
+  ctx.translate(x, y); ctx.scale(1, .62);
+  const g = ctx.createRadialGradient(0, 0, 1, 0, 0, 17);
+  g.addColorStop(0, 'rgba(233,112,151,.40)');
+  g.addColorStop(.45, 'rgba(245,138,172,.24)');
+  g.addColorStop(1, 'rgba(245,138,172,0)');
+  ctx.fillStyle = g; ctx.fillRect(-17, -17, 34, 34);
   ctx.restore();
 };
 const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number): void => {
@@ -73,38 +76,44 @@ const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number): vo
   ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.shadowColor = 'rgba(61,42,45,.25)'; ctx.shadowBlur = 1.5; ctx.shadowOffsetY = 1.2;
   if (id === 'heart') {
-    ctx.beginPath(); ctx.moveTo(0, r * .8);
-    ctx.bezierCurveTo(-r * 1.35, r * .04, -r * .74, -r * 1.04, 0, -r * .34);
-    ctx.bezierCurveTo(r * .74, -r * 1.04, r * 1.35, r * .04, 0, r * .8);
-    ctx.fillStyle = gradient(ctx, '#ffe1e6', '#ef80a4', '#c95a88', r); ctx.fill();
+    drawToyMixIn(ctx, 'hearts', r);
   } else if (id === 'star') {
-    ctx.beginPath();
-    for (let i = 0; i < 10; i++) {
-      const a = -Math.PI / 2 + i * TAU / 10;
-      const d = i % 2 === 0 ? r : r * .49;
-      if (i === 0) ctx.moveTo(Math.cos(a) * d, Math.sin(a) * d);
-      else ctx.lineTo(Math.cos(a) * d, Math.sin(a) * d);
-    }
-    ctx.closePath(); ctx.fillStyle = gradient(ctx, '#fffce8', '#ffe7a1', '#dfae5f', r); ctx.fill();
+    drawPearlStar(ctx, r);
   } else if (id === 'flower') {
-    ctx.fillStyle = gradient(ctx, '#fff2f2', '#edb6d3', '#cb8eae', r);
     for (let i = 0; i < 5; i++) {
       const a = i * TAU / 5 - Math.PI / 2;
-      ctx.beginPath(); ctx.ellipse(Math.cos(a) * r * .49, Math.sin(a) * r * .49, r * .42, r * .29, a, 0, TAU); ctx.fill();
+      const x = Math.cos(a) * r * .46, y = Math.sin(a) * r * .46;
+      const g = ctx.createRadialGradient(x - r * .12, y - r * .16, 0, x, y, r * .5);
+      g.addColorStop(0, '#fff1f5'); g.addColorStop(.45, '#f6bad9'); g.addColorStop(1, '#bf7dad');
+      ctx.beginPath(); ctx.ellipse(x, y, r * .46, r * .32, a, 0, TAU);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,236,246,.7)'; ctx.lineWidth = Math.max(.6, r * .05); ctx.stroke();
     }
-    ctx.beginPath(); ctx.arc(0, 0, r * .31, 0, TAU);
-    ctx.fillStyle = '#ffdfa4'; ctx.fill();
-  } else {
-    ctx.strokeStyle = '#fff7d7'; ctx.lineWidth = Math.max(2.5, r * .24);
-    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, -r); ctx.lineTo(0, r);
-    ctx.moveTo(-r * .48, -r * .48); ctx.lineTo(r * .48, r * .48);
-    ctx.moveTo(r * .48, -r * .48); ctx.lineTo(-r * .48, r * .48); ctx.stroke();
-  }
-  if (id !== 'sparkle') {
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-    ctx.strokeStyle = 'rgba(255,250,243,.83)'; ctx.lineWidth = 1.25; ctx.stroke();
+    drawToyMixIn(ctx, 'pearls', r * .28);
+  } else {
+    ctx.beginPath(); ctx.moveTo(0, -r);
+    ctx.quadraticCurveTo(r * .14, -r * .14, r, 0);
+    ctx.quadraticCurveTo(r * .14, r * .14, 0, r);
+    ctx.quadraticCurveTo(-r * .14, r * .14, -r, 0);
+    ctx.quadraticCurveTo(-r * .14, -r * .14, 0, -r); ctx.closePath();
+    ctx.fillStyle = gradient(ctx, '#fffce7', '#ffe7a8', '#cf9aca', r); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,244,.85)'; ctx.lineWidth = Math.max(.6, r * .07); ctx.stroke();
   }
   ctx.restore();
+};
+
+/** Native controls preview the same face lines as the UV overlay. */
+export const drawPagesFaceChoice = (ctx: CanvasRenderingContext2D, kind: 'eyes' | 'mouth', style: NonNullable<DecorDocumentV1['eyes']> | NonNullable<DecorDocumentV1['mouth']>, width: number, height: number): void => {
+  ctx.save(); ctx.translate(width / 2, height / 2); ctx.scale(1.3, 1.3); ctx.translate(-S / 2, -S / 2);
+  if (kind === 'eyes') {
+    eye(ctx, style as NonNullable<DecorDocumentV1['eyes']>, { u: .5 - 16 / S, v: .5 });
+    eye(ctx, style as NonNullable<DecorDocumentV1['eyes']>, { u: .5 + 16 / S, v: .5 });
+  } else mouth(ctx, style as NonNullable<DecorDocumentV1['mouth']>, { u: .5, v: .5 });
+  ctx.restore();
+};
+export const drawPagesStickerChoice = (ctx: CanvasRenderingContext2D, id: StickerId, width: number, height: number): void => {
+  ctx.save(); ctx.translate(width / 2, height / 2); sticker(ctx, id, Math.min(width, height) * .78); ctx.restore();
 };
 
 export const renderPagesSurfaceStickers = (
@@ -140,7 +149,7 @@ export const renderPagesSurfaceDecor = (
 
 export const drawPagesAccessoryGraphic = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, shapeId?: ShapeId): void => {
   ctx.clearRect(0, 0, width, height);
-  if (id === 'bow' && drawPuffyBow(ctx, width, height)) return;
+  if (drawToyAccessory(ctx, id, width, height, shapeId)) return;
   ctx.save();
   ctx.translate(width * .5, height * .92);
   // The original 108px-tall bunny ears were cut by the native 256px Hall
