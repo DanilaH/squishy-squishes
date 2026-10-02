@@ -182,6 +182,13 @@ void main() {
   );
   float gelCaustic = pow(gelWave, 5.5) * interior * translucency;
   base += uSheenColor * gelCaustic * 0.045;
+  // Broad softbox reflections make dense gel feel rounded and touchable.
+  // They use the same UV/deformation field and leave opaque materials untouched.
+  vec2 gelHighlightUv = vUv - vec2(0.34, 0.72);
+  float gelSoftbox = exp(-dot(gelHighlightUv * vec2(9.0, 17.0), gelHighlightUv * vec2(9.0, 17.0)));
+  vec2 gelBounceUv = vUv - vec2(0.70, 0.28);
+  float gelBounce = exp(-dot(gelBounceUv * vec2(13.0, 8.0), gelBounceUv * vec2(13.0, 8.0)));
+  base = mix(base, uSheenColor, jellyIdentity * interior * (gelSoftbox * 0.34 + gelBounce * 0.09));
   base += uRimColor * edge * translucency * (0.25 + lightSurface * 0.04);
 
   float roughness = clamp(uRoughness, 0.0, 1.0);

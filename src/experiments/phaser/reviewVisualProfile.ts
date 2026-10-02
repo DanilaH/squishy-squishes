@@ -1,3 +1,4 @@
+import { preloadToyArt } from '../../sandbox/toyArt';
 import { registerPagesDecorArt, unregisterPagesDecorArt } from '../../sandbox/decor';
 import {
   disablePagesLibraryMaterialLighting,
@@ -24,7 +25,9 @@ import '../../app/styles/room-atmosphere.css';
 import '../../app/styles/controls.css';
 
 /** Decode the Hall's small first-screen art before the playable Library mounts. */
-export const preloadReviewVisualProfile = (): Promise<void> => preloadLibraryHallAssets();
+export const preloadReviewVisualProfile = async (): Promise<void> => {
+  await Promise.all([preloadLibraryHallAssets(), preloadToyArt()]);
+};
 
 /**
  * Registers the owner-reviewed Hall/Studio appearance before the first Library

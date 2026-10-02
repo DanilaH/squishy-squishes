@@ -1,3 +1,5 @@
+import { drawPuffyBow } from './toyArt';
+import { drawPearlStar } from './pearlStars';
 import { MATERIALS, getMaterial, getPalette, type MaterialId } from '../game/content';
 import { SquishyAudio } from '../game/SquishyAudio';
 import { SHAPES, getShape, isPointInsideShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
@@ -406,6 +408,9 @@ export class SandboxApp {
   private accessoryRestV = 0;
   private muted = false;
   private activityBlocked = false;
+  private placementAnimation: Animation | null = null;
+  private sprinkle: HTMLElement | null = null;
+  private starSprinkleImage = '';
   private appearanceLimitReached = false;
   private exitConfirmOpen = false;
   private exitReturnFocus: HTMLElement | null = null;
@@ -437,6 +442,18 @@ export class SandboxApp {
 
     root.innerHTML = this.renderShell();
     this.shell = this.requireElement<HTMLElement>('[data-sandbox-app]');
+    const starIcon = this.root.querySelector<HTMLCanvasElement>('[data-pearl-star-icon]');
+    const starContext = starIcon?.getContext('2d');
+    if (starContext) {
+      for (const [x, y, radius, angle] of [[28, 34, 13, -.25], [50, 23, 17, .2], [71, 37, 12, .4]] as const) {
+        starContext.save(); starContext.translate(x, y); starContext.rotate(angle);
+        drawPearlStar(starContext, radius); starContext.restore();
+      }
+    }
+    if (starIcon) this.starSprinkleImage = starIcon.toDataURL();
+    const bowIcon = this.root.querySelector<HTMLCanvasElement>('[data-bow-icon]');
+    const bowContext = bowIcon?.getContext('2d');
+    if (bowContext && !drawPuffyBow(bowContext, 180, 120, true)) drawAccessoryGraphic(bowContext, 'bow', 180, 120);
     this.canvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-canvas]');
     this.accessoryCanvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-accessory]');
     this.accessoryCanvas.width = 180;
@@ -520,6 +537,7 @@ export class SandboxApp {
   public setActivityBlocked(blocked: boolean): void {
     if (this.disposed) return;
     this.activityBlocked = blocked;
+    if (blocked) this.clearPlacementFeedback();
     this.shell.classList.toggle('is-blocked', blocked);
     this.shell.setAttribute('aria-busy', String(blocked));
     this.syncInteractivity();
@@ -532,6 +550,7 @@ export class SandboxApp {
     if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);
     if (this.rigidMixinFrame !== 0) cancelAnimationFrame(this.rigidMixinFrame);
     this.abortController.abort();
+    this.clearPlacementFeedback();
     this.renderer.dispose();
     this.audio.dispose();
   }
@@ -554,7 +573,7 @@ export class SandboxApp {
     `).join('');
     const mixins = MIXIN_IDS.map((id, index) => `
       <button class="sandbox-mixin" type="button" data-mixin="${id}" aria-pressed="${index === 0}">
-        <span>${mixinGlyph(id)}</span><small>${mixinLabels[id]}</small>
+        <span>${id === 'stars' ? '<canvas class="toy-choice-art" data-pearl-star-icon width="96" height="56" aria-hidden="true"></canvas>' : mixinGlyph(id)}</span><small>${mixinLabels[id]}</small>
       </button>
     `).join('');
     const materials = MATERIALS.map((material) => `
@@ -584,7 +603,7 @@ export class SandboxApp {
     `).join('');
     const accessories = [null, ...ACCESSORY_IDS].map((id) => `
       <button class="sandbox-decor-choice" type="button" data-decor-accessory="${id ?? 'none'}" aria-pressed="${id === null}">
-        <span>${id ? accessoryGlyph(id) : '—'}</span><small>${id ? decorLabels.accessories[id] : this.copy.none}</small>
+        <span>${id === 'bow' ? '<canvas class="toy-choice-art" data-bow-icon width="180" height="120" aria-hidden="true"></canvas>' : id ? accessoryGlyph(id) : '—'}</span><small>${id ? decorLabels.accessories[id] : this.copy.none}</small>
       </button>
     `).join('');
 
@@ -792,6 +811,7 @@ export class SandboxApp {
       if (accessory === null || ACCESSORY_IDS.includes(accessory)) {
         this.draft = { ...this.draft, decor: { ...this.draft.decor, accessory } };
         this.refreshAccessoryGraphic();
+        if (accessory === 'bow') this.playPlacementFeedback(this.accessoryCanvas, 'bow');
         this.updateDecorUi();
       }
       return;
@@ -801,6 +821,7 @@ export class SandboxApp {
     if (materialId && MATERIALS.some((material) => material.id === materialId)) {
       this.draft = { ...this.draft, materialId };
       this.applyMaterial(materialId);
+      this.replayAndUpload();
       this.updatePressed('[data-material]', 'material', materialId);
       return;
     }
@@ -1060,10 +1081,62 @@ export class SandboxApp {
       return;
     }
     this.draft = { ...this.draft, appearance: next };
-    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS });
+    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId });
     this.scheduleTextureUpload();
     this.refreshRigidMixins();
     this.updateAppearanceDataset();
+    if (this.selectedMixIn === 'stars') {
+      this.showStarSprinkle(point);
+    }
+  }
+
+  private playPlacementFeedback(element: HTMLElement, kind: 'bow' | 'stars'): void {
+    if (this.activityBlocked || this.exitConfirmOpen) return;
+    this.audio.playToyPlacement(kind);
+    this.clearPlacementFeedback();
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Animate individual scale, leaving the live mesh-projection matrix intact.
+    this.placementAnimation = element.animate([
+      { scale: kind === 'bow' ? '.84' : '.88', opacity: .75 },
+      { scale: '1.06', opacity: 1, offset: .55 },
+      { scale: '1', opacity: 1 },
+    ], { duration: 260, easing: 'ease-out' });
+  }
+
+  private clearPlacementFeedback(): void {
+    this.placementAnimation?.cancel();
+    this.placementAnimation = null;
+    this.sprinkle?.remove();
+    this.sprinkle = null;
+  }
+
+  private showStarSprinkle(point: AppearancePoint): void {
+    this.clearPlacementFeedback();
+    this.audio.playToyPlacement('stars');
+    if (this.activityBlocked || this.exitConfirmOpen || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const center = this.renderer.projectUvToCanvas(point.u, point.v);
+    const rect = this.canvas.getBoundingClientRect();
+    const stage = this.canvas.parentElement;
+    if (!stage) return;
+    const stageRect = stage.getBoundingClientRect();
+    const sprinkle = document.createElement('span');
+    sprinkle.className = 'toy-star-sprinkle';
+    sprinkle.setAttribute('aria-hidden', 'true');
+    sprinkle.style.backgroundImage = `url(${this.starSprinkleImage})`;
+    sprinkle.style.left = `${rect.left - stageRect.left + center.x}px`;
+    sprinkle.style.top = `${rect.top - stageRect.top + center.y}px`;
+    stage.append(sprinkle);
+    this.sprinkle = sprinkle;
+    const animation = sprinkle.animate([
+      { transform: 'translate(-50%, -150%) scale(.6)', opacity: 0 },
+      { transform: 'translate(-50%, -80%) scale(1)', opacity: .85, offset: .35 },
+      { transform: 'translate(-50%, -50%) scale(.85)', opacity: 0 },
+    ], { duration: 320, easing: 'ease-out' });
+    this.placementAnimation = animation;
+    animation.onfinish = () => {
+      sprinkle.remove();
+      if (this.sprinkle === sprinkle) this.sprinkle = null;
+    };
   }
 
   private undoPaint(): void {
@@ -1455,6 +1528,7 @@ export class SandboxApp {
   }
 
   private setStage(next: SandboxStage): void {
+    this.clearPlacementFeedback();
     this.stage = next;
     this.shell.dataset.stage = next;
     const details = this.stageCopy(next);
@@ -1488,6 +1562,7 @@ export class SandboxApp {
 
   private syncInteractivity(): void {
     const blocked = this.activityBlocked || this.exitConfirmOpen;
+    if (blocked) this.clearPlacementFeedback();
     if (this.options.rendererBackend === 'phaser') {
       (this.renderer as PhaserSquishSurface).setStudioStage(this.stage, this.decorSection);
       (this.renderer as PhaserSquishSurface).setActivityBlocked(blocked);
@@ -1525,7 +1600,7 @@ export class SandboxApp {
   }
 
   private replayAndUpload(): void {
-    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS });
+    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId });
     if (this.options.rendererBackend === 'phaser') {
       renderSurfaceStickers(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
       this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);

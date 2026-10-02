@@ -91,6 +91,7 @@ export class SquishyAudio {
   private pourRequestId = 0;
   private stageCompleteToneIndex = 0;
   private muted = false;
+  private lastToyPlacementAt = -1;
   private disposed = false;
 
   public async prime(): Promise<void> {
@@ -134,6 +135,25 @@ export class SquishyAudio {
   public stopPour(): void {
     this.pourRequestId += 1;
     this.stopActivePour();
+  }
+
+  /** Quiet one-shot craft feedback; uses the same mute/context lifecycle. */
+  public playToyPlacement(kind: 'bow' | 'stars'): void {
+    if (!this.context || !this.master || this.context.state !== 'running' || this.muted) return;
+    const now = this.context.currentTime;
+    if (now - this.lastToyPlacementAt < .09) return;
+    this.lastToyPlacementAt = now;
+    const tone = this.context.createOscillator();
+    const gain = this.context.createGain();
+    tone.type = 'sine';
+    tone.frequency.setValueAtTime(kind === 'bow' ? 260 : 1120, now);
+    tone.frequency.exponentialRampToValueAtTime(kind === 'bow' ? 115 : 690, now + .09);
+    gain.gain.setValueAtTime(.0001, now);
+    gain.gain.exponentialRampToValueAtTime(kind === 'bow' ? .024 : .009, now + .008);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + .12);
+    tone.connect(gain); gain.connect(this.master);
+    tone.start(now); tone.stop(now + .13);
+    tone.onended = () => { tone.disconnect(); gain.disconnect(); };
   }
 
   public playStageComplete(weight = 0.5): void {

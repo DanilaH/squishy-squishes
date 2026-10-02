@@ -36,3 +36,25 @@ This file originally adapted the reviewed `mini-games-kit` revision `797b5689767
 - Phaser runtime loader, planar-depth and text-sharpness: were incompatible with the **original** WebGL2/DOM stack; re-evaluate only if the new Phaser implementation needs them.
 
 Changes to these decisions require a concrete asset/UX need, evidence, and reviewable validation rather than a blanket bootstrap copy.
+
+## Tactile toy sample — 2 October 2026
+
+Owner requested a sweeter, more toy-like material/accessory presentation, starting
+with one pink jelly + pearlescent stars + puffy bow sample. Retain all existing IDs,
+V3 documents, canonical shapes, physics, progression and no-scroll controls.
+
+The bow is generated transparent art, normalized with the approved asset pipeline;
+master, exact prompt, provenance and measured format budgets live in
+`assets-src/toy-polish/README.md`. It is startup-required for saved Hall toys, with
+AVIF → WebP → procedural fallback. Tray, Studio/Squeeze and Hall use the same art.
+Stars share a procedural beveled pearl renderer; Jelly varies their visual contrast
+by deterministic existing placement bytes. This suggests depth but is not a claim
+of volumetric particles or independent internal physics. Softbox gel reflections
+remain in the existing parameterized shader. Short sprinkle/seat animations and
+quiet one-shot audio are presentation only, bounded, reduced-motion aware and
+cancelled on stage/activity/disposal. No second on-screen WebGL renderer.
+
+This is a first playable art sample, not a completed catalog redesign. Owner phone
+acceptance is still required before extending the style to other accessories or
+claiming satisfaction/tactile feel. Browser screenshots establish appearance and
+regressions, not real-phone sound/feel.
