@@ -84,6 +84,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
+          merge-multiple: true
           path: ci-build
       - name: Verify source identity and restore the exact build
         shell: bash
@@ -141,6 +142,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
+          merge-multiple: true
           path: ci-build
       - name: Verify source identity and restore the exact build
         shell: bash
@@ -189,6 +191,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
+          merge-multiple: true
           path: ci-build
       - name: Verify source identity and restore the exact build
         shell: bash
