@@ -651,7 +651,9 @@ test('S3 Decor authors identity through real UI, preserves paint/mix-ins, saves,
   }));
   const squeezeBox = await getCanvasBox(page);
   const sx = squeezeBox.x + squeezeBox.width * 0.5;
-  const sy = squeezeBox.y + squeezeBox.height * 0.34;
+  // Squeeze uses a viewport-sized transparent buffer with a .14 render radius.
+  // Starting at .34 is above the resting toy; begin on its body, as a player does.
+  const sy = squeezeBox.y + squeezeBox.height * 0.5;
   await page.mouse.move(sx, sy);
   await page.mouse.down();
   await page.mouse.move(sx + Math.min(82, squeezeBox.width * 0.22), sy + 18, { steps: 12 });
