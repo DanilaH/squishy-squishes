@@ -70,7 +70,15 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
       await page.locator('[data-action="paint-undo"]').click();
       await expect(shell).toHaveAttribute('data-paint-strokes', '1');
     }
+    await page.locator('[data-paint-tool="erase"]').click();
+    await page.mouse.move(x - 12, y); await page.mouse.down(); await page.mouse.move(x + 12, y, { steps: 6 }); await page.mouse.up();
+    await expect(shell).toHaveAttribute('data-paint-strokes', '2');
+    await page.locator('[data-action="paint-undo"]').click();
+    await expect(shell).toHaveAttribute('data-paint-strokes', '1');
     await page.locator('[data-paint-tool="paint"]').click();
+    await expect(page.locator('[data-tools-overlay]')).toBeHidden();
+    await page.locator('[data-paint-tool="paint"]').click();
+    await expect(page.locator('[data-tools-overlay]')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-tools-overlay]')).toBeHidden();
     await expect(page.locator('[data-paint-tool="paint"]')).toBeFocused();

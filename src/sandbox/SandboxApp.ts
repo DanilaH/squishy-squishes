@@ -508,7 +508,7 @@ export class SandboxApp {
             this.uploadAppearanceNow();
           },
           paintSegment: (from, to) => {
-            if (this.appearanceLimitReached || this.paintStampId || this.paintTool === 'fill' || this.authoredPoints.length >= 320) return;
+            if (this.appearanceLimitReached || (this.paintStampId && this.paintTool === 'paint') || this.paintTool === 'fill' || this.authoredPoints.length >= 320) return;
             drawAppearanceSegment(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, from, to);
             this.authoredPoints.push(to);
             this.uploadAppearanceNow();
@@ -718,10 +718,10 @@ export class SandboxApp {
         <div class="sandbox-tools-overlay" data-tools-overlay hidden>
           <section class="sandbox-tools-dialog" role="dialog" aria-modal="true" aria-labelledby="tools-title">
             <strong id="tools-title">${this.options.language === 'ru' ? 'Краски и штампы' : 'Colors & stamps'}</strong>
-            <div class="sandbox-theme-choices">${CREATIVE_PALETTES.map(theme => `<button type="button" data-paint-theme="${theme.id}"><span>${theme.colors.map(c => `<i style="background:#${c.toString(16).padStart(6, '0')}"></i>`).join('')}</span>${theme[this.options.language]}</button>`).join('')}</div>
+            <div class="sandbox-theme-choices">${CREATIVE_PALETTES.map(theme => `<button type="button" data-paint-theme="${theme.id}" aria-pressed="false"><span>${theme.colors.map(c => `<i style="background:#${c.toString(16).padStart(6, '0')}"></i>`).join('')}</span>${theme[this.options.language]}</button>`).join('')}</div>
             <div class="sandbox-stamp-choices">
-              <button type="button" data-paint-stamp="none">${this.copy.brush}</button>
-              ${PAINT_STAMPS.map(stamp => `<button type="button" data-paint-stamp="${stamp.id}"><span aria-hidden="true">${stamp.icon}</span>${stamp[this.options.language]}</button>`).join('')}
+              <button type="button" data-paint-stamp="none" aria-pressed="true">${this.copy.brush}</button>
+              ${PAINT_STAMPS.map(stamp => `<button type="button" data-paint-stamp="${stamp.id}" aria-pressed="false"><span aria-hidden="true">${stamp.icon}</span>${stamp[this.options.language]}</button>`).join('')}
             </div>
             <button class="sandbox-secondary" type="button" data-action="tools-close">${this.copy.done}</button>
           </section>
@@ -781,6 +781,7 @@ export class SandboxApp {
       this.paintColor = theme.colors[0];
       this.updatePressed('[data-paint-color]', 'paintColor', String(this.paintColor));
       this.shell.dataset.paintTheme = theme.id;
+      this.updatePressed('[data-paint-theme]', 'paintTheme', theme.id);
       this.status.textContent = theme[this.options.language];
       this.setToolsOpen(false); return;
     }
@@ -793,6 +794,7 @@ export class SandboxApp {
       brush.textContent = `${selected?.icon ?? this.copy.brush} ▾`;
       brush.setAttribute('aria-label', selected?.[this.options.language] ?? this.copy.brush);
       this.shell.dataset.paintStamp = stamp;
+      this.updatePressed('[data-paint-stamp]', 'paintStamp', stamp);
       this.updatePressed('[data-paint-tool]', 'paintTool', 'paint');
       this.setToolsOpen(false); return;
     }
@@ -814,7 +816,9 @@ export class SandboxApp {
       this.paintTool = paintTool;
       if (paintTool === 'paint' && !wasBrush) {
         this.paintStampId = null;
-        this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]').textContent = `${this.copy.brush} ▾`;
+        this.updatePressed('[data-paint-stamp]', 'paintStamp', 'none');
+        const brush = this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]');
+        brush.textContent = `${this.copy.brush} ▾`; brush.setAttribute('aria-label', this.copy.brush);
       }
       this.updatePressed('[data-paint-tool]', 'paintTool', paintTool);
       if (paintTool === 'paint' && wasBrush) this.setToolsOpen(true);
