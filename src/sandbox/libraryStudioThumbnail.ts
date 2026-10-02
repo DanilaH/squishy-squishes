@@ -185,7 +185,7 @@ class StudioThumbnailRenderer {
     if (hasAppearance) {
       // Flatten rigid pearl mix-ins only in the static thumbnail; Studio's live
       // squeeze scene draws those separately, but a saved decoration must not vanish.
-      replayAppearanceDocument(this.appearanceContext, toy.appearance);
+      replayAppearanceDocument(this.appearanceContext, toy.appearance, { materialId: toy.materialId });
       renderSurfaceDecor(this.appearanceContext, toy.decor, getShape(toy.shapeId));
     }
     gl.activeTexture(gl.TEXTURE1);

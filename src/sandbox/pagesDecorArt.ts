@@ -1,9 +1,10 @@
+import { drawPuffyBow } from './toyArt';
 import type { ShapeDefinition, ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE } from './appearance';
 import type { AccessoryId, DecorDocumentV1, DecorFrame, StickerId } from './decor';
 
-/** Pages-only authored transparent vector art. Old V3 IDs and the ordinary/Yandex
- * rasterizer remain untouched; Studio, Squeeze and Hall share these same pixels. */
+/** Shared production decor profile. Studio, Squeeze and Hall share these pixels;
+ * IDs and V3 documents retain their original meaning. */
 const TAU = Math.PI * 2;
 const INK = '#514253';
 const S = APPEARANCE_TEXTURE_SIZE;
@@ -139,6 +140,7 @@ export const renderPagesSurfaceDecor = (
 
 export const drawPagesAccessoryGraphic = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, shapeId?: ShapeId): void => {
   ctx.clearRect(0, 0, width, height);
+  if (id === 'bow' && drawPuffyBow(ctx, width, height)) return;
   ctx.save();
   ctx.translate(width * .5, height * .92);
   // The original 108px-tall bunny ears were cut by the native 256px Hall

@@ -1,3 +1,4 @@
+import { preloadToyArt } from '../../sandbox/toyArt';
 import type { SandboxAppOptions } from '../../sandbox/SandboxApp';
 import { preloadMakerJellyUi } from './jellyUiPreload';
 import { preloadStudioEnvironmentAssets } from './studioEnvironmentPreview';
@@ -11,7 +12,7 @@ const waitForMakerArt = async (): Promise<void> => {
   // A genuine decode/network failure may still fall back to the original Studio
   // rather than trapping the player outside the maker forever.
   await preloadStudioEnvironmentAssets();
-  await preloadMakerJellyUi();
+  await Promise.all([preloadMakerJellyUi(), preloadToyArt()]);
 };
 
 export interface ReviewMakerRendererLoader {

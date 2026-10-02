@@ -307,7 +307,7 @@ export const renderLibraryThumbnail = (
   const appearanceContext = appearanceCanvas.getContext('2d');
   if (appearanceContext) {
     appearanceContext.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
-    replayAppearanceDocument(appearanceContext, toy.appearance);
+    replayAppearanceDocument(appearanceContext, toy.appearance, { materialId: toy.materialId });
     renderSurfaceDecor(appearanceContext, toy.decor, shape);
     context.drawImage(appearanceCanvas, 0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   }

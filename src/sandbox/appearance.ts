@@ -1,3 +1,5 @@
+import { drawPearlStar } from './pearlStars';
+import type { MaterialId } from '../game/content';
 export const APPEARANCE_TEXTURE_SIZE = 256;
 export const APPEARANCE_TARGET_BYTES = 6_000;
 export const MAX_APPEARANCE_STROKES = 96;
@@ -269,7 +271,7 @@ const drawHeart = (context: CanvasRenderingContext2D, radius: number): void => {
   context.closePath();
 };
 
-const drawMixIn = (context: CanvasRenderingContext2D, placement: MixInPlacementV1): void => {
+const drawMixIn = (context: CanvasRenderingContext2D, placement: MixInPlacementV1, materialId?: MaterialId): void => {
   const id = getMixInId(placement);
   const x = (placement.x / 255) * APPEARANCE_TEXTURE_SIZE;
   const y = (1 - placement.y / 255) * APPEARANCE_TEXTURE_SIZE;
@@ -284,12 +286,8 @@ const drawMixIn = (context: CanvasRenderingContext2D, placement: MixInPlacementV
     drawStar(context, radius * 0.72);
     context.fill();
   } else if (id === 'stars') {
-    context.fillStyle = 'rgba(255, 217, 89, 0.94)';
-    drawStar(context, radius);
-    context.fill();
-    context.strokeStyle = 'rgba(255,255,255,0.65)';
-    context.lineWidth = Math.max(1, radius * 0.12);
-    context.stroke();
+    const depth = materialId === 'jelly' ? ((placement.x * 7 + placement.y * 3 + placement.r) % 5) / 4 : 0;
+    drawPearlStar(context, radius, depth);
   } else if (id === 'foam') {
     context.fillStyle = 'rgba(244, 249, 255, 0.92)';
     context.beginPath();
@@ -321,7 +319,7 @@ const drawMixIn = (context: CanvasRenderingContext2D, placement: MixInPlacementV
 export const replayAppearanceDocument = (
   context: CanvasRenderingContext2D,
   document: AppearanceDocumentV1,
-  options: { readonly excludeMixIns?: readonly MixInId[] } = {},
+  options: { readonly excludeMixIns?: readonly MixInId[]; readonly materialId?: MaterialId } = {},
 ): void => {
   context.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
   // Fill is stored as an ordinary V1 stroke for rollback compatibility, but it
@@ -342,6 +340,6 @@ export const replayAppearanceDocument = (
   }
   const excludedMixIns = new Set(options.excludeMixIns ?? []);
   for (const mixin of document.mixins) {
-    if (!excludedMixIns.has(getMixInId(mixin))) drawMixIn(context, mixin);
+    if (!excludedMixIns.has(getMixInId(mixin))) drawMixIn(context, mixin, options.materialId);
   }
 };
