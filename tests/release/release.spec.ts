@@ -282,7 +282,7 @@ const createFixtureAppearance = (seed: number, rich = false): AppearanceDocument
   return { v: 1, strokes, mixins };
 };
 
-const FIXTURE_SHAPES = ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw'] as const;
+const FIXTURE_SHAPES = ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw', 'dumpling', 'strawberry'] as const;
 const FIXTURE_MATERIALS = ['soft', 'jelly', 'holo'] as const;
 
 const createFixtureToy = (index: number, rich = false): SavedSquishy => ({
@@ -302,7 +302,7 @@ const createFixtureSave = (count: number, rich = false): SaveStateV3 => ({
   updatedAt: 12_345,
 });
 
-test('Pages production build boots into an empty personal Library and all six maker shapes remain open', async ({ page }) => {
+test('Pages production build boots into an empty personal Library and all eight maker shapes remain open', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(PAGES_URL);
@@ -316,7 +316,7 @@ test('Pages production build boots into an empty personal Library and all six ma
 
   const shell = page.locator('[data-sandbox-app]');
   await expect(shell).toHaveAttribute('data-stage', 'shape');
-  await expect(page.locator('.sandbox-shape')).toHaveCount(6);
+  await expect(page.locator('.sandbox-shape')).toHaveCount(8);
   await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);
   for (const shapeId of FIXTURE_SHAPES) {
     await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();
@@ -701,7 +701,7 @@ test('Library thumbnails render saved decor distinctly from an otherwise identic
   expect(decoratedData).not.toBe(plainData);
 });
 
-test('the same S3 decor document renders and opens across all six production shapes', async ({ page }) => {
+test('the same S3 decor document renders and opens across all eight production shapes', async ({ page }) => {
   const decor = createFixtureDecor(4, false);
   const library = FIXTURE_SHAPES.map((shapeId, index): SavedSquishy => ({
     ...createFixtureToy(index),
@@ -711,8 +711,8 @@ test('the same S3 decor document renders and opens across all six production sha
   }));
   const save: SaveStateV3 = { ...createDefaultSaveV3(), library, totalCrafts: library.length, updatedAt: 77 };
   await seedSaveV3(page, save);
-  await expect(page.locator('[data-library-toy]')).toHaveCount(6);
-  for (let room = 1; room <= 3; room += 1) {
+  await expect(page.locator('[data-library-toy]')).toHaveCount(FIXTURE_SHAPES.length);
+  for (let room = 1; room <= Math.ceil(library.length / 2); room += 1) {
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(room));
     for (const toy of library.slice((room - 1) * 2, room * 2)) {
       const play = page.locator(`[data-library-play-id="${toy.id}"]`);
@@ -726,7 +726,7 @@ test('the same S3 decor document renders and opens across all six production sha
       await page.locator('[data-action="home"]').click();
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(room));
     }
-    if (room < 3) await page.locator('[data-library-hall-next]').click();
+    if (room < Math.ceil(library.length / 2)) await page.locator('[data-library-hall-next]').click();
   }
 });
 

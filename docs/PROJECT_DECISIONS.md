@@ -85,3 +85,33 @@ are a separate catalog check. Compact hidden section labels have explicit
 local anchors so they cannot enlarge tray scroll geometry. At ≤350px landscape
 height, choice previews are 24px tall so both 44px rows and blush fit the
 136px face tray (28px previews produced two 47.09px rows).
+
+## Traditional molds and decoration seats — 2 October 2026
+
+The owner requested a pinched dumpling, a more recognizable paw and additional
+traditional toy shapes, with correctly seated accessories. Add `dumpling` and
+`strawberry`; retain all six legacy IDs and improve the `paw` contour. Eight free
+choices fit two rows of four, without paging/scrolling or reduced touch targets.
+Ideas, rewards, saves and tactile constants are unchanged. Existing saved paws
+use the improved mold while retaining their exact paint, filler and decor data.
+
+Contours remain in `src/game/shapes.ts` and drive the same generic deformation,
+hit testing, field and preview geometry. The dumpling has a rounded body and
+top pinch with four folded grooves; the paw has four plump toes and pads; the
+strawberry has a tapered body, small calyx and seeds. Original procedural vectors
+in `shapeRelief.ts` share body UVs across Hall, Studio, Squeeze and choice icons;
+these molded details are never extra saved strokes. They deform with the same
+surface and do not create separate appendage physics or another renderer.
+
+Paired gear uses the upper contour at both shoulders. Centered crown/bow keep
+their own seats; the dumpling/strawberry bow sits off-center to leave the pinch
+or calyx readable. Face placement leaves room for folds/pads. Review unmasked
+resting and dragged screenshots for each new mold × all five existing accessories,
+plus EN/RU 320px portrait, short landscape and desktop choice containment. Existing
+visual baselines remain unless an actual reviewed UI capture requires a change.
+
+Reference research: common bao/dumpling and fruit toy categories in the independent
+[Squishy Dumpling catalog](https://squishy-dumpling.com/products/dumpling-squishy-bun-mystery-toy)
+and [strawberry listing](https://dumplingsquishy.co/fr/products/strawberry-squishy).
+These are category/silhouette references, not measured popularity rankings or
+copied art. All contours and molded detail vectors are authored in this repository.

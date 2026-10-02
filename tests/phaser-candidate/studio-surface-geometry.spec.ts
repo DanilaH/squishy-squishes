@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-const SHAPES = ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw'] as const;
+const SHAPES = ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw', 'dumpling', 'strawberry'] as const;
 
-test('M4: studio input and renderer share canonical shape UV for all six shapes', async ({ page }) => {
+test('M4: studio input and renderer share canonical shape UV for all eight shapes', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 850 });
   await page.goto('/phaser-stage-input.html');
   await expect(page.locator('[data-gesture-ready]')).toHaveAttribute('data-gesture-ready', 'ready');

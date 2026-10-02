@@ -70,7 +70,7 @@ export const renderVolumeControl = (toy: SavedSquishy, relief: boolean): HTMLCan
   const appearanceContext = appearance.getContext('2d', { willReadFrequently: true });
   if (!appearanceContext) throw new Error('Appearance canvas unavailable for volume probe');
   appearanceContext.setTransform(2, 0, 0, 2, 0, 0);
-  replayAppearanceDocument(appearanceContext, toy.appearance);
+  replayAppearanceDocument(appearanceContext, toy.appearance, { shapeId: toy.shapeId, materialId: toy.materialId });
   renderSurfaceDecor(appearanceContext, toy.decor, getShape(toy.shapeId));
   const painted = appearanceContext.getImageData(0, 0, SIZE, SIZE).data;
   let field = fields.get(toy.shapeId);

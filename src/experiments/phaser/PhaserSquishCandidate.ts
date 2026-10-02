@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { hasShapeRelief } from '../../sandbox/shapeRelief';
 import { getMaterial, getPalette, type MaterialId, type PaletteId } from '../../game/content';
 import { createShapeField, getShape, type ShapeId } from '../../game/shapes';
 import {
@@ -227,13 +228,14 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private bakeAppearance(): void {
     replayAppearanceDocument(this.appearanceContext, this.appearanceDocument ?? createEmptyAppearanceDocument(), {
       excludeMixIns: ['pearls'],
+      shapeId: this.shapeId,
     });
     if (this.decorDocument) renderSurfaceDecor(this.appearanceContext, this.decorDocument, getShape(this.shapeId));
     const appearance = this.appearanceDocument;
     const decor = this.decorDocument;
     this.appearanceEnabled = Boolean(
       appearance?.strokes.length || appearance?.mixins.some((item) => getMixInId(item) !== 'pearls') ||
-      decor?.eyes || decor?.mouth || decor?.blush || decor?.stickers.length,
+      decor?.eyes || decor?.mouth || decor?.blush || decor?.stickers.length || hasShapeRelief(this.shapeId),
     );
     this.appearanceRevision += 1;
   }
