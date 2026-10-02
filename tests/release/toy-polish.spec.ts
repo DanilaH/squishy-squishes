@@ -84,6 +84,9 @@ test('real creation saves pearl stars and bow, with reduced motion and WebP fall
   await page.mouse.click(x, y);
   await page.locator('[data-action="paint-continue"]').click();
   await page.locator('[data-mixin="stars"]').click();
+  for (const choice of await page.locator('.sandbox-mixin').all()) {
+    expect(await choice.evaluate((el) => el.scrollWidth <= el.clientWidth + 2)).toBe(true);
+  }
   for (const dx of [-25, 0, 25]) await page.mouse.click(x + dx, y + 15);
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-mixin-count', '3');
   await expect(page.locator('.toy-star-sprinkle')).toHaveCount(0);

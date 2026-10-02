@@ -1,3 +1,4 @@
+import { drawPuffyBow } from './toyArt';
 import { drawPearlStar } from './pearlStars';
 import { MATERIALS, getMaterial, getPalette, type MaterialId } from '../game/content';
 import { SquishyAudio } from '../game/SquishyAudio';
@@ -452,7 +453,7 @@ export class SandboxApp {
     if (starIcon) this.starSprinkleImage = starIcon.toDataURL();
     const bowIcon = this.root.querySelector<HTMLCanvasElement>('[data-bow-icon]');
     const bowContext = bowIcon?.getContext('2d');
-    if (bowContext) drawAccessoryGraphic(bowContext, 'bow', 180, 120);
+    if (bowContext && !drawPuffyBow(bowContext, 180, 120, true)) drawAccessoryGraphic(bowContext, 'bow', 180, 120);
     this.canvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-canvas]');
     this.accessoryCanvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-accessory]');
     this.accessoryCanvas.width = 180;

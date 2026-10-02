@@ -27,7 +27,7 @@ export const preloadToyArt = (): Promise<void> => {
   return pending;
 };
 
-export const drawPuffyBow = (context: CanvasRenderingContext2D, width: number, height: number): boolean => {
+export const drawPuffyBow = (context: CanvasRenderingContext2D, width: number, height: number, icon = false): boolean => {
   if (!bow) return false;
   context.save();
   // Retain the old logical seat/extent: art never changes the projection basis.
@@ -35,7 +35,9 @@ export const drawPuffyBow = (context: CanvasRenderingContext2D, width: number, h
   context.shadowColor = 'rgba(108, 45, 76, .26)';
   context.shadowBlur = height * .025;
   context.shadowOffsetY = height * .018;
-  context.drawImage(bow, 12, 68, 232, 120, width * .16, height * .53, width * .68, height * .48);
+  context.drawImage(bow, 12, 68, 232, 120,
+    width * (icon ? .05 : .16), height * (icon ? .14 : .53),
+    width * (icon ? .90 : .68), height * (icon ? .70 : .48));
   context.restore();
   return true;
 };
