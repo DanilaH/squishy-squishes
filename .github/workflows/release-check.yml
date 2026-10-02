@@ -18,6 +18,8 @@ permissions:
 
 jobs:
   release-check:
+    outputs:
+      build-artifact-id: ${{ steps.shared-build.outputs.artifact-id }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -43,9 +45,10 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > ci-build/source-sha
           (cd ci-build && sha256sum release-build.tar.gz > SHA256SUMS)
       - name: Upload the exact build for QA and deployment
+        id: shared-build
         uses: actions/upload-artifact@v4
         with:
-          name: release-build
+          name: release-build-${{ github.run_attempt }}
           path: ci-build/*
           if-no-files-found: error
           retention-days: 7
@@ -57,6 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: squishy-squishes-yandex
+          overwrite: true
           path: squishy-squishes-yandex.zip
           if-no-files-found: error
 
@@ -79,7 +83,7 @@ jobs:
       - name: Download this run's shared build
         uses: actions/download-artifact@v4
         with:
-          name: release-build
+          artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
           path: ci-build
       - name: Verify source identity and restore the exact build
         shell: bash
@@ -100,6 +104,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: phaser-m0-old-engine-evidence
+          overwrite: true
           path: migration-baseline-evidence/*.png
           if-no-files-found: error
           retention-days: 14
@@ -108,6 +113,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-browser-qa-failure
+          overwrite: true
           path: |
             playwright-report
             test-results
@@ -134,7 +140,7 @@ jobs:
       - name: Download this run's shared build
         uses: actions/download-artifact@v4
         with:
-          name: release-build
+          artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
           path: ci-build
       - name: Verify source identity and restore the exact build
         shell: bash
@@ -153,6 +159,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: phaser-candy-ui-screenshots
+          overwrite: true
           path: test-results/**/candy-*.png
           if-no-files-found: ignore
           retention-days: 7
@@ -161,6 +168,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: phaser-pages-failure
+          overwrite: true
           path: |
             test-results
             playwright-report
@@ -180,7 +188,7 @@ jobs:
       - name: Download this run's shared build
         uses: actions/download-artifact@v4
         with:
-          name: release-build
+          artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
           path: ci-build
       - name: Verify source identity and restore the exact build
         shell: bash

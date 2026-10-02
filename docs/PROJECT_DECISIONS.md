@@ -122,7 +122,7 @@ copied art. All contours and molded detail vectors are authored in this reposito
 Release Check owns the production build, Yandex audit and staged Pages preview.
 Its immutable `release-build` artifact contains both tested roots in a tar archive,
 with the workflow source SHA and SHA-256 checksum. `browser-qa` and `pages-preview`
-restore that exact artifact in parallel; the latter runs the unchanged Pages
+restore that exact artifact by its producer job output ID in parallel; the latter runs the unchanged Pages
 Playwright suite without rebuilding. Production browser and visual commands,
 all assertions, baselines, retries and single-worker settings are unchanged.
 The check job names remain `release-check`, `browser-qa` and `pages-preview`.
@@ -133,6 +133,11 @@ artifact identity/checksum, and publishes its exact `dist` without Node, Chromiu
 or another test/build pass. A main-head guard prevents rerunning an older source
 from overwriting a newer release. It retains the existing gh-pages publication
 mechanism and `Deploy <source SHA>` provenance; write permission is job-local.
+
+Build archives use an attempt-specific name and immutable artifact ID. Failed-job
+reruns consume the successful producer's output; full reruns produce a new ID.
+Existing diagnostic/distribution names overwrite their previous copy within that
+same run, avoiding upload-name collisions without selecting a different build.
 
 The separate duplicate browser, Pages QA and deploy workflows are superseded by
 this dependency graph. Candidate, Yandex DRAFT and path-filtered Hall review
