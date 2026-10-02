@@ -71,9 +71,10 @@ const blush = (ctx: CanvasRenderingContext2D, p: { u: number; v: number }): void
   ctx.fillStyle = g; ctx.fillRect(-17, -17, 34, 34);
   ctx.restore();
 };
-const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number): void => {
+const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number, variant = 0): void => {
   const r = size * .5;
   ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.filter = `hue-rotate(${[0, 155, 245, 75][variant % 4]}deg)`;
   ctx.shadowColor = 'rgba(61,42,45,.25)'; ctx.shadowBlur = 1.5; ctx.shadowOffsetY = 1.2;
   if (id === 'heart') {
     drawToyMixIn(ctx, 'hearts', r);
@@ -84,7 +85,7 @@ const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number): vo
       const a = i * TAU / 5 - Math.PI / 2;
       const x = Math.cos(a) * r * .46, y = Math.sin(a) * r * .46;
       const g = ctx.createRadialGradient(x - r * .12, y - r * .16, 0, x, y, r * .5);
-      g.addColorStop(0, '#fff1f5'); g.addColorStop(.45, '#f6bad9'); g.addColorStop(1, '#bf7dad');
+      g.addColorStop(0, '#f3fff8'); g.addColorStop(.45, '#a6e6cf'); g.addColorStop(1, '#62abac');
       ctx.beginPath(); ctx.ellipse(x, y, r * .46, r * .32, a, 0, TAU);
       ctx.fillStyle = g; ctx.fill();
       ctx.strokeStyle = 'rgba(255,236,246,.7)'; ctx.lineWidth = Math.max(.6, r * .05); ctx.stroke();
@@ -127,7 +128,7 @@ export const renderPagesSurfaceStickers = (
     ctx.save();
     if (Math.abs(x - faceX) < 42 && Math.abs(y - faceY) < 35) ctx.globalAlpha = .55;
     ctx.translate(x, y); ctx.rotate(placed.r / 255 * TAU);
-    sticker(ctx, ids[placed.t] ?? 'heart', placed.s);
+    sticker(ctx, ids[placed.t] ?? 'heart', placed.s, (placed.x * 3 + placed.y * 7 + placed.r) % 4);
     ctx.restore();
   }
 };
