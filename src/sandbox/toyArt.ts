@@ -1,43 +1,58 @@
 import { resolveAuthoredImagePath } from '../app/runtimeAssets';
+import type { AccessoryId } from './decor';
+import type { ShapeId } from '../game/shapes';
 
-// Startup-required: existing V3 toys can display a bow immediately in the Hall.
-// Both formats were emitted by asset:prepare; the original lives in assets-src.
-const bowPath = `${import.meta.env.BASE_URL}assets/toy-polish/puffy-bow.webp`;
-let bow: HTMLImageElement | null = null;
+interface ToyAsset {
+  readonly file: string;
+  readonly hasAvif: boolean;
+  readonly crop: readonly [number, number, number, number];
+}
+// Startup-required: any existing V3 toy can display its accessory in the Hall.
+// Every crop is measured from the prepared image, including a 2px alpha margin.
+const assets: Readonly<Record<AccessoryId, ToyAsset>> = {
+  bow: { file: 'puffy-bow', hasAvif: true, crop: [12, 68, 232, 120] },
+  'cat-ears': { file: 'cat-ears', hasAvif: true, crop: [14, 79, 228, 99] },
+  'bunny-ears': { file: 'bunny-ears', hasAvif: true, crop: [14, 49, 228, 159] },
+  horns: { file: 'horns', hasAvif: true, crop: [14, 75, 228, 107] },
+  crown: { file: 'crown', hasAvif: true, crop: [14, 66, 228, 125] },
+};
+const images = new Map<AccessoryId, HTMLImageElement>();
 let pending: Promise<void> | null = null;
-
 export const preloadToyArt = (): Promise<void> => {
-  pending ??= (async () => {
-    const image = new Image();
-    const preferred = await resolveAuthoredImagePath(bowPath, true);
+  pending ??= Promise.all((Object.entries(assets) as [AccessoryId, ToyAsset][]).map(async ([id, asset]) => {
+    if (images.has(id)) return;
+    const path = `${import.meta.env.BASE_URL}assets/toy-polish/${asset.file}.webp`;
+    const image = new Image(); const preferred = await resolveAuthoredImagePath(path, asset.hasAvif);
     image.src = preferred;
-    try { await image.decode(); }
-    catch (error: unknown) {
-      if (preferred === bowPath) throw error;
-      image.src = bowPath;
-      await image.decode();
+    try {
+      try { await image.decode(); }
+      catch (error: unknown) { if (preferred === path) throw error; image.src = path; await image.decode(); }
+      if (!image.naturalWidth) throw new Error('Empty toy image');
+      images.set(id, image);
+    } catch (error: unknown) {
+      console.warn(`[squishy:toy-art] ${id} unavailable; using drawn accessory.`, error);
     }
-    if (!image.naturalWidth) throw new Error('Empty puffy bow image');
-    bow = image;
-  })().catch((error: unknown) => {
-    // Preserve the procedural bow on a genuine asset failure; retry next entry.
-    pending = null;
-    console.warn('[squishy:toy-art] Puffy bow unavailable; using drawn bow.', error);
-  });
+  })).then(() => { if (images.size < Object.keys(assets).length) pending = null; });
   return pending;
 };
 
-export const drawPuffyBow = (context: CanvasRenderingContext2D, width: number, height: number, icon = false): boolean => {
-  if (!bow) return false;
-  context.save();
-  // Retain the old logical seat/extent: art never changes the projection basis.
-  // The prepared 256px canvas contains alpha bounds x16..239, y72..183.
-  context.shadowColor = 'rgba(108, 45, 76, .26)';
-  context.shadowBlur = height * .025;
-  context.shadowOffsetY = height * .018;
-  context.drawImage(bow, 12, 68, 232, 120,
-    width * (icon ? .05 : .16), height * (icon ? .14 : .53),
-    width * (icon ? .90 : .68), height * (icon ? .70 : .48));
-  context.restore();
-  return true;
+export const drawToyAccessory = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, shapeId?: ShapeId, icon = false): boolean => {
+  const image = images.get(id); if (!image) return false;
+  ctx.save(); ctx.shadowColor = 'rgba(108,45,76,.22)'; ctx.shadowBlur = height * .025; ctx.shadowOffsetY = height * .018;
+  const [sx, sy, sw, sh] = assets[id].crop;
+  if (id === 'bow') {
+    // Preserve the owner-approved bow pixels and logical seat.
+    ctx.drawImage(image, sx, sy, sw, sh, width * (icon ? .05 : .16), height * (icon ? .14 : .53), width * (icon ? .90 : .68), height * (icon ? .70 : .48));
+  } else {
+    const w = width * (icon ? .88 : .68);
+    const h = Math.min(height * (icon ? .86 : .62), w * sh / sw);
+    const y = height * (icon ? .5 : .92) - h * (icon ? .5 : 1);
+    if (shapeId === 'heart' && id !== 'crown' && !icon) {
+      // Paired roots straddle the heart cleft without stretching either ear.
+      ctx.drawImage(image, sx, sy, sw / 2, sh, width / 2 - w / 2 - width * .08, y, w / 2, h);
+      ctx.drawImage(image, sx + sw / 2, sy, sw / 2, sh, width / 2 + width * .08, y, w / 2, h);
+    } else ctx.drawImage(image, sx, sy, sw, sh, (width - w) / 2, y, w, h);
+  }
+  ctx.restore(); return true;
 };
+export const drawPuffyBow = (ctx: CanvasRenderingContext2D, width: number, height: number, icon = false): boolean => drawToyAccessory(ctx, 'bow', width, height, undefined, icon);

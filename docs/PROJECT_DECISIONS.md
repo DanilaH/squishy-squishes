@@ -58,3 +58,20 @@ This is a first playable art sample, not a completed catalog redesign. Owner pho
 acceptance is still required before extending the style to other accessories or
 claiming satisfaction/tactile feel. Browser screenshots establish appearance and
 regressions, not real-phone sound/feel.
+
+## Toy catalog and face polish — 2 October 2026
+
+The owner accepted the bow/star sample and requested the existing catalog and
+faces be brought to that quality. Four generated silicone accessories extend
+the sample; no new catalog IDs, saving fields, physics constants or progression.
+Shared procedural fillers distinguish foil glitter, foam beads, pearls, molded
+hearts and satin confetti. Existing star pixels are retained. All fillers get
+the bounded placement cue and all accessories the seat cue, with reduced-motion
+and activity cancellation preserved. Face lines are thinner/cleaner and blush
+is softly oval; UI previews use actual shared drawings.
+
+Authored assets decode before the Hall and maker, independently falling back
+AVIF → WebP → existing procedural accessory on failure. Masters and exact
+prompts/budgets live in assets-src/toy-polish. Catalog tests capture unmasked
+Hall/Squeeze samples in EN/RU and verify existing V3 collection is unchanged.
+Real-phone tactile and taste acceptance remains the owner's next check.
