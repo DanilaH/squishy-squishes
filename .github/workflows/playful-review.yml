@@ -1,0 +1,28 @@
+name: Playful toy review captures
+on:
+  push:
+    branches: [qa/playful-toy-captures]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run release:check
+      - run: npx playwright test --config=playwright.release.config.ts tests/release/playful-tools.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playful-toy-review
+          path: |
+            migration-baseline-evidence
+            test-results
+          retention-days: 14
