@@ -13,7 +13,7 @@ test('every mold has separate mirrored shoulder roots and a tilted side bow', ()
     expect(bow.angle).toBeLessThan(0);
     expect(ears[0]!.u).toBeLessThan(ears[1]!.u);
     expect(ears.map(s => s.side)).toEqual(['left', 'right']);
-    for (const root of [...ears, bow, ...getAccessorySeats(shape, 'crown')]) expect(isPointInsideShape(shape, root.u * 2 - 1, root.v * 2 - 1)).toBe(true);
+    for (const root of [...ears, ...getAccessorySeats(shape, 'bunny-ears'), ...getAccessorySeats(shape, 'horns'), bow, ...getAccessorySeats(shape, 'crown')]) expect(isPointInsideShape(shape, root.u * 2 - 1, root.v * 2 - 1)).toBe(true);
   }
 });
 
@@ -119,12 +119,12 @@ test('paw pads remain intact throughout a live stroke and adding sprinkles', asy
   await checkPad();
 });
 
-test('all mold bows and mirrored ears stay in front in Hall and Squeeze', async ({ page }) => {
+test('all molds seat bows and crowns in front, mirrored ears and horns behind', async ({ page }) => {
   test.setTimeout(150_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/squishy-squishes/');
-  for (const accessory of ['bow', 'cat-ears', 'bunny-ears'] as const) {
+  for (const accessory of ['bow', 'crown', 'cat-ears', 'bunny-ears', 'horns'] as const) {
     await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), {
       ...createDefaultSaveV3(), totalCrafts: 8,
       library: SHAPES.map((shape, n) => ({ id: shape.id, createdAt: 1700000000000 + n, shapeId: shape.id, materialId: 'soft',
@@ -135,11 +135,17 @@ test('all mold bows and mirrored ears stay in front in Hall and Squeeze', async 
       const play = page.locator(`[data-library-play-id="${shape.id}"]`);
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
       for (let n = 0; n < 3 && !await play.isVisible(); n++) await page.locator('[data-library-hall-next]').click();
+      await mkdir('migration-baseline-evidence', { recursive: true });
+      await page.screenshot({ path: `migration-baseline-evidence/decor-hall-${shape.id}-${accessory}.png` });
       await play.click();
       const gear = page.locator('[data-sandbox-accessory]');
       await expect.poll(() => gear.getAttribute('data-accessory-matrix')).not.toBeNull();
-      expect(await gear.evaluate(el => Number(getComputedStyle(el).zIndex))).toBeGreaterThan(await page.locator('[data-sandbox-canvas]').evaluate(el => Number(getComputedStyle(el).zIndex)));
-      if (accessory !== 'bow') {
+      const bodyDepth = await page.locator('[data-sandbox-canvas]').evaluate(el => Number(getComputedStyle(el).zIndex));
+      const gearDepth = await gear.evaluate(el => Number(getComputedStyle(el).zIndex));
+      if (accessory === 'bow' || accessory === 'crown') expect(gearDepth).toBeGreaterThan(bodyDepth);
+      else expect(gearDepth).toBeLessThan(bodyDepth);
+      await expect(gear).toHaveAttribute('data-accessory-depth', accessory === 'bow' || accessory === 'crown' ? 'front' : 'rear');
+      if (accessory !== 'bow' && accessory !== 'crown') {
         const right = page.locator('[data-accessory-part="right"]'); await expect(right).toBeVisible();
         expect(Number(await gear.getAttribute('data-accessory-anchor-x'))).toBeLessThan(Number(await right.getAttribute('data-accessory-anchor-x')));
       }

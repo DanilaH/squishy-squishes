@@ -210,8 +210,10 @@
   overflow-wrap: anywhere;
 }
 
-/* Body (4), rigid fillers (5), then head gear (6). Never intercept paint. */
-#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-accessory-layer { z-index: 6; }
+/* Rear ears/horns (3), body (4), fillers (5), front bow/crown (6). Passive layers. */
+.sandbox-accessory-layer[data-accessory-depth='front'] { z-index: 3; }
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-accessory-layer[data-accessory-depth='rear'] { z-index: 3; }
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-accessory-layer[data-accessory-depth='front'] { z-index: 6; }
 
 /* Every tab shares the same grid slot. Invisible panels reserve the largest
    content size, keeping tabs/CTA and the playfield still through tab changes. */

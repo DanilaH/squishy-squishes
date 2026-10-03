@@ -6,7 +6,7 @@ import { releaseVolumeMesh, renderVolumeMesh } from './libraryVolumeMesh';
 /** Owner-reviewed Hall: static 512px mesh snapshots, one reusable offscreen WebGL2
  * context, no per-card context or animation. Production, review Pages and the
  * isolated Yandex DRAFT share this renderer. Accessories are composited once,
- * in front of the body, using the same per-mold seats as Studio. */
+ * behind or in front of the body by accessory type, using Studio seats. */
 export const renderPagesVolumeThumbnail = (
   destination: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512,
 ): boolean => {

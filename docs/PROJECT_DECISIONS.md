@@ -204,3 +204,23 @@ indicator and small text raster differences, with unchanged geometry. Only those
 two baselines are aligned; 28 remain unchanged and the threshold is retained.
 The mobile stamp chooser uses two rows to avoid splitting Russian words. Review
 also caught and fixed eraser segments being suppressed after choosing a stamp.
+
+
+## Accessory depth correction — 3 October 2026
+
+The owner corrected the earlier all-front direction: cat/bunny ears and horns
+belong behind the body; bow and crown remain in front. Shared accessory depth
+drives both live Studio/Squeeze layers and Hall composition, including shader
+and lost-WebGL fallback. Rear Hall gear uses destination-over on the transparent
+toy snapshot, without changing the body renderer. Rear roots overlap the contour
+slightly more, with per-mold angles and separate upright bunny/spread horn seats.
+Paired art remains one mirrored ear/horn with independently projected roots;
+existing bounded sway and exact attachment pivots are retained. No save fields,
+physical parameters or layout changes. All eight molds and five accessories
+are covered by depth assertions and unmasked Hall/Squeeze captures.
+
+Actual first-pass captures exposed a low forehead crown on heart/peach and a
+small bunny-root gap on the heart lobes. Crown roots were raised inside the
+contour and heart rear roots inset further; approved bow seats remain unchanged.
+The heart crown also shares a shallower art pivot in Hall/Studio, so its base
+meets the cleft instead of extending down onto the forehead.

@@ -1,5 +1,5 @@
 import { REST_FACE, type FaceReaction } from './toyReactions';
-import { getAccessorySeats, type AccessorySeat } from './accessorySeats';
+import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats, type AccessorySeat } from './accessorySeats';
 import { getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
 
@@ -629,14 +629,17 @@ export const drawAccessoryPiece = (ctx: CanvasRenderingContext2D, id: AccessoryI
   ctx.restore();
 };
 
-/** Shared front-facing Hall/fallback composition, after the body. */
+/** Shared Hall/fallback composition. Rear gear is placed behind existing body pixels. */
 export const drawSeatedAccessories = (ctx: CanvasRenderingContext2D, shape: ShapeDefinition, id: AccessoryId, project: (u: number, v: number) => readonly [number, number], width: number, height: number): void => {
+  ctx.save();
+  if (getAccessoryDepth(id) === 'rear') ctx.globalCompositeOperation = 'destination-over';
   for (const seat of getAccessorySeats(shape, id)) {
     const source = document.createElement('canvas'); source.width = 360; source.height = 240;
     const drawing = source.getContext('2d'); if (!drawing) continue;
     drawing.scale(2, 2); drawAccessoryPiece(drawing, id, 180, 120, seat.side);
     const [x, y] = project(seat.u, seat.v);
     ctx.save(); ctx.translate(x, y); ctx.rotate(seat.angle);
-    ctx.drawImage(source, -width / 2, -height * (id === 'bow' ? .87 : id === 'crown' ? .80 : .92), width, height); ctx.restore();
+    ctx.drawImage(source, -width / 2, -height * getAccessorySeatFactor(shape, id), width, height); ctx.restore();
   }
+  ctx.restore();
 };
