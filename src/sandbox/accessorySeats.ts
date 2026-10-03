@@ -4,6 +4,11 @@ import type { AccessoryId } from './decor';
 export const getAccessoryDepth = (id: AccessoryId): 'front' | 'rear' =>
   id === 'bow' || id === 'crown' ? 'front' : 'rear';
 
+// Heart gear rests in the cleft: its base must meet the root, rather than
+// using the deeper crown overlap suitable for broad convex tops.
+export const getAccessorySeatFactor = (shape: ShapeDefinition, id: AccessoryId): number =>
+  id === 'crown' ? (shape.id === 'heart' ? .92 : .80) : id === 'bow' ? .87 : .92;
+
 export interface AccessorySeat { readonly u: number; readonly v: number; readonly angle: number; readonly side: 'whole' | 'left' | 'right' }
 // Coordinates are fractions of each mold's bounding frame; roots follow its
 // actual contour. A paired accessory reuses one authored ear, mirrored on the right.

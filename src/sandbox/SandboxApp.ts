@@ -1,6 +1,6 @@
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp, type PaintStampId } from './creativeTools';
 import { REST_FACE, faceReaction, accessorySway, type FaceReaction } from './toyReactions';
-import { getAccessoryDepth, getAccessorySeats } from './accessorySeats';
+import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats } from './accessorySeats';
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
 import { drawToyMixIn } from './toyMixins';
@@ -1631,7 +1631,7 @@ export class SandboxApp {
         // Phaser preview assets a few pixels deeper; ordinary/Yandex keeps the
         // established overlay position.
         const liveSeatFactor = this.options.rendererBackend === 'phaser'
-          ? (this.draft.decor.accessory === 'crown' ? 0.80 : this.draft.decor.accessory === 'bow' ? 0.87 : 0.92)
+          ? getAccessorySeatFactor(getShape(this.draft.shapeId), this.draft.decor.accessory)
           : 0.92;
         accessoryCanvas.style.left = (anchorX - width * 0.5).toFixed(2) + 'px';
         accessoryCanvas.style.top = (anchorY - height * liveSeatFactor).toFixed(2) + 'px';

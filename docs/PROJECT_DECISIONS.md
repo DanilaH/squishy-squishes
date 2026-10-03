@@ -222,3 +222,5 @@ are covered by depth assertions and unmasked Hall/Squeeze captures.
 Actual first-pass captures exposed a low forehead crown on heart/peach and a
 small bunny-root gap on the heart lobes. Crown roots were raised inside the
 contour and heart rear roots inset further; approved bow seats remain unchanged.
+The heart crown also shares a shallower art pivot in Hall/Studio, so its base
+meets the cleft instead of extending down onto the forehead.
