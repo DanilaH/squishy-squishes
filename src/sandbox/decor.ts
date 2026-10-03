@@ -1,5 +1,5 @@
 import { REST_FACE, type FaceReaction } from './toyReactions';
-import { getAccessoryDepth, getAccessorySeats, type AccessorySeat } from './accessorySeats';
+import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats, type AccessorySeat } from './accessorySeats';
 import { getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
 
@@ -639,7 +639,7 @@ export const drawSeatedAccessories = (ctx: CanvasRenderingContext2D, shape: Shap
     drawing.scale(2, 2); drawAccessoryPiece(drawing, id, 180, 120, seat.side);
     const [x, y] = project(seat.u, seat.v);
     ctx.save(); ctx.translate(x, y); ctx.rotate(seat.angle);
-    ctx.drawImage(source, -width / 2, -height * (id === 'bow' ? .87 : id === 'crown' ? .80 : .92), width, height); ctx.restore();
+    ctx.drawImage(source, -width / 2, -height * getAccessorySeatFactor(shape, id), width, height); ctx.restore();
   }
   ctx.restore();
 };
