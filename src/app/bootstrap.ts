@@ -8,6 +8,7 @@ import {
   deleteSavedSquishy,
   loadSaveV3WithMigration,
   replaceSavedSquishy,
+  updateSavedSquishy,
 } from '../platform/saveV3';
 import { createDefaultSettings, createSettingsRepository } from '../platform/settings';
 import { completeRecipeIdea } from '../platform/saveV3Ideas';
@@ -145,6 +146,12 @@ export const bootstrapSquishyApp = async (
       let nextState = replaceSavedSquishy(saveState, targetId, savedSquishy);
       nextState = completeMatchingIdea(nextState, draft, ideaId);
       await persistSave(nextState);
+      return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
+    },
+    onUpdateSquishy: async (targetId, draft) => {
+      const nextState = updateSavedSquishy(saveState, targetId, draft);
+      await persistSave(nextState);
+      const savedSquishy = nextState.library.find(toy => toy.id === targetId)!;
       return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
     },
     onDeleteSquishy: async (targetId) => {

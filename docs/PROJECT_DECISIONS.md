@@ -224,3 +224,39 @@ small bunny-root gap on the heart lobes. Crown roots were raised inside the
 contour and heart rear roots inset further; approved bow seats remain unchanged.
 The heart crown also shares a shallower art pivot in Hall/Studio, so its base
 meets the cleft instead of extending down onto the forehead.
+
+
+## Reversible creation and saved redecorating — 3 October 2026
+
+The owner authorized the independent review's next iteration: Undo after Clear
+for pigment/mix-ins/stickers, single-tap Brush menu with an explicit palette/stamp
+hint, an individual sticker eraser and redecorating saved toys. Collection histories
+are bounded in-memory snapshots and reset on loading/saving/starting another toy;
+no history is persisted. Sticker erasing projects the existing placement into CSS
+pixels, removes the topmost touched item and retains all remaining placement bytes
+and therefore their colors. Erasing and Clear are undoable.
+
+Saved edits use a separate update operation, preserving ID, createdAt, slot, total
+crafts, capacity and reward/Idea state; saving an edit never opens the full-shelf
+replacement chooser. Discard/failure leaves the durable toy unchanged. Returning
+to Mix on a saved toy retains completion, while physical input stays in the same
+gesture router. V3 and Appearance/Decor V1 codecs remain unchanged. New Squishy
+still creates a new craft. No tactile constants, renderers or progression added.
+
+Release face-reaction QA now records animation frames before pointer release and
+checks the same transient delight state plus eventual rest, avoiding a polling
+gap without weakening the reaction assertion.
+
+First runner comparison checked all 30 UI baselines. Only three Paint images
+failed: RU 320, EN 320 and EN 844. Their full expected/actual/diff images were
+reviewed: the explicit palette/stamp hint and previously stale Brush menu glyph,
+with intact geometry and button hierarchy. Only these three captures are aligned;
+the other 27 baselines, masks, thresholds and retries remain unchanged. Initial
+focused checks reached successful edit/Undo/save in all six locales/viewports,
+then exposed a test expectation comparing compact persisted Decor with decoded
+objects; the test now decodes V3 before asserting unchanged toys and content.
+
+Diff review also caught the session's Finish-to-Squeeze counter treating an edit
+as a new craft. Save kind now distinguishes edits before the transition, so
+redecorating never advances craft analytics or interstitial eligibility. Existing
+new-craft cadence stays unchanged; failure/retry and repeated-edit checks cover it.

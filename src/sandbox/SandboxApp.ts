@@ -49,6 +49,7 @@ import {
   type EyeStyleId,
   type MouthStyleId,
   type StickerId,
+  type StickerPlacementV1,
 } from './decor';
 import { captureModalReturnFocus, focusModal, restoreModalFocus, trapModalTab } from './modalFocus';
 import { createSandboxDraft, type SandboxDraft, type SavedSquishy } from './types';
@@ -72,7 +73,7 @@ export interface SandboxAppOptions {
     audio: SquishyAudio,
     callbacks: PhaserSandboxCallbacks,
   ) => PhaserSquishSurface;
-  readonly onSaveSquishy: (draft: SandboxDraft) => Promise<SavedSquishy | null>;
+  readonly onSaveSquishy: (draft: SandboxDraft, editingId: string | null) => Promise<SavedSquishy | null>;
   readonly onMutedChange: (muted: boolean) => void | Promise<void>;
 }
 
@@ -148,7 +149,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     home: 'YOUR SQUISHY',
     squeeze: 'SQUEEZE IT',
     chooseShape: 'Pick any one. They are all yours.',
-    paintHint: 'Draw anything. You can continue whenever you want.',
+    paintHint: 'Draw freely. Tap Brush ▾ for palettes and stamps.',
     mixinsHint: 'Tap or drag to scatter. Skip it if you want.',
     mixHint: 'Grab the squishy and really move it around.',
     decorHint: 'Give it a face, stickers or a little something on top.',
@@ -207,7 +208,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     home: 'ТВОЙ СКВИШ',
     squeeze: 'ЖМЯКАЙ',
     chooseShape: 'Выбирай любую. Все формы уже открыты.',
-    paintHint: 'Рисуй что угодно. Продолжить можно в любой момент.',
+    paintHint: 'Рисуй свободно. Кисть ▾ открывает палитры и штампы.',
     mixinsHint: 'Тапай или веди пальцем. Можно вообще пропустить.',
     mixHint: 'Хватай сквиш и хорошенько потяни его.',
     decorHint: 'Добавь мордочку, наклейки или что-нибудь на макушку.',
@@ -379,6 +380,11 @@ export class SandboxApp {
   private savedSquishy: SavedSquishy | null;
   private paintTool: PaintTool = 'paint';
   private paintStampId: PaintStampId | null = null;
+  private editingId: string | null = null;
+  private stickerErase = false;
+  private readonly paintHistory: AppearanceDocumentV1['strokes'][] = [];
+  private readonly mixinHistory: AppearanceDocumentV1['mixins'][] = [];
+  private readonly stickerHistory: (readonly StickerPlacementV1[])[] = [];
   private toolsOpen = false;
   private toolsReturnFocus: HTMLElement | null = null;
   private readonly reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -518,14 +524,11 @@ export class SandboxApp {
             this.authoredPoints = [];
           },
           addMixin: (point) => this.addMixinAt(point),
-          addSticker: (point) => {
-            if (this.draft.decor.stickers.length >= MAX_DECOR_STICKERS) return;
-            const placement = createStickerPlacement(this.selectedSticker, point, this.draft.decor.stickers.length);
-            this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers: [...this.draft.decor.stickers, placement] } };
-            this.replayAndUpload();
-            this.updateDecorUi();
-          },
+          addSticker: (point) => this.editStickerAt(point),
           mixProgress: (distance, progress) => {
+            // A saved toy has already completed Mix. Revisiting it is optional;
+            // the gesture router still owns physical input and its own distance.
+            if (this.editingId) { distance = Math.max(distance, MIX_DISTANCE_FOR_COMPLETE_PX); progress = 1; }
             this.mixDistance = distance;
             this.mixProgressFill.style.transform = `scaleX(${progress})`;
             this.mixContinueButton.disabled = progress < 1;
@@ -691,7 +694,7 @@ export class SandboxApp {
             <div class="sandbox-decor-section" role="tabpanel" id="decor-panel-stickers" aria-labelledby="decor-tab-stickers" data-decor-panel="stickers" hidden>
               <div class="sandbox-decor-grid sandbox-decor-grid--four">${stickers}</div>
               <p class="sandbox-decor-tip">${decorLabels.stickerTip}</p>
-              <div class="sandbox-tool-row sandbox-tool-row--actions"><button type="button" data-action="decor-undo">${this.copy.undo}</button><button type="button" data-action="decor-clear">${this.copy.clear}</button></div>
+              <div class="sandbox-tool-row sandbox-tool-row--actions"><button type="button" data-action="decor-undo">${this.copy.undo}</button><button type="button" data-action="decor-clear">${this.copy.clear}</button><button type="button" data-action="decor-erase" aria-pressed="false">${this.copy.eraser}</button></div>
             </div>
             <div class="sandbox-decor-section" role="tabpanel" id="decor-panel-accessory" aria-labelledby="decor-tab-accessory" data-decor-panel="accessory" hidden>
               <div class="sandbox-decor-grid sandbox-decor-grid--three">${accessories}</div>
@@ -710,6 +713,7 @@ export class SandboxApp {
           </div>
 
           <div class="sandbox-panel sandbox-panel--center" data-panel="squeeze">
+            <button class="sandbox-secondary" type="button" data-action="edit-saved">${this.options.language === 'ru' ? 'Украсить ещё' : 'Decorate again'}</button>
             <button class="sandbox-secondary" type="button" data-action="home">${this.copy.done}</button>
             <button class="sandbox-primary" type="button" data-action="new">${this.copy.newSquishy}</button>
           </div>
@@ -812,16 +816,15 @@ export class SandboxApp {
 
     const paintTool = target.dataset.paintTool as PaintTool | undefined;
     if (paintTool === 'paint' || paintTool === 'erase' || paintTool === 'fill') {
-      const wasBrush = this.paintTool === 'paint';
       this.paintTool = paintTool;
-      if (paintTool === 'paint' && !wasBrush) {
+      if (paintTool !== 'paint') {
         this.paintStampId = null;
         this.updatePressed('[data-paint-stamp]', 'paintStamp', 'none');
         const brush = this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]');
         brush.textContent = `${this.copy.brush} ▾`; brush.setAttribute('aria-label', this.copy.brush);
       }
       this.updatePressed('[data-paint-tool]', 'paintTool', paintTool);
-      if (paintTool === 'paint' && wasBrush) this.setToolsOpen(true);
+      if (paintTool === 'paint') this.setToolsOpen(true);
       return;
     }
 
@@ -869,7 +872,9 @@ export class SandboxApp {
 
     const decorSticker = target.dataset.decorSticker as StickerId | undefined;
     if (decorSticker && STICKER_IDS.includes(decorSticker)) {
+      this.stickerErase = false;
       this.selectedSticker = decorSticker;
+      this.updateDecorUi();
       this.updatePressed('[data-decor-sticker]', 'decorSticker', decorSticker);
       return;
     }
@@ -911,9 +916,18 @@ export class SandboxApp {
     else if (action === 'decor-blush') { this.draft = { ...this.draft, decor: { ...this.draft.decor, blush: !this.draft.decor.blush } }; this.replayAndUpload(); this.updateDecorUi(); }
     else if (action === 'decor-undo') this.undoSticker();
     else if (action === 'decor-clear') this.clearStickers();
+    else if (action === 'decor-erase') { this.stickerErase = !this.stickerErase; this.updateDecorUi(); }
     else if (action === 'decor-continue') this.setStage('finish');
     else if (action === 'finish-back') this.setStage('decor');
     else if (action === 'save') void this.saveDraft();
+    else if (action === 'edit-saved' && this.savedSquishy) {
+      this.loadSavedSquishy(this.savedSquishy);
+      this.editingId = this.savedSquishy.id;
+      this.shell.dataset.saveKind = 'edit';
+      this.mixDistance = MIX_DISTANCE_FOR_COMPLETE_PX;
+      this.setDecorSection('face');
+      this.setStage('decor');
+    }
     else if (action === 'play-saved') this.openSavedForSqueeze();
     else if (action === 'new') this.startNew();
     else if (action === 'home') {
@@ -1007,11 +1021,8 @@ export class SandboxApp {
 
     if (this.stage === 'decor' && this.decorSection === 'stickers') {
       const point = this.renderer.clientPointToUv(event.clientX, event.clientY);
-      if (!point || this.draft.decor.stickers.length >= MAX_DECOR_STICKERS) return;
-      const placement = createStickerPlacement(this.selectedSticker, point, this.draft.decor.stickers.length);
-      this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers: [...this.draft.decor.stickers, placement] } };
-      this.replayAndUpload();
-      this.updateDecorUi();
+      if (!point) return;
+      this.editStickerAt(point);
       event.preventDefault();
       return;
     }
@@ -1109,6 +1120,7 @@ export class SandboxApp {
     if (next.strokes.length > MAX_APPEARANCE_STROKES || estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
       this.setAppearanceLimitReached(true); return;
     }
+    this.remember(this.paintHistory, this.draft.appearance.strokes);
     this.draft = { ...this.draft, appearance: next };
     const points = decodeAppearancePoints(stroke.p);
     if (points[0]) drawAppearanceStamp(this.appearanceContext, 0, stroke.c, stroke.s, points[0]);
@@ -1157,6 +1169,7 @@ export class SandboxApp {
       this.replayAndUpload();
       return;
     }
+    this.remember(this.paintHistory, this.draft.appearance.strokes);
     this.draft = { ...this.draft, appearance: next };
     this.updateAppearanceDataset();
   }
@@ -1182,6 +1195,7 @@ export class SandboxApp {
       this.setAppearanceLimitReached(true);
       return;
     }
+    this.remember(this.paintHistory, this.draft.appearance.strokes);
     this.draft = { ...this.draft, appearance: next };
     this.replayAndUpload();
   }
@@ -1204,6 +1218,7 @@ export class SandboxApp {
       this.setAppearanceLimitReached(true);
       return;
     }
+    this.remember(this.mixinHistory, this.draft.appearance.mixins);
     this.draft = { ...this.draft, appearance: next };
     replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
     this.scheduleTextureUpload();
@@ -1261,50 +1276,94 @@ export class SandboxApp {
     };
   }
 
+  private remember<T>(history: T[], value: T): void {
+    history.push(value);
+    if (history.length > 160) history.shift();
+  }
+
   private undoPaint(): void {
-    if (this.draft.appearance.strokes.length === 0) return;
+    const strokes = this.paintHistory.at(-1);
+    if (!strokes) return;
+    if (estimateAppearanceBytes({ ...this.draft.appearance, strokes }) > APPEARANCE_TARGET_BYTES) {
+      this.setAppearanceLimitReached(true); return;
+    }
+    this.paintHistory.pop();
     this.setAppearanceLimitReached(false);
-    this.draft = {
-      ...this.draft,
-      appearance: { ...this.draft.appearance, strokes: this.draft.appearance.strokes.slice(0, -1) },
-    };
+    this.draft = { ...this.draft, appearance: { ...this.draft.appearance, strokes } };
     this.replayAndUpload();
   }
 
   private clearPaint(): void {
+    if (!this.draft.appearance.strokes.length) return;
+    this.remember(this.paintHistory, this.draft.appearance.strokes);
     this.setAppearanceLimitReached(false);
     this.draft = { ...this.draft, appearance: { ...this.draft.appearance, strokes: [] } };
     this.replayAndUpload();
   }
 
   private undoMixin(): void {
-    if (this.draft.appearance.mixins.length === 0) return;
+    const mixins = this.mixinHistory.at(-1);
+    if (!mixins) return;
+    if (estimateAppearanceBytes({ ...this.draft.appearance, mixins }) > APPEARANCE_TARGET_BYTES) {
+      this.setAppearanceLimitReached(true); return;
+    }
+    this.mixinHistory.pop();
     this.setAppearanceLimitReached(false);
-    this.draft = {
-      ...this.draft,
-      appearance: { ...this.draft.appearance, mixins: this.draft.appearance.mixins.slice(0, -1) },
-    };
+    this.draft = { ...this.draft, appearance: { ...this.draft.appearance, mixins } };
     this.replayAndUpload();
   }
 
   private clearMixins(): void {
+    if (!this.draft.appearance.mixins.length) return;
+    this.remember(this.mixinHistory, this.draft.appearance.mixins);
     this.setAppearanceLimitReached(false);
     this.draft = { ...this.draft, appearance: { ...this.draft.appearance, mixins: [] } };
     this.replayAndUpload();
   }
 
-  private undoSticker(): void {
-    if (this.draft.decor.stickers.length === 0) return;
-    this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers: this.draft.decor.stickers.slice(0, -1) } };
+  private editStickerAt(point: AppearancePoint): void {
+    const current = this.draft.decor.stickers;
+    let stickers: readonly StickerPlacementV1[];
+    if (this.stickerErase) {
+      // Project into CSS pixels so every sticker has a 44px touch target.
+      const hit = this.renderer.projectUvToCanvas(point.u, point.v);
+      let index = -1;
+      for (let i = current.length - 1; i >= 0; i--) {
+        const p = current[i]!;
+        const center = this.renderer.projectUvToCanvas(p.x / 255, p.y / 255);
+        const edge = this.renderer.projectUvToCanvas(Math.min(1, (p.x / 255) + p.s / (2 * APPEARANCE_TEXTURE_SIZE)), p.y / 255);
+        const radius = Math.max(22, Math.hypot(edge.x - center.x, edge.y - center.y));
+        if (Math.hypot(hit.x - center.x, hit.y - center.y) <= radius) { index = i; break; }
+      }
+      if (index < 0) return;
+      stickers = current.filter((_, i) => i !== index);
+    } else {
+      if (current.length >= MAX_DECOR_STICKERS) {
+        this.status.textContent = this.options.language === 'ru' ? 'Все 12 наклеек на месте. Убери одну ластиком.' : 'All 12 stickers are placed. Erase one to make room.';
+        return;
+      }
+      stickers = [...current, createStickerPlacement(this.selectedSticker, point, current.length)];
+    }
+    this.remember(this.stickerHistory, current);
+    this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers } };
+    this.status.textContent = '';
     this.replayAndUpload();
-    this.updateDecorUi();
+  }
+
+  private undoSticker(): void {
+    const stickers = this.stickerHistory.pop();
+    if (!stickers) return;
+    this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers } };
+    this.status.textContent = '';
+    this.replayAndUpload();
   }
 
   private clearStickers(): void {
-    if (this.draft.decor.stickers.length === 0) return;
+    if (!this.draft.decor.stickers.length) return;
+    this.remember(this.stickerHistory, this.draft.decor.stickers);
     this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers: [] } };
+    this.status.textContent = '';
     this.replayAndUpload();
-    this.updateDecorUi();
   }
 
   private setDecorSection(next: DecorSection): void {
@@ -1319,7 +1378,13 @@ export class SandboxApp {
     this.updatePressed('[data-decor-eyes]', 'decorEyes', this.draft.decor.eyes ?? 'none');
     this.updatePressed('[data-decor-mouth]', 'decorMouth', this.draft.decor.mouth ?? 'none');
     this.updatePressed('[data-decor-accessory]', 'decorAccessory', this.draft.decor.accessory ?? 'none');
-    this.updatePressed('[data-decor-sticker]', 'decorSticker', this.selectedSticker);
+    this.updatePressed('[data-decor-sticker]', 'decorSticker', this.stickerErase ? '' : this.selectedSticker);
+    this.requireElement<HTMLButtonElement>('[data-action="decor-erase"]').setAttribute('aria-pressed', String(this.stickerErase));
+    this.shell.dataset.decorTool = this.stickerErase ? 'erase' : 'sticker';
+    const stickerTip = this.requireElement<HTMLElement>('.sandbox-decor-tip');
+    stickerTip.textContent = this.stickerErase
+      ? (this.options.language === 'ru' ? 'Коснись наклейки, чтобы убрать её. Отменой можно вернуть.' : 'Tap a sticker to erase it. Undo brings it back.')
+      : DECOR_LABELS[this.options.language].stickerTip;
     const blush = this.root.querySelector<HTMLButtonElement>('[data-action="decor-blush"]');
     blush?.setAttribute('aria-pressed', String(this.draft.decor.blush));
     this.shell.dataset.decorEyes = this.draft.decor.eyes ?? 'none';
@@ -1330,7 +1395,7 @@ export class SandboxApp {
     this.shell.dataset.decorBytes = String(estimateDecorBytes(this.draft.decor));
     for (const action of ['decor-undo', 'decor-clear']) {
       const button = this.root.querySelector<HTMLButtonElement>(`[data-action="${action}"]`);
-      if (button) button.disabled = this.draft.decor.stickers.length === 0;
+      if (button) button.disabled = action === 'decor-undo' ? this.stickerHistory.length === 0 : this.draft.decor.stickers.length === 0;
     }
   }
 
@@ -1413,12 +1478,14 @@ export class SandboxApp {
     this.saveButton.disabled = true;
     this.saveButton.textContent = this.copy.saving;
     try {
-      const saved = await this.options.onSaveSquishy(this.draft);
+      const saved = await this.options.onSaveSquishy(this.draft, this.editingId);
       if (this.disposed) return;
       if (!saved) {
         this.status.textContent = '';
         return;
       }
+      this.shell.dataset.saveKind = this.editingId ? 'edit' : 'craft';
+      this.editingId = null;
       this.savedSquishy = saved;
       this.shell.dataset.savedSquishyId = saved.id;
       this.shell.dataset.saveComplete = 'true';
@@ -1447,6 +1514,10 @@ export class SandboxApp {
   private startNew(): void {
     this.setExitConfirmOpen(false);
     this.setAppearanceLimitReached(false);
+    this.editingId = null;
+    this.shell.dataset.saveKind = 'craft';
+    this.stickerErase = false;
+    this.paintHistory.length = this.mixinHistory.length = this.stickerHistory.length = 0;
     this.draft = createSandboxDraft();
     this.paintStampId = null;
     this.updatePressed('[data-paint-stamp]', 'paintStamp', 'none');
@@ -1474,6 +1545,8 @@ export class SandboxApp {
   }
 
   private loadSavedSquishy(saved: SavedSquishy): void {
+    this.paintHistory.length = this.mixinHistory.length = this.stickerHistory.length = 0;
+    this.stickerErase = false;
     this.draft = {
       shapeId: saved.shapeId,
       materialId: saved.materialId,
@@ -1770,9 +1843,9 @@ export class SandboxApp {
     }
     this.updateAppearanceLimitUi();
     for (const [action, empty] of [
-      ['paint-undo', this.draft.appearance.strokes.length === 0],
+      ['paint-undo', this.paintHistory.length === 0],
       ['paint-clear', this.draft.appearance.strokes.length === 0],
-      ['mixin-undo', this.draft.appearance.mixins.length === 0],
+      ['mixin-undo', this.mixinHistory.length === 0],
       ['mixin-clear', this.draft.appearance.mixins.length === 0],
     ] as const) {
       const button = this.root.querySelector<HTMLButtonElement>(`[data-action="${action}"]`);
