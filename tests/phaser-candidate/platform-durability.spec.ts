@@ -126,6 +126,16 @@ test('saved redecorating failure preserves the original and retry updates the sa
   expect(after.library[0]!.id).toBe(before.library[0]!.id);
   expect(after.library[0]!.createdAt).toBe(before.library[0]!.createdAt);
   expect(after.library[0]!.decor.accessory).toBe('bow');
+  // Repeated saved edits must not become new completed-craft/ad actions.
+  for (let n = 0; n < 2; n++) {
+    await page.locator('[data-action="edit-saved"]').click();
+    await page.locator('[data-action="decor-continue"]').click();
+    await page.locator('[data-action="save"]').click();
+    await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+  }
+  expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).filter(event => event.startsWith('analytics:craft_save:'))).toHaveLength(1);
+  await page.locator('[data-action="home"]').click();
+  expect(await page.evaluate(() => window.__squishyPhaserPlatform!.getSdkCounters()?.interstitials)).toBe(0);
   await page.reload();
   await page.locator(`[data-library-play-id="${before.library[0]!.id}"]`).click();
   await expect(shell).toHaveAttribute('data-decor-accessory', 'bow');

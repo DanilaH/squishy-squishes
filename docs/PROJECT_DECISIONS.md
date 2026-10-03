@@ -255,3 +255,8 @@ the other 27 baselines, masks, thresholds and retries remain unchanged. Initial
 focused checks reached successful edit/Undo/save in all six locales/viewports,
 then exposed a test expectation comparing compact persisted Decor with decoded
 objects; the test now decodes V3 before asserting unchanged toys and content.
+
+Diff review also caught the session's Finish-to-Squeeze counter treating an edit
+as a new craft. Save kind now distinguishes edits before the transition, so
+redecorating never advances craft analytics or interstitial eligibility. Existing
+new-craft cadence stays unchanged; failure/retry and repeated-edit checks cover it.

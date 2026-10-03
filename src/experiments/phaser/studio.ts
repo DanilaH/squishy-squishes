@@ -10,7 +10,7 @@ import '../../sandbox-core.css';
 import '../../sandbox-library.css';
 import '../../sandbox-ideas.css';
 import '../../sandbox-polish-01.css';
-import { appendSavedSquishy, createSaveV3Repository, createSavedSquishy, SAVE_V3_STORAGE_KEY, type SaveStateV3 } from '../../platform/saveV3';
+import { appendSavedSquishy, createSaveV3Repository, createSavedSquishy, updateSavedSquishy, SAVE_V3_STORAGE_KEY, type SaveStateV3 } from '../../platform/saveV3';
 import { SandboxApp, type SandboxLanguage } from '../../sandbox/SandboxApp';
 import { PhaserSquishSurface } from '../../sandbox/PhaserSquishSurface';
 
@@ -42,9 +42,9 @@ const mount = async (): Promise<void> => {
     rendererBackend: 'phaser',
     makePhaserRenderer: (canvas, onMetrics, audio, callbacks) =>
       new PhaserSquishSurface(canvas, onMetrics, audio, callbacks),
-    onSaveSquishy: async (draft) => {
-      const saved = createSavedSquishy(draft);
-      const next = appendSavedSquishy(state, saved);
+    onSaveSquishy: async (draft, editingId) => {
+      const next = editingId ? updateSavedSquishy(state, editingId, draft) : appendSavedSquishy(state, createSavedSquishy(draft));
+      const saved = editingId ? next.library.find(toy => toy.id === editingId)! : next.library.at(-1)!;
       await repository.write(next);
       await repository.flush();
       state = next;
