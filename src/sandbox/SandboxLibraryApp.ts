@@ -30,6 +30,7 @@ export interface SandboxLibraryAppOptions {
   readonly onUnlockShelfExpansion: () => Promise<{ readonly granted: boolean; readonly libraryCapacity: number; readonly status: 'closed' | 'error' }>;
   readonly onAppendSquishy: (draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
   readonly onReplaceSquishy: (targetId: string, draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
+  readonly onUpdateSquishy: (targetId: string, draft: SandboxDraft) => Promise<SandboxLibraryCommitResult>;
   readonly onDeleteSquishy: (targetId: string) => Promise<readonly SavedSquishy[]>;
   /** Candidate-only renderer port. Ordinary library bootstrap leaves it absent. */
   readonly makerRendererOptions?: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
@@ -477,7 +478,7 @@ export class SandboxLibraryApp {
         ...(toy === null && idea ? { initialShapeId: idea.shapeId } : {}),
         startSavedInSqueeze: toy !== null,
         onExitToLibrary: () => this.renderLibrary(),
-        onSaveSquishy: (draft) => this.handleSaveRequest(draft),
+        onSaveSquishy: (draft, editingId) => this.handleSaveRequest(draft, editingId),
         onMutedChange: (muted) => this.setMuted(muted),
       });
       this.currentMaker.setActivityBlocked(this.activityBlocked);
@@ -515,7 +516,14 @@ export class SandboxLibraryApp {
     }
   }
 
-  private async handleSaveRequest(draft: SandboxDraft): Promise<SavedSquishy | null> {
+  private async handleSaveRequest(draft: SandboxDraft, editingId: string | null): Promise<SavedSquishy | null> {
+    if (editingId) {
+      const result = await this.options.onUpdateSquishy(editingId, draft);
+      if (this.disposed) return null;
+      this.library = [...result.library];
+      this.completedRecipeIds = [...result.completedRecipeIds];
+      return result.savedSquishy;
+    }
     const ideaId = this.activeIdea?.id ?? null;
     if (this.library.length < this.libraryCapacity) {
       const previousCompleted = this.completedRecipeIds;

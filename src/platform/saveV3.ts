@@ -312,6 +312,19 @@ export const replaceSavedSquishy = (
   };
 };
 
+/** Edit a toy in its existing slot without awarding another craft. V3 is unchanged. */
+export const updateSavedSquishy = (
+  state: SaveStateV3,
+  targetId: string,
+  draft: Omit<SavedSquishy, 'id' | 'createdAt'>,
+  updatedAt = Date.now(),
+): SaveStateV3 => {
+  const previous = state.library.find(toy => toy.id === targetId);
+  if (!previous) throw new RangeError('Edit target does not exist.');
+  const updated: SavedSquishy = { ...draft, id: previous.id, createdAt: previous.createdAt };
+  return { ...state, library: state.library.map(toy => toy.id === targetId ? updated : toy), updatedAt };
+};
+
 export const deleteSavedSquishy = (
   state: SaveStateV3,
   targetId: string,

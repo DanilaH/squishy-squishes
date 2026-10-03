@@ -18,7 +18,9 @@
 [`PLAYFUL_POLISH_PLAN.md`](PLAYFUL_POLISH_PLAN.md) records the owner's 3 October
 2026 discussion: reactive faces, sound, accessory motion, palettes and stamps
 as the nearest iteration, plus the complete optional idea bank. This is a saved
-product plan; the owner has started the nearest iteration. The full optional
+product plan; the nearest iteration shipped in #69 and accessory depth was
+corrected in #70. Current work covers reversible creation tools and editing
+saved toys. The full optional
 idea bank is not a release checklist.
 
 ## Latest independent review

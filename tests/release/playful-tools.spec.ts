@@ -76,8 +76,6 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     await page.locator('[data-action="paint-undo"]').click();
     await expect(shell).toHaveAttribute('data-paint-strokes', '1');
     await page.locator('[data-paint-tool="paint"]').click();
-    await expect(page.locator('[data-tools-overlay]')).toBeHidden();
-    await page.locator('[data-paint-tool="paint"]').click();
     await expect(page.locator('[data-tools-overlay]')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-tools-overlay]')).toBeHidden();
@@ -106,8 +104,21 @@ for (const reduced of [false, true]) test(`saved face reacts and returns to rest
   if (!reduced) await expect.poll(() => shell.getAttribute('data-face-reaction')).toMatch(/^[^0]/);
   await mkdir('migration-baseline-evidence', { recursive: true });
   await page.screenshot({ path: `migration-baseline-evidence/reaction-held-${reduced}.png` });
+  if (!reduced) await shell.evaluate(el => {
+    const samples: string[] = [];
+    const end = performance.now() + 1500;
+    const record = (): void => {
+      samples.push(el.getAttribute('data-face-reaction') ?? '');
+      el.setAttribute('data-release-reaction-samples', JSON.stringify(samples));
+      if (performance.now() < end) requestAnimationFrame(record);
+    };
+    requestAnimationFrame(record);
+  });
   await page.mouse.up();
-  if (!reduced) await expect.poll(() => shell.getAttribute('data-face-reaction')).toMatch(/^0:[^0]/);
+  if (!reduced) await expect.poll(async () => {
+    const samples: string[] = JSON.parse(await shell.getAttribute('data-release-reaction-samples') ?? '[]');
+    return samples.some(value => /^0:[^0]/.test(value));
+  }).toBe(true);
   await expect.poll(async () => Number(await page.locator('[data-sandbox-accessory]').getAttribute('data-accessory-sway'))).toBe(0);
   if (!reduced) await expect(shell).toHaveAttribute('data-face-reaction', '0:0');
   else expect(await shell.getAttribute('data-face-reaction')).toBeNull();

@@ -16,6 +16,7 @@ import {
   createSavedSquishy,
   deleteSavedSquishy,
   replaceSavedSquishy,
+  updateSavedSquishy,
   SAVE_V3_STORAGE_KEY,
   type SaveStateV3,
 } from '../../platform/saveV3';
@@ -90,6 +91,12 @@ const mount = async (): Promise<void> => {
       const savedSquishy = createSavedSquishy(draft);
       const next = completeIdea(replaceSavedSquishy(saveState, targetId, savedSquishy), draft, ideaId);
       await persist(next);
+      return { savedSquishy, library: next.library, completedRecipeIds: next.completedRecipeIds };
+    },
+    onUpdateSquishy: async (targetId, draft) => {
+      const next = updateSavedSquishy(saveState, targetId, draft);
+      await persist(next);
+      const savedSquishy = next.library.find(toy => toy.id === targetId)!;
       return { savedSquishy, library: next.library, completedRecipeIds: next.completedRecipeIds };
     },
     onDeleteSquishy: async (id) => {
