@@ -210,7 +210,7 @@
   overflow-wrap: anywhere;
 }
 
-/* Body (4), rigid fillers (5), then head gear (6). Never intercept paint. */
+/* Rear ears/horns (3), body (4), fillers (5), front bow/crown (6). Passive layers. */
 .sandbox-accessory-layer[data-accessory-depth='front'] { z-index: 3; }
 #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-accessory-layer[data-accessory-depth='rear'] { z-index: 3; }
 #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-accessory-layer[data-accessory-depth='front'] { z-index: 6; }
