@@ -103,6 +103,8 @@ test('dirty craft exit confirms, and appearance limit stays explicit without blo
 
   await page.locator('[data-action="paint-clear"]').click();
   await page.locator('[data-paint-tool="paint"]').click();
+  await expect(page.locator('[data-tools-overlay]')).toBeVisible();
+  await page.locator('[data-paint-stamp="none"]').click();
   for (let index = 0; index < 96; index += 1) {
     await page.mouse.click(x, y);
   }

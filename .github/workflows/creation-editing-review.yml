@@ -19,6 +19,10 @@ jobs:
       - run: npm run release:check
       - name: Check reversible creation and reaction samples
         run: npx playwright test --config=playwright.release.config.ts tests/release/creation-editing.spec.ts tests/release/playful-tools.spec.ts --retries=0
+      - name: Build isolated platform candidate
+        run: npm run candidate:build
+      - name: Check edit failure, retry and unchanged ad eligibility
+        run: npx playwright test --config=playwright.phaser-candidate.config.ts tests/phaser-candidate/platform-durability.spec.ts --grep "saved redecorating failure" --retries=0
       - name: Review production UI against original baselines
         if: always()
         run: npm run qa:visual

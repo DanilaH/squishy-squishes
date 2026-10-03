@@ -99,3 +99,44 @@ test('M5: failed reward persistence cannot unlock slots; ad close cannot resume 
   expect(state.unlockedRewardIds).toHaveLength(1);
   expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).filter((event) => event.startsWith('analytics:shelf_reward_granted:'))).toHaveLength(1);
 });
+
+
+test('saved redecorating failure preserves the original and retry updates the same toy', async ({ page }) => {
+  await open(page);
+  await reachFinish(page);
+  await page.locator('[data-action="save"]').click();
+  const shell = page.locator('[data-sandbox-app]');
+  await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+  const before = await page.evaluate(() => window.__squishyPhaserPlatform!.readSave());
+  await page.locator('[data-action="edit-saved"]').click();
+  await page.locator('[data-decor-section="accessory"]').click();
+  await page.locator('[data-decor-accessory="bow"]').click();
+  await page.locator('[data-action="decor-continue"]').click();
+  await page.evaluate(() => window.__squishyPhaserPlatform!.setSaveWriteFailure(true));
+  await page.locator('[data-action="save"]').click();
+  await expect(shell).toHaveAttribute('data-save-complete', 'false');
+  await expect(shell).toHaveAttribute('data-stage', 'finish');
+  expect(await page.evaluate(() => window.__squishyPhaserPlatform!.readSave())).toEqual(before);
+  await page.evaluate(() => window.__squishyPhaserPlatform!.setSaveWriteFailure(false));
+  await page.locator('[data-action="save"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+  const after = await page.evaluate(() => window.__squishyPhaserPlatform!.readSave());
+  expect(after.library).toHaveLength(1);
+  expect(after.totalCrafts).toBe(before.totalCrafts);
+  expect(after.library[0]!.id).toBe(before.library[0]!.id);
+  expect(after.library[0]!.createdAt).toBe(before.library[0]!.createdAt);
+  expect(after.library[0]!.decor.accessory).toBe('bow');
+  // Repeated saved edits must not become new completed-craft/ad actions.
+  for (let n = 0; n < 2; n++) {
+    await page.locator('[data-action="edit-saved"]').click();
+    await page.locator('[data-action="decor-continue"]').click();
+    await page.locator('[data-action="save"]').click();
+    await expect(shell).toHaveAttribute('data-stage', 'squeeze');
+  }
+  expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).filter(event => event.startsWith('analytics:craft_save:'))).toHaveLength(1);
+  await page.locator('[data-action="home"]').click();
+  expect(await page.evaluate(() => window.__squishyPhaserPlatform!.getSdkCounters()?.interstitials)).toBe(0);
+  await page.reload();
+  await page.locator(`[data-library-play-id="${before.library[0]!.id}"]`).click();
+  await expect(shell).toHaveAttribute('data-decor-accessory', 'bow');
+});

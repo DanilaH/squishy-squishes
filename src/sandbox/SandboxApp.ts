@@ -923,6 +923,7 @@ export class SandboxApp {
     else if (action === 'edit-saved' && this.savedSquishy) {
       this.loadSavedSquishy(this.savedSquishy);
       this.editingId = this.savedSquishy.id;
+      this.shell.dataset.saveKind = 'edit';
       this.mixDistance = MIX_DISTANCE_FOR_COMPLETE_PX;
       this.setDecorSection('face');
       this.setStage('decor');
@@ -1483,6 +1484,7 @@ export class SandboxApp {
         this.status.textContent = '';
         return;
       }
+      this.shell.dataset.saveKind = this.editingId ? 'edit' : 'craft';
       this.editingId = null;
       this.savedSquishy = saved;
       this.shell.dataset.savedSquishyId = saved.id;
@@ -1513,6 +1515,7 @@ export class SandboxApp {
     this.setExitConfirmOpen(false);
     this.setAppearanceLimitReached(false);
     this.editingId = null;
+    this.shell.dataset.saveKind = 'craft';
     this.stickerErase = false;
     this.paintHistory.length = this.mixinHistory.length = this.stickerHistory.length = 0;
     this.draft = createSandboxDraft();

@@ -105,10 +105,10 @@ export const installReleaseSession = (
 
     if (sandboxMode) {
       const sandboxShell = getSandboxShell();
-      if (previousStage === 'shape' && stage === 'paint') {
+      if (previousStage === 'shape' && stage === 'paint' && sandboxShell?.dataset.saveKind !== 'edit') {
         runtime.analytics.track('craft_start', selectionParams(sandboxShell));
       }
-      if (previousStage === 'finish' && stage === 'squeeze') {
+      if (previousStage === 'finish' && stage === 'squeeze' && sandboxShell?.dataset.saveKind !== 'edit') {
         completedCrafts += 1;
         pendingCompletedSaveActions += 1;
         runtime.analytics.track('craft_save', {

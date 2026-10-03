@@ -52,6 +52,8 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     await page.touchscreen.tap(paint.x, paint.y);
     await expect(shell).toHaveAttribute('data-paint-strokes', '1');
     await page.locator('[data-paint-tool="paint"]').tap();
+    await expect(page.locator('[data-tools-overlay]')).toBeVisible();
+    await page.locator('[data-paint-stamp="none"]').tap();
 
     // Begin outside the canonical heart but cross the appearance-texture edge
     // exactly. The first authored UV must exist before the pointer center enters
