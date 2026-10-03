@@ -1,6 +1,6 @@
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp, type PaintStampId } from './creativeTools';
 import { REST_FACE, faceReaction, accessorySway, type FaceReaction } from './toyReactions';
-import { getAccessorySeats } from './accessorySeats';
+import { getAccessoryDepth, getAccessorySeats } from './accessorySeats';
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
 import { drawToyMixIn } from './toyMixins';
@@ -1565,6 +1565,8 @@ export class SandboxApp {
     }
     this.accessoryCanvas.hidden = false;
     this.accessoryCanvas.dataset.accessoryId = accessory;
+    this.accessoryCanvas.dataset.accessoryDepth = getAccessoryDepth(accessory);
+    this.accessorySecond.dataset.accessoryDepth = getAccessoryDepth(accessory);
     const seats = getAccessorySeats(getShape(this.draft.shapeId), accessory);
     drawAccessoryPiece(this.accessoryContext, accessory, 180, 120, seats[0]!.side);
     this.accessorySecond.hidden = seats.length < 2;
