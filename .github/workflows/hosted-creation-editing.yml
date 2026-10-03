@@ -1,0 +1,54 @@
+name: Hosted creation editing acceptance
+on:
+  push:
+    branches: [qa/hosted-creation-editing]
+permissions:
+  contents: read
+jobs:
+  hosted:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify actual Pages source and served entry asset
+        run: |
+          git fetch --depth=1 origin gh-pages:refs/remotes/origin/gh-pages
+          node --input-type=module <<'JS'
+          import { execFileSync } from 'node:child_process';
+          import { writeFileSync } from 'node:fs';
+          const source = '47c51af0a7fc7f9d72041043fa3b147fa55d1405';
+          const pages = execFileSync('git', ['rev-parse', 'origin/gh-pages'], {encoding:'utf8'}).trim();
+          const message = execFileSync('git', ['log', '-1', '--format=%s', 'origin/gh-pages'], {encoding:'utf8'}).trim();
+          if (message !== 'Deploy ' + source) throw new Error('Pages source mismatch: ' + message + ' versus ' + source);
+          const expected = execFileSync('git', ['show', 'origin/gh-pages:index.html'], {encoding:'utf8'});
+          const script = expected.match(/<script[^>]+src="([^"]+)"/)?.[1];
+          if (!script) throw new Error('No deployed entry script');
+          const target = 'https://danilah.github.io/squishy-squishes/?v=' + source;
+          const response = await fetch(target, {headers:{'cache-control':'no-cache'}});
+          if (!response.ok) throw new Error('Live HTML HTTP ' + response.status);
+          const html = await response.text();
+          if (!html.includes(script)) throw new Error('Live Pages serves a different script');
+          const asset = new URL(script, target);
+          const js = await fetch(asset, {headers:{'cache-control':'no-cache'}});
+          if (!js.ok || !(await js.text()).includes('edit-saved')) throw new Error('Updated live maker missing');
+          writeFileSync('hosted-source.json', JSON.stringify({source,pages,message,target,script,status:response.status,assetStatus:js.status}, null, 2));
+          console.log({source,pages,message,target,script});
+          JS
+      - name: Exercise the actual hosted maker and saved edits, no local server
+        run: npx playwright test --config=playwright.hosted-creation.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hosted-creation-acceptance
+          path: |
+            hosted-source.json
+            migration-baseline-evidence
+            test-results
+            playwright-report
+          retention-days: 7
