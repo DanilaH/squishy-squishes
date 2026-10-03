@@ -1,0 +1,33 @@
+name: Creation editing review
+on:
+  push:
+    branches: [qa/creation-editing-review]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run release:check
+      - name: Check reversible creation and reaction samples
+        run: npx playwright test --config=playwright.release.config.ts tests/release/creation-editing.spec.ts tests/release/playful-tools.spec.ts --retries=0
+      - name: Review production UI against original baselines
+        if: always()
+        run: npm run qa:visual
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: creation-editing-review
+          path: |
+            migration-baseline-evidence
+            test-results
+            playwright-report
+          retention-days: 7
