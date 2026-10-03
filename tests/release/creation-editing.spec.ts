@@ -20,8 +20,12 @@ test('editing V3 preserves identity, slots, rewards and craft count', () => {
 for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
   { width: 320, height: 568 }, { width: 568, height: 320 }, { width: 1440, height: 900 },
 ]) test(`clear Undo and saved redecorating in ${locale} ${viewport.width}`, async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ baseURL, locale, viewport, reducedMotion: 'reduce' });
+  const context = await browser.newContext({ baseURL, locale, viewport, hasTouch: viewport.width === 320, reducedMotion: 'reduce' });
   const page = await context.newPage();
+  const tap = async (x: number, y: number): Promise<void> => {
+    if (viewport.width === 320) await page.touchscreen.tap(x, y);
+    else await page.mouse.click(x, y);
+  };
   try {
     await page.goto('/squishy-squishes/');
     const state = { ...createDefaultSaveV3(), library: Array.from({ length: 8 }, (_, i) => saved(`toy-${i}`)), totalCrafts: 19 };
@@ -38,7 +42,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     const body = page.locator('[data-sandbox-canvas]');
     const box = (await body.boundingBox())!;
     const x = box.x + box.width / 2, y = box.y + box.height / 2;
-    await page.mouse.click(x, y);
+    await tap(x, y);
     await page.locator('[data-action="paint-clear"]').click();
     await expect(shell).toHaveAttribute('data-paint-strokes', '0');
     await page.locator('[data-action="paint-undo"]').click();
@@ -47,9 +51,9 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     await page.locator('[data-paint-tool="paint"]').click();
     await expect(page.locator('[data-tools-overlay]')).toBeVisible();
     await page.locator('[data-paint-stamp="star"]').click();
-    await page.mouse.click(x + 20, y);
+    await tap(x + 20, y);
     await page.locator('[data-action="paint-continue"]').click();
-    await page.mouse.click(x, y);
+    await tap(x, y);
     await page.locator('[data-action="mixin-clear"]').click();
     await expect(shell).toHaveAttribute('data-mixin-count', '0');
     await page.locator('[data-action="mixin-undo"]').click();
@@ -59,10 +63,10 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     await page.locator('[data-decor-section="stickers"]').click();
     const stickerBox = (await body.boundingBox())!;
     const sx = stickerBox.x + stickerBox.width / 2, sy = stickerBox.y + stickerBox.height / 2;
-    await page.mouse.click(sx - 35, sy);
-    await page.mouse.click(sx + 35, sy);
+    await tap(sx - 35, sy);
+    await tap(sx + 35, sy);
     await page.locator('[data-action="decor-erase"]').click();
-    await page.mouse.click(sx - 35, sy);
+    await tap(sx - 35, sy);
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
     await page.locator('[data-action="decor-undo"]').click();
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '2');
