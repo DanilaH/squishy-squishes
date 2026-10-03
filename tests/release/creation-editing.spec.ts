@@ -76,14 +76,15 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     await page.locator('[data-action="save"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'squeeze');
     await expect(page.locator('[data-library-replace-overlay]')).toHaveCount(0);
-    const after = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!));
+    const rawAfter = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!));
+    const after = decodeSaveStateV3(rawAfter);
     expect(after.totalCrafts).toBe(19);
     expect(after.library).toHaveLength(8);
-    expect(after.library[0].id).toBe('toy-0');
-    expect(after.library[0].createdAt).toBe(state.library[0]!.createdAt);
+    expect(after.library[0]!.id).toBe('toy-0');
+    expect(after.library[0]!.createdAt).toBe(state.library[0]!.createdAt);
     expect(after.library.slice(1)).toEqual(state.library.slice(1));
-    expect(after.library[0].decor.stickers).toHaveLength(2);
-    expect(after.library[0].decor.accessory).toBe('bow');
+    expect(after.library[0]!.decor.stickers).toHaveLength(2);
+    expect(after.library[0]!.decor.accessory).toBe('bow');
     for (const button of await page.locator('[data-panel="squeeze"]').getByRole('button').all()) {
       const bounds = (await button.boundingBox())!;
       expect(bounds.width).toBeGreaterThanOrEqual(44); expect(bounds.height).toBeGreaterThanOrEqual(44);
@@ -103,7 +104,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     await page.locator('[data-decor-accessory="none"]').click();
     await page.locator('[data-action="exit-craft"]').click();
     await page.locator('[data-action="exit-confirm"]').click();
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!))).toEqual(after);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!))).toEqual(rawAfter);
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   } finally { await context.close(); }
 });

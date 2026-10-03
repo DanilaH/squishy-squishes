@@ -246,3 +246,12 @@ still creates a new craft. No tactile constants, renderers or progression added.
 Release face-reaction QA now records animation frames before pointer release and
 checks the same transient delight state plus eventual rest, avoiding a polling
 gap without weakening the reaction assertion.
+
+First runner comparison checked all 30 UI baselines. Only three Paint images
+failed: RU 320, EN 320 and EN 844. Their full expected/actual/diff images were
+reviewed: the explicit palette/stamp hint and previously stale Brush menu glyph,
+with intact geometry and button hierarchy. Only these three captures are aligned;
+the other 27 baselines, masks, thresholds and retries remain unchanged. Initial
+focused checks reached successful edit/Undo/save in all six locales/viewports,
+then exposed a test expectation comparing compact persisted Decor with decoded
+objects; the test now decodes V3 before asserting unchanged toys and content.

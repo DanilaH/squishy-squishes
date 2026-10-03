@@ -1281,8 +1281,12 @@ export class SandboxApp {
   }
 
   private undoPaint(): void {
-    const strokes = this.paintHistory.pop();
+    const strokes = this.paintHistory.at(-1);
     if (!strokes) return;
+    if (estimateAppearanceBytes({ ...this.draft.appearance, strokes }) > APPEARANCE_TARGET_BYTES) {
+      this.setAppearanceLimitReached(true); return;
+    }
+    this.paintHistory.pop();
     this.setAppearanceLimitReached(false);
     this.draft = { ...this.draft, appearance: { ...this.draft.appearance, strokes } };
     this.replayAndUpload();
@@ -1297,8 +1301,12 @@ export class SandboxApp {
   }
 
   private undoMixin(): void {
-    const mixins = this.mixinHistory.pop();
+    const mixins = this.mixinHistory.at(-1);
     if (!mixins) return;
+    if (estimateAppearanceBytes({ ...this.draft.appearance, mixins }) > APPEARANCE_TARGET_BYTES) {
+      this.setAppearanceLimitReached(true); return;
+    }
+    this.mixinHistory.pop();
     this.setAppearanceLimitReached(false);
     this.draft = { ...this.draft, appearance: { ...this.draft.appearance, mixins } };
     this.replayAndUpload();
@@ -1372,6 +1380,10 @@ export class SandboxApp {
     this.updatePressed('[data-decor-sticker]', 'decorSticker', this.stickerErase ? '' : this.selectedSticker);
     this.requireElement<HTMLButtonElement>('[data-action="decor-erase"]').setAttribute('aria-pressed', String(this.stickerErase));
     this.shell.dataset.decorTool = this.stickerErase ? 'erase' : 'sticker';
+    const stickerTip = this.requireElement<HTMLElement>('.sandbox-decor-tip');
+    stickerTip.textContent = this.stickerErase
+      ? (this.options.language === 'ru' ? 'Коснись наклейки, чтобы убрать её. Отменой можно вернуть.' : 'Tap a sticker to erase it. Undo brings it back.')
+      : DECOR_LABELS[this.options.language].stickerTip;
     const blush = this.root.querySelector<HTMLButtonElement>('[data-action="decor-blush"]');
     blush?.setAttribute('aria-pressed', String(this.draft.decor.blush));
     this.shell.dataset.decorEyes = this.draft.decor.eyes ?? 'none';
