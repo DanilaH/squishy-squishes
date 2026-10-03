@@ -218,3 +218,7 @@ Paired art remains one mirrored ear/horn with independently projected roots;
 existing bounded sway and exact attachment pivots are retained. No save fields,
 physical parameters or layout changes. All eight molds and five accessories
 are covered by depth assertions and unmasked Hall/Squeeze captures.
+
+Actual first-pass captures exposed a low forehead crown on heart/peach and a
+small bunny-root gap on the heart lobes. Crown roots were raised inside the
+contour and heart rear roots inset further; approved bow seats remain unchanged.
