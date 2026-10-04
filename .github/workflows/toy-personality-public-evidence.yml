@@ -1,0 +1,49 @@
+name: Toy personality public Pages QA
+on:
+  push:
+    branches: [qa/toy-personality-public-evidence]
+permissions:
+  contents: read
+jobs:
+  public-touch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: e4f2bfae94cc3f804fdfe06f087680b33699fcb4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run release:check
+      - name: Require exact published entry bytes
+        run: GITHUB_SHA=e4f2bfae94cc3f804fdfe06f087680b33699fcb4 node scripts/ci-wait-for-pages.mjs
+      - name: Exercise personality and decoration on public Pages
+        run: |
+          cat > playwright.personality-public.config.ts <<'CONFIG'
+          import { defineConfig } from '@playwright/test';
+          export default defineConfig({
+            testDir: './tests/release', testMatch: 'toy-personality.spec.ts',
+            timeout: 45000, expect: { timeout: 6000 }, workers: 1, retries: 0,
+            reporter: [['line']], use: {
+              baseURL: 'https://danilah.github.io', headless: true,
+              trace: 'retain-on-failure', screenshot: 'only-on-failure',
+              launchOptions: { args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
+            },
+          });
+          CONFIG
+          npx playwright test --config=playwright.personality-public.config.ts --grep 'remain durable'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: personality-public-evidence
+          path: |
+            hosted-source.json
+            migration-baseline-evidence/personality-*.png
+            test-results/*/error-context.md
+            test-results/*/test-failed*.png
+          if-no-files-found: error
+          retention-days: 7
