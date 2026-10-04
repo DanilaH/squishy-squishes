@@ -260,3 +260,20 @@ Diff review also caught the session's Finish-to-Squeeze counter treating an edit
 as a new craft. Save kind now distinguishes edits before the transition, so
 redecorating never advances craft analytics or interstitial eligibility. Existing
 new-craft cadence stays unchanged; failure/retry and repeated-edit checks cover it.
+
+## Free painting and larger sticker allowance — 4 October 2026
+
+The owner requested a substantial sticker increase and removal of drawing limits.
+Decor allows 128 stickers instead of 12, retaining individual erase/Undo and compact
+V1 placement tuples. Pigment no longer stops at 96 strokes, 6 KB or 320 points per
+gesture. The V1 UV-pair format and V3 identity/schema remain unchanged; decoding
+accepts longer valid strokes without truncating old or new drawings. The 160
+mix-in placement cap is independent and never disables Paint, Fill or Eraser.
+Undo history remains bounded to 160 actions, not the drawing itself. Storage
+failures retain the existing retry/discard behavior; available device storage is
+still finite. No physics, progression, layout or baseline changes.
+
+Coverage includes 1000 existing strokes plus new touch/long-gesture paint, full
+mix-ins, 128 stickers, Clear/Undo, individual erase/Undo and save/reload in EN/RU.
+The historical payload fixture assertions remain unchanged; the former quota UI
+case now checks continued drawing beyond 96 strokes and 6 KB.

@@ -11,9 +11,7 @@ import { SHAPES, getShape, isPointInsideShape, type ShapeDefinition, type ShapeI
 import { SquishSurface, type SquishMaterialStyle, type SquishMetrics } from '../squish/SquishSurface';
 import type { PhaserSquishSurface, PhaserSandboxCallbacks } from './PhaserSquishSurface';
 import {
-  APPEARANCE_TARGET_BYTES,
   APPEARANCE_TEXTURE_SIZE,
-  MAX_APPEARANCE_STROKES,
   MAX_MIXIN_PLACEMENTS,
   createAppearanceStroke,
   createBodyFillStroke,
@@ -174,7 +172,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     leave: 'LEAVE',
     mixReady: 'Nice. It is mixed!',
     mixMore: 'Keep stretching…',
-    drawingFull: 'Detail limit reached. Undo or clear to keep editing.',
+    drawingFull: 'Mix-in tray is full. Undo or clear to add more.',
     muted: 'Sound off',
     sound: 'Sound on',
     soft: 'Soft',
@@ -233,7 +231,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     leave: 'ВЫЙТИ',
     mixReady: 'Отлично замешано!',
     mixMore: 'Ещё немного потяни…',
-    drawingFull: 'Лимит деталей достигнут. Отмени или очисти, чтобы продолжить редактирование.',
+    drawingFull: 'Наполнителей достаточно. Отмени или очисти, чтобы добавить ещё.',
     muted: 'Звук выкл.',
     sound: 'Звук вкл.',
     soft: 'Мягкий',
@@ -501,7 +499,6 @@ export class SandboxApp {
     this.renderer = options.rendererBackend === 'phaser'
       ? options.makePhaserRenderer!(this.canvas, this.handleMetrics, this.audio, {
           paintStamp: (point) => {
-            if (this.appearanceLimitReached) return;
             if (this.paintStampId && this.paintTool === 'paint') { this.applyPaintStamp(point); return; }
             if (this.paintTool === 'fill') {
               this.applyPaintFill(point);
@@ -514,13 +511,13 @@ export class SandboxApp {
             this.uploadAppearanceNow();
           },
           paintSegment: (from, to) => {
-            if (this.appearanceLimitReached || (this.paintStampId && this.paintTool === 'paint') || this.paintTool === 'fill' || this.authoredPoints.length >= 320) return;
+            if ((this.paintStampId && this.paintTool === 'paint') || this.paintTool === 'fill') return;
             drawAppearanceSegment(this.appearanceContext, this.authoredStrokeMode, this.authoredStrokeColor, this.brushSize, from, to);
             this.authoredPoints.push(to);
             this.uploadAppearanceNow();
           },
           paintEnd: () => {
-            if (!this.appearanceLimitReached && this.paintTool !== 'fill') this.finishPaintStroke();
+            if (this.paintTool !== 'fill') this.finishPaintStroke();
             this.authoredPoints = [];
           },
           addMixin: (point) => this.addMixinAt(point),
@@ -984,7 +981,7 @@ export class SandboxApp {
   private readonly handlePointerDown = (event: PointerEvent): void => {
     if (this.activityBlocked) return;
     if (this.stage === 'paint') {
-      if (this.authoredPointerId !== null || this.appearanceLimitReached) return;
+      if (this.authoredPointerId !== null) return;
       const point = this.renderer.clientPointToAppearanceUv(event.clientX, event.clientY);
       if (this.paintStampId && this.paintTool === 'paint') { if (point) this.applyPaintStamp(point); event.preventDefault(); return; }
       if (this.paintTool === 'fill') {
@@ -1112,14 +1109,11 @@ export class SandboxApp {
   }
 
   private applyPaintStamp(point: AppearancePoint): void {
-    if (!this.paintStampId || this.appearanceLimitReached) return;
+    if (!this.paintStampId) return;
     const shape = getShape(this.draft.shapeId);
     if (!isPointInsideShape(shape, point.u * 2 - 1, point.v * 2 - 1)) return;
     const stroke = createPaintStamp(this.paintStampId, this.paintColor, this.brushSize, point);
     const next = { ...this.draft.appearance, strokes: [...this.draft.appearance.strokes, stroke] };
-    if (next.strokes.length > MAX_APPEARANCE_STROKES || estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
-      this.setAppearanceLimitReached(true); return;
-    }
     this.remember(this.paintHistory, this.draft.appearance.strokes);
     this.draft = { ...this.draft, appearance: next };
     const points = decodeAppearancePoints(stroke.p);
@@ -1149,11 +1143,6 @@ export class SandboxApp {
 
   private finishPaintStroke(): void {
     if (this.authoredPoints.length === 0) return;
-    if (this.draft.appearance.strokes.length >= MAX_APPEARANCE_STROKES) {
-      this.setAppearanceLimitReached(true);
-      this.replayAndUpload();
-      return;
-    }
     const stroke = createAppearanceStroke(
       this.authoredStrokeMode,
       this.authoredStrokeColor,
@@ -1164,26 +1153,16 @@ export class SandboxApp {
       ...this.draft.appearance,
       strokes: [...this.draft.appearance.strokes, stroke],
     };
-    if (estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
-      this.setAppearanceLimitReached(true);
-      this.replayAndUpload();
-      return;
-    }
     this.remember(this.paintHistory, this.draft.appearance.strokes);
     this.draft = { ...this.draft, appearance: next };
     this.updateAppearanceDataset();
   }
 
   private applyPaintFill(point: AppearancePoint): void {
-    if (this.appearanceLimitReached) return;
     const localX = point.u * 2 - 1;
     const localY = point.v * 2 - 1;
     if (!isPointInsideShape(getShape(this.draft.shapeId), localX, localY)) return;
     const strokesWithoutFill = this.draft.appearance.strokes.filter((stroke) => !isBodyFillStroke(stroke));
-    if (strokesWithoutFill.length >= MAX_APPEARANCE_STROKES) {
-      this.setAppearanceLimitReached(true);
-      return;
-    }
     const stroke = createBodyFillStroke(this.paintColor);
     const next: AppearanceDocumentV1 = {
       ...this.draft.appearance,
@@ -1191,10 +1170,6 @@ export class SandboxApp {
       // pipeline renders the recognized Fill stroke underneath ordinary paint.
       strokes: [...strokesWithoutFill, stroke],
     };
-    if (estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
-      this.setAppearanceLimitReached(true);
-      return;
-    }
     this.remember(this.paintHistory, this.draft.appearance.strokes);
     this.draft = { ...this.draft, appearance: next };
     this.replayAndUpload();
@@ -1214,10 +1189,6 @@ export class SandboxApp {
       ...this.draft.appearance,
       mixins: [...this.draft.appearance.mixins, placement],
     };
-    if (estimateAppearanceBytes(next) > APPEARANCE_TARGET_BYTES) {
-      this.setAppearanceLimitReached(true);
-      return;
-    }
     this.remember(this.mixinHistory, this.draft.appearance.mixins);
     this.draft = { ...this.draft, appearance: next };
     replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
@@ -1284,9 +1255,6 @@ export class SandboxApp {
   private undoPaint(): void {
     const strokes = this.paintHistory.at(-1);
     if (!strokes) return;
-    if (estimateAppearanceBytes({ ...this.draft.appearance, strokes }) > APPEARANCE_TARGET_BYTES) {
-      this.setAppearanceLimitReached(true); return;
-    }
     this.paintHistory.pop();
     this.setAppearanceLimitReached(false);
     this.draft = { ...this.draft, appearance: { ...this.draft.appearance, strokes } };
@@ -1304,9 +1272,6 @@ export class SandboxApp {
   private undoMixin(): void {
     const mixins = this.mixinHistory.at(-1);
     if (!mixins) return;
-    if (estimateAppearanceBytes({ ...this.draft.appearance, mixins }) > APPEARANCE_TARGET_BYTES) {
-      this.setAppearanceLimitReached(true); return;
-    }
     this.mixinHistory.pop();
     this.setAppearanceLimitReached(false);
     this.draft = { ...this.draft, appearance: { ...this.draft.appearance, mixins } };
@@ -1339,7 +1304,7 @@ export class SandboxApp {
       stickers = current.filter((_, i) => i !== index);
     } else {
       if (current.length >= MAX_DECOR_STICKERS) {
-        this.status.textContent = this.options.language === 'ru' ? 'Все 12 наклеек на месте. Убери одну ластиком.' : 'All 12 stickers are placed. Erase one to make room.';
+        this.status.textContent = this.options.language === 'ru' ? `Наклеек: ${MAX_DECOR_STICKERS}. Убери одну ластиком.` : `${MAX_DECOR_STICKERS} stickers. Erase one to add more.`;
         return;
       }
       stickers = [...current, createStickerPlacement(this.selectedSticker, point, current.length)];
@@ -1447,11 +1412,11 @@ export class SandboxApp {
   }
 
   private updateAppearanceLimitUi(): void {
-    const showNotice = this.appearanceLimitReached && (this.stage === 'paint' || this.stage === 'mixins');
+    const showNotice = this.appearanceLimitReached && this.stage === 'mixins';
     this.status.toggleAttribute('data-limit', showNotice);
     if (showNotice) this.status.textContent = this.copy.drawingFull;
     else if (this.status.textContent === this.copy.drawingFull) this.status.textContent = '';
-    for (const selector of ['[data-paint-color]', '[data-paint-tool]', '[data-brush-size]', '[data-mixin]']) {
+    for (const selector of ['[data-mixin]']) {
       for (const button of this.root.querySelectorAll<HTMLButtonElement>(selector)) button.disabled = this.appearanceLimitReached;
     }
   }
@@ -1836,11 +1801,7 @@ export class SandboxApp {
     this.shell.dataset.appearanceBytes = String(estimateAppearanceBytes(this.draft.appearance));
     this.shell.dataset.paintStrokes = String(this.draft.appearance.strokes.length);
     this.shell.dataset.mixinCount = String(this.draft.appearance.mixins.length);
-    if (!this.appearanceLimitReached
-      && (this.draft.appearance.strokes.length >= MAX_APPEARANCE_STROKES
-        || this.draft.appearance.mixins.length >= MAX_MIXIN_PLACEMENTS)) {
-      this.setAppearanceLimitReached(true);
-    }
+    this.setAppearanceLimitReached(this.draft.appearance.mixins.length >= MAX_MIXIN_PLACEMENTS);
     this.updateAppearanceLimitUi();
     for (const [action, empty] of [
       ['paint-undo', this.paintHistory.length === 0],

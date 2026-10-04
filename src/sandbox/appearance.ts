@@ -3,9 +3,7 @@ import type { MaterialId } from '../game/content';
 import type { ShapeId } from '../game/shapes';
 import { drawShapeRelief } from './shapeRelief';
 export const APPEARANCE_TEXTURE_SIZE = 256;
-export const APPEARANCE_TARGET_BYTES = 6_000;
-export const MAX_APPEARANCE_STROKES = 96;
-export const MAX_STROKE_PAYLOAD_CHARS = 1_024;
+// Pigment has no authored stroke, point or byte quota. Keep V1 UV encoding.
 export const MAX_MIXIN_PLACEMENTS = 160;
 export const BODY_FILL_BRUSH_SIZE = 112;
 
@@ -77,7 +75,6 @@ export const encodeAppearancePoints = (points: readonly AppearancePoint[]): stri
 };
 
 export const decodeAppearancePoints = (encoded: string): readonly AppearancePoint[] => {
-  if (encoded.length > MAX_STROKE_PAYLOAD_CHARS) throw new TypeError('Appearance stroke point payload is too large.');
   const bytes = decodeBytes(encoded);
   if (bytes.length % 2 !== 0) throw new TypeError('Appearance point payload must contain UV byte pairs.');
 
@@ -174,7 +171,6 @@ export const decodeAppearanceDocument = (value: unknown): AppearanceDocumentV1 =
   if (!isRecord(value) || value.v !== 1 || !Array.isArray(value.strokes)) {
     throw new TypeError('Unsupported appearance document.');
   }
-  if (value.strokes.length > MAX_APPEARANCE_STROKES) throw new TypeError('Appearance has too many strokes.');
   const mixinsRaw = value.mixins === undefined ? [] : value.mixins;
   if (!Array.isArray(mixinsRaw)) throw new TypeError('Appearance mix-ins must be an array.');
   if (mixinsRaw.length > MAX_MIXIN_PLACEMENTS) throw new TypeError('Appearance has too many mix-ins.');
