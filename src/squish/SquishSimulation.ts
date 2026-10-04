@@ -108,6 +108,7 @@ export class SquishSimulation {
   private stretch = 0;
   private stroking = 0;
   private motionSpeed = 0;
+  private strokeGraceMs = 0;
   private previousPointerX = 0;
   private previousPointerY = 0;
   private material: MaterialId = 'soft';
@@ -279,7 +280,7 @@ export class SquishSimulation {
     this.gestureDurationMs = 0;
     this.hadSecond = false;
     this.previousPointerX = x; this.previousPointerY = y;
-    this.motionSpeed = 0;
+    this.motionSpeed = 0; this.strokeGraceMs = 0;
     this.sheenX += (localX - this.sheenX) * 0.55;
     this.sheenY += (localY - this.sheenY) * 0.55;
     return true;
@@ -344,7 +345,12 @@ export class SquishSimulation {
   public cancel(): void {
     this.pointerId = null;
     this.second = null;
-    this.stroking = 0; this.stretch = 0; this.motionSpeed = 0;
+    this.stroking = 0; this.stretch = 0; this.motionSpeed = 0; this.strokeGraceMs = 0;
+  }
+
+  private grabRadius(): number {
+    const edge = this.multiTouch ? smoothstep01((Math.hypot(this.grabStartX, this.grabStartY) - .4) / .55) : 0;
+    return GRAB_RADIUS * (1 - edge * .28);
   }
 
   private applyReleaseImpulse(): void {
@@ -360,7 +366,7 @@ export class SquishSimulation {
       const lx = vertex.restX - this.grabStartX;
       const ly = vertex.restY - this.grabStartY;
       const distance = Math.hypot(lx, ly);
-      const dragInfluence = smoothstep01(1 - distance / GRAB_RADIUS) ** 2;
+      const dragInfluence = smoothstep01(1 - distance / this.grabRadius()) ** 2;
       const pressInfluence = smoothstep01(1 - distance / PRESS_RADIUS) ** 2;
       vertex.vx -= dx * dragInfluence * RELEASE_DRAG_KICK;
       vertex.vy -= dy * dragInfluence * RELEASE_DRAG_KICK;
@@ -383,7 +389,9 @@ export class SquishSimulation {
     const slowStroke = this.multiTouch && active && !this.second && this.gestureDurationMs > 180
       && this.motionSpeed > .06 && this.motionSpeed < .8
       && Math.hypot(this.pointerX - this.grabPointerStartX, this.pointerY - this.grabPointerStartY) < .32;
-    this.stroking += ((slowStroke ? 1 : 0) - this.stroking) * (1 - Math.exp(-8 * dt));
+    this.strokeGraceMs = slowStroke ? 90 : Math.max(0, this.strokeGraceMs - Math.max(0, deltaMs));
+    const keepStroke = slowStroke || (this.strokeGraceMs > 0 && active && !this.second && this.motionSpeed < .8);
+    this.stroking += ((keepStroke ? 1 : 0) - this.stroking) * (1 - Math.exp(-8 * dt));
     // Same solver for every silhouette; soft/default retains the reviewed constants.
     const foam = this.multiTouch && this.material === 'marshmallow';
     const jelly = this.multiTouch && this.material === 'jelly';
@@ -475,7 +483,7 @@ export class SquishSimulation {
         const lx = vertex.restX - this.grabStartX;
         const ly = vertex.restY - this.grabStartY;
         const grabDistance = Math.hypot(lx, ly);
-        const influence = smoothstep01(1 - grabDistance / GRAB_RADIUS);
+        const influence = smoothstep01(1 - grabDistance / this.grabRadius());
         const weighted = influence * influence;
         const pressInfluence = smoothstep01(1 - grabDistance / PRESS_RADIUS) ** 2;
         responseInfluence = Math.max(weighted, pressInfluence * 0.9);

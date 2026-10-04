@@ -61,6 +61,7 @@ uniform sampler2D uAppearanceTexture;
 uniform bool uAppearanceEnabled;
 uniform vec2 uPointerUv;
 uniform vec2 uStrainDirection;
+uniform vec2 uFillingDrift;
 uniform vec3 uColorLow;
 uniform vec3 uColorHigh;
 uniform vec3 uSheenColor;
@@ -265,8 +266,8 @@ void main() {
   base = mix(base, metalSurface, metallic * 0.82);
 
   float fillAmount = clamp(uFillingAmount, 0.0, 1.0);
-  float bead = beadField(vUv, uMaterialSeed, fillAmount, uFillingStyle);
-  vec2 fillCell = fillingCell(vUv, uMaterialSeed, uFillingStyle);
+  float bead = beadField(vUv - uFillingDrift, uMaterialSeed, fillAmount, uFillingStyle);
+  vec2 fillCell = fillingCell(vUv - uFillingDrift, uMaterialSeed, uFillingStyle);
   float beadShade = 0.78 + hash21(fillCell + uMaterialSeed * 31.0) * 0.22;
   float pearl = step(1.5, uFillingStyle);
   vec3 foamColor = mix(vec3(0.89, 0.92, 0.96), uSheenColor, 0.28) * beadShade;
@@ -296,14 +297,14 @@ void main() {
 
   float pressDistance = distance(vUv, uPointerUv);
   float dent = exp(-pressDistance * pressDistance * 52.0) * uPressDepth;
-  base *= 1.0 - dent * 0.065;
+  base *= 1.0 - dent * 0.11;
   float pressRing = exp(-pow(pressDistance - 0.115, 2.0) * 180.0) * uPressDepth;
   // Keep the reaction visible around the finger, with a broad soft rim for
   // powdery materials and a narrower coloured reflection for gel/pearl.
   float touchSpread = mix(0.15, 0.21, roughness);
   float touchHalo = exp(-pow(pressDistance - touchSpread, 2.0)
     * mix(210.0, 115.0, roughness)) * min(uPressDepth, 1.0) * interior;
-  base += uRimColor * pressRing * 0.045;
+  base += uRimColor * pressRing * 0.075;
   base = mix(base, mix(base, uSheenColor, 0.32), touchHalo * mix(0.24, 0.09, roughness));
 
   float centerGlow = exp(-dot(p, p) * 1.7) * 0.07;

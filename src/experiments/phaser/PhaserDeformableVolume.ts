@@ -1,3 +1,4 @@
+import { REST_TOY, posePoint, type ToyPose } from '../../sandbox/livingToy';
 import type { ShapeDefinition } from '../../game/shapes';
 import type { SquishMaterialStyle } from '../../squish/SquishSurface';
 import type { SquishSimulation } from '../../squish/SquishSimulation';
@@ -183,6 +184,7 @@ export class PhaserDeformableVolume {
     moldProgress: number,
     compression: number,
     renderCenterOffsetY = 0,
+    pose: ToyPose = REST_TOY,
   ): void {
     const gl = this.gl;
     if (gl.isContextLost()) return;
@@ -201,12 +203,14 @@ export class PhaserDeformableVolume {
       const inset = simulation.projectUvToLocal(0.5 + (u - 0.5) * 0.962, 0.5 + (v - 0.5) * 0.962);
       const a = i * 4;
       const b = (n + i) * 4;
-      this.packed[a] = inset.x;
+      const front = posePoint(inset.x, inset.y + .025, pose);
+      const back = posePoint(deformed.x + thickness * .31, deformed.y - thickness, pose);
+      this.packed[a] = front.x;
       // Raise the side's inner rim into the opaque front, covering the
       // subpixel antialias transition without changing the outer silhouette.
-      this.packed[a + 1] = inset.y + 0.025 + renderCenterOffsetY;
-      this.packed[b] = deformed.x + thickness * 0.31;
-      this.packed[b + 1] = deformed.y - thickness + renderCenterOffsetY;
+      this.packed[a + 1] = front.y + renderCenterOffsetY;
+      this.packed[b] = back.x;
+      this.packed[b + 1] = back.y + renderCenterOffsetY;
       this.packed[a + 2] = this.packed[b + 2] = u;
       this.packed[a + 3] = this.packed[b + 3] = v;
     }

@@ -387,3 +387,34 @@ The existing face/audio path handles stroke delight and stretch expression;
 sparse idle blinking uses the existing frame clock and quantized reactions.
 Reduced motion/activity disable presentation reactions; mute still guards audio.
 No storage, progression, accessory placement or layout changes are authorized.
+
+
+## Living Squeeze presentation — 4 October 2026
+
+The owner authorized contact volume/shadow, inclusion lag, gentle stroke
+reversals, localized edge grabs, a first-action gesture hint, and sparse idle
+rotation/skew/jiggle/stretch with the chosen face. A bounded pure ToyPose
+transforms the existing front/backing and UV projections; inverse hit conversion
+lets the first touch claim the visible toy before cancelling presentation.
+No idle pose enters simulation positions, velocities, squeeze counts or saves.
+The Phaser frame clock owns quiet time; interruptions, active gestures, unsettled
+body, reduced motion and activity blockers suppress idle. Accessories use the
+same projected basis, with a tiny secondary sway. Existing contact shadow
+variables preserve their default values outside Squeeze.
+Quiet elapsed time is sampled with performance.now inside that frame callback:
+Phaser's smoothed/clamped delta must not slow idle delays on low-FPS renderers.
+Activity transitions and long frame gaps reset it; springs retain their delta.
+
+Slow stroke classification tolerates a brief reversal; Squeeze edge grabs use a
+narrower generic influence radius, while default/Finish/Mix constants remain.
+In Squeeze, existing authored inclusions reuse the existing Canvas2D overlay
+and bounded lag, clipped to the projected silhouette. Returning to creative
+stages rebakes their normal appearance; V3 coordinates/IDs never change.
+Procedural filling uses the same drift via a shared shader uniform (zero by
+default). Face ink stays after material lighting, above the sidewall backing.
+
+Browser QA in #77 approached its 15-minute job budget. The unchanged full suite
+now uses two one-worker shards and a stable browser-qa aggregate; shard 1 also
+performs the complete strict visual suite. Matrix failure/cancellation fails the
+aggregate; deploy and exact-PR build reuse keep requiring that aggregate.
+Existing retry/time budgets and masks/thresholds are unchanged.

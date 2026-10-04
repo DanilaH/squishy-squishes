@@ -1,5 +1,6 @@
+import { contactFeedback } from './livingToy';
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp, type PaintStampId } from './creativeTools';
-import { REST_FACE, faceReaction, heldFaceStrength, idleBlink, accessorySway, type FaceReaction } from './toyReactions';
+import { REST_FACE, faceReaction, heldFaceStrength, accessorySway, type FaceReaction } from './toyReactions';
 import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats } from './accessorySeats';
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
@@ -391,9 +392,12 @@ export class SandboxApp {
   private gestureActive = false;
   private gestureBeganAt = -Infinity;
   private gestureStrength = 0;
-  private idleFaceAt = performance.now();
+  private contactKey = '';
+  private lastPress = 0;
+  private lastCompression = 0;
   private strokeDelight = 0;
   private stretchReaction = 0;
+  private gestureHintSeen = false;
   private releaseStrength = 0;
   private releasedAt = -Infinity;
   private paintColor: number = PAINT_COLORS[0];
@@ -538,23 +542,23 @@ export class SandboxApp {
           },
           onSquishBegin: () => {
             this.gestureBeganAt = performance.now();
-            this.idleFaceAt = performance.now();
             this.gestureActive = true;
+            this.gestureHintSeen = true;
+            if (this.stage === 'squeeze') this.stageHint.textContent = this.copy.squeezeHint;
             this.releasedAt = -Infinity;
           },
           onSquishRelease: (energy) => {
             this.releasedAt = performance.now();
-            this.idleFaceAt = performance.now();
             this.releaseStrength = Math.min(1, Math.max(this.gestureStrength, energy));
             this.gestureActive = false; this.gestureStrength = 0;
           },
           onSquishCancel: () => {
             this.releasedAt = -Infinity; this.releaseStrength = 0;
-            this.idleFaceAt = performance.now();
             this.gestureActive = false; this.gestureStrength = 0;
           },
           onFrame: () => {
             this.updateToyReaction();
+            this.updateContactFeedback();
             if (!this.rigidMixinCanvas.hidden) this.updateRigidMixinOverlay();
             if (!this.accessoryCanvas.hidden) this.updateAccessoryOverlay();
           },
@@ -1148,9 +1152,9 @@ export class SandboxApp {
     if (this.disposed || this.options.rendererBackend !== 'phaser') return;
     const enabled = (this.draft.decor.eyes !== null || this.draft.decor.mouth !== null) && !this.activityBlocked && !this.toolsOpen && !this.exitConfirmOpen && !this.reducedMotion.matches
       && (this.stage === 'finish' || this.stage === 'squeeze' || this.stage === 'mix');
-    if (!enabled) this.idleFaceAt = performance.now();
-    const blink = enabled && !this.gestureActive && this.stage === 'squeeze' ? idleBlink(performance.now() - this.idleFaceAt) : 0;
-    const next: FaceReaction = enabled ? { ...faceReaction(this.gestureStrength, this.gestureActive ? -1 : performance.now() - this.releasedAt, this.releaseStrength, this.gestureActive ? this.strokeDelight : 0, this.gestureActive ? this.stretchReaction : 0), ...(blink ? { blink } : {}) } : REST_FACE;
+    const idle = (this.renderer as PhaserSquishSurface).presentation();
+    const blink = enabled && !this.gestureActive ? idle.blink : 0;
+    const next: FaceReaction = enabled ? { ...faceReaction(Math.max(this.gestureStrength, this.gestureActive ? 0 : idle.squeeze), this.gestureActive ? -1 : performance.now() - this.releasedAt, this.releaseStrength, this.gestureActive ? this.strokeDelight : idle.delight, this.gestureActive ? this.stretchReaction : 0), ...(blink ? { blink } : {}) } : REST_FACE;
     const key = `${next.squeeze}:${next.delight}${next.stretch ? `:${next.stretch}` : ''}${blink ? `:b${blink}` : ''}`;
     if (key === this.reactionKey) return;
     this.reaction = next; this.reactionKey = key;
@@ -1214,7 +1218,7 @@ export class SandboxApp {
     };
     this.remember(this.mixinHistory, this.draft.appearance.mixins);
     this.draft = { ...this.draft, appearance: next };
-    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
+    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: this.overlayMixinIds(), materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
     this.scheduleTextureUpload();
     this.refreshRigidMixins();
     this.updateAppearanceDataset();
@@ -1557,8 +1561,30 @@ export class SandboxApp {
     this.refreshAccessoryGraphic();
   }
 
+  private overlayMixinIds(): readonly MixInId[] {
+    return this.options.rendererBackend === 'phaser' && this.stage === 'squeeze' ? MIXIN_IDS : RIGID_MIXIN_IDS;
+  }
+
+  private updateContactFeedback(): void {
+    const stage = this.canvas.parentElement;
+    if (!stage || this.options.rendererBackend !== 'phaser') return;
+    const enabled = this.stage === 'squeeze' && !this.activityBlocked && !this.exitConfirmOpen && !this.toolsOpen && !this.reducedMotion.matches;
+    const pose = (this.renderer as PhaserSquishSurface).presentation();
+    const feedback = enabled ? contactFeedback(this.gestureActive ? this.lastPress : 0, this.lastCompression, this.stretchReaction, pose.y) : contactFeedback(0, 0, 0, 0);
+    const radiusRatio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio')) || .34;
+    const offset = (this.renderer as PhaserSquishSurface).bodyOffset();
+    const x = enabled ? offset.x * Math.min(this.canvas.clientWidth, this.canvas.clientHeight) * radiusRatio + pose.rotation * 20 : 0;
+    const key = `${feedback.width.toFixed(3)}:${feedback.opacity.toFixed(3)}:${feedback.blur.toFixed(3)}:${x.toFixed(2)}`;
+    if (key === this.contactKey) return;
+    this.contactKey = key;
+    stage.style.setProperty('--toy-contact-width', String(feedback.width));
+    stage.style.setProperty('--toy-contact-opacity', String(feedback.opacity));
+    stage.style.setProperty('--toy-contact-blur', `${feedback.blur}px`);
+    stage.style.setProperty('--toy-contact-x', `${x.toFixed(2)}px`);
+  }
+
   private refreshRigidMixins(): void {
-    const hasRigidMixins = this.draft.appearance.mixins.some((placement) => RIGID_MIXIN_IDS.includes(getMixInId(placement)));
+    const hasRigidMixins = this.draft.appearance.mixins.some((placement) => this.overlayMixinIds().includes(getMixInId(placement)));
     if (!hasRigidMixins) {
       this.rigidMixinCanvas.hidden = true;
       if (this.rigidMixinFrame !== 0) cancelAnimationFrame(this.rigidMixinFrame);
@@ -1571,7 +1597,7 @@ export class SandboxApp {
   }
 
   private readonly updateRigidMixinOverlay = (): void => {
-    const rigidPlacements = this.draft.appearance.mixins.filter((placement) => RIGID_MIXIN_IDS.includes(getMixInId(placement)));
+    const rigidPlacements = this.draft.appearance.mixins.filter((placement) => this.overlayMixinIds().includes(getMixInId(placement)));
     if (this.disposed || rigidPlacements.length === 0) {
       this.rigidMixinFrame = 0;
       this.rigidMixinCanvas.hidden = true;
@@ -1601,10 +1627,32 @@ export class SandboxApp {
       const appearanceScale = Math.min(canvasRect.width, canvasRect.height) * radiusRatio * 2 / APPEARANCE_TEXTURE_SIZE;
       context.save();
       context.globalAlpha = this.draft.materialId === 'chrome' ? 0.42 : 1;
+      if (this.options.rendererBackend === 'phaser' && this.stage === 'squeeze') {
+        context.beginPath();
+        getShape(this.draft.shapeId).boundary.forEach((p, index) => {
+          const point = this.renderer.projectUvToCanvas(p.x * .5 + .5, p.y * .5 + .5);
+          if (index === 0) context.moveTo(point.x, point.y); else context.lineTo(point.x, point.y);
+        });
+        context.closePath(); context.clip();
+      }
       for (const placement of rigidPlacements) {
-        const center = this.renderer.projectUvToCanvas(placement.x / 255, placement.y / 255);
+        const lag = this.options.rendererBackend === 'phaser' ? (this.renderer as PhaserSquishSurface).inclusionOffset() : { x: 0, y: 0 };
+        const u = Math.min(.98, Math.max(.02, placement.x / 255 + lag.x * .5));
+        const v = Math.min(.98, Math.max(.02, placement.y / 255 + lag.y * .5));
+        // Taper drift near the canonical edge so authored inclusions stay inside.
+        const bodyPoint = getShape(this.draft.shapeId);
+        const inside = isPointInsideShape(bodyPoint, u * 2 - 1, v * 2 - 1);
+        const center = this.renderer.projectUvToCanvas(inside ? u : placement.x / 255, inside ? v : placement.y / 255);
         const radius = Math.max(3.5, placement.s * appearanceScale * 0.5);
-        context.drawImage(this.pearlSprite, center.x - radius, center.y - radius, radius * 2, radius * 2);
+        if (getMixInId(placement) === 'pearls') context.drawImage(this.pearlSprite, center.x - radius, center.y - radius, radius * 2, radius * 2);
+        else {
+          context.save(); context.translate(center.x, center.y);
+          const pose = (this.renderer as PhaserSquishSurface).presentation();
+          context.rotate((placement.r / 255) * Math.PI * 2 - pose.rotation);
+          const depth = this.draft.materialId === 'jelly' ? ((placement.x * 7 + placement.y * 3 + placement.r) % 5) / 4 : 0;
+          drawToyMixIn(context, getMixInId(placement), radius, placement.r, depth);
+          context.restore();
+        }
       }
       context.restore();
     }
@@ -1670,7 +1718,8 @@ export class SandboxApp {
       // inherit arbitrary mesh shear or a near-vertical tangent during an extreme
       // full-screen pull. A modest tilt still sells the deformation.
       const rawAngle = Math.atan2(normUy, normUx);
-      const sway = this.activityBlocked || this.reducedMotion.matches ? 0 : accessorySway(performance.now() - this.releasedAt, this.releaseStrength, piece);
+      const idleSway = this.options.rendererBackend === 'phaser' ? (this.renderer as PhaserSquishSurface).presentation().sway : 0;
+      const sway = this.activityBlocked || this.reducedMotion.matches ? 0 : idleSway + accessorySway(performance.now() - this.releasedAt, this.releaseStrength, piece);
       const angle = Math.min(Math.PI / 6, Math.max(-Math.PI / 6, rawAngle)) + frame.headAngle + sway;
       accessoryCanvas.dataset.accessorySway = sway.toFixed(4);
       const cosAngle = Math.cos(angle);
@@ -1732,10 +1781,10 @@ export class SandboxApp {
   }
 
   private setStage(next: SandboxStage): void {
-    this.idleFaceAt = performance.now();
     this.clearPlacementFeedback();
     if (this.toolsOpen) this.setToolsOpen(false);
     this.releasedAt = -Infinity; this.gestureStrength = 0; this.gestureActive = false;
+    const overlayChanged = this.options.rendererBackend === 'phaser' && (next === 'squeeze') !== (this.stage === 'squeeze');
     this.stage = next;
     this.shell.dataset.stage = next;
     const details = this.stageCopy(next);
@@ -1754,6 +1803,8 @@ export class SandboxApp {
     }
     this.updateAppearanceLimitUi();
     this.syncInteractivity();
+    if (overlayChanged) this.replayAndUpload();
+    if (next === 'squeeze' && !this.gestureHintSeen) this.stageHint.textContent = this.options.language === 'ru' ? 'Погладь или сожми двумя пальцами.' : 'Stroke it or squeeze with two fingers.';
   }
 
   private stageCopy(stage: SandboxStage): { step: string; title: string; hint: string } {
@@ -1807,7 +1858,7 @@ export class SandboxApp {
   }
 
   private replayAndUpload(): void {
-    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: RIGID_MIXIN_IDS, materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
+    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: this.overlayMixinIds(), materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
     if (this.options.rendererBackend === 'phaser') {
       this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
       drawShapeRelief(this.faceContext, this.draft.shapeId);
@@ -1866,6 +1917,7 @@ export class SandboxApp {
       this.releasedAt = performance.now(); this.releaseStrength = this.gestureStrength;
     }
     this.gestureActive = metrics.active;
+    this.lastPress = metrics.pressDepth; this.lastCompression = metrics.compression;
     this.strokeDelight = metrics.stroking ?? 0;
     this.stretchReaction = metrics.stretch ?? 0;
     this.shell.dataset.squishPointers = String(metrics.pointers ?? (metrics.active ? 1 : 0));
