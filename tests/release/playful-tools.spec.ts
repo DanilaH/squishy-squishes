@@ -101,7 +101,7 @@ for (const reduced of [false, true]) test(`saved face reacts and returns to rest
   await page.mouse.move(x, y); await page.mouse.down();
   await page.mouse.move(x + 40, y + 25, { steps: 12 });
   await expect(shell).toHaveAttribute('data-squish-active', 'true');
-  if (!reduced) await expect.poll(() => shell.getAttribute('data-face-reaction')).toMatch(/^[^0]/);
+  if (!reduced) await expect.poll(async () => Number((await shell.getAttribute('data-face-reaction'))?.split(':')[0])).toBeGreaterThan(0);
   await mkdir('migration-baseline-evidence', { recursive: true });
   await page.screenshot({ path: `migration-baseline-evidence/reaction-held-${reduced}.png` });
   if (!reduced) await shell.evaluate(el => {

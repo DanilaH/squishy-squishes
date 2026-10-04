@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: 58b1f8cefb13cdd655096c04fc7902bd4749d114
+          ref: 9b33ec647562a724929810cfd0bd55b9f929a46c
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -20,7 +20,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run release:check
       - name: Capture real press hold release cancellation and audio
-        run: npx playwright test tests/release/tactile-press.spec.ts tests/release/playful-audio.spec.ts --config=playwright.release.config.ts --retries=0
+        run: npx playwright test tests/release/tactile-press.spec.ts tests/release/playful-audio.spec.ts tests/release/playful-tools.spec.ts --grep 'saved face|touch hold|material release' --config=playwright.release.config.ts --retries=0
       - uses: actions/upload-artifact@v4
         if: always()
         with:
