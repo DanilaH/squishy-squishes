@@ -5,21 +5,23 @@ import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 test('material release tones differ, stay quiet and respect mute', async ({ page }) => {
   await page.addInitScript(() => {
     const NativeAudio = window.AudioContext;
-    const records: { context: AudioContext; master: GainNode; pitches: number[]; analyser: AnalyserNode }[] = [];
+    const records: { context: AudioContext; master: GainNode; pitches: number[]; ramps: number[]; analyser: AnalyserNode }[] = [];
     (window as unknown as { toyAudio: typeof records }).toyAudio = records;
     window.AudioContext = class extends NativeAudio {
       constructor(options?: AudioContextOptions) {
         super(options);
         const gainFactory = this.createGain.bind(this), oscillatorFactory = this.createOscillator.bind(this);
-        const pitches: number[] = [];
+        const pitches: number[] = [], ramps: number[] = [];
         this.createGain = () => {
           const gain = gainFactory();
           if (!records.some(r => r.context === this)) {
             const analyser = this.createAnalyser(), silent = gainFactory();
             silent.gain.value = 0;
             gain.connect(analyser); analyser.connect(silent); silent.connect(this.destination);
-            records.push({ context: this, master: gain, pitches, analyser });
+            records.push({ context: this, master: gain, pitches, ramps, analyser });
           }
+          const ramp = gain.gain.linearRampToValueAtTime.bind(gain.gain);
+          gain.gain.linearRampToValueAtTime = (value, time) => { ramps.push(value); return ramp(value, time); };
           return gain;
         };
         this.createOscillator = () => {
@@ -51,6 +53,8 @@ test('material release tones differ, stay quiet and respect mute', async ({ page
     const x = box.x + box.width / 2, y = box.y + box.height / 2;
     await page.mouse.move(x, y); await page.mouse.down();
     await page.mouse.move(x + 55, y + 35, { steps: 16 });
+    // Assert the continuous graph receives movement before any release tone.
+    expect(await page.evaluate(() => (window as unknown as { toyAudio: { ramps: number[] }[] }).toyAudio.at(-1)!.ramps.some(value => value > .002))).toBe(true);
     await page.mouse.up();
     const stats = await page.evaluate(async () => {
       const record = (window as unknown as { toyAudio: { context: AudioContext; master: GainNode; pitches: number[]; analyser: AnalyserNode }[] }).toyAudio.at(-1)!;

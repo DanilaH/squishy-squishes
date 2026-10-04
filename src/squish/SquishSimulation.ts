@@ -51,6 +51,7 @@ const PRESS_RELEASE = 18;
 const RELEASE_DRAG_KICK = 1.05;
 const RELEASE_PRESS_KICK = 0.24;
 const POKE_MAX_TRAVEL = 0.10;
+const POKE_MAX_DURATION_MS = 220;
 const POKE_REBOUND_KICK = 1.08;
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
@@ -90,6 +91,7 @@ export class SquishSimulation {
   private maxDisplacement = 0;
   private maxGestureCompression = 0;
   private squeezes = 0;
+  private gestureDurationMs = 0;
 
   public constructor(shape: ShapeDefinition = getShape('soft-square'), startAtMs = 0) {
     this.shape = shape;
@@ -238,6 +240,7 @@ export class SquishSimulation {
     this.grabBodyStartX = this.bodyOffsetX;
     this.grabBodyStartY = this.bodyOffsetY;
     this.maxGestureCompression = 0;
+    this.gestureDurationMs = 0;
     this.sheenX += (localX - this.sheenX) * 0.55;
     this.sheenY += (localY - this.sheenY) * 0.55;
     return true;
@@ -255,7 +258,7 @@ export class SquishSimulation {
     const localPointerX = this.pointerX - this.bodyOffsetX;
     const localPointerY = this.pointerY - this.bodyOffsetY;
     const tapTravel = Math.hypot(localPointerX - this.grabStartX, localPointerY - this.grabStartY);
-    const poke = pokeOnTap && tapTravel <= POKE_MAX_TRAVEL;
+    const poke = pokeOnTap && tapTravel <= POKE_MAX_TRAVEL && this.gestureDurationMs <= POKE_MAX_DURATION_MS;
     const energy = clamp01(Math.max(this.maxGestureCompression, this.pressDepth * PRESS_COMPRESSION_WEIGHT));
     if (energy >= 0.08) {
       this.squeezes += 1;
@@ -317,6 +320,7 @@ export class SquishSimulation {
   public advance(deltaMs: number, nowMs: number): SquishSimulationSample {
     const dt = Math.min(Math.max(0.001, deltaMs / 1000), 1 / 30);
     const active = this.pointerId !== null;
+    if (active) this.gestureDurationMs += Math.max(0, deltaMs);
 
     let targetBodyX = active && this.viewportFollowEnabled
       ? this.grabBodyStartX + (this.pointerX - this.grabPointerStartX) * VIEWPORT_FOLLOW_RATIO

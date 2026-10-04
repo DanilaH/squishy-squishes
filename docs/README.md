@@ -20,8 +20,9 @@
 as the nearest iteration, plus the complete optional idea bank. This is a saved
 product plan; the nearest iteration shipped in #69 and accessory depth was
 corrected in #70. Reversible creation tools, editing saved toys and free painting shipped in #71–72.
-Current work covers the approved pastel workshop graphics pass; new tactile
-gestures remain a separate idea bank. The full optional
+The pastel workshop graphics pass shipped in #75. The owner authorized the
+next tactile stage: first refine stationary press/hold/release and existing
+audio/face feedback; two-finger gestures and material physics remain later prototypes. The full optional
 idea bank is not a release checklist.
 
 ## Latest independent review

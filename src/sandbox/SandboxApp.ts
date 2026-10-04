@@ -1,5 +1,5 @@
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp, type PaintStampId } from './creativeTools';
-import { REST_FACE, faceReaction, accessorySway, type FaceReaction } from './toyReactions';
+import { REST_FACE, faceReaction, heldFaceStrength, accessorySway, type FaceReaction } from './toyReactions';
 import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats } from './accessorySeats';
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
@@ -389,6 +389,7 @@ export class SandboxApp {
   private reaction: FaceReaction = REST_FACE;
   private reactionKey = '0:0';
   private gestureActive = false;
+  private gestureBeganAt = -Infinity;
   private gestureStrength = 0;
   private releaseStrength = 0;
   private releasedAt = -Infinity;
@@ -531,6 +532,20 @@ export class SandboxApp {
             this.mixContinueButton.disabled = progress < 1;
             this.status.textContent = progress >= 1 ? this.copy.mixReady : this.copy.mixMore;
             this.shell.dataset.mixProgress = progress.toFixed(3);
+          },
+          onSquishBegin: () => {
+            this.gestureBeganAt = performance.now();
+            this.gestureActive = true;
+            this.releasedAt = -Infinity;
+          },
+          onSquishRelease: (energy) => {
+            this.releasedAt = performance.now();
+            this.releaseStrength = Math.min(1, Math.max(this.gestureStrength, energy));
+            this.gestureActive = false; this.gestureStrength = 0;
+          },
+          onSquishCancel: () => {
+            this.releasedAt = -Infinity; this.releaseStrength = 0;
+            this.gestureActive = false; this.gestureStrength = 0;
           },
           onFrame: () => {
             this.updateToyReaction();
@@ -1127,7 +1142,7 @@ export class SandboxApp {
     if (this.disposed || this.options.rendererBackend !== 'phaser') return;
     const enabled = (this.draft.decor.eyes !== null || this.draft.decor.mouth !== null) && !this.activityBlocked && !this.toolsOpen && !this.exitConfirmOpen && !this.reducedMotion.matches
       && (this.stage === 'finish' || this.stage === 'squeeze' || this.stage === 'mix');
-    const next = enabled ? faceReaction(this.gestureStrength, this.gestureActive ? -1 : performance.now() - this.releasedAt) : REST_FACE;
+    const next = enabled ? faceReaction(this.gestureStrength, this.gestureActive ? -1 : performance.now() - this.releasedAt, this.releaseStrength) : REST_FACE;
     const key = `${next.squeeze}:${next.delight}`;
     if (key === this.reactionKey) return;
     this.reaction = next; this.reactionKey = key;
@@ -1837,11 +1852,13 @@ export class SandboxApp {
 
   private readonly handleMetrics = (metrics: SquishMetrics): void => {
     if (!this.shell || this.disposed) return;
-    if (this.gestureActive && !metrics.active && this.gestureStrength > .05) {
+    if (this.options.rendererBackend !== 'phaser' && this.gestureActive && !metrics.active && this.gestureStrength > .05) {
       this.releasedAt = performance.now(); this.releaseStrength = this.gestureStrength;
     }
     this.gestureActive = metrics.active;
-    this.gestureStrength = metrics.active ? Math.min(1, Math.max(metrics.pressDepth * 2, metrics.compression * 3, metrics.maxDisplacement * 1.5)) : 0;
+    this.gestureStrength = metrics.active ? (this.options.rendererBackend === 'phaser'
+      ? heldFaceStrength(metrics.pressDepth, metrics.compression, metrics.maxDisplacement, performance.now() - this.gestureBeganAt)
+      : Math.min(1, Math.max(metrics.pressDepth * 2, metrics.compression * 3, metrics.maxDisplacement * 1.5))) : 0;
     this.shell.dataset.sandboxSqueezes = String(metrics.squeezes);
     this.shell.dataset.fps = String(Math.round(metrics.fps));
     this.shell.dataset.squishMaxDisplacement = metrics.maxDisplacement.toFixed(3);

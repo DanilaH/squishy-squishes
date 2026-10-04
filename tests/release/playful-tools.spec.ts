@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp } from '../../src/sandbox/creativeTools';
 import { decodeAppearanceDocument, decodeAppearancePoints } from '../../src/sandbox/appearance';
-import { accessorySway, faceReaction } from '../../src/sandbox/toyReactions';
+import { accessorySway, faceReaction, heldFaceStrength } from '../../src/sandbox/toyReactions';
 import { createDefaultSaveV3 } from '../../src/platform/saveV3';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
@@ -127,4 +127,16 @@ for (const reduced of [false, true]) test(`saved face reacts and returns to rest
   await page.locator('[data-library-play-id="reaction"]').click();
   await expect(shell).toHaveAttribute('data-paint-strokes', '4');
   await page.screenshot({ path: `migration-baseline-evidence/stamps-reloaded-${reduced}.png` });
+});
+
+
+test('stationary face hold is gentler than a pull and release follows its strength', () => {
+  const early = heldFaceStrength(.9, .2, .02, 100);
+  const held = heldFaceStrength(1, .22, .03, 900);
+  expect(early).toBeGreaterThan(0);
+  expect(held).toBeGreaterThan(early);
+  expect(held).toBeLessThan(1);
+  expect(heldFaceStrength(1, .8, .5, 200)).toBe(1);
+  expect(faceReaction(0, 0, .2).delight).toBeLessThan(faceReaction(0, 0, .9).delight);
+  expect(faceReaction(0, 650, .9)).toEqual({ squeeze: 0, delight: 0 });
 });

@@ -74,6 +74,7 @@ const getStyle = (paletteId: PaletteId, materialId: MaterialId): SquishMaterialS
 /** Phaser owns the WebGL2 context and frame clock. The old and new renderers share SquishSimulation. */
 export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private readonly simulation = new SquishSimulation(getShape('soft-square'), performance.now());
+  private frameSample = this.simulation.snapshot();
   private readonly packed = new Float32Array(this.simulation.vertices.length * 4);
   private readonly shapeFields = new Map<ShapeId, Uint8Array>();
   private readonly appearanceCanvas = document.createElement('canvas');
@@ -271,7 +272,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
 
   /** The only animation clock is Phaser's Scene.update. */
   public advance(deltaMs: number, nowMs: number): void {
-    if (!this.disposed) this.simulation.advance(deltaMs, nowMs);
+    if (!this.disposed) this.frameSample = this.simulation.advance(deltaMs, nowMs);
   }
 
   private uploadShapeField(gpu: GpuResources): void {
@@ -525,7 +526,9 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   }
 
   /** The real studio uses the same public metrics sample as the raw renderer. */
-  public metricsSample(): SquishSimulationSample { return this.simulation.snapshot(); }
+  public metricsSample(): SquishSimulationSample {
+    return { ...this.frameSample, active: this.simulation.snapshot().active };
+  }
 
   public forgetLostContext(): void {
     this.volume?.dispose();

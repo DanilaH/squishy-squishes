@@ -12,6 +12,9 @@ export interface PhaserSandboxCallbacks extends Pick<PhaserStudioGestureHost,
   'paintStamp' | 'paintSegment' | 'paintEnd' | 'addMixin' | 'addSticker' | 'mixProgress'> {
   /** Draw existing DOM decor layers on Phaser's own update tick, not a second RAF. */
   readonly onFrame: () => void;
+  readonly onSquishBegin?: () => void;
+  readonly onSquishRelease?: (energy: number) => void;
+  readonly onSquishCancel?: () => void;
 }
 
 /**
@@ -86,15 +89,17 @@ export class PhaserSquishSurface {
           paintPointToUv: (x, y) => squish.pointToAppearanceUv(x, y),
           beginSquish: (pointer) => {
             const claimed = squish.beginAt(pointer.id, pointer.x, pointer.y);
-            if (claimed) void owner.audio.prime();
+            if (claimed) { void owner.audio.prime(); owner.callbacks.onSquishBegin?.(); }
             return claimed;
           },
           moveSquish: (pointer) => squish.moveAt(pointer.id, pointer.x, pointer.y),
           endSquish: (pointerId) => {
             squish.endById(pointerId);
-            owner.audio.releaseTactile(squish.snapshot().releaseEnergy);
+            const energy = squish.snapshot().releaseEnergy;
+            owner.audio.releaseTactile(energy);
+            owner.callbacks.onSquishRelease?.(energy);
           },
-          cancelSquish: () => { squish.cancel(); owner.audio.releaseTactile(); },
+          cancelSquish: () => { squish.cancel(); owner.audio.releaseTactile(); owner.callbacks.onSquishCancel?.(); },
           paintStamp: (point) => owner.callbacks.paintStamp(point),
           paintSegment: (from, to) => owner.callbacks.paintSegment(from, to),
           paintEnd: () => owner.callbacks.paintEnd(),
@@ -281,7 +286,7 @@ export class PhaserSquishSurface {
     const bodyOffset = squish.viewportFollowOffset();
     this.canvas.dataset.squishBodyOffsetX = bodyOffset.x.toFixed(3);
     this.canvas.dataset.squishBodyOffsetY = bodyOffset.y.toFixed(3);
-    if (sample.active && sample.tactileActive && !this.muted) {
+    if (sample.active && sample.tactileActive && !this.muted && !this.blocked) {
       this.audio.updateTactile(sample.tactileProgress, sample.normalizedVelocity);
     }
     this.onMetrics({
