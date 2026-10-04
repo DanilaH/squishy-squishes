@@ -1,30 +1,55 @@
-/* Passive room dust: small composited layers, never animated game canvases or furniture. */
+/* Shared warm window light. The centre stays quiet; every layer is passive and
+   composited below the real UI/toy. Only small dust/plant layers move. */
+.library-hall-scene::before,
+.studio-env-stage-art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 14% 9%, #fff6d880, transparent 59%),
+    linear-gradient(122deg, transparent 8%, #fff6dc38 18%, #fff6dc12 29%, transparent 42%);
+}
+.library-hall-scene::before { z-index: 1; }
+.studio-env-stage-art::before { z-index: 1; }
 .library-hall-scene::after,
 .studio-env-stage-art::after {
   content: '';
   position: absolute;
-  left: 18%;
-  top: 16%;
-  width: 90px;
-  height: 130px;
+  z-index: 2;
+  left: 12%;
+  top: 8%;
+  width: 110px;
+  height: 160px;
   pointer-events: none;
   background:
-    radial-gradient(circle at 12% 20%, #fff8df 0 2px, transparent 3px),
+    radial-gradient(circle at 12% 20%, #fff8df 0 1.5px, transparent 2.5px),
     radial-gradient(circle at 75% 48%, #fff8df 0 1px, transparent 2px),
-    radial-gradient(circle at 38% 85%, #fff8df 0 1.5px, transparent 2.5px);
-  animation: room-dust-drift 12s ease-in-out infinite;
+    radial-gradient(circle at 38% 85%, #fff8df 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 85% 12%, #fff8df 0 .8px, transparent 1.8px);
+  animation: room-dust-drift 16s ease-in-out infinite;
 }
-.studio-env-stage-art::after { left: auto; right: 12%; animation-delay: -5s; }
+.studio-env-stage-art::after { left: 8%; animation-delay: -5s; }
+.library-hall-scene__plant {
+  transform-origin: 50% 92%;
+  animation: room-plant-sway 11s ease-in-out infinite;
+}
 @keyframes room-dust-drift {
-  0%, 100% { transform: translate3d(0, 8px, 0); opacity: .15; }
-  50% { transform: translate3d(12px, -10px, 0); opacity: .55; }
+  0%, 100% { transform: translate3d(0, 8px, 0); opacity: .18; }
+  50% { transform: translate3d(12px, -10px, 0); opacity: .48; }
+}
+@keyframes room-plant-sway {
+  0%, 100% { transform: rotate(-.5deg); }
+  50% { transform: rotate(.5deg); }
 }
 #app[data-room-motion-paused] .library-hall-scene::after,
 #app[data-room-motion-paused] .studio-env-stage-art::after,
+#app[data-room-motion-paused] .library-hall-scene__plant,
 .is-blocked .library-hall-scene::after,
-.is-blocked .studio-env-stage-art::after { animation-play-state: paused; }
+.is-blocked .studio-env-stage-art::after,
+.is-blocked .library-hall-scene__plant { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) {
   .library-hall-scene::after,
   .studio-env-stage-art::after { display: none; animation: none; }
+  .library-hall-scene__plant { animation: none; transform: none; }
 }
-

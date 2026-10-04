@@ -184,9 +184,13 @@ void main() {
   base += uSheenColor * gelCaustic * 0.045;
   // Broad softbox reflections make dense gel feel rounded and touchable.
   // They use the same UV/deformation field and leave opaque materials untouched.
-  vec2 gelHighlightUv = vUv - vec2(0.34, 0.72);
+  // A small strain-led shift lets the reflection glide across the stretched
+  // body instead of becoming a static sticker. It reuses existing uniforms.
+  vec2 reflectionShift = clamp(uStrainDirection, vec2(-1.0), vec2(1.0))
+    * min(uCompression, 0.6) * 0.055;
+  vec2 gelHighlightUv = vUv - vec2(0.34, 0.72) - reflectionShift;
   float gelSoftbox = exp(-dot(gelHighlightUv * vec2(9.0, 17.0), gelHighlightUv * vec2(9.0, 17.0)));
-  vec2 gelBounceUv = vUv - vec2(0.70, 0.28);
+  vec2 gelBounceUv = vUv - vec2(0.70, 0.28) + reflectionShift * 0.65;
   float gelBounce = exp(-dot(gelBounceUv * vec2(13.0, 8.0), gelBounceUv * vec2(13.0, 8.0)));
   base = mix(base, uSheenColor, jellyIdentity * interior * (gelSoftbox * 0.34 + gelBounce * 0.09));
   base += uRimColor * edge * translucency * (0.25 + lightSurface * 0.04);
@@ -292,7 +296,13 @@ void main() {
   float dent = exp(-pressDistance * pressDistance * 52.0) * uPressDepth;
   base *= 1.0 - dent * 0.065;
   float pressRing = exp(-pow(pressDistance - 0.115, 2.0) * 180.0) * uPressDepth;
+  // Keep the reaction visible around the finger, with a broad soft rim for
+  // powdery materials and a narrower coloured reflection for gel/pearl.
+  float touchSpread = mix(0.15, 0.21, roughness);
+  float touchHalo = exp(-pow(pressDistance - touchSpread, 2.0)
+    * mix(210.0, 115.0, roughness)) * min(uPressDepth, 1.0) * interior;
   base += uRimColor * pressRing * 0.045;
+  base = mix(base, mix(base, uSheenColor, 0.32), touchHalo * mix(0.24, 0.09, roughness));
 
   float centerGlow = exp(-dot(p, p) * 1.7) * 0.07;
   base += uRimColor * centerGlow;

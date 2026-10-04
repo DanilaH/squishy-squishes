@@ -1,0 +1,62 @@
+name: Cozy workshop art review
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/app/styles/room-atmosphere.css'
+      - 'src/experiments/phaser/studioEnvironmentPreview.*'
+      - 'src/squish/shaders.ts'
+      - 'public/assets/room/**'
+      - 'tests/release/cozy-workshop.spec.ts'
+      - '.github/workflows/cozy-workshop-review.yml'
+permissions:
+  contents: read
+jobs:
+  art-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Capture unchanged base with the same unmasked camera
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git worktree add /tmp/squishy-before "$BASE_SHA"
+          ln -s "$PWD/node_modules" /tmp/squishy-before/node_modules
+          cp tests/release/cozy-workshop.spec.ts /tmp/squishy-before/tests/release/
+          cd /tmp/squishy-before
+          npm run build:app
+          COZY_BEFORE=1 npx playwright test tests/release/cozy-workshop.spec.ts --config=playwright.release.config.ts --retries=0
+      - name: Build and capture proposed art
+        run: |
+          npm run build:app
+          npx playwright test tests/release/cozy-workshop.spec.ts --config=playwright.release.config.ts --retries=0
+      - name: Upload unmasked before and after art
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozy-workshop-before-after
+          path: |
+            /tmp/squishy-before/test-results/**/cozy-*.png
+            test-results/**/cozy-*.png
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload failure details
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozy-workshop-review-failure
+          path: |
+            test-results
+            playwright-report
+            /tmp/squishy-before/test-results
+          if-no-files-found: ignore
+          retention-days: 7

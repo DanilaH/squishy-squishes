@@ -63,8 +63,8 @@ const check = async (page: Page, label: string): Promise<void> => {
     };
   });
   expect(facts.stageName, label).toMatch(/^(shape|paint)$/);
-  expect(facts.imagesLoaded).toHaveLength(3);
-  expect(facts.imagesLoaded.every((i) => i.loaded), `${label}: both props and assembled desk decoded`).toBe(true);
+  expect(facts.imagesLoaded).toHaveLength(5);
+  expect(facts.imagesLoaded.every((i) => i.loaded), `${label}: furniture, tabletop traces and assembled desk decoded`).toBe(true);
   expect(facts.deskComposed, `${label}: a single raster, not separately scaled slices`).toBe(true);
   expect(facts.deskSize).toEqual({ width: 1237, height: 435 });
   expect(facts.deskChildren).toBe(0);

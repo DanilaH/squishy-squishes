@@ -302,3 +302,20 @@ then run EN/RU touch painting, sticker editing and durable save/reload directly
 against Pages, without serving a local rebuilt app. Failures remain visible in
 CI with source proof and browser diagnostics. The fast path is validated after
 merging this PR; measured durations belong in its release record.
+
+## Cozy workshop graphics — 4 October 2026
+
+The owner authorized a graphics pass strictly within the accepted pastel cartoon
+workshop. Warm passive window light unifies Hall/Studio; dust stays sparse near
+the light, and only the separate Hall plant sways. Existing activity pause and
+reduced-motion rules cover both animations. Studio gets a stitched lavender mat,
+a little dumpling drawing and ribbon/beads, attached to the existing desk anchor
+without moving UI/canvas/control tracks. Editable original SVGs and preparation
+provenance live in assets-src/cozy-workshop; their two alpha WebP exports join
+session-required Studio decode with the existing usable failure fallback.
+
+A strain-led gel reflection shift and soft material-dependent press halo reuse
+the existing generic shader uniforms. No physics, gesture routing, saves, IDs,
+progression or accessory depth/positions change. Unmasked before/after art
+captures complement the strict UI baselines; changed baselines require inspecting
+the actual images before acceptance. Release verification is recorded in the PR.
