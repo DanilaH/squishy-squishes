@@ -1,0 +1,39 @@
+name: Tactile press evidence
+on:
+  push:
+    branches: [qa/tactile-press-evidence]
+permissions:
+  contents: read
+jobs:
+  touch-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: 56b06004c4d9cb915fc0eb3dcaeaef639bf38686
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run release:check
+      - name: Capture real press hold release cancellation and audio
+        run: npx playwright test tests/release/tactile-press.spec.ts tests/release/playful-audio.spec.ts --config=playwright.release.config.ts --retries=0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tactile-press-frames
+          path: migration-baseline-evidence/hold-*.png
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: tactile-press-failure
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
