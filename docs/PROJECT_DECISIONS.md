@@ -342,3 +342,10 @@ stable pages-preview aggregate requires the whole matrix result to be success;
 publish and exact-PR reuse still require that gate. Shard diagnostics have unique
 names. No test is excluded and no limit or comparison is weakened. Local test
 collection must prove the disjoint union equals the full suite before pushing.
+
+The 18 new unmasked camera cases run once in their dedicated art-review config,
+instead of repeating inside the 116-case functional release suite. The art gate
+covers PRs changing any src/art asset, visual baseline, camera test or related
+config. Before/after evidence and assertions remain intact. Local collection
+verifies the disjoint 116 + 18 union equals the original 134 cases. The camera
+has zero retries; the existing functional/Pages retry policy is unchanged.

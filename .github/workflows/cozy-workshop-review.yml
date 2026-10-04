@@ -3,11 +3,13 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'src/app/styles/room-atmosphere.css'
-      - 'src/experiments/phaser/studioEnvironmentPreview.*'
-      - 'src/squish/shaders.ts'
-      - 'public/assets/room/**'
+      - 'src/**'
+      - 'public/assets/**'
+      - 'assets-src/**'
       - 'tests/release/cozy-workshop.spec.ts'
+      - 'tests/visual/**'
+      - 'playwright.art-review.config.ts'
+      - 'playwright.release.config.ts'
       - '.github/workflows/cozy-workshop-review.yml'
 permissions:
   contents: read
@@ -32,13 +34,14 @@ jobs:
           git worktree add /tmp/squishy-before "$BASE_SHA"
           ln -s "$PWD/node_modules" /tmp/squishy-before/node_modules
           cp tests/release/cozy-workshop.spec.ts /tmp/squishy-before/tests/release/
+          cp playwright.art-review.config.ts /tmp/squishy-before/
           cd /tmp/squishy-before
           npm run build:app
-          COZY_BEFORE=1 npx playwright test tests/release/cozy-workshop.spec.ts --config=playwright.release.config.ts --retries=0
+          COZY_BEFORE=1 npx playwright test tests/release/cozy-workshop.spec.ts --config=playwright.art-review.config.ts --retries=0
       - name: Build and capture proposed art
         run: |
           npm run build:app
-          npx playwright test tests/release/cozy-workshop.spec.ts --config=playwright.release.config.ts --retries=0
+          npx playwright test tests/release/cozy-workshop.spec.ts --config=playwright.art-review.config.ts --retries=0
       - name: Compare reviewed UI baselines and export individual diffs
         run: npm run qa:visual
       - name: Upload UI actual images
