@@ -99,10 +99,11 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
     let box = (await canvas.boundingBox())!;
     const cdp = await context.newCDPSession(page), point = { id: 1, x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    // Node waits avoid tracing a full WebGL/DOM snapshot between rapid touch events.
     for (let i = 0; i < 3; i++) {
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
-      await page.waitForTimeout(65); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-      await page.waitForTimeout(60);
+      await new Promise(resolve => setTimeout(resolve, 65)); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await new Promise(resolve => setTimeout(resolve, 60));
     }
     await expect(shell).toHaveAttribute('data-face-reaction', /:s/);
     await mkdir('migration-baseline-evidence', { recursive: true });
@@ -110,8 +111,8 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
     await expect(shell).toHaveAttribute('data-face-reaction', '0:0');
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
     for (let f = 0; f < 65; f++) {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + Math.sin(f / 12) * box.width * .018 }] });
-      await page.waitForTimeout(32);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + Math.sin(f / 18) * box.width * .024 }] });
+      await new Promise(resolve => setTimeout(resolve, 32));
     }
     await expect(shell).toHaveAttribute('data-face-reaction', /:b/);
     expect(await page.evaluate(() => (window as unknown as { gestureBands: number[] }).gestureBands.some(hz => hz >= 1100))).toBe(true);

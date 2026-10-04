@@ -40,6 +40,7 @@ export class PhaserStudioGestureBridge {
       paintEnd: () => host.paintEnd(),
       addMixin: (point) => host.addMixin(point),
       addSticker: (point) => host.addSticker(point),
+      ...(host.previewSticker ? { previewSticker: (point) => host.previewSticker?.(point) } : {}),
       mixProgress: (distance, progress) => host.mixProgress(distance, progress),
     });
     scene.input.on('pointerdown', this.handleDown);
