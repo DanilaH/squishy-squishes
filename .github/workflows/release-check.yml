@@ -15,11 +15,13 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   release-check:
     outputs:
       build-artifact-id: ${{ steps.shared-build.outputs.artifact-id }}
+      qa-reused: ${{ steps.verify-pr.outputs.qa-reused }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -30,19 +32,45 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Find successful merged PR evidence
+        id: merged-pr
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci-release-reuse.mjs find
+      - name: Download candidate immutable PR build
+        if: steps.merged-pr.outputs.artifact-id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.merged-pr.outputs.artifact-id }}
+          run-id: ${{ steps.merged-pr.outputs.run-id }}
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: ci-build
+      - name: Verify exact source tree, provenance and archive checksum
+        id: verify-pr
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci-release-reuse.mjs verify
       - name: Install dependencies
+        if: steps.verify-pr.outputs.qa-reused != 'true'
         run: npm ci
       - name: Validate Pages and Yandex builds
+        if: steps.verify-pr.outputs.qa-reused != 'true'
         run: npm run release:check
       - name: Build and stage the isolated Pages preview once
+        if: steps.verify-pr.outputs.qa-reused != 'true'
         run: npm run pages:build:app
       - name: Package shared build with source identity and checksum
+        if: steps.verify-pr.outputs.qa-reused != 'true'
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p ci-build
           tar -czf ci-build/release-build.tar.gz dist dist-yandex
           printf '%s\n' "$GITHUB_SHA" > ci-build/source-sha
+          git rev-parse 'HEAD^{tree}' > ci-build/source-tree
           (cd ci-build && sha256sum release-build.tar.gz > SHA256SUMS)
       - name: Upload the exact build for QA and deployment
         id: shared-build
@@ -52,6 +80,9 @@ jobs:
           path: ci-build/*
           if-no-files-found: error
           retention-days: 7
+      - name: Restore the already tested roots when reusing PR QA
+        if: steps.verify-pr.outputs.qa-reused == 'true'
+        run: tar -xzf ci-build/release-build.tar.gz
       - name: Package Yandex archive
         run: |
           cd dist-yandex
@@ -66,6 +97,7 @@ jobs:
 
   browser-qa:
     needs: release-check
+    if: needs.release-check.outputs.qa-reused != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -124,6 +156,7 @@ jobs:
 
   pages-preview:
     needs: release-check
+    if: needs.release-check.outputs.qa-reused != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -179,9 +212,17 @@ jobs:
 
   build-and-deploy:
     needs: [release-check, browser-qa, pages-preview]
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: >-
+      !cancelled() && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.release-check.result == 'success' &&
+      ((needs.release-check.outputs.qa-reused == 'true' &&
+        needs.browser-qa.result == 'skipped' && needs.pages-preview.result == 'skipped') ||
+       (needs.browser-qa.result == 'success' && needs.pages-preview.result == 'success'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      published: ${{ steps.publish.outputs.published }}
     permissions:
       contents: write
     steps:
@@ -204,6 +245,7 @@ jobs:
           test -f dist/phaser/index.html
           test -f dist-yandex/index.html
       - name: Publish the verified tree only while its source is current main
+        id: publish
         shell: bash
         run: |
           set -euo pipefail
@@ -222,3 +264,45 @@ jobs:
           git -C "$publish_dir" commit -m "Deploy ${GITHUB_SHA}"
           git fetch "$publish_dir" gh-pages
           git push origin FETCH_HEAD:refs/heads/gh-pages --force
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+  hosted-smoke:
+    needs: [release-check, build-and-deploy]
+    if: >-
+      !cancelled() && needs.build-and-deploy.result == 'success' &&
+      needs.build-and-deploy.outputs.published == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
+          merge-multiple: true
+          path: ci-build
+      - name: Restore verified build for live asset comparison
+        run: |
+          test "$(cat ci-build/source-sha)" = "$GITHUB_SHA"
+          (cd ci-build && sha256sum --check SHA256SUMS)
+          tar -xzf ci-build/release-build.tar.gz
+      - name: Wait for Pages to serve these exact tested bytes
+        run: node scripts/ci-wait-for-pages.mjs
+      - name: Exercise hosted touch editing, save and reload
+        run: npx playwright test --config=playwright.hosted.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hosted-release-evidence
+          path: |
+            hosted-source.json
+            ci-build/verified-pr.json
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
