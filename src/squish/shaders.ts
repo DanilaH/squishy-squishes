@@ -40,6 +40,7 @@ export interface SquishFragmentShaderOptions {
   readonly finalBodyLighting?: string;
   readonly extraUniforms?: string;
   readonly finalComposite?: string;
+  readonly finalBodyAlpha?: string;
 }
 
 export const createFragmentShaderSource = (
@@ -49,6 +50,7 @@ export const createFragmentShaderSource = (
   const finalBodyLighting = options.finalBodyLighting ?? '';
   const extraUniforms = options.extraUniforms ?? '';
   const finalComposite = options.finalComposite ?? '';
+  const finalBodyAlpha = options.finalBodyAlpha ?? '';
   return `#version 300 es
 precision highp float;
 
@@ -316,7 +318,10 @@ void main() {
 
   ${finalBodyLighting}
   ${finalComposite}
-  float bodyAlpha = mix(0.985, 0.60 + edge * 0.30, translucency);
+  // Dense gummy gel keeps a little room transmission without losing its
+  // pastel pigment against the bright stage reflection.
+  float bodyAlpha = mix(0.985, 0.78 + edge * 0.18, translucency);
+  ${finalBodyAlpha}
   outColor = vec4(base, bodyAlpha * shapeAlpha);
 }
 `;

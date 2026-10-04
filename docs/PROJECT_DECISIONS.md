@@ -319,3 +319,17 @@ the existing generic shader uniforms. No physics, gesture routing, saves, IDs,
 progression or accessory depth/positions change. Unmasked before/after art
 captures complement the strict UI baselines; changed baselines require inspecting
 the actual images before acceptance. Release verification is recorded in the PR.
+
+Unmasked material review also exposed translucent face ink on Jelly: the shared
+front shader now keeps eyes/blush/stickers/relief opaque using the actual face
+texture alpha, preserving antialiased edges. Gel body alpha is denser while still
+transmitting the room; pigment and expressions should read as a pastel toy rather
+than a transparent glass ornament. Side geometry and simulation remain unchanged.
+
+The first art capture showed a rectangular light edge and washed landscape
+headings. Stage light now fades at every edge and headings have their own higher
+stacking level. All six short-landscape baselines remain unchanged. Only twelve
+reviewed phone/desktop captures are aligned from run 37189515892: EN/RU Library
+and Paint at 1440, and Library/Paint/Decor/Finish at 320. Full expected/actual
+images and original diff sets were inspected, alongside unmasked full scenes;
+no threshold, mask, retry or existing gate is relaxed.
