@@ -1,0 +1,97 @@
+name: Cozy workshop art review
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/assets/**'
+      - 'assets-src/**'
+      - 'tests/release/cozy-workshop.spec.ts'
+      - 'tests/visual/**'
+      - 'playwright.art-review.config.ts'
+      - 'playwright.release.config.ts'
+      - '.github/workflows/cozy-workshop-review.yml'
+permissions:
+  contents: read
+jobs:
+  art-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Capture unchanged base with the same unmasked camera
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git worktree add /tmp/squishy-before "$BASE_SHA"
+          ln -s "$PWD/node_modules" /tmp/squishy-before/node_modules
+          cp tests/release/cozy-workshop.spec.ts /tmp/squishy-before/tests/release/
+          cp playwright.art-review.config.ts /tmp/squishy-before/
+          cd /tmp/squishy-before
+          npm run build:app
+          COZY_BEFORE=1 npx playwright test tests/release/cozy-workshop.spec.ts --config=playwright.art-review.config.ts --retries=0
+      - name: Build and capture proposed art
+        run: |
+          npm run build:app
+          npx playwright test tests/release/cozy-workshop.spec.ts --config=playwright.art-review.config.ts --retries=0
+      - name: Compare reviewed UI baselines and export individual diffs
+        run: npm run qa:visual
+      - name: Upload UI actual images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozy-ui-actual
+          path: test-results/visual/**/*-actual.png
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload UI expected images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozy-ui-expected
+          path: test-results/visual/**/*-expected.png
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload UI diff images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozy-ui-diff
+          path: test-results/visual/**/*-diff.png
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload unmasked base art
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozy-workshop-before
+          path: /tmp/squishy-before/test-results/**/cozy-*.png
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload unmasked proposed art
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozy-workshop-after
+          path: test-results/**/cozy-*.png
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload failure details
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozy-workshop-review-failure
+          path: |
+            test-results
+            playwright-report
+            /tmp/squishy-before/test-results
+          if-no-files-found: ignore
+          retention-days: 7

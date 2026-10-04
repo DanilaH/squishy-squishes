@@ -302,3 +302,50 @@ then run EN/RU touch painting, sticker editing and durable save/reload directly
 against Pages, without serving a local rebuilt app. Failures remain visible in
 CI with source proof and browser diagnostics. The fast path is validated after
 merging this PR; measured durations belong in its release record.
+
+## Cozy workshop graphics — 4 October 2026
+
+The owner authorized a graphics pass strictly within the accepted pastel cartoon
+workshop. Warm passive window light unifies Hall/Studio; dust stays sparse near
+the light, and only the separate Hall plant sways. Existing activity pause and
+reduced-motion rules cover both animations. Studio gets a stitched lavender mat,
+a little dumpling drawing and ribbon/beads, attached to the existing desk anchor
+without moving UI/canvas/control tracks. Editable original SVGs and preparation
+provenance live in assets-src/cozy-workshop; their two alpha WebP exports join
+session-required Studio decode with the existing usable failure fallback.
+
+A strain-led gel reflection shift and soft material-dependent press halo reuse
+the existing generic shader uniforms. No physics, gesture routing, saves, IDs,
+progression or accessory depth/positions change. Unmasked before/after art
+captures complement the strict UI baselines; changed baselines require inspecting
+the actual images before acceptance. Release verification is recorded in the PR.
+
+Unmasked material review also exposed translucent face ink on Jelly: the shared
+front shader now keeps eyes/blush/stickers/relief opaque using the actual face
+texture alpha, preserving antialiased edges. Gel body alpha is denser while still
+transmitting the room; pigment and expressions should read as a pastel toy rather
+than a transparent glass ornament. Side geometry and simulation remain unchanged.
+
+The first art capture showed a rectangular light edge and washed landscape
+headings. Stage light now fades at every edge and headings have their own higher
+stacking level. All six short-landscape baselines remain unchanged. Only twelve
+reviewed phone/desktop captures are aligned from run 37189515892: EN/RU Library
+and Paint at 1440, and Library/Paint/Decor/Finish at 320. Full expected/actual
+images and original diff sets were inspected, alongside unmasked full scenes;
+no threshold, mask, retry or existing gate is relaxed.
+
+The final single-runner Pages job hit its 15-minute job budget at scenario 82/83,
+with no assertion failure before cancellation (run 37190245614). The same entire
+suite now uses two Playwright shards on separate runners, each with the unchanged
+one-worker/retry/timeout configuration and immutable source-checked build. A
+stable pages-preview aggregate requires the whole matrix result to be success;
+publish and exact-PR reuse still require that gate. Shard diagnostics have unique
+names. No test is excluded and no limit or comparison is weakened. Local test
+collection must prove the disjoint union equals the full suite before pushing.
+
+The 18 new unmasked camera cases run once in their dedicated art-review config,
+instead of repeating inside the 116-case functional release suite. The art gate
+covers PRs changing any src/art asset, visual baseline, camera test or related
+config. Before/after evidence and assertions remain intact. Local collection
+verifies the disjoint 116 + 18 union equals the original 134 cases. The camera
+has zero retries; the existing functional/Pages retry policy is unchanged.

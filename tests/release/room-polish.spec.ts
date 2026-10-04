@@ -49,6 +49,13 @@ test('room atmosphere respects reduced motion and never intercepts input', async
   });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   expect(await style()).toMatchObject({ animation: 'room-dust-drift', pointerEvents: 'none' });
+  const plant = page.locator('.library-hall-scene__plant');
+  expect(await plant.evaluate(e => getComputedStyle(e).animationName)).toBe('room-plant-sway');
+  await page.locator('.is-library-hall').evaluate(e => e.classList.add('is-blocked'));
+  expect(await plant.evaluate(e => getComputedStyle(e).animationPlayState)).toBe('paused');
+  expect(await scene.evaluate(e => getComputedStyle(e, '::after').animationPlayState)).toBe('paused');
+  await page.locator('.is-library-hall').evaluate(e => e.classList.remove('is-blocked'));
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await plant.evaluate(e => getComputedStyle(e).animationName)).toBe('none');
   expect(await style()).toMatchObject({ animation: 'none', display: 'none' });
 });

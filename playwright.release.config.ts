@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/release',
+  // The unchanged 18-case unmasked camera runs in its dedicated art-review gate.
+  testIgnore: 'cozy-workshop.spec.ts',
   timeout: 45_000,
   expect: {
     timeout: 6_000,

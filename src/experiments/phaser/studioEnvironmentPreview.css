@@ -369,3 +369,45 @@
     align-self: flex-start;
   }
 }
+
+/* Quiet lavender textile, attached to the SAME stable desk anchor. No layout
+   tracks or canvas dimensions depend on the ornament. */
+#app .studio-env-mat {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: var(--studio-mat-top);
+  width: var(--studio-mat-width);
+  height: var(--studio-mat-height);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 1px solid #ab91b8;
+  background:
+    repeating-linear-gradient(12deg, transparent 0 3px, #fff5fb24 3px 4px),
+    linear-gradient(175deg, #e6d5ec, #c4afd2);
+  box-shadow: 0 3px 0 #a68cb0, 0 6px 8px #80566e20, inset 0 2px 2px #fff7ed8c;
+  pointer-events: none;
+}
+#app .studio-env-mat::after {
+  content: '';
+  position: absolute;
+  inset: 5px 10px;
+  border: 1px dashed #fff3efb3;
+  border-radius: inherit;
+}
+#app .studio-env-trace {
+  position: absolute;
+  z-index: 2;
+  top: calc(var(--studio-mat-top) - var(--studio-trace-size) * .33);
+  width: var(--studio-trace-size);
+  height: var(--studio-trace-size);
+  max-width: none;
+  pointer-events: none;
+}
+#app .studio-env-trace--sketch { left: calc(50% - var(--studio-trace-offset) - var(--studio-trace-size) * .5); }
+#app .studio-env-trace--ribbon { left: calc(50% + var(--studio-trace-offset) - var(--studio-trace-size) * .5); }
+#app .studio-env-stage-art[data-tabletop-visible='false'] .studio-env-mat,
+#app .studio-env-stage-art[data-tabletop-visible='false'] .studio-env-trace { display: none; }
+
+/* The short-landscape heading crosses the stage; keep window light behind it. */
+#app .studio-env-active > .sandbox-copy { z-index: 2; }

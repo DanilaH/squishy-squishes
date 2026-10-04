@@ -24,10 +24,15 @@ export const getPagesVolumeFrontShader = (): string => createFragmentShaderSourc
 uniform sampler2D uFaceTexture;
 uniform bool uFaceEnabled;`,
   finalComposite: `
+  float surfaceInkAlpha = 0.0;
   if (uFaceEnabled) {
     vec4 face = texture(uFaceTexture, vUv);
-    base = mix(base, face.rgb, clamp(face.a, 0.0, 1.0));
+    surfaceInkAlpha = clamp(face.a, 0.0, 1.0);
+    base = mix(base, face.rgb, surfaceInkAlpha);
   }`,
+  // Painted-on eyes, blush, stickers and paw relief stay readable on gel;
+  // alpha follows the existing front texture, including antialiased edges.
+  finalBodyAlpha: 'bodyAlpha = mix(bodyAlpha, 0.985, surfaceInkAlpha);',
 });
 
 const SIDE_FRAGMENT = `#version 300 es

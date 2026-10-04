@@ -10,6 +10,8 @@ const assets = {
   right: new URL('./studio-assets/studio-desk-right.png', import.meta.url).href,
   decorLeft: new URL('./studio-assets/studio-decor-left.png', import.meta.url).href,
   decorRight: new URL('./studio-assets/studio-decor-right.png', import.meta.url).href,
+  sketch: `${import.meta.env.BASE_URL}assets/room/cozy-sketch.webp`,
+  ribbon: `${import.meta.env.BASE_URL}assets/room/cozy-ribbon.webp`,
 } as const;
 
 const loadImage = async (src: string): Promise<HTMLImageElement> => {
@@ -135,7 +137,12 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
       desk.dataset.studioDesk = '';
       desk.src = deskTexture;
       decorClip.append(leftDecor, rightDecor);
-      art.append(decorClip, desk);
+      const mat = element('div', 'studio-env-mat') as HTMLDivElement;
+      const sketch = element('img', 'studio-env-trace studio-env-trace--sketch') as HTMLImageElement;
+      sketch.src = assets.sketch;
+      const ribbon = element('img', 'studio-env-trace studio-env-trace--ribbon') as HTMLImageElement;
+      ribbon.src = assets.ribbon;
+      art.append(decorClip, desk, mat, sketch, ribbon);
       stage.insertBefore(art, stage.firstChild);
     }
     const sr = stage.getBoundingClientRect();
@@ -174,6 +181,12 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
     // A formula based only on stage/canvas percentages drifted tens of pixels
     // once desktop craft gained a larger hero and tactile stages gained headroom.
     stage.style.setProperty('--studio-contact-top', `${snap(top - sr.top + 4)}px`);
+    art.style.setProperty('--studio-mat-top', `${snap(top - sr.top - visibleBodyDiameter * 0.035)}px`);
+    art.style.setProperty('--studio-mat-width', `${snap(visibleBodyDiameter * 1.55)}px`);
+    art.style.setProperty('--studio-mat-height', `${snap(visibleBodyDiameter * 0.22)}px`);
+    art.style.setProperty('--studio-trace-size', `${snap(Math.min(76, visibleBodyDiameter * 0.28))}px`);
+    art.style.setProperty('--studio-trace-offset', `${snap(Math.min(innerWidth * 0.37, visibleBodyDiameter * 0.97))}px`);
+    art.dataset.tabletopVisible = String(showDesk);
     desk.style.display = showDesk ? 'block' : 'none';
     desk.style.top = `${snap(top - sr.top)}px`;
     desk.style.width = `${snap(scaleWidth)}px`;
