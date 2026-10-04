@@ -127,8 +127,9 @@ Playwright suite without rebuilding. Production browser and visual commands,
 all assertions, baselines, retries and single-worker settings are unchanged.
 The check job names remain `release-check`, `browser-qa` and `pages-preview`.
 
-`build-and-deploy` is now a dependent job in that same workflow. It requires all
-three jobs to succeed, runs only for main push/manual dispatch, verifies the
+`build-and-deploy` is a dependent job in that same workflow. Fresh builds require
+all three jobs to succeed; the verified-PR reuse path below carries their successful
+evidence for the exact same source tree. It runs only for main push/manual dispatch, verifies the
 artifact identity/checksum, and publishes its exact `dist` without Node, Chromium
 or another test/build pass. A main-head guard prevents rerunning an older source
 from overwriting a newer release. It retains the existing gh-pages publication
@@ -277,3 +278,27 @@ Coverage includes 1000 existing strokes plus new touch/long-gesture paint, full
 mix-ins, 128 stickers, Clear/Undo, individual erase/Undo and save/reload in EN/RU.
 The historical payload fixture assertions remain unchanged; the former quota UI
 case now checks continued drawing beyond 96 strokes and 6 KB.
+
+
+## Reuse exact successful PR releases after merge — 4 October 2026
+
+The owner requested shorter CI after observing two serial full QA passes. PRs
+still run all release/browser/visual/Pages gates. A main push can reuse the
+immutable archive of a completed successful Release Check from its merged PR
+in this repository. The resolver requires matching merged/head/run identities,
+successful producer/browser/Pages jobs and the current attempt's unexpired build.
+The downloaded archive must have an identical whole Git tree, a GitHub-verified
+source commit descended from that PR head, and the original SHA-256 checksum.
+This includes workflow/config/dependency/test/doc files, not only application code.
+Only then are the duplicate main browser/Pages jobs skipped; the exact tested
+archive is republished with current-main identity and retained PR provenance.
+Missing, older, expired, unavailable or mismatched evidence falls back to the
+unchanged full build and QA path. Manual dispatch always runs full QA. The
+current-main publication guard remains. Candidate/DRAFT/Hall checks remain.
+
+Hosted smoke is now part of the release workflow: wait for live HTML to reference
+the tested entry and verify the public JS bytes against the checked artifact,
+then run EN/RU touch painting, sticker editing and durable save/reload directly
+against Pages, without serving a local rebuilt app. Failures remain visible in
+CI with source proof and browser diagnostics. The fast path is validated after
+merging this PR; measured durations belong in its release record.
