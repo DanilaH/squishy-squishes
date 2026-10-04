@@ -401,6 +401,9 @@ The Phaser frame clock owns quiet time; interruptions, active gestures, unsettle
 body, reduced motion and activity blockers suppress idle. Accessories use the
 same projected basis, with a tiny secondary sway. Existing contact shadow
 variables preserve their default values outside Squeeze.
+Quiet elapsed time is sampled with performance.now inside that frame callback:
+Phaser's smoothed/clamped delta must not slow idle delays on low-FPS renderers.
+Activity transitions and long frame gaps reset it; springs retain their delta.
 
 Slow stroke classification tolerates a brief reversal; Squeeze edge grabs use a
 narrower generic influence radius, while default/Finish/Mix constants remain.
