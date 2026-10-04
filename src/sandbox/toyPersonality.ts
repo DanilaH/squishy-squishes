@@ -4,9 +4,9 @@ import { REST_TOY, type ToyPose } from './livingToy';
 const unit = (n: number): number => Math.max(0, Math.min(1, n));
 const quantize = (n: number): number => Math.round(unit(n) * 8) / 8;
 
-/** Transient responses only; the host supplies its clock and actual gestures. */
+/** Transient responses only; the host supplies input timestamps and its presentation clock. */
 export class ToyPersonality {
-  private beganAt = 0;
+  private beganInputAt = 0;
   private lastTapAt = -Infinity;
   private taps = 0;
   private surprisedAt = -Infinity;
@@ -15,11 +15,11 @@ export class ToyPersonality {
   private releasedAt = -Infinity;
   private releaseStrength = 0;
 
-  public begin(now: number): void { this.beganAt = now; this.releasedAt = -Infinity; this.stretched = 0; }
-  public release(now: number, energy: number): void {
-    if (now - this.beganAt < 220) {
-      this.taps = now - this.lastTapAt < 750 ? this.taps + 1 : 1;
-      this.lastTapAt = now;
+  public begin(now: number, inputTime = now): void { this.beganInputAt = inputTime; this.releasedAt = -Infinity; this.stretched = 0; }
+  public release(now: number, energy: number, inputTime = now): void {
+    if (inputTime - this.beganInputAt >= 0 && inputTime - this.beganInputAt < 220) {
+      this.taps = inputTime >= this.lastTapAt && inputTime - this.lastTapAt < 750 ? this.taps + 1 : 1;
+      this.lastTapAt = inputTime;
       if (this.taps >= 3) { this.surprisedAt = now; this.taps = 0; }
     } else this.taps = 0;
     this.releasedAt = now;
@@ -28,7 +28,7 @@ export class ToyPersonality {
   }
   public greet(now: number): void { this.releasedAt = now; this.releaseStrength = .35; }
   public cancel(): void {
-    this.taps = 0; this.surprisedAt = this.strokingAt = this.releasedAt = -Infinity;
+    this.taps = 0; this.lastTapAt = -Infinity; this.surprisedAt = this.strokingAt = this.releasedAt = -Infinity;
     this.stretched = this.releaseStrength = 0;
   }
   public sample(now: number, active: boolean, stroke: number, stretch: number): { surprise: number; blink: number } {

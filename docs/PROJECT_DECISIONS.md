@@ -449,3 +449,10 @@ perpetual filter, new WebGL context or storage mutation. Maker/modal/activity/
 visibility/reduced-motion guards stop it and restore pixels. Workshop release
 moves only the existing passive dust pseudo-layer and softly changes its light;
 furniture, game canvas and controls stay still. Existing pastel art is preserved.
+
+Tap duration/burst spacing use the native input timestamp forwarded by the
+Phaser bridge. Display decay still starts at the current Phaser clock: delayed
+event delivery must neither turn a short hardware tap into a hold nor expire
+its face response before rendering it. The browser test injects the explicit
+65ms native touch sequence; rendering/trace overhead cannot change its input
+duration. Physics/release credit and their clocks are unchanged.

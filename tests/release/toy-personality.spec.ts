@@ -20,6 +20,11 @@ test('personality follows deliberate gestures, clears cancellation and never sta
   expect(toy.releasePose(2400).kind).toBe('jiggle');
   expect(toy.releasePose(3100)).toBe(REST_TOY);
   toy.cancel(); expect(toy.sample(2450, false, 0, 0)).toEqual({ surprise: 0, blink: 0 });
+  // A slow renderer must classify queued input using native timestamps, while
+  // the visible response begins when that input is actually processed.
+  for (let i = 0; i < 3; i++) { toy.begin(5000 + i * 500, 10 + i * 125); toy.release(5350 + i * 500, .1, 75 + i * 125); }
+  expect(toy.sample(6360, false, 0, 0).surprise).toBeGreaterThan(.8);
+  toy.cancel();
   for (const id of ['bow', 'crown', 'bunny-ears', 'horns'] as const) for (let t = 0; t < 1200; t += 20) {
     const a = accessoryMotion(id, t, 1, 0), b = accessoryMotion(id, t, 1, 1);
     expect(Math.abs(a.angle)).toBeLessThanOrEqual(.11); expect(a.lift).toBeLessThanOrEqual(.035);
@@ -100,9 +105,10 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
     let box = (await canvas.boundingBox())!;
     const cdp = await context.newCDPSession(page), point = { id: 1, x: box.x + box.width / 2, y: box.y + box.height / 2 };
     // Node waits avoid tracing a full WebGL/DOM snapshot between rapid touch events.
+    const burstAt = Date.now() / 1000;
     for (let i = 0; i < 3; i++) {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
-      await new Promise(resolve => setTimeout(resolve, 65)); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point], timestamp: burstAt + i * .125 });
+      await new Promise(resolve => setTimeout(resolve, 65)); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [], timestamp: burstAt + i * .125 + .065 });
       await new Promise(resolve => setTimeout(resolve, 60));
     }
     await expect(shell).toHaveAttribute('data-face-reaction', /:s/);
