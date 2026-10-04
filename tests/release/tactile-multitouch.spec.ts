@@ -73,10 +73,12 @@ test('desktop touch stroking and sparse idle blink preserve the saved toy', asyn
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
     const saved = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
     const box = (await canvas.boundingBox())!, cdp = await context.newCDPSession(page);
+    const radiusRatio = await canvas.evaluate(el => Number.parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
+    const radius = Math.min(box.width, box.height) * radiusRatio;
     const point = { id: 1, x: box.x + box.width / 2, y: box.y + box.height / 2 };
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
     for (let step = 1; step <= 24; step++) {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + box.width * .0025 * step }] });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + radius * .0075 * step }] });
       await page.waitForTimeout(32);
     }
     await expect.poll(async () => Number(await shell.getAttribute('data-squish-stroking'))).toBeGreaterThan(.6);
