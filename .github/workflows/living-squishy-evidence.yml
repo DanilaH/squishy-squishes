@@ -1,0 +1,43 @@
+name: Living squishy evidence
+on:
+  push:
+    branches: [qa/living-squishy-evidence]
+permissions:
+  contents: read
+jobs:
+  living-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: b677f9929e5cb06d66a43e988be006b78b258f68
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run release:check
+      - name: Exercise idle, contact, touch handoff, cancellation and audio
+        run: npx playwright test tests/release/living-toy.spec.ts tests/release/tactile-multitouch.spec.ts tests/release/tactile-press.spec.ts tests/release/playful-audio.spec.ts tests/release/playful-tools.spec.ts --grep 'living toy|idle poses|contact grows|short back|two-finger|desktop touch|saved face|touch hold|material release' --config=playwright.release.config.ts --retries=0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: living-squishy-frames
+          path: |
+            migration-baseline-evidence/living-*.png
+            migration-baseline-evidence/hold-*.png
+            migration-baseline-evidence/multi-*.png
+            migration-baseline-evidence/stroke-*.png
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: living-squishy-failure
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
