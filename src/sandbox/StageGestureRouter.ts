@@ -10,6 +10,7 @@ export interface StagePointer {
   readonly y: number;
   readonly clientX: number;
   readonly clientY: number;
+  readonly inputTime?: number;
 }
 
 export interface StageGestureHost {
@@ -20,7 +21,7 @@ export interface StageGestureHost {
   beginSecondSquish?(pointer: StagePointer): boolean;
   beginSquish(pointer: StagePointer): boolean;
   moveSquish(pointer: StagePointer): void;
-  endSquish(pointerId: number): void;
+  endSquish(pointerId: number, inputTime?: number): void;
   cancelSquish(): void;
   paintStamp(point: AppearancePoint): void;
   paintSegment(from: AppearancePoint, to: AppearancePoint): void;
@@ -169,13 +170,13 @@ export class StageGestureRouter {
   }
 
   /** Native pointercancel, focus loss and activity blockers must never credit a squeeze. */
-  public up(pointerId: number, cancelled = false): void {
+  public up(pointerId: number, cancelled = false, inputTime?: number): void {
     if (pointerId !== this.owner && pointerId !== this.secondOwner) return;
     if (this.secondOwner !== null) {
       if (cancelled) {
         this.host.cancelSquish(); this.owner = null; this.squishOwner = null; this.secondOwner = null; return;
       }
-      this.host.endSquish(pointerId);
+      this.host.endSquish(pointerId, inputTime);
       if (pointerId === this.owner) { this.owner = this.secondOwner; this.squishOwner = this.owner; }
       this.secondOwner = null;
       return;
@@ -187,7 +188,7 @@ export class StageGestureRouter {
     }
     if (this.squishOwner === pointerId) {
       if (cancelled) this.host.cancelSquish();
-      else this.host.endSquish(pointerId);
+      else this.host.endSquish(pointerId, inputTime);
     }
     this.owner = null;
     this.squishOwner = null;

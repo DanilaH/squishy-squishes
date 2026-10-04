@@ -138,16 +138,16 @@ export class PhaserSquishSurface {
           beginSecondSquish: (pointer) => squish.beginAt(pointer.id, pointer.x, pointer.y),
           beginSquish: (pointer) => {
             const claimed = squish.beginAt(pointer.id, pointer.x, pointer.y);
-            if (claimed) { owner.resetPresentation(); owner.personality.begin(performance.now()); void owner.audio.prime(); owner.callbacks.onSquishBegin?.(); }
+            if (claimed) { owner.resetPresentation(); owner.personality.begin(performance.now(), pointer.inputTime); void owner.audio.prime(); owner.callbacks.onSquishBegin?.(); }
             return claimed;
           },
           moveSquish: (pointer) => squish.moveAt(pointer.id, pointer.x, pointer.y),
-          endSquish: (pointerId) => {
+          endSquish: (pointerId, inputTime) => {
             squish.endById(pointerId);
             owner.resetPresentation();
             if (squish.metricsSample().active) return;
             const energy = squish.snapshot().releaseEnergy;
-            owner.personality.release(performance.now(), energy);
+            owner.personality.release(performance.now(), energy, inputTime);
             owner.audio.releaseTactile(energy);
             owner.callbacks.onSquishRelease?.(energy);
           },
