@@ -1,3 +1,4 @@
+import { REST_TOY, posePoint, unposePoint, type ToyPose } from '../../sandbox/livingToy';
 import Phaser from 'phaser';
 import { hasShapeRelief } from '../../sandbox/shapeRelief';
 import { getMaterial, getPalette, type MaterialId, type PaletteId } from '../../game/content';
@@ -34,7 +35,7 @@ const FIELD_SIZE = 128;
 const clamp01 = (n: number): number => Math.min(1, Math.max(0, n));
 const UNIFORMS = [
   'uScale', 'uMoldProgress', 'uShapeField', 'uAppearanceTexture', 'uAppearanceEnabled',
-  'uPointerUv', 'uStrainDirection', 'uColorLow', 'uColorHigh', 'uSheenColor', 'uRimColor',
+  'uFillingDrift', 'uPointerUv', 'uStrainDirection', 'uColorLow', 'uColorHigh', 'uSheenColor', 'uRimColor',
   'uCompression', 'uPressDepth', 'uFillingAmount', 'uFillingStyle', 'uFillProgress',
   'uMaterialSeed', 'uTranslucency', 'uIridescence', 'uRoughness', 'uMetallic',
   'uPearlescence', 'uCloudiness', 'uWireframePass',
@@ -101,6 +102,9 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private moldProgress = 1;
   private wireframe = false;
   private pokeEnabled = false;
+  private pose: ToyPose = REST_TOY;
+  private fillingDrift = { x: 0, y: 0 };
+  public setPresentation(pose: ToyPose, x = 0, y = 0): void { this.pose = pose; this.fillingDrift = { x, y }; }
   private drawCalls = 0;
   private disposed = false;
   private lastReleaseEnergy = 0;
@@ -184,7 +188,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public pointToUv(x: number, y: number): AppearancePoint | null {
     if (this.disposed) return null;
     const point = this.localPoint(x, y);
-    return this.simulation.pointToUv(point.x, point.y);
+    const hit = unposePoint(point.x, point.y, this.pose);
+    return this.simulation.pointToUv(hit.x, hit.y);
   }
 
   public pointToAppearanceUv(x: number, y: number): AppearancePoint | null {
@@ -197,7 +202,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public projectUvToCanvas(u: number, v: number): { x: number; y: number } {
     const { width, height } = this.scene.scale;
     const radius = this.radius();
-    const point = this.simulation.projectUvToLocal(u, v);
+    const local = this.simulation.projectUvToLocal(u, v);
+    const point = posePoint(local.x, local.y, this.pose);
     return {
       x: width / 2 + point.x * radius,
       y: height / 2 - (point.y + this.renderCenterOffsetY) * radius,
@@ -249,7 +255,9 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public beginAt(pointerId: number, canvasX: number, canvasY: number): boolean {
     if (this.disposed) return false;
     const point = this.localPoint(canvasX, canvasY);
-    if (!this.simulation.begin(pointerId, point.x, point.y)) return false;
+    const hit = unposePoint(point.x, point.y, this.pose);
+    if (!this.simulation.begin(pointerId, hit.x, hit.y)) return false;
+    this.pose = REST_TOY;
     return true;
   }
 
@@ -435,8 +443,9 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     for (let index = 0; index < this.simulation.vertices.length; index += 1) {
       const vertex = this.simulation.vertices[index]!;
       const offset = index * 4;
-      this.packed[offset] = vertex.x;
-      this.packed[offset + 1] = vertex.y + this.renderCenterOffsetY;
+      const point = posePoint(vertex.x, vertex.y, this.pose);
+      this.packed[offset] = point.x;
+      this.packed[offset + 1] = point.y + this.renderCenterOffsetY;
       this.packed[offset + 2] = vertex.u;
       this.packed[offset + 3] = vertex.v;
     }
@@ -458,7 +467,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       this.volume ??= new PhaserDeformableVolume(gl);
       this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
         this.appearanceEnabled, radius * 2 / width, radius * 2 / height,
-        this.moldProgress, sample.compression, this.renderCenterOffsetY);
+        this.moldProgress, sample.compression, this.renderCenterOffsetY, this.pose);
     }
     gl.useProgram(gpu.program);
     const u = (name: typeof UNIFORMS[number]): WebGLUniformLocation => gpu.uniforms.get(name)!;
@@ -481,6 +490,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.uniform2f(u('uStrainDirection'), sample.gestureX, sample.gestureY);
     gl.uniform1f(u('uCompression'), sample.compression);
     gl.uniform1f(u('uPressDepth'), sample.pressDepth);
+    gl.uniform2f(u('uFillingDrift'), this.fillingDrift.x, this.fillingDrift.y);
     gl.uniform3f(u('uColorLow'), ...material.low);
     gl.uniform3f(u('uColorHigh'), ...material.high);
     gl.uniform3f(u('uSheenColor'), ...material.sheen);

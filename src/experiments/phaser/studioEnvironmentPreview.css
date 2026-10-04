@@ -174,14 +174,14 @@
   top: var(--studio-contact-top, calc(50% + min(23.78vw, 125px, 29cqh)));
   width: min(38vw, 175px, 46cqh);
   height: min(4.2vw, 17px, 5.2cqh);
-  transform: translate(-50%, -50%);
+  transform: translate(calc(-50% + var(--toy-contact-x, 0px)), -50%) scaleX(var(--toy-contact-width, 1));
   border-radius: 50%;
   background: radial-gradient(ellipse,
     rgba(82, 50, 34, .24) 0 16%,
     rgba(82, 50, 34, .11) 45%,
     transparent 76%);
-  filter: blur(2.2px);
-  opacity: .76;
+  filter: blur(var(--toy-contact-blur, 2.2px));
+  opacity: var(--toy-contact-opacity, .76);
   pointer-events: none;
 }
 /* The desk is z=2. Contact lives on its surface, then the live toy/rigid

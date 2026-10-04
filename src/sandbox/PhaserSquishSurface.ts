@@ -1,3 +1,4 @@
+import { REST_TOY, idleToyPose, inclusionLag, type ToyPose } from './livingToy';
 import Phaser from 'phaser';
 import type { SquishyAudio } from '../game/SquishyAudio';
 import { getShape, isPointInsideShape, type ShapeDefinition } from '../game/shapes';
@@ -49,6 +50,36 @@ export class PhaserSquishSurface {
   private decorSection: StudioDecorSection = 'face';
   private disposed = false;
   private lastMetricsAt = 0;
+  private quietMs = 0;
+  private pose: ToyPose = REST_TOY;
+  private lag = { x: 0, y: 0 };
+  private lastBody = { x: 0, y: 0 };
+  private lastPose = REST_TOY;
+  public bodyOffset(): { readonly x: number; readonly y: number } { return this.squish?.viewportFollowOffset() ?? { x: 0, y: 0 }; }
+  private readonly reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  public presentation(): ToyPose { return this.pose; }
+  public inclusionOffset(): { x: number; y: number } { return this.lag; }
+  private resetPresentation(): void {
+    this.quietMs = 0; this.pose = REST_TOY; this.lag = { x: 0, y: 0 };
+    this.lastPose = REST_TOY;
+    this.lastBody = this.squish?.viewportFollowOffset() ?? { x: 0, y: 0 };
+    this.squish?.setPresentation(REST_TOY);
+  }
+  private advancePresentation(delta: number): void {
+    const squish = this.squish;
+    if (!squish) return;
+    const sample = squish.metricsSample(), body = squish.viewportFollowOffset();
+    const enabled = this.stage === 'squeeze' && !this.blocked && !this.reducedMotion.matches;
+    if (enabled && !sample.active && sample.maxDisplacement < .025) this.quietMs += delta > 500 ? 0 : Math.max(0, delta);
+    else this.quietMs = 0;
+    this.pose = enabled && !sample.active ? idleToyPose(this.quietMs) : REST_TOY;
+    this.lag = enabled ? { x: inclusionLag(this.lag.x, body.x - this.lastBody.x + (this.pose.rotation - this.lastPose.rotation) * .25, delta), y: inclusionLag(this.lag.y, body.y - this.lastBody.y + this.pose.y - this.lastPose.y, delta) } : { x: 0, y: 0 };
+    this.lastBody = body; this.lastPose = this.pose;
+    squish.setPresentation(this.pose, this.lag.x, this.lag.y);
+    this.canvas.dataset.toyIdle = this.pose.kind;
+    this.canvas.dataset.toyRotation = this.pose.rotation.toFixed(4);
+    this.canvas.dataset.toySkew = this.pose.skew.toFixed(4);
+  }
   private readonly frameTimes: number[] = [];
   private readonly resizeObserver: ResizeObserver;
 
@@ -90,18 +121,19 @@ export class PhaserSquishSurface {
           beginSecondSquish: (pointer) => squish.beginAt(pointer.id, pointer.x, pointer.y),
           beginSquish: (pointer) => {
             const claimed = squish.beginAt(pointer.id, pointer.x, pointer.y);
-            if (claimed) { void owner.audio.prime(); owner.callbacks.onSquishBegin?.(); }
+            if (claimed) { owner.resetPresentation(); void owner.audio.prime(); owner.callbacks.onSquishBegin?.(); }
             return claimed;
           },
           moveSquish: (pointer) => squish.moveAt(pointer.id, pointer.x, pointer.y),
           endSquish: (pointerId) => {
             squish.endById(pointerId);
+            owner.resetPresentation();
             if (squish.metricsSample().active) return;
             const energy = squish.snapshot().releaseEnergy;
             owner.audio.releaseTactile(energy);
             owner.callbacks.onSquishRelease?.(energy);
           },
-          cancelSquish: () => { squish.cancel(); owner.audio.releaseTactile(); owner.callbacks.onSquishCancel?.(); },
+          cancelSquish: () => { owner.resetPresentation(); squish.cancel(); owner.audio.releaseTactile(); owner.callbacks.onSquishCancel?.(); },
           paintStamp: (point) => owner.callbacks.paintStamp(point),
           paintSegment: (from, to) => owner.callbacks.paintSegment(from, to),
           paintEnd: () => owner.callbacks.paintEnd(),
@@ -119,6 +151,7 @@ export class PhaserSquishSurface {
       override update(_time: number, delta: number): void {
         if (owner.disposed || !owner.squish) return;
         owner.squish.advance(delta, performance.now());
+        owner.advancePresentation(delta);
         owner.publishMetrics(delta);
         owner.callbacks.onFrame();
       }
@@ -199,6 +232,7 @@ export class PhaserSquishSurface {
   public setInteractive(_enabled: boolean): void { /* The old raw-renderer interaction gate is not a Phaser stage. */ }
   public setStudioStage(stage: StudioGestureStage, section: StudioDecorSection): void {
     if (stage !== this.stage) {
+      this.resetPresentation();
       // A new Studio scene must start from its own centered presentation, even
       // if the player saved immediately after a far Finish drag.
       this.bridge?.cancel();
