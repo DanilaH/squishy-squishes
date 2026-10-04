@@ -1,0 +1,39 @@
+name: Toy Personality Focused QA
+on:
+  push:
+    branches: [qa/toy-personality-evidence]
+permissions:
+  contents: read
+jobs:
+  focused:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: 437987e2b9de734ceb003b17cc04aa7938db22e0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run release:check
+      - run: npx playwright test tests/release/toy-personality.spec.ts --config=playwright.release.config.ts --retries=0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: personality-frames
+          path: |
+            migration-baseline-evidence/*.png
+            test-results/**/*.png
+            test-results/**/error-context.md
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: personality-traces
+          path: test-results/**/trace.zip
+          if-no-files-found: ignore
+          retention-days: 7
