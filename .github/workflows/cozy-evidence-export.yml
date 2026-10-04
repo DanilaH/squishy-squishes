@@ -1,0 +1,71 @@
+name: Export cozy review evidence
+on:
+  push:
+    branches: [qa/cozy-evidence-export]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 11297363572
+          run-id: 37188922148
+          github-token: ${{ github.token }}
+          path: camera
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 11297998934
+          run-id: 37188922106
+          github-token: ${{ github.token }}
+          path: comparison
+      - name: Split existing evidence without altering pixels
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          for p in Path('camera').rglob('*.png'):
+            kind='before' if 'squishy-before' in p.parts else 'after'
+            out=Path('split')/kind/p.parent.name/p.name
+            out.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,out)
+          for p in Path('comparison').rglob('*.png'):
+            if 'test-results' not in p.parts or 'visual' not in p.parts:continue
+            kind=next((k for k in ['actual','expected','diff'] if p.stem.endswith('-'+k)),None)
+            if not kind:continue
+            out=Path('split')/kind/p.parent.name/p.name
+            out.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,out)
+          for d in sorted(Path('split').iterdir()):
+            print(d.name,len(list(d.rglob('*.png'))),sum(p.stat().st_size for p in d.rglob('*.png')))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cozy-before
+          path: split/before
+          if-no-files-found: error
+          retention-days: 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cozy-after
+          path: split/after
+          if-no-files-found: error
+          retention-days: 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cozy-ui-actual
+          path: split/actual
+          if-no-files-found: error
+          retention-days: 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cozy-ui-expected
+          path: split/expected
+          if-no-files-found: error
+          retention-days: 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cozy-ui-diff
+          path: split/diff
+          if-no-files-found: error
+          retention-days: 2
