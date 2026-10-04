@@ -117,7 +117,7 @@ for (const reduced of [false, true]) test(`saved face reacts and returns to rest
   await page.mouse.up();
   if (!reduced) await expect.poll(async () => {
     const samples: string[] = JSON.parse(await shell.getAttribute('data-release-reaction-samples') ?? '[]');
-    return samples.some(value => /^0:[^0]/.test(value));
+    return samples.some(value => Number(value.split(':')[0]) === 0 && Number(value.split(':')[1]) > 0);
   }).toBe(true);
   await expect.poll(async () => Number(await page.locator('[data-sandbox-accessory]').getAttribute('data-accessory-sway'))).toBe(0);
   if (!reduced) await expect(shell).toHaveAttribute('data-face-reaction', '0:0');
