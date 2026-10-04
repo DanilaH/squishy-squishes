@@ -33,10 +33,10 @@ export class ToyPersonality {
   }
   public sample(now: number, active: boolean, stroke: number, stretch: number): { surprise: number; blink: number } {
     if (active) this.stretched = Math.max(this.stretched, stretch);
-    if (active && stroke > .6) { if (!Number.isFinite(this.strokingAt)) this.strokingAt = now; }
+    if (active && stroke > .2) { if (!Number.isFinite(this.strokingAt)) this.strokingAt = now; }
     else this.strokingAt = -Infinity;
     const surprise = quantize(1 - (now - this.surprisedAt) / 650);
-    const blink = active && now - this.strokingAt > 650 ? quantize(stroke * .65) : 0;
+    const blink = active && Number.isFinite(this.strokingAt) && now - this.strokingAt > 650 ? quantize(stroke * .65) : 0;
     return { surprise, blink };
   }
   public releasePose(now: number): ToyPose {

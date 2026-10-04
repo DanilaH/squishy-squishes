@@ -14,7 +14,8 @@ test('personality follows deliberate gestures, clears cancellation and never sta
   for (const now of [100, 300, 500]) { toy.begin(now); toy.release(now + 70, .1); }
   expect(toy.sample(580, false, 0, 0).surprise).toBeGreaterThan(.8);
   expect(toy.sample(1300, false, 0, 0).surprise).toBe(0);
-  toy.begin(1500); toy.sample(1510, true, .9, 0);
+  toy.begin(1500); expect(toy.sample(1510, true, .9, 0).blink).toBe(0);
+  expect(toy.sample(1850, true, .3, 0).blink).toBe(0);
   expect(toy.sample(2250, true, .9, 0).blink).toBeGreaterThan(.5);
   toy.sample(2300, true, 0, .8); toy.release(2350, .3);
   expect(toy.releasePose(2400).kind).toBe('jiggle');
@@ -116,8 +117,13 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
     await page.screenshot({ path: `migration-baseline-evidence/personality-${width}-surprise.png` });
     await expect(shell).toHaveAttribute('data-face-reaction', '0:0');
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
-    for (let f = 0; f < 65; f++) {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + Math.sin(f / 18) * box.width * .024 }] });
+    const radius = Math.min(box.width, box.height) * await canvas.evaluate(el => Number.parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
+    const strokeAt = performance.now();
+    for (let f = 0; f < 48; f++) {
+      // Constant slow travel in local units, regardless of CDP/GPU delivery latency.
+      const phase = ((performance.now() - strokeAt) / 1000 * .18) % .32;
+      const travel = phase < .16 ? phase : .32 - phase;
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + radius * travel }] });
       await new Promise(resolve => setTimeout(resolve, 32));
     }
     await expect(shell).toHaveAttribute('data-face-reaction', /:b/);
