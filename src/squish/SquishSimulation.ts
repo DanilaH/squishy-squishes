@@ -57,6 +57,10 @@ const RELEASE_PRESS_KICK = 0.24;
 const POKE_MAX_TRAVEL = 0.10;
 const POKE_MAX_DURATION_MS = 220;
 const POKE_REBOUND_KICK = 1.08;
+const PINCH_MAX_STRETCH = .45;
+const PINCH_MAX_COMPRESSION = .38;
+// Resist mesh folding when two fingers abruptly reverse direction.
+const PINCH_DAMPING = 30;
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 const clamp01 = (value: number): number => clamp(value, 0, 1);
@@ -391,8 +395,8 @@ export class SquishSimulation {
     const axisLength = Math.max(.12, Math.hypot(axisX, axisY));
     const ux = axisX / axisLength, uy = axisY / axisLength;
     const separation = second ? ((second.x - this.pointerX) * ux + (second.y - this.pointerY) * uy) / axisLength - 1 : 0;
-    const pinch = clamp(separation, -.55, .65);
-    this.stretch = second ? Math.max(0, pinch) / .65 : 0;
+    const pinch = clamp(separation, -PINCH_MAX_COMPRESSION, PINCH_MAX_STRETCH);
+    this.stretch = second ? Math.max(0, pinch) / PINCH_MAX_STRETCH : 0;
 
     let targetBodyX = active && this.viewportFollowEnabled && !second
       ? this.grabBodyStartX + (this.pointerX - this.grabPointerStartX) * VIEWPORT_FOLLOW_RATIO
@@ -504,7 +508,8 @@ export class SquishSimulation {
         responseInfluence = Math.max(responseInfluence, .65);
       }
       const stiffness = active ? GRAB_STIFFNESS_FAR + (GRAB_STIFFNESS_NEAR - GRAB_STIFFNESS_FAR) * responseInfluence : 0;
-      const damping = Math.exp(-(DAMPING * dampingResponse * (0.88 + responseInfluence * 0.12)) * dt);
+      const dampingRate = second ? PINCH_DAMPING : DAMPING * dampingResponse;
+      const damping = Math.exp(-(dampingRate * (0.88 + responseInfluence * 0.12)) * dt);
       const ax = (targetX - vertex.x) * stiffness + (bodyRestX - vertex.x) * REST_STIFFNESS * restResponse;
       const ay = (targetY - vertex.y) * stiffness + (bodyRestY - vertex.y) * REST_STIFFNESS * restResponse;
       vertex.vx = (vertex.vx + ax * dt) * damping;

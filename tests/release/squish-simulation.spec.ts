@@ -199,3 +199,18 @@ test('slow short strokes are distinct from stationary holds and fast pulls', () 
   expect(stroke.snapshot().pressDepth).toBeLessThan(hold.snapshot().pressDepth);
   expect(hold.snapshot().stroking).toBe(0); expect(pull.snapshot().stroking).toBe(0);
 });
+
+test('abrupt stretch-to-compression keeps the shared mesh ordered and face readable', () => {
+  const sim = new SquishSimulation(); sim.setTactileFeatures(true, 'jelly');
+  sim.begin(1, -.25, 0); sim.begin(2, .25, 0);
+  for (let f = 1; f <= 120; f++) {
+    const gap = f <= 40 ? .55 : .10;
+    sim.move(1, -gap, 0); sim.move(2, gap, 0); sim.advance(16, f * 16);
+    expect(sim.projectUvToLocal(.75, .5).x - sim.projectUvToLocal(.25, .5).x).toBeGreaterThan(.48);
+    expect(sim.projectUvToLocal(.5, .75).y - sim.projectUvToLocal(.5, .25).y).toBeGreaterThan(.65);
+    for (let row = 0; row <= 16; row++) {
+      const vertices = sim.vertices.slice(row * 17, row * 17 + 17);
+      expect(vertices.every((v, i) => i === 0 || v.x > vertices[i - 1]!.x)).toBe(true);
+    }
+  }
+});
