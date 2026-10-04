@@ -20,7 +20,7 @@ export class PhaserStudioGestureBridge {
   private readonly router: StageGestureRouter;
   private readonly abort = new AbortController();
   private disposed = false;
-  private releasedNativePointer: number | null = null;
+  private readonly releasedNativePointers = new Set<number>();
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -30,6 +30,7 @@ export class PhaserStudioGestureBridge {
     this.router = new StageGestureRouter({
       pointToUv: (x, y) => host.pointToUv(x, y),
       paintPointToUv: (x, y) => host.paintPointToUv(x, y),
+      beginSecondSquish: (pointer) => host.beginSecondSquish?.(pointer) ?? false,
       beginSquish: (pointer) => host.beginSquish(pointer),
       moveSquish: (pointer) => host.moveSquish(pointer),
       endSquish: (id) => host.endSquish(id),
@@ -48,8 +49,8 @@ export class PhaserStudioGestureBridge {
     // Touch implicitly loses capture before Phaser receives touchend. Remember
     // a normal native release only to classify that interruption; Phaser still
     // exclusively owns the actual gesture end and authoring callbacks.
-    canvas.addEventListener('pointerdown', () => { this.releasedNativePointer = null; }, { signal: this.abort.signal });
-    canvas.addEventListener('pointerup', (event) => { this.releasedNativePointer = event.pointerId; }, { signal: this.abort.signal });
+    canvas.addEventListener('pointerdown', (event) => { this.releasedNativePointers.delete(event.pointerId); }, { signal: this.abort.signal });
+    canvas.addEventListener('pointerup', (event) => { this.releasedNativePointers.add(event.pointerId); }, { signal: this.abort.signal });
     canvas.addEventListener('pointercancel', this.handleCancel, { signal: this.abort.signal });
     canvas.addEventListener('lostpointercapture', this.handleLostCapture, { signal: this.abort.signal });
     window.addEventListener('blur', this.handleCancel, { signal: this.abort.signal });
@@ -91,7 +92,7 @@ export class PhaserStudioGestureBridge {
     // TouchEvent is absent on some desktop browsers (notably Firefox without a
     // touch device). An unguarded instanceof throws and drops every mouse gesture.
     const touch = typeof TouchEvent !== 'undefined' && native instanceof TouchEvent
-      ? native.changedTouches.item(0) : null;
+      ? Array.from(native.changedTouches).find((touch) => touch.identifier === pointer.identifier) ?? null : null;
     const clientX = native instanceof MouseEvent ? native.clientX
       : touch?.clientX ?? rect.left + pointer.x * rect.width / Math.max(1, this.scene.scale.width);
     const clientY = native instanceof MouseEvent ? native.clientY
@@ -115,7 +116,6 @@ export class PhaserStudioGestureBridge {
 
   private readonly handleMove = (pointer: Phaser.Input.Pointer): void => {
     if (this.disposed) return;
-    if (pointer.id !== this.router.snapshot().owner) return;
     this.router.move(this.point(pointer));
   };
 
@@ -129,8 +129,7 @@ export class PhaserStudioGestureBridge {
   private readonly handleCancel = (): void => { this.cancel(); };
   private readonly handleVisibility = (): void => { if (document.hidden) this.cancel(); };
   private readonly handleLostCapture = (event: PointerEvent): void => {
-    if (event.pointerId === this.releasedNativePointer) {
-      this.releasedNativePointer = null;
+    if (this.releasedNativePointers.delete(event.pointerId)) {
       return;
     }
     if (this.router.snapshot().owner !== null) this.cancel();

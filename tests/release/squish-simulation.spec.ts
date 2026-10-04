@@ -135,3 +135,67 @@ test('stationary hold releases through the existing spring impulse without the t
   tapped.end(1, true); plain.end(1, false);
   expect(vertexTrace(tapped)).not.toEqual(vertexTrace(plain));
 });
+
+for (const shapeId of ['dumpling', 'paw', 'mochi'] as const) test(`two-finger field stays bounded and hands off either pointer: ${shapeId}`, () => {
+  for (const firstUp of [1, 2]) {
+    const sim = new SquishSimulation(getShape(shapeId));
+    sim.setTactileFeatures(true);
+    expect(sim.begin(1, -.25, 0)).toBe(true);
+    expect(sim.begin(2, .25, 0)).toBe(true);
+    expect(sim.begin(3, 0, 0)).toBe(false);
+    for (let frame = 1; frame <= 40; frame++) {
+      sim.move(1, -.55, 0); sim.move(2, .55, 0);
+      const sample = sim.advance(16, frame * 16);
+      expect(sample.pointers).toBe(2); expect(sample.stretch).toBeGreaterThan(.5);
+      expect(Math.max(...sim.vertices.map(v => Math.hypot(v.x - v.restX, v.y - v.restY)))).toBeLessThanOrEqual(.720001);
+    }
+    expect(sim.projectUvToLocal(.75, .5).x - sim.projectUvToLocal(.25, .5).x).toBeGreaterThan(1.2);
+    const before = vertexTrace(sim);
+    expect(sim.end(firstUp, true)).toBeNull();
+    expect(vertexTrace(sim)).toEqual(before);
+    expect(sim.pointerOwner()).toBe(firstUp === 1 ? 2 : 1);
+    expect(sim.snapshot().squeezes).toBe(0);
+    expect(sim.end(firstUp === 1 ? 2 : 1, true)).toBeGreaterThan(.08);
+    expect(sim.snapshot().squeezes).toBe(1);
+    sim.advance(16, 656);
+    expect(sim.snapshot().pointers).toBe(0);
+  }
+});
+
+test('two-finger compression bulges sideways; cancellation never adds a release', () => {
+  const sim = new SquishSimulation(); sim.setTactileFeatures(true);
+  sim.begin(1, -.4, 0); sim.begin(2, .4, 0);
+  for (let f = 1; f <= 40; f++) { sim.move(1, -.2, 0); sim.move(2, .2, 0); sim.advance(16, f * 16); }
+  expect(sim.projectUvToLocal(.75, .5).x - sim.projectUvToLocal(.25, .5).x).toBeLessThan(.8);
+  expect(sim.projectUvToLocal(.5, .75).y - sim.projectUvToLocal(.5, .25).y).toBeGreaterThan(1.1);
+  const before = vertexTrace(sim); sim.cancel(); expect(vertexTrace(sim)).toEqual(before);
+  expect(sim.snapshot().squeezes).toBe(0); expect(sim.snapshot().pointers).toBe(0);
+});
+
+test('material profiles are distinct, deterministic, bounded and eventually rest', () => {
+  const traces: number[][] = [];
+  for (const material of ['soft', 'jelly', 'marshmallow'] as const) {
+    const left = new SquishSimulation(), right = new SquishSimulation();
+    for (const sim of [left, right]) {
+      sim.setTactileFeatures(true, material); drive(sim);
+      traces.push(vertexTrace(sim));
+      for (let f = 25; f <= 500; f++) sim.advance(16, f * 16);
+      expect(sim.snapshot().maxDisplacement).toBeLessThan(.002);
+      expect(sim.vertices.every(v => Number.isFinite(v.x) && Number.isFinite(v.vx))).toBe(true);
+    }
+    expect(vertexTrace(left)).toEqual(vertexTrace(right));
+  }
+  expect(traces[0]).not.toEqual(traces[2]); expect(traces[0]).not.toEqual(traces[4]);
+});
+
+test('slow short strokes are distinct from stationary holds and fast pulls', () => {
+  const stroke = new SquishSimulation(), hold = new SquishSimulation(), pull = new SquishSimulation();
+  for (const sim of [stroke, hold, pull]) { sim.setTactileFeatures(true); sim.begin(1, 0, 0); }
+  for (let f = 1; f <= 50; f++) {
+    stroke.move(1, f * .003, 0); pull.move(1, f * .018, 0);
+    for (const sim of [stroke, hold, pull]) sim.advance(16, f * 16);
+  }
+  expect(stroke.snapshot().stroking).toBeGreaterThan(.8);
+  expect(stroke.snapshot().pressDepth).toBeLessThan(hold.snapshot().pressDepth);
+  expect(hold.snapshot().stroking).toBe(0); expect(pull.snapshot().stroking).toBe(0);
+});

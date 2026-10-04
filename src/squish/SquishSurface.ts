@@ -8,6 +8,7 @@ export type SquishRgb = readonly [number, number, number];
 export type SquishFillingStyle = 'none' | 'foam' | 'pearl';
 
 export interface SquishMaterialStyle {
+  materialId?: import('../game/content').MaterialId;
   low: SquishRgb;
   high: SquishRgb;
   sheen: SquishRgb;
@@ -22,6 +23,9 @@ export interface SquishMaterialStyle {
 }
 
 export interface SquishMetrics {
+  stretch?: number;
+  stroking?: number;
+  pointers?: number;
   fps: number;
   p95FrameMs: number;
   compression: number;

@@ -1,4 +1,5 @@
 import { sampleContinuousInteraction } from '@danilah/mini-games-kit/core';
+import type { MaterialId } from '../game/content';
 import { getShape, isPointInsideShape, type ShapeDefinition } from '../game/shapes';
 
 /** Engine-neutral mesh state. No DOM, WebGL, Phaser or WebAudio dependencies. */
@@ -26,6 +27,9 @@ export interface SquishSimulationSample {
   readonly sheenX: number;
   readonly sheenY: number;
   readonly squeezes: number;
+  readonly stretch: number;
+  readonly stroking: number;
+  readonly pointers: number;
 }
 
 export const SQUISH_GRID_CELLS = 16;
@@ -92,6 +96,25 @@ export class SquishSimulation {
   private maxGestureCompression = 0;
   private squeezes = 0;
   private gestureDurationMs = 0;
+  private second: { id: number; x: number; y: number; startX: number; startY: number } | null = null;
+  private pinchStartX = 0;
+  private pinchStartY = 0;
+  private multiTouch = false;
+  private hadSecond = false;
+  private stretch = 0;
+  private stroking = 0;
+  private motionSpeed = 0;
+  private previousPointerX = 0;
+  private previousPointerY = 0;
+  private material: MaterialId = 'soft';
+
+  public setTactileFeatures(enabled: boolean, material: MaterialId = 'soft'): void {
+    if (this.multiTouch && !enabled) this.cancel();
+    this.multiTouch = enabled;
+    this.material = material;
+  }
+
+  public pointerOwner(): number | null { return this.pointerId; }
 
   public constructor(shape: ShapeDefinition = getShape('soft-square'), startAtMs = 0) {
     this.shape = shape;
@@ -229,7 +252,16 @@ export class SquishSimulation {
   public begin(pointerId: number, x: number, y: number): boolean {
     const localX = x - this.bodyOffsetX;
     const localY = y - this.bodyOffsetY;
-    if (this.pointerId !== null || !isPointInsideShape(this.shape, localX, localY)) return false;
+    if (!isPointInsideShape(this.shape, localX, localY)) return false;
+    if (this.pointerId !== null) {
+      if (!this.multiTouch || this.second || pointerId === this.pointerId) return false;
+      if (Math.hypot(x - this.pointerX, y - this.pointerY) < 0.12) return false;
+      this.second = { id: pointerId, x, y, startX: x, startY: y };
+      this.pinchStartX = this.pointerX;
+      this.pinchStartY = this.pointerY;
+      this.hadSecond = true;
+      return true;
+    }
     this.pointerId = pointerId;
     this.grabStartX = localX;
     this.grabStartY = localY;
@@ -241,12 +273,16 @@ export class SquishSimulation {
     this.grabBodyStartY = this.bodyOffsetY;
     this.maxGestureCompression = 0;
     this.gestureDurationMs = 0;
+    this.hadSecond = false;
+    this.previousPointerX = x; this.previousPointerY = y;
+    this.motionSpeed = 0;
     this.sheenX += (localX - this.sheenX) * 0.55;
     this.sheenY += (localY - this.sheenY) * 0.55;
     return true;
   }
 
   public move(pointerId: number, x: number, y: number): void {
+    if (pointerId === this.second?.id) { this.second.x = x; this.second.y = y; return; }
     if (pointerId !== this.pointerId) return;
     this.pointerX = x;
     this.pointerY = y;
@@ -254,11 +290,25 @@ export class SquishSimulation {
 
   /** Returns tactile release energy; a weak gesture does not count as a squeeze. */
   public end(pointerId: number, pokeOnTap = false): number | null {
+    if (this.second && (pointerId === this.pointerId || pointerId === this.second.id)) {
+      if (pointerId === this.pointerId) {
+        // Transfer ownership without a mesh reset or a credited release.
+        this.pointerId = this.second.id;
+        this.pointerX = this.second.x; this.pointerY = this.second.y;
+        this.grabStartX = this.pointerX - this.bodyOffsetX;
+        this.grabStartY = this.pointerY - this.bodyOffsetY;
+      }
+      this.second = null;
+      this.grabPointerStartX = this.pointerX; this.grabPointerStartY = this.pointerY;
+      this.grabBodyStartX = this.bodyOffsetX; this.grabBodyStartY = this.bodyOffsetY;
+      this.previousPointerX = this.pointerX; this.previousPointerY = this.pointerY;
+      return null;
+    }
     if (pointerId !== this.pointerId) return null;
     const localPointerX = this.pointerX - this.bodyOffsetX;
     const localPointerY = this.pointerY - this.bodyOffsetY;
     const tapTravel = Math.hypot(localPointerX - this.grabStartX, localPointerY - this.grabStartY);
-    const poke = pokeOnTap && tapTravel <= POKE_MAX_TRAVEL && this.gestureDurationMs <= POKE_MAX_DURATION_MS;
+    const poke = pokeOnTap && !this.hadSecond && tapTravel <= POKE_MAX_TRAVEL && this.gestureDurationMs <= POKE_MAX_DURATION_MS;
     const energy = clamp01(Math.max(this.maxGestureCompression, this.pressDepth * PRESS_COMPRESSION_WEIGHT));
     if (energy >= 0.08) {
       this.squeezes += 1;
@@ -289,6 +339,8 @@ export class SquishSimulation {
   /** Cancel without adding a squeeze or a release impulse. */
   public cancel(): void {
     this.pointerId = null;
+    this.second = null;
+    this.stroking = 0; this.stretch = 0; this.motionSpeed = 0;
   }
 
   private applyReleaseImpulse(): void {
@@ -321,13 +373,33 @@ export class SquishSimulation {
     const dt = Math.min(Math.max(0.001, deltaMs / 1000), 1 / 30);
     const active = this.pointerId !== null;
     if (active) this.gestureDurationMs += Math.max(0, deltaMs);
+    const speed = active ? Math.hypot(this.pointerX - this.previousPointerX, this.pointerY - this.previousPointerY) / dt : 0;
+    this.previousPointerX = this.pointerX; this.previousPointerY = this.pointerY;
+    this.motionSpeed += (speed - this.motionSpeed) * (1 - Math.exp(-10 * dt));
+    const slowStroke = this.multiTouch && active && !this.second && this.gestureDurationMs > 180
+      && this.motionSpeed > .06 && this.motionSpeed < .8
+      && Math.hypot(this.pointerX - this.grabPointerStartX, this.pointerY - this.grabPointerStartY) < .32;
+    this.stroking += ((slowStroke ? 1 : 0) - this.stroking) * (1 - Math.exp(-8 * dt));
+    // Same solver for every silhouette; soft/default retains the reviewed constants.
+    const foam = this.multiTouch && this.material === 'marshmallow';
+    const jelly = this.multiTouch && this.material === 'jelly';
+    const restResponse = foam ? .48 : jelly ? .85 : 1;
+    const dampingResponse = foam ? 1.28 : jelly ? .70 : 1;
+    const second = this.second;
+    const axisX = second ? second.startX - this.pinchStartX : 1;
+    const axisY = second ? second.startY - this.pinchStartY : 0;
+    const axisLength = Math.max(.12, Math.hypot(axisX, axisY));
+    const ux = axisX / axisLength, uy = axisY / axisLength;
+    const separation = second ? ((second.x - this.pointerX) * ux + (second.y - this.pointerY) * uy) / axisLength - 1 : 0;
+    const pinch = clamp(separation, -.55, .65);
+    this.stretch = second ? Math.max(0, pinch) / .65 : 0;
 
-    let targetBodyX = active && this.viewportFollowEnabled
+    let targetBodyX = active && this.viewportFollowEnabled && !second
       ? this.grabBodyStartX + (this.pointerX - this.grabPointerStartX) * VIEWPORT_FOLLOW_RATIO
-      : 0;
-    let targetBodyY = active && this.viewportFollowEnabled
+      : second ? this.bodyOffsetX : 0;
+    let targetBodyY = active && this.viewportFollowEnabled && !second
       ? this.grabBodyStartY + (this.pointerY - this.grabPointerStartY) * VIEWPORT_FOLLOW_RATIO
-      : 0;
+      : second ? this.bodyOffsetY : 0;
     const targetBodyMagnitude = Math.hypot(targetBodyX, targetBodyY);
     if (targetBodyMagnitude > MAX_VIEWPORT_FOLLOW) {
       const scale = MAX_VIEWPORT_FOLLOW / targetBodyMagnitude;
@@ -345,8 +417,10 @@ export class SquishSimulation {
 
     const localPointerX = active ? this.pointerX - this.bodyOffsetX : this.grabStartX;
     const localPointerY = active ? this.pointerY - this.bodyOffsetY : this.grabStartY;
-    let dx = active ? localPointerX - this.grabStartX : 0;
-    let dy = active ? localPointerY - this.grabStartY : 0;
+    const heldX = second ? this.pinchStartX + ((this.pointerX + second.x) - (this.pinchStartX + second.startX)) * .5 : this.pointerX;
+    const heldY = second ? this.pinchStartY + ((this.pointerY + second.y) - (this.pinchStartY + second.startY)) * .5 : this.pointerY;
+    let dx = active ? heldX - this.bodyOffsetX - this.grabStartX : 0;
+    let dy = active ? heldY - this.bodyOffsetY - this.grabStartY : 0;
     const magnitude = Math.hypot(dx, dy);
     if (magnitude > MAX_POINTER_DISPLACEMENT) {
       const scale = MAX_POINTER_DISPLACEMENT / magnitude;
@@ -355,9 +429,9 @@ export class SquishSimulation {
     }
     const dragMagnitude = Math.hypot(dx, dy);
     const pressBlend = 1 - Math.exp(-(active ? PRESS_ATTACK : PRESS_RELEASE) * dt);
-    this.pressDepth += ((active ? 1 : 0) - this.pressDepth) * pressBlend;
+    this.pressDepth += ((active ? 1 - this.stroking * .65 : 0) - this.pressDepth) * pressBlend;
     const dragCompression = active ? clamp01(dragMagnitude / MAX_POINTER_DISPLACEMENT) : 0;
-    const target = active ? clamp01(Math.max(dragCompression, this.pressDepth * PRESS_COMPRESSION_WEIGHT)) : 0;
+    const target = active ? clamp01(Math.max(dragCompression, Math.abs(pinch), this.pressDepth * PRESS_COMPRESSION_WEIGHT)) : 0;
     if (active) this.compression = target;
     else {
       this.compression += (target - this.compression) * (1 - Math.exp(-VISUAL_COMPRESSION_RELEASE_RATE * dt));
@@ -419,10 +493,20 @@ export class SquishSimulation {
         targetX += radialX * bulge;
         targetY += radialY * bulge;
       }
+      if (second) {
+        // Axial stretch/compression with sideways bulge.
+        // Bounded common field; the canonical mesh/UVs and silhouette stay shared.
+        const along = vertex.restX * ux + vertex.restY * uy;
+        const across = -vertex.restX * uy + vertex.restY * ux;
+        const sideways = -pinch * .45;
+        targetX += ux * along * pinch - uy * across * sideways;
+        targetY += uy * along * pinch + ux * across * sideways;
+        responseInfluence = Math.max(responseInfluence, .65);
+      }
       const stiffness = active ? GRAB_STIFFNESS_FAR + (GRAB_STIFFNESS_NEAR - GRAB_STIFFNESS_FAR) * responseInfluence : 0;
-      const damping = Math.exp(-(DAMPING * (0.88 + responseInfluence * 0.12)) * dt);
-      const ax = (targetX - vertex.x) * stiffness + (bodyRestX - vertex.x) * REST_STIFFNESS;
-      const ay = (targetY - vertex.y) * stiffness + (bodyRestY - vertex.y) * REST_STIFFNESS;
+      const damping = Math.exp(-(DAMPING * dampingResponse * (0.88 + responseInfluence * 0.12)) * dt);
+      const ax = (targetX - vertex.x) * stiffness + (bodyRestX - vertex.x) * REST_STIFFNESS * restResponse;
+      const ay = (targetY - vertex.y) * stiffness + (bodyRestY - vertex.y) * REST_STIFFNESS * restResponse;
       vertex.vx = (vertex.vx + ax * dt) * damping;
       vertex.vy = (vertex.vy + ay * dt) * damping;
       vertex.x += vertex.vx * dt;
@@ -445,10 +529,10 @@ export class SquishSimulation {
     return {
       active, compression: this.compression, pressDepth: this.pressDepth,
       normalizedVelocity: this.normalizedVelocity,
-      tactileActive: sample.active, tactileProgress: sample.progress,
+      tactileActive: sample.active || this.stroking > .2, tactileProgress: Math.max(sample.progress, this.stroking * .08),
       maxDisplacement: this.maxDisplacement, gestureX: this.gestureX,
       gestureY: this.gestureY, sheenX: this.sheenX, sheenY: this.sheenY,
-      squeezes: this.squeezes,
+      squeezes: this.squeezes, stretch: this.stretch, stroking: this.stroking, pointers: this.pointerId === null ? 0 : this.second ? 2 : 1,
     };
   }
 
@@ -465,7 +549,7 @@ export class SquishSimulation {
       gestureY: this.gestureY,
       sheenX: this.sheenX,
       sheenY: this.sheenY,
-      squeezes: this.squeezes,
+      squeezes: this.squeezes, stretch: this.stretch, stroking: this.stroking, pointers: this.pointerId === null ? 0 : this.second ? 2 : 1,
     };
   }
 }

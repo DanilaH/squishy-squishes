@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp } from '../../src/sandbox/creativeTools';
 import { decodeAppearanceDocument, decodeAppearancePoints } from '../../src/sandbox/appearance';
-import { accessorySway, faceReaction, heldFaceStrength } from '../../src/sandbox/toyReactions';
+import { REST_FACE, idleBlink, accessorySway, faceReaction, heldFaceStrength } from '../../src/sandbox/toyReactions';
 import { createDefaultSaveV3 } from '../../src/platform/saveV3';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
@@ -139,4 +139,17 @@ test('stationary face hold is gentler than a pull and release follows its streng
   expect(heldFaceStrength(1, .8, .5, 200)).toBe(1);
   expect(faceReaction(0, 0, .2).delight).toBeLessThan(faceReaction(0, 0, .9).delight);
   expect(faceReaction(0, 650, .9)).toEqual({ squeeze: 0, delight: 0 });
+});
+
+test('stroking shows delight and stretching changes expression without replacing the chosen face', () => {
+  const stroke = faceReaction(.8, -1, 1, .9);
+  expect(stroke.delight).toBeGreaterThan(.75); expect(stroke.squeeze).toBeLessThan(.5);
+  expect(faceReaction(.8, -1, 1, 0, .7).stretch).toBeGreaterThan(.5);
+  expect(faceReaction(0, -1, 0)).toEqual(REST_FACE);
+});
+
+test('idle blink is sparse and has a finite quantized lifetime', () => {
+  expect(idleBlink(4999)).toBe(0); expect(idleBlink(5090)).toBe(1);
+  expect(idleBlink(5180)).toBe(0); expect(idleBlink(9000)).toBe(0);
+  expect(idleBlink(12090)).toBe(1);
 });

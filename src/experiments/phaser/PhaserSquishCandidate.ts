@@ -100,7 +100,6 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private fillProgress = 1;
   private moldProgress = 1;
   private wireframe = false;
-  private activePointer: number | null = null;
   private pokeEnabled = false;
   private drawCalls = 0;
   private disposed = false;
@@ -133,9 +132,12 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   }
 
   public setPalette(id: PaletteId): void { this.paletteId = id; this.materialStyle = null; }
-  public setMaterial(id: MaterialId): void { this.materialId = id; this.materialStyle = null; }
+  public setMaterial(id: MaterialId): void { this.materialId = id; this.materialStyle = null; this.simulation.setTactileFeatures(this.pokeEnabled, id); }
   /** The actual SandboxApp passes the complete original material style, not a guessed preset. */
-  public setMaterialStyle(style: SquishMaterialStyle): void { this.materialStyle = style; }
+  public setMaterialStyle(style: SquishMaterialStyle): void {
+    this.materialStyle = style;
+    this.simulation.setTactileFeatures(this.pokeEnabled, style.materialId);
+  }
   public setFillingAmount(amount: number): void { this.fillingAmount = clamp01(amount); }
   public setFillingStyle(style: SquishFillingStyle): void {
     this.fillingStyle = style === 'pearl' ? 2 : style === 'foam' ? 1 : 0;
@@ -152,7 +154,10 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public setViewportFollowEnabled(enabled: boolean): void {
     this.simulation.setViewportFollowEnabled(this.pagesVolume && enabled);
   }
-  public setPokeEnabled(enabled: boolean): void { this.pokeEnabled = this.pagesVolume && enabled; }
+  public setPokeEnabled(enabled: boolean): void {
+    this.pokeEnabled = this.pagesVolume && enabled;
+    this.simulation.setTactileFeatures(this.pokeEnabled, this.materialStyle?.materialId ?? this.materialId);
+  }
   public recenterViewportFollow(): void {
     if (this.pagesVolume) this.simulation.recenterViewportFollow();
   }
@@ -242,23 +247,19 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   }
 
   public beginAt(pointerId: number, canvasX: number, canvasY: number): boolean {
-    if (this.disposed || this.activePointer !== null) return false;
+    if (this.disposed) return false;
     const point = this.localPoint(canvasX, canvasY);
     if (!this.simulation.begin(pointerId, point.x, point.y)) return false;
-    this.activePointer = pointerId;
     return true;
   }
 
   public moveAt(pointerId: number, canvasX: number, canvasY: number): void {
-    if (pointerId !== this.activePointer) return;
     const point = this.localPoint(canvasX, canvasY);
     this.simulation.move(pointerId, point.x, point.y);
   }
 
   public endById(pointerId: number): void {
-    if (pointerId !== this.activePointer) return;
     this.lastReleaseEnergy = this.simulation.end(pointerId, this.pokeEnabled) ?? 0;
-    this.activePointer = null;
   }
 
   public begin(pointer: Phaser.Input.Pointer): boolean { return this.beginAt(pointer.id, pointer.x, pointer.y); }
@@ -266,7 +267,6 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public end(pointer: Phaser.Input.Pointer): void { this.endById(pointer.id); }
 
   public cancel(): void {
-    this.activePointer = null;
     this.simulation.cancel();
   }
 
