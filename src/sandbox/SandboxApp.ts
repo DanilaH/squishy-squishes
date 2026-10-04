@@ -1629,6 +1629,10 @@ export class SandboxApp {
     const stage = this.canvas.parentElement;
     if (!stage || this.options.rendererBackend !== 'phaser') return;
     const enabled = this.stage === 'squeeze' && !this.activityBlocked && !this.exitConfirmOpen && !this.toolsOpen && !this.reducedMotion.matches;
+    if (!enabled && (this.roomReaction || this.roomLight)) {
+      this.roomReaction?.cancel(); this.roomLight?.cancel();
+      this.roomReaction = this.roomLight = null; this.shell.dataset.workshopReaction = 'rest';
+    }
     const pose = (this.renderer as PhaserSquishSurface).presentation();
     const feedback = enabled ? contactFeedback(this.gestureActive ? this.lastPress : 0, this.lastCompression, this.stretchReaction, pose.y) : contactFeedback(0, 0, 0, 0);
     const radiusRatio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio')) || .34;

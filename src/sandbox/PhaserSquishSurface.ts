@@ -233,6 +233,7 @@ export class PhaserSquishSurface {
     if (this.faceDefined) squish.setFaceCanvas(this.face);
     this.bridge?.setStage(this.stage, this.decorSection);
     this.bridge?.setBlocked(this.blocked);
+    if (this.stage === 'squeeze' && !this.blocked && !this.reducedMotion.matches) this.personality.greet(performance.now());
   }
 
   public setShape(shape: ShapeDefinition): void {
