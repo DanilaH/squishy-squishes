@@ -408,3 +408,6 @@
 #app .studio-env-trace--ribbon { left: calc(50% + var(--studio-trace-offset) - var(--studio-trace-size) * .5); }
 #app .studio-env-stage-art[data-tabletop-visible='false'] .studio-env-mat,
 #app .studio-env-stage-art[data-tabletop-visible='false'] .studio-env-trace { display: none; }
+
+/* The short-landscape heading crosses the stage; keep window light behind it. */
+#app .studio-env-active > .sandbox-copy { z-index: 2; }

@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+import { createEmptyDecorDocument } from '../../src/sandbox/decor';
+import { createBodyFillStroke } from '../../src/sandbox/appearance';
 
 // Unmasked art evidence supplements the UI baselines: actually inspect toys,
 // tabletop, control overlap and gesture feedback rather than hiding GPU output.
@@ -64,5 +67,42 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of views) {
       await capture('finish');
       expect(errors).toEqual([]);
     } finally { await context.close(); }
+  });
+}
+
+// One seeded, already saved toy isolates material/gesture rendering from craft
+// progress. Capture all six identities with the same pose and pink pigment.
+for (const materialId of ['soft', 'jelly', 'holo', 'marshmallow', 'pearl', 'chrome']) {
+  test(`cozy material touch ${materialId}`, async ({ page }, info) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/squishy-squishes/');
+    const toy = { id: 'cozy-material', createdAt: 1700000000000,
+      shapeId: 'dumpling', materialId,
+      appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [
+        { t: 1, x: 88, y: 139, s: 23, r: 0 }, { t: 1, x: 164, y: 151, s: 21, r: 24 },
+      ] },
+      decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory: 'bow' } };
+    await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)),
+      { ...createDefaultSaveV3(), library: [toy], totalCrafts: 1 });
+    await page.reload();
+    await page.locator('[data-library-play-id="cozy-material"]').click();
+    const shell = page.locator('[data-sandbox-app]'), canvas = page.locator('[data-sandbox-canvas]');
+    await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
+    await expect(shell).toHaveAttribute('data-material', materialId);
+    const saved = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+    await page.screenshot({ path: info.outputPath(`cozy-${materialId}-rest.png`) });
+    const b = (await canvas.boundingBox())!;
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await expect(shell).toHaveAttribute('data-squish-active', 'true');
+    // Wait for the existing press attack to settle; do not change its constants.
+    await page.waitForTimeout(350);
+    await page.screenshot({ path: info.outputPath(`cozy-${materialId}-press.png`) });
+    await page.mouse.move(b.x + b.width / 2 + 65, b.y + b.height / 2 - 20, { steps: 12 });
+    await page.screenshot({ path: info.outputPath(`cozy-${materialId}-stretch.png`) });
+    await page.mouse.up();
+    await expect(shell).toHaveAttribute('data-squish-active', 'false');
+    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(saved);
   });
 }
