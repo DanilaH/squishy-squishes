@@ -17,6 +17,7 @@ export interface StageGestureHost {
   pointToUv(x: number, y: number): AppearancePoint | null;
   /** Paint may author in the full appearance texture so the brush footprint can feather over the silhouette edge. */
   paintPointToUv(x: number, y: number): AppearancePoint | null;
+  beginSecondSquish?(pointer: StagePointer): boolean;
   beginSquish(pointer: StagePointer): boolean;
   moveSquish(pointer: StagePointer): void;
   endSquish(pointerId: number): void;
@@ -35,7 +36,7 @@ const PAINT_MIN_UV_DISTANCE = 0.004;
 const MAX_MIX_STEP_PX = 160;
 
 /**
- * One owner for one stage gesture. Phaser is the only pointer source; studio
+ * One owner per creative gesture; Squeeze may capture a second physical pointer. Phaser is the only pointer source; studio
  * callbacks author the *existing* Appearance/Decor documents. In particular,
  * Paint owns an outside down so a stroke may start on entering the silhouette.
  * No DOM canvas listeners and no second physics implementation are needed.
@@ -45,6 +46,7 @@ export class StageGestureRouter {
   private decorSection: StudioDecorSection = 'face';
   private blocked = false;
   private owner: number | null = null;
+  private secondOwner: number | null = null;
   private squishOwner: number | null = null;
   private lastUv: AppearancePoint | null = null;
   private lastClientX = 0;
@@ -73,7 +75,13 @@ export class StageGestureRouter {
 
   /** Whether this canvas event belongs to the stage, for pointer capture. */
   public down(pointer: StagePointer): boolean {
-    if (this.blocked || this.owner !== null) return false;
+    if (this.blocked) return false;
+    if (this.owner !== null) {
+      if (this.stage !== 'squeeze' || this.secondOwner !== null || pointer.id === this.owner) return false;
+      if (!this.host.beginSecondSquish?.(pointer)) return false;
+      this.secondOwner = pointer.id;
+      return true;
+    }
     const point = this.host.pointToUv(pointer.x, pointer.y);
     if (this.stage === 'paint') {
       const paintPoint = this.host.paintPointToUv(pointer.x, pointer.y);
@@ -114,7 +122,9 @@ export class StageGestureRouter {
   }
 
   public move(pointer: StagePointer): void {
-    if (this.blocked || pointer.id !== this.owner) return;
+    if (this.blocked) return;
+    if (pointer.id === this.secondOwner) { this.host.moveSquish(pointer); return; }
+    if (pointer.id !== this.owner) return;
     if (this.stage === 'paint') {
       const point = this.host.paintPointToUv(pointer.x, pointer.y);
       if (!point) {
@@ -153,7 +163,16 @@ export class StageGestureRouter {
 
   /** Native pointercancel, focus loss and activity blockers must never credit a squeeze. */
   public up(pointerId: number, cancelled = false): void {
-    if (pointerId !== this.owner) return;
+    if (pointerId !== this.owner && pointerId !== this.secondOwner) return;
+    if (this.secondOwner !== null) {
+      if (cancelled) {
+        this.host.cancelSquish(); this.owner = null; this.squishOwner = null; this.secondOwner = null; return;
+      }
+      this.host.endSquish(pointerId);
+      if (pointerId === this.owner) { this.owner = this.secondOwner; this.squishOwner = this.owner; }
+      this.secondOwner = null;
+      return;
+    }
     if (this.stage === 'paint' && this.lastUv) this.host.paintEnd();
     if (this.squishOwner === pointerId) {
       if (cancelled) this.host.cancelSquish();
@@ -169,7 +188,7 @@ export class StageGestureRouter {
     else this.host.cancelSquish();
   }
 
-  public snapshot(): { readonly stage: StudioGestureStage; readonly owner: number | null; readonly squishOwner: number | null; readonly mixDistance: number; readonly blocked: boolean } {
-    return { stage: this.stage, owner: this.owner, squishOwner: this.squishOwner, mixDistance: this.mixDistance, blocked: this.blocked };
+  public snapshot(): { readonly stage: StudioGestureStage; readonly owner: number | null; readonly squishOwner: number | null; readonly secondOwner: number | null; readonly mixDistance: number; readonly blocked: boolean } {
+    return { stage: this.stage, owner: this.owner, squishOwner: this.squishOwner, secondOwner: this.secondOwner, mixDistance: this.mixDistance, blocked: this.blocked };
   }
 }

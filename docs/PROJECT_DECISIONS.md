@@ -369,3 +369,21 @@ coefficients, radii, mesh, body travel and canonical shape boundaries are unchan
 only poke classification adds a 220 ms duration bound. Save V3, progression,
 accessory seats/layers and UI geometry are unchanged. Multi-touch and material
 physics are separate later prototypes, not bundled into this fix.
+
+
+## Remaining tactile stage — 4 October 2026
+
+After the published #76 slice, the owner explicitly authorized the remaining
+tactile work together. Squeeze alone enables two-pointer stretch/compression,
+slow short stroking, and generic material response: soft retains the reviewed
+constants; jelly lowers damping/rest response; marshmallow lowers rest response
+and increases damping. This is an intentional, owner-authorized extension of
+the tactile-constant contract, not per-shape physics. Mesh topology, canonical
+hits, displacement/body bounds and default/Finish/Mix/legacy behavior remain.
+One pointer lifting transfers ownership without resetting mesh or crediting
+a release; cancellation/stage change/activity clears both without reward.
+Phaser matches changedTouches by identifier and allocates two touch pointers.
+The existing face/audio path handles stroke delight and stretch expression;
+sparse idle blinking uses the existing frame clock and quantized reactions.
+Reduced motion/activity disable presentation reactions; mute still guards audio.
+No storage, progression, accessory placement or layout changes are authorized.

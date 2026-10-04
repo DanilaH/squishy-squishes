@@ -42,7 +42,7 @@ const bead = (ctx: CanvasRenderingContext2D, x: number, y: number, radius = 8.6)
 const eye = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['eyes']>, p: { u: number; v: number }, reaction: FaceReaction = REST_FACE): void => {
   const [x, y] = point(p);
   ctx.save(); ctx.translate(x, y);
-  ctx.scale(1 + reaction.squeeze * .08, 1 - reaction.squeeze * .62); ctx.translate(-x, -y);
+  ctx.scale(1 + reaction.squeeze * .08, (1 - reaction.squeeze * .62 + (reaction.stretch ?? 0) * .35) * (1 - (reaction.blink ?? 0) * .9)); ctx.translate(-x, -y);
   if (style === 'dot') { bead(ctx, x, y); ctx.restore(); return; }
   ctx.save();
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -56,7 +56,7 @@ const eye = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['
 const mouth = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['mouth']>, p: { u: number; v: number }, reaction: FaceReaction = REST_FACE): void => {
   const [x, y] = point(p);
   ctx.save(); ctx.translate(x, y);
-  ctx.scale(1 + reaction.delight * .18, 1 - reaction.squeeze * .22 + reaction.delight * .22); ctx.translate(-x, -y);
+  ctx.scale(1 + reaction.delight * .18, 1 - reaction.squeeze * .22 + reaction.delight * .22 + (reaction.stretch ?? 0) * .45); ctx.translate(-x, -y);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   if (style === 'o') {
     ctx.beginPath(); ctx.ellipse(x, y + 2, 5.4, 6.8, 0, 0, TAU);

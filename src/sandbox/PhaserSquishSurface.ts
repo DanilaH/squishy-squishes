@@ -87,6 +87,7 @@ export class PhaserSquishSurface {
         owner.bridge = new PhaserStudioGestureBridge(this, canvas, {
           pointToUv: (x, y) => squish.pointToUv(x, y),
           paintPointToUv: (x, y) => squish.pointToAppearanceUv(x, y),
+          beginSecondSquish: (pointer) => squish.beginAt(pointer.id, pointer.x, pointer.y),
           beginSquish: (pointer) => {
             const claimed = squish.beginAt(pointer.id, pointer.x, pointer.y);
             if (claimed) { void owner.audio.prime(); owner.callbacks.onSquishBegin?.(); }
@@ -95,6 +96,7 @@ export class PhaserSquishSurface {
           moveSquish: (pointer) => squish.moveAt(pointer.id, pointer.x, pointer.y),
           endSquish: (pointerId) => {
             squish.endById(pointerId);
+            if (squish.metricsSample().active) return;
             const energy = squish.snapshot().releaseEnergy;
             owner.audio.releaseTactile(energy);
             owner.callbacks.onSquishRelease?.(energy);
@@ -130,6 +132,7 @@ export class PhaserSquishSurface {
         width: Math.max(1, canvas.clientWidth), height: Math.max(1, canvas.clientHeight),
         transparent: true, scale: { mode: Phaser.Scale.NONE },
         render: { antialias: true, premultipliedAlpha: true },
+        input: { activePointers: 2 },
         audio: { noAudio: true }, scene: [StudioScene],
       });
       this.game = game;
@@ -299,7 +302,7 @@ export class PhaserSquishSurface {
       gestureX: sample.gestureX,
       gestureY: sample.gestureY,
       active: sample.active,
-      squeezes: sample.squeezes,
+      squeezes: sample.squeezes, stretch: sample.stretch, stroking: sample.stroking, pointers: sample.pointers,
     });
   }
 

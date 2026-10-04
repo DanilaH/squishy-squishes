@@ -21,8 +21,8 @@ as the nearest iteration, plus the complete optional idea bank. This is a saved
 product plan; the nearest iteration shipped in #69 and accessory depth was
 corrected in #70. Reversible creation tools, editing saved toys and free painting shipped in #71–72.
 The pastel workshop graphics pass shipped in #75. The owner authorized the
-next tactile stage: first refine stationary press/hold/release and existing
-audio/face feedback; two-finger gestures and material physics remain later prototypes. The full optional
+next tactile stage: press/hold/release shipped in #76; the remaining authorized
+work adds two-finger Squeeze, material response, stroking and sparse idle blinks. The full optional
 idea bank is not a release checklist.
 
 ## Latest independent review

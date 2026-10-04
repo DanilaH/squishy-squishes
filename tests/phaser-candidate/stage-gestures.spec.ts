@@ -155,3 +155,25 @@ test('M4 input: squeeze requires hit; cancellation, blocking and stage change ne
   s.router.up(2);
   expect(s.squeezeCount).toBe(2);
 });
+
+for (const firstUp of [1, 2]) test(`Squeeze owns two touches, hands off ${firstUp} and rejects extras`, () => {
+  const events: string[] = [];
+  const host: StageGestureHost = {
+    pointToUv: () => ({ u: .5, v: .5 }), paintPointToUv: () => null,
+    beginSquish: () => true, beginSecondSquish: () => true,
+    moveSquish: p => events.push(`move:${p.id}`), endSquish: id => events.push(`end:${id}`),
+    cancelSquish: () => events.push('cancel'), paintStamp: () => {}, paintSegment: () => {},
+    paintEnd: () => {}, addMixin: () => {}, addSticker: () => {}, mixProgress: () => {},
+  };
+  const router = new StageGestureRouter(host); router.setStage('squeeze'); events.length = 0;
+  expect(router.down(pointer(1, -.3))).toBe(true); expect(router.down(pointer(2, .3))).toBe(true);
+  expect(router.down(pointer(3, 0))).toBe(false);
+  router.move(pointer(2, .5)); expect(events).toEqual(['move:2']);
+  router.up(firstUp); expect(router.snapshot().owner).toBe(firstUp === 1 ? 2 : 1);
+  expect(router.snapshot().secondOwner).toBeNull();
+  router.setBlocked(true); expect(router.snapshot().owner).toBeNull();
+  expect(events).toEqual(['move:2', `end:${firstUp}`, 'cancel']);
+  router.setBlocked(false); router.setStage('paint');
+  expect(router.down(pointer(1, 0))).toBe(true); expect(router.down(pointer(2, .3))).toBe(false);
+  expect(router.snapshot().secondOwner).toBeNull();
+});

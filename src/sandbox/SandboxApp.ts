@@ -1,5 +1,5 @@
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp, type PaintStampId } from './creativeTools';
-import { REST_FACE, faceReaction, heldFaceStrength, accessorySway, type FaceReaction } from './toyReactions';
+import { REST_FACE, faceReaction, heldFaceStrength, idleBlink, accessorySway, type FaceReaction } from './toyReactions';
 import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats } from './accessorySeats';
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
@@ -391,6 +391,9 @@ export class SandboxApp {
   private gestureActive = false;
   private gestureBeganAt = -Infinity;
   private gestureStrength = 0;
+  private idleFaceAt = performance.now();
+  private strokeDelight = 0;
+  private stretchReaction = 0;
   private releaseStrength = 0;
   private releasedAt = -Infinity;
   private paintColor: number = PAINT_COLORS[0];
@@ -535,16 +538,19 @@ export class SandboxApp {
           },
           onSquishBegin: () => {
             this.gestureBeganAt = performance.now();
+            this.idleFaceAt = performance.now();
             this.gestureActive = true;
             this.releasedAt = -Infinity;
           },
           onSquishRelease: (energy) => {
             this.releasedAt = performance.now();
+            this.idleFaceAt = performance.now();
             this.releaseStrength = Math.min(1, Math.max(this.gestureStrength, energy));
             this.gestureActive = false; this.gestureStrength = 0;
           },
           onSquishCancel: () => {
             this.releasedAt = -Infinity; this.releaseStrength = 0;
+            this.idleFaceAt = performance.now();
             this.gestureActive = false; this.gestureStrength = 0;
           },
           onFrame: () => {
@@ -1142,8 +1148,10 @@ export class SandboxApp {
     if (this.disposed || this.options.rendererBackend !== 'phaser') return;
     const enabled = (this.draft.decor.eyes !== null || this.draft.decor.mouth !== null) && !this.activityBlocked && !this.toolsOpen && !this.exitConfirmOpen && !this.reducedMotion.matches
       && (this.stage === 'finish' || this.stage === 'squeeze' || this.stage === 'mix');
-    const next = enabled ? faceReaction(this.gestureStrength, this.gestureActive ? -1 : performance.now() - this.releasedAt, this.releaseStrength) : REST_FACE;
-    const key = `${next.squeeze}:${next.delight}`;
+    if (!enabled) this.idleFaceAt = performance.now();
+    const blink = enabled && !this.gestureActive && this.stage === 'squeeze' ? idleBlink(performance.now() - this.idleFaceAt) : 0;
+    const next: FaceReaction = enabled ? { ...faceReaction(this.gestureStrength, this.gestureActive ? -1 : performance.now() - this.releasedAt, this.releaseStrength, this.gestureActive ? this.strokeDelight : 0, this.gestureActive ? this.stretchReaction : 0), ...(blink ? { blink } : {}) } : REST_FACE;
+    const key = `${next.squeeze}:${next.delight}${next.stretch ? `:${next.stretch}` : ''}${blink ? `:b${blink}` : ''}`;
     if (key === this.reactionKey) return;
     this.reaction = next; this.reactionKey = key;
     this.shell.dataset.faceReaction = key;
@@ -1716,6 +1724,7 @@ export class SandboxApp {
       metallic: material.metallic,
       pearlescence: material.pearlescence,
       cloudiness: material.cloudiness,
+      materialId,
     };
     this.audio.setMaterial(materialId);
     this.renderer.setMaterial(style);
@@ -1723,6 +1732,7 @@ export class SandboxApp {
   }
 
   private setStage(next: SandboxStage): void {
+    this.idleFaceAt = performance.now();
     this.clearPlacementFeedback();
     if (this.toolsOpen) this.setToolsOpen(false);
     this.releasedAt = -Infinity; this.gestureStrength = 0; this.gestureActive = false;
@@ -1856,6 +1866,11 @@ export class SandboxApp {
       this.releasedAt = performance.now(); this.releaseStrength = this.gestureStrength;
     }
     this.gestureActive = metrics.active;
+    this.strokeDelight = metrics.stroking ?? 0;
+    this.stretchReaction = metrics.stretch ?? 0;
+    this.shell.dataset.squishPointers = String(metrics.pointers ?? (metrics.active ? 1 : 0));
+    this.shell.dataset.squishStroking = this.strokeDelight.toFixed(3);
+    this.shell.dataset.squishStretch = this.stretchReaction.toFixed(3);
     this.gestureStrength = metrics.active ? (this.options.rendererBackend === 'phaser'
       ? heldFaceStrength(metrics.pressDepth, metrics.compression, metrics.maxDisplacement, performance.now() - this.gestureBeganAt)
       : Math.min(1, Math.max(metrics.pressDepth * 2, metrics.compression * 3, metrics.maxDisplacement * 1.5))) : 0;
