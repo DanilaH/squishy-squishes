@@ -333,3 +333,12 @@ reviewed phone/desktop captures are aligned from run 37189515892: EN/RU Library
 and Paint at 1440, and Library/Paint/Decor/Finish at 320. Full expected/actual
 images and original diff sets were inspected, alongside unmasked full scenes;
 no threshold, mask, retry or existing gate is relaxed.
+
+The final single-runner Pages job hit its 15-minute job budget at scenario 82/83,
+with no assertion failure before cancellation (run 37190245614). The same entire
+suite now uses two Playwright shards on separate runners, each with the unchanged
+one-worker/retry/timeout configuration and immutable source-checked build. A
+stable pages-preview aggregate requires the whole matrix result to be success;
+publish and exact-PR reuse still require that gate. Shard diagnostics have unique
+names. No test is excluded and no limit or comparison is weakened. Local test
+collection must prove the disjoint union equals the full suite before pushing.
