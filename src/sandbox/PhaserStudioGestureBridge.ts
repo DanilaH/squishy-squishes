@@ -5,7 +5,7 @@ import { StageGestureRouter, type StageGestureHost, type StagePointer, type Stud
 export interface PhaserStudioGestureHost extends Omit<StageGestureHost, 'beginSquish' | 'moveSquish' | 'endSquish'> {
   beginSquish(pointer: StagePointer): boolean;
   moveSquish(pointer: StagePointer): void;
-  endSquish(pointerId: number): void;
+  endSquish(pointerId: number, inputTime?: number): void;
 }
 
 /**
@@ -33,13 +33,14 @@ export class PhaserStudioGestureBridge {
       beginSecondSquish: (pointer) => host.beginSecondSquish?.(pointer) ?? false,
       beginSquish: (pointer) => host.beginSquish(pointer),
       moveSquish: (pointer) => host.moveSquish(pointer),
-      endSquish: (id) => host.endSquish(id),
+      endSquish: (id, inputTime) => host.endSquish(id, inputTime),
       cancelSquish: () => host.cancelSquish(),
       paintStamp: (point) => host.paintStamp(point),
       paintSegment: (from, to) => host.paintSegment(from, to),
       paintEnd: () => host.paintEnd(),
       addMixin: (point) => host.addMixin(point),
       addSticker: (point) => host.addSticker(point),
+      ...(host.previewSticker ? { previewSticker: (point) => host.previewSticker?.(point) } : {}),
       mixProgress: (distance, progress) => host.mixProgress(distance, progress),
     });
     scene.input.on('pointerdown', this.handleDown);
@@ -103,8 +104,14 @@ export class PhaserStudioGestureBridge {
       y: (clientY - rect.top) * this.scene.scale.height / Math.max(1, rect.height),
       clientX,
       clientY,
+      inputTime: this.eventTime(pointer),
     };
   };
+
+  private eventTime(pointer: Phaser.Input.Pointer): number {
+    const stamp = pointer.event?.timeStamp;
+    return Number.isFinite(stamp) && stamp > 0 ? stamp > 1e12 ? stamp - performance.timeOrigin : stamp : performance.now();
+  }
 
   private readonly handleDown = (pointer: Phaser.Input.Pointer): void => {
     if (this.disposed) return;
@@ -123,7 +130,7 @@ export class PhaserStudioGestureBridge {
     if (this.disposed) return;
     // Phaser emits pointerup for TOUCH_CANCEL too; native pointercancel may
     // already have cleared ownership, but the engine flag must also be honored.
-    this.router.up(pointer.id, pointer.wasCanceled);
+    this.router.up(pointer.id, pointer.wasCanceled, this.eventTime(pointer));
   };
 
   private readonly handleCancel = (): void => { this.cancel(); };

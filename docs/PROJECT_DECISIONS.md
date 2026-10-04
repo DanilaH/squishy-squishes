@@ -418,3 +418,41 @@ now uses two one-worker shards and a stable browser-qa aggregate; shard 1 also
 performs the complete strict visual suite. Matrix failure/cancellation fails the
 aggregate; deploy and exact-PR build reuse keep requiring that aggregate.
 Existing retry/time budgets and masks/thresholds are unchanged.
+
+
+## Toy personality and workshop response — 5 October 2026
+
+The owner authorized all seven follow-up ideas: gesture-specific character,
+more distinct material release, weighted accessories, gesture sound, sparse
+Hall life, clearer decoration placement/erase/Undo, and subtle workshop response.
+ToyPersonality is transient state driven only by actual input and the existing
+Phaser clock. Three short taps produce brief surprise; sustained slow strokes
+relax the chosen eyes; strong release briefly jiggles the shared presentation.
+Entering Squeeze gives a silent greeting. All reset on cancellation/blocking and
+respect reduced motion. They cannot change saved decor or credit a squeeze.
+Squeeze-only Jelly/marshmallow parameters are more distinct; strong two-pointer
+pinch retains its existing stabilizing damping and generic mesh bounds.
+Accessory motion rotates around the existing shape-specific seats: bow softness,
+mirrored ear lag, small crown hop. The existing audio graph owns quiet stroke and
+stretch noise envelopes, material timbre, mute/blocking and disposal; idle is silent.
+
+Decor uses an optional preview seam in the existing gesture router. Down/move
+preview one placement; only a valid normal up edits the existing V3 document.
+Cancel/outside up/stage changes discard it. Legacy callers without the seam keep
+their existing down behavior. Erase preview and commit share the exact topmost
+44px CSS-pixel hit test. Preview reuses procedural sticker art, not new bitmaps.
+
+The Hall has one sparse timer and animates only one visible saved toy at a time.
+It snapshots that card's exact pixels, reuses the existing shared offscreen
+renderer for one closed-eye frame, then restores the snapshot. No per-card RAF,
+perpetual filter, new WebGL context or storage mutation. Maker/modal/activity/
+visibility/reduced-motion guards stop it and restore pixels. Workshop release
+moves only the existing passive dust pseudo-layer and softly changes its light;
+furniture, game canvas and controls stay still. Existing pastel art is preserved.
+
+Tap duration/burst spacing use the native input timestamp forwarded by the
+Phaser bridge. Display decay still starts at the current Phaser clock: delayed
+event delivery must neither turn a short hardware tap into a hold nor expire
+its face response before rendering it. The browser test injects the explicit
+65ms native touch sequence; rendering/trace overhead cannot change its input
+duration. Physics/release credit and their clocks are unchanged.

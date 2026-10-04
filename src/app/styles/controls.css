@@ -237,3 +237,14 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+
+/* Passive preview: the existing Phaser router still owns the entire gesture. */
+.toy-sticker-preview {
+  position: absolute; z-index: 8; pointer-events: none;
+  transform: translate(-50%, -50%); background: center / contain no-repeat;
+  opacity: .72;
+}
+.toy-sticker-preview[data-preview-tool='erase'] {
+  opacity: 1; border-radius: 50%; outline: 2px dashed #b96087;
+  background-color: #fff2f560;
+}

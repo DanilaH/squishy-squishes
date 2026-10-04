@@ -1,3 +1,4 @@
+import { REST_FACE, type FaceReaction } from './toyReactions';
 import { getMaterial, getPalette, type MaterialId } from '../game/content';
 import { getShape } from '../game/shapes';
 import {
@@ -15,7 +16,7 @@ const SHAPE_PADDING = 30;
 let pagesMaterialLighting = false;
 export const enablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = true; };
 export const disablePagesLibraryMaterialLighting = (): void => { pagesMaterialLighting = false; };
-type PagesRenderer = (context: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512) => boolean;
+type PagesRenderer = (context: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512, reaction?: FaceReaction) => boolean;
 let pagesRenderer: PagesRenderer | null = null;
 let pagesRelease: (() => void) | null = null;
 export const registerPagesLibraryMaterialRenderer = (render: PagesRenderer, release: () => void): void => {
@@ -238,6 +239,7 @@ export const renderLibraryThumbnail = (
   canvas: HTMLCanvasElement,
   toy: SavedSquishy,
   outputSize: 256 | 512 = pagesMaterialLighting ? 512 : 256,
+  reaction: FaceReaction = REST_FACE,
 ): void => {
   // The accepted Hall profile uses a 2x backing resolution. A 256px override
   // remains available for explicit benchmark/fallback callers.
@@ -255,7 +257,7 @@ export const renderLibraryThumbnail = (
   // One shared WebGL2 renderer snapshots the *actual* Studio material once per
   // card. The Canvas2D approximation remains a functional lost-WebGL fallback.
   if (pagesMaterialLighting) delete canvas.dataset.libraryRenderer;
-  if (pagesMaterialLighting && pagesRenderer?.(context, toy, THUMBNAIL_SIZE * rasterScale as 256 | 512)) {
+  if (pagesMaterialLighting && pagesRenderer?.(context, toy, THUMBNAIL_SIZE * rasterScale as 256 | 512, reaction)) {
     if (canvas.dataset.libraryRenderer !== 'volume-mesh') canvas.dataset.libraryRenderer = 'studio-shader';
     return;
   }
@@ -286,7 +288,7 @@ export const renderLibraryThumbnail = (
   if (appearanceContext) {
     appearanceContext.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
     replayAppearanceDocument(appearanceContext, toy.appearance, { materialId: toy.materialId, shapeId: toy.shapeId });
-    renderSurfaceDecor(appearanceContext, toy.decor, shape);
+    renderSurfaceDecor(appearanceContext, toy.decor, shape, reaction);
     context.drawImage(appearanceCanvas, 0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
   }
 

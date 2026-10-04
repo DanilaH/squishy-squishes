@@ -1,3 +1,4 @@
+import { REST_FACE, type FaceReaction } from '../../sandbox/toyReactions';
 import { getPalette } from '../../game/content';
 import { getShape } from '../../game/shapes';
 import { replayAppearanceDocument } from '../../sandbox/appearance';
@@ -9,7 +10,7 @@ import type { SavedSquishy } from '../../sandbox/types';
  * the authored 2D path prevents concave toe/heart UVs from sampling transparent
  * black and creating dark wedges; authored strokes and decor stay shape-clipped.
  * No baked lighting or changes to V3 saves. */
-export const renderNeutralVolumeAlbedo = (toy: SavedSquishy): HTMLCanvasElement => {
+export const renderNeutralVolumeAlbedo = (toy: SavedSquishy, reaction: FaceReaction = REST_FACE): HTMLCanvasElement => {
   const size = 512;
   const output = document.createElement('canvas');
   output.width = size;
@@ -52,7 +53,7 @@ export const renderNeutralVolumeAlbedo = (toy: SavedSquishy): HTMLCanvasElement 
   if (!authoredContext) throw new Error('Unlit volume authored-art context unavailable');
   authoredContext.setTransform(2, 0, 0, 2, 0, 0);
   replayAppearanceDocument(authoredContext, toy.appearance, { materialId: toy.materialId, shapeId: toy.shapeId });
-  renderSurfaceDecor(authoredContext, toy.decor, shape);
+  renderSurfaceDecor(authoredContext, toy.decor, shape, reaction);
   context.save();
   context.clip(path);
   context.drawImage(authored, 0, 0);
