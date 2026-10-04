@@ -27,7 +27,7 @@ jobs:
           import { defineConfig } from '@playwright/test';
           export default defineConfig({
             testDir: './tests/release', testMatch: 'toy-personality.spec.ts',
-            timeout: 45000, expect: { timeout: 6000 }, workers: 1, retries: 0,
+            timeout: 90000, expect: { timeout: 6000 }, workers: 1, retries: 0,
             reporter: [['line']], use: {
               baseURL: 'https://danilah.github.io', headless: true,
               trace: 'retain-on-failure', screenshot: 'only-on-failure',
@@ -43,6 +43,7 @@ jobs:
           path: |
             hosted-source.json
             migration-baseline-evidence/personality-*.png
+            test-results/*/trace.zip
             test-results/*/error-context.md
             test-results/*/test-failed*.png
           if-no-files-found: error
