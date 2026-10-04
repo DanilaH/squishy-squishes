@@ -492,11 +492,12 @@ export const renderSurfaceDecor = (
   context: CanvasRenderingContext2D,
   decor: DecorDocumentV1,
   shape: ShapeDefinition,
+  reaction: FaceReaction = REST_FACE,
 ): void => {
   const frame = getDecorFrame(shape);
-  if (pagesDecorArt) { pagesDecorArt.render(context, decor, shape, frame); return; }
+  if (pagesDecorArt && reaction === REST_FACE) { pagesDecorArt.render(context, decor, shape, frame); return; }
   renderSurfaceStickers(context, decor, shape);
-  renderSurfaceFace(context, decor, shape);
+  renderSurfaceFace(context, decor, shape, reaction);
 };
 
 export const drawAccessoryGraphic = (

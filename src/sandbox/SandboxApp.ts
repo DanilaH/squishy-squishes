@@ -1,6 +1,7 @@
+import { accessoryMotion } from './toyPersonality';
 import { contactFeedback } from './livingToy';
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp, type PaintStampId } from './creativeTools';
-import { REST_FACE, faceReaction, heldFaceStrength, accessorySway, type FaceReaction } from './toyReactions';
+import { REST_FACE, faceReaction, heldFaceStrength, type FaceReaction } from './toyReactions';
 import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats } from './accessorySeats';
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
@@ -424,6 +425,10 @@ export class SandboxApp {
   private activityBlocked = false;
   private placementAnimation: Animation | null = null;
   private sprinkle: HTMLElement | null = null;
+  private stickerPreview: HTMLElement | null = null;
+  private stickerPreviewKey = '';
+  private roomReaction: Animation | null = null;
+  private roomLight: Animation | null = null;
   private readonly sprinkleImages = new Map<MixInId, string>();
   private appearanceLimitReached = false;
   private exitConfirmOpen = false;
@@ -530,6 +535,7 @@ export class SandboxApp {
           },
           addMixin: (point) => this.addMixinAt(point),
           addSticker: (point) => this.editStickerAt(point),
+          previewSticker: (point) => this.previewStickerAt(point),
           mixProgress: (distance, progress) => {
             // A saved toy has already completed Mix. Revisiting it is optional;
             // the gesture router still owns physical input and its own distance.
@@ -550,6 +556,7 @@ export class SandboxApp {
           onSquishRelease: (energy) => {
             this.releasedAt = performance.now();
             this.releaseStrength = Math.min(1, Math.max(this.gestureStrength, energy));
+            if (this.stage === 'squeeze') this.reactWorkshop(energy);
             this.gestureActive = false; this.gestureStrength = 0;
           },
           onSquishCancel: () => {
@@ -581,7 +588,7 @@ export class SandboxApp {
     this.activityBlocked = blocked;
     this.audio.setActivityBlocked(blocked);
     if (blocked && this.toolsOpen) this.setToolsOpen(false);
-    if (blocked) this.clearPlacementFeedback();
+    if (blocked) { this.clearPlacementFeedback(); this.roomReaction?.cancel(); this.roomLight?.cancel(); this.shell.dataset.workshopReaction = 'rest'; }
     this.shell.classList.toggle('is-blocked', blocked);
     this.shell.setAttribute('aria-busy', String(blocked));
     this.syncInteractivity();
@@ -589,6 +596,7 @@ export class SandboxApp {
 
   public dispose(): void {
     if (this.disposed) return;
+    this.previewStickerAt(null); this.roomReaction?.cancel(); this.roomLight?.cancel();
     this.disposed = true;
     if (this.uploadFrame !== 0) cancelAnimationFrame(this.uploadFrame);
     if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);
@@ -1153,9 +1161,10 @@ export class SandboxApp {
     const enabled = (this.draft.decor.eyes !== null || this.draft.decor.mouth !== null) && !this.activityBlocked && !this.toolsOpen && !this.exitConfirmOpen && !this.reducedMotion.matches
       && (this.stage === 'finish' || this.stage === 'squeeze' || this.stage === 'mix');
     const idle = (this.renderer as PhaserSquishSurface).presentation();
-    const blink = enabled && !this.gestureActive ? idle.blink : 0;
-    const next: FaceReaction = enabled ? { ...faceReaction(Math.max(this.gestureStrength, this.gestureActive ? 0 : idle.squeeze), this.gestureActive ? -1 : performance.now() - this.releasedAt, this.releaseStrength, this.gestureActive ? this.strokeDelight : idle.delight, this.gestureActive ? this.stretchReaction : 0), ...(blink ? { blink } : {}) } : REST_FACE;
-    const key = `${next.squeeze}:${next.delight}${next.stretch ? `:${next.stretch}` : ''}${blink ? `:b${blink}` : ''}`;
+    const extras = (this.renderer as PhaserSquishSurface).reactionExtras();
+    const blink = enabled ? Math.max(this.gestureActive ? 0 : idle.blink, extras.blink) : 0;
+    const next: FaceReaction = enabled ? { ...faceReaction(Math.max(this.gestureStrength, this.gestureActive ? 0 : idle.squeeze), this.gestureActive ? -1 : performance.now() - this.releasedAt, this.releaseStrength, this.gestureActive ? this.strokeDelight : idle.delight, this.gestureActive ? this.stretchReaction : 0), ...(blink ? { blink } : {}), ...(extras.surprise ? { surprise: extras.surprise } : {}) } : REST_FACE;
+    const key = `${next.squeeze}:${next.delight}${next.stretch ? `:${next.stretch}` : ''}${blink ? `:b${blink}` : ''}${next.surprise ? `:s${next.surprise}` : ''}`;
     if (key === this.reactionKey) return;
     this.reaction = next; this.reactionKey = key;
     this.shell.dataset.faceReaction = key;
@@ -1239,6 +1248,7 @@ export class SandboxApp {
   }
 
   private clearPlacementFeedback(): void {
+    this.previewStickerAt(null);
     this.placementAnimation?.cancel();
     this.placementAnimation = null;
     this.sprinkle?.remove();
@@ -1313,20 +1323,70 @@ export class SandboxApp {
     this.replayAndUpload();
   }
 
+  private stickerHit(point: AppearancePoint): number {
+    const hit = this.renderer.projectUvToCanvas(point.u, point.v), current = this.draft.decor.stickers;
+    for (let i = current.length - 1; i >= 0; i--) {
+      const p = current[i]!, center = this.renderer.projectUvToCanvas(p.x / 255, p.y / 255);
+      const edge = this.renderer.projectUvToCanvas(Math.min(1, p.x / 255 + p.s / (2 * APPEARANCE_TEXTURE_SIZE)), p.y / 255);
+      if (Math.hypot(hit.x - center.x, hit.y - center.y) <= Math.max(22, Math.hypot(edge.x - center.x, edge.y - center.y))) return i;
+    }
+    return -1;
+  }
+
+  private previewStickerAt(point: AppearancePoint | null): void {
+    if (!point || this.disposed || this.activityBlocked || this.stage !== 'decor' || this.decorSection !== 'stickers') {
+      this.stickerPreview?.remove(); this.stickerPreview = null; this.stickerPreviewKey = ''; return;
+    }
+    const target = this.stickerErase ? this.stickerHit(point) : -1;
+    if (this.stickerErase && target < 0) { this.previewStickerAt(null); return; }
+    if (!this.stickerErase && this.draft.decor.stickers.length >= MAX_DECOR_STICKERS) { this.previewStickerAt(null); return; }
+    const placement = this.stickerErase ? this.draft.decor.stickers[target]! : createStickerPlacement(this.selectedSticker, point, this.draft.decor.stickers.length);
+    const key = `${this.stickerErase}:${placement.t}:${placement.s}:${placement.r}:${target}`;
+    if (!this.stickerPreview) {
+      this.stickerPreview = document.createElement('span'); this.stickerPreview.className = 'toy-sticker-preview';
+      this.stickerPreview.setAttribute('aria-hidden', 'true'); this.stickerPreview.dataset.stickerPreview = 'true';
+      this.canvas.parentElement?.append(this.stickerPreview);
+    }
+    const element = this.stickerPreview;
+    element.dataset.previewTool = this.stickerErase ? 'erase' : 'place';
+    element.dataset.previewTarget = String(target);
+    if (key !== this.stickerPreviewKey) {
+      const art = document.createElement('canvas'); art.width = art.height = 96;
+      const ctx = art.getContext('2d');
+      if (ctx) {
+        ctx.translate(48 - 128, 48 - 128);
+        renderSurfaceStickers(ctx, { ...this.draft.decor, stickers: [{ ...placement, x: 128, y: 128 }] }, getShape(this.draft.shapeId));
+      }
+      element.style.backgroundImage = `url(${art.toDataURL()})`; this.stickerPreviewKey = key;
+    }
+    const rect = this.canvas.getBoundingClientRect(), stage = this.canvas.parentElement!.getBoundingClientRect();
+    const center = this.renderer.projectUvToCanvas(placement.x / 255, placement.y / 255);
+    const ratio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio')) || .34;
+    const size = 96 * Math.min(rect.width, rect.height) * ratio * 2 / APPEARANCE_TEXTURE_SIZE;
+    element.style.width = element.style.height = `${size}px`;
+    element.style.left = `${rect.left - stage.left + center.x}px`; element.style.top = `${rect.top - stage.top + center.y}px`;
+  }
+
+  private reactWorkshop(energy: number): void {
+    if (energy < .22 || this.activityBlocked || this.reducedMotion.matches) return;
+    const dust = this.root.querySelector<HTMLElement>('.studio-env-stage-art');
+    if (!dust) return;
+    this.roomReaction?.cancel(); this.roomLight?.cancel();
+    this.roomReaction = dust.animate([
+      { translate: '0px 0px', opacity: 1 },
+      { translate: `${Math.min(8, energy * 10)}px -6px`, opacity: .72, offset: .32 },
+      { translate: '0px 0px', opacity: 1 },
+    ], { duration: 850, easing: 'ease-out', pseudoElement: '::after' });
+    this.roomLight = dust.animate([{ opacity: 1 }, { opacity: .72, offset: .4 }, { opacity: 1 }], { duration: 850, easing: 'ease-out', pseudoElement: '::before' });
+    this.shell.dataset.workshopReaction = 'release';
+    this.roomReaction.onfinish = () => { this.shell.dataset.workshopReaction = 'rest'; };
+  }
+
   private editStickerAt(point: AppearancePoint): void {
     const current = this.draft.decor.stickers;
     let stickers: readonly StickerPlacementV1[];
     if (this.stickerErase) {
-      // Project into CSS pixels so every sticker has a 44px touch target.
-      const hit = this.renderer.projectUvToCanvas(point.u, point.v);
-      let index = -1;
-      for (let i = current.length - 1; i >= 0; i--) {
-        const p = current[i]!;
-        const center = this.renderer.projectUvToCanvas(p.x / 255, p.y / 255);
-        const edge = this.renderer.projectUvToCanvas(Math.min(1, (p.x / 255) + p.s / (2 * APPEARANCE_TEXTURE_SIZE)), p.y / 255);
-        const radius = Math.max(22, Math.hypot(edge.x - center.x, edge.y - center.y));
-        if (Math.hypot(hit.x - center.x, hit.y - center.y) <= radius) { index = i; break; }
-      }
+      const index = this.stickerHit(point);
       if (index < 0) return;
       stickers = current.filter((_, i) => i !== index);
     } else {
@@ -1346,7 +1406,7 @@ export class SandboxApp {
     const stickers = this.stickerHistory.pop();
     if (!stickers) return;
     this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers } };
-    this.status.textContent = '';
+    this.status.textContent = this.options.language === 'ru' ? 'Действие с наклейкой отменено.' : 'Sticker action undone.';
     this.replayAndUpload();
   }
 
@@ -1719,12 +1779,13 @@ export class SandboxApp {
       // full-screen pull. A modest tilt still sells the deformation.
       const rawAngle = Math.atan2(normUy, normUx);
       const idleSway = this.options.rendererBackend === 'phaser' ? (this.renderer as PhaserSquishSurface).presentation().sway : 0;
-      const sway = this.activityBlocked || this.reducedMotion.matches ? 0 : idleSway + accessorySway(performance.now() - this.releasedAt, this.releaseStrength, piece);
+      const motion = this.activityBlocked || this.reducedMotion.matches ? { angle: 0, lift: 0, scale: 1 } : accessoryMotion(this.draft.decor.accessory!, performance.now() - this.releasedAt, this.releaseStrength, piece);
+      const sway = this.activityBlocked || this.reducedMotion.matches ? 0 : idleSway + motion.angle;
       const angle = Math.min(Math.PI / 6, Math.max(-Math.PI / 6, rawAngle)) + frame.headAngle + sway;
       accessoryCanvas.dataset.accessorySway = sway.toFixed(4);
       const cosAngle = Math.cos(angle);
       const sinAngle = Math.sin(angle);
-      const rigidScale = Math.min(1.12, Math.max(0.90, Math.sqrt(ratioU * ratioV)));
+      const rigidScale = Math.min(1.12, Math.max(0.90, Math.sqrt(ratioU * ratioV))) * motion.scale;
       const a = cosAngle * rigidScale;
       const b = sinAngle * rigidScale;
       const c = -sinAngle * rigidScale;
@@ -1733,7 +1794,7 @@ export class SandboxApp {
       const stageRect = this.canvas.parentElement?.getBoundingClientRect();
       if (stageRect) {
         const anchorX = canvasRect.left - stageRect.left + seat.x;
-        const anchorY = canvasRect.top - stageRect.top + seat.y;
+        const anchorY = canvasRect.top - stageRect.top + seat.y - motion.lift * canvasRect.height;
         const width = accessoryCanvas.offsetWidth || 160;
         const height = accessoryCanvas.offsetHeight || 107;
         // Pages' live overlay previously left the broad crown/bow visibly hovering
@@ -1820,7 +1881,7 @@ export class SandboxApp {
 
   private syncInteractivity(): void {
     const blocked = this.activityBlocked || this.exitConfirmOpen || this.toolsOpen;
-    if (blocked) this.clearPlacementFeedback();
+    if (blocked) { this.clearPlacementFeedback(); this.roomReaction?.cancel(); this.roomLight?.cancel(); this.shell.dataset.workshopReaction = 'rest'; }
     if (this.options.rendererBackend === 'phaser') {
       (this.renderer as PhaserSquishSurface).setStudioStage(this.stage, this.decorSection);
       (this.renderer as PhaserSquishSurface).setActivityBlocked(blocked);

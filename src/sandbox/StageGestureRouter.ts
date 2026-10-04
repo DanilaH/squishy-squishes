@@ -27,6 +27,7 @@ export interface StageGestureHost {
   paintEnd(): void;
   addMixin(point: AppearancePoint): void;
   addSticker(point: AppearancePoint): void;
+  previewSticker?(point: AppearancePoint | null): void;
   mixProgress(distancePx: number, progress: number): void;
 }
 
@@ -101,7 +102,8 @@ export class StageGestureRouter {
     if (this.stage === 'decor' && this.decorSection === 'stickers') {
       if (!point) return false;
       this.owner = pointer.id;
-      this.host.addSticker(point);
+      if (this.host.previewSticker) { this.lastUv = point; this.host.previewSticker(point); }
+      else this.host.addSticker(point);
       return true;
     }
     if (this.stage === 'mix') {
@@ -125,6 +127,11 @@ export class StageGestureRouter {
     if (this.blocked) return;
     if (pointer.id === this.secondOwner) { this.host.moveSquish(pointer); return; }
     if (pointer.id !== this.owner) return;
+    if (this.stage === 'decor' && this.decorSection === 'stickers' && this.host.previewSticker) {
+      this.lastUv = this.host.pointToUv(pointer.x, pointer.y);
+      this.host.previewSticker(this.lastUv);
+      return;
+    }
     if (this.stage === 'paint') {
       const point = this.host.paintPointToUv(pointer.x, pointer.y);
       if (!point) {
@@ -174,6 +181,10 @@ export class StageGestureRouter {
       return;
     }
     if (this.stage === 'paint' && this.lastUv) this.host.paintEnd();
+    if (this.stage === 'decor' && this.decorSection === 'stickers' && this.host.previewSticker) {
+      if (!cancelled && this.lastUv) this.host.addSticker(this.lastUv);
+      this.host.previewSticker(null);
+    }
     if (this.squishOwner === pointerId) {
       if (cancelled) this.host.cancelSquish();
       else this.host.endSquish(pointerId);
@@ -184,6 +195,7 @@ export class StageGestureRouter {
   }
 
   public cancel(): void {
+    this.host.previewSticker?.(null);
     if (this.owner !== null) this.up(this.owner, true);
     else this.host.cancelSquish();
   }

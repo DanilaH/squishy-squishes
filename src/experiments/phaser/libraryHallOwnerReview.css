@@ -68,3 +68,17 @@
     bottom: 45%;
   }
 }
+
+/* One short curiosity cue at a time; no perpetual filter/translate repaint. */
+@keyframes library-toy-curious {
+  0%, 100% { rotate: 0deg; }
+  48% { rotate: -1.5deg; }
+  75% { rotate: .8deg; }
+}
+#app .is-library-hall .sandbox-library-card.is-library-curious .sandbox-library-card__canvas {
+  animation: library-toy-curious 220ms ease-out;
+  transform-origin: 50% 85%;
+}
+@media (prefers-reduced-motion: reduce) {
+  #app .is-library-hall .sandbox-library-card.is-library-curious .sandbox-library-card__canvas { animation: none; }
+}

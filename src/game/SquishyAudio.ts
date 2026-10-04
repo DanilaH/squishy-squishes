@@ -96,6 +96,7 @@ export class SquishyAudio {
   private material: MaterialId = 'soft';
   private lastBeadAt = -1;
   private lastToyPlacementAt = -1;
+  private lastGestureAt = -Infinity;
   private disposed = false;
 
   public async prime(): Promise<void> {
@@ -124,14 +125,37 @@ export class SquishyAudio {
     this.setMuted(this.muted);
   }
 
-  public updateTactile(progress: number, velocity: number): void {
+  public updateTactile(progress: number, velocity: number, stroke = 0, stretch = 0): void {
     if (this.blocked) return;
     const softness = this.material === 'marshmallow' ? .52 : this.material === 'jelly' ? 1 : .78;
     this.tactile?.update(progress * softness, velocity * softness);
+    if (stroke > .6) this.playGestureTexture('stroke', stroke);
+    else if (stretch > .25) this.playGestureTexture('stretch', stretch);
     if ((this.material === 'pearl' || this.material === 'chrome') && velocity > .12 && progress > .04) {
       const now = this.context?.currentTime ?? 0;
       if (now - this.lastBeadAt > .22) { this.lastBeadAt = now; this.playToyPlacement('stars'); }
     }
+  }
+
+  private playGestureTexture(kind: 'stroke' | 'stretch', weight: number): void {
+    if (!this.context || !this.master || !this.noiseBuffer || this.context.state !== 'running' || this.muted || this.blocked) return;
+    const now = this.context.currentTime;
+    if (now - this.lastGestureAt < .32) return;
+    this.lastGestureAt = now;
+    const source = this.context.createBufferSource(), filter = this.context.createBiquadFilter(), gain = this.context.createGain();
+    source.buffer = this.noiseBuffer;
+    source.playbackRate.value = this.material === 'jelly' ? .85 : this.material === 'marshmallow' ? .6 : 1;
+    filter.type = 'bandpass';
+    const hz = kind === 'stroke' ? this.material === 'marshmallow' ? 1100 : 1800 : this.material === 'jelly' ? 320 : 210;
+    filter.frequency.setValueAtTime(hz, now);
+    filter.frequency.exponentialRampToValueAtTime(hz * .7, now + .22);
+    filter.Q.value = kind === 'stroke' ? .6 : 1.8;
+    gain.gain.setValueAtTime(.0001, now);
+    gain.gain.exponentialRampToValueAtTime((kind === 'stroke' ? .008 : .012) * clamp01(weight), now + .035);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + .26);
+    source.connect(filter); filter.connect(gain); gain.connect(this.master);
+    source.start(now); source.stop(now + .28);
+    source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
   }
 
   public releaseTactile(intensity = 0): void {

@@ -1,3 +1,4 @@
+import { ToyPersonality } from './toyPersonality';
 import { REST_TOY, idleToyPose, inclusionLag, type ToyPose } from './livingToy';
 import Phaser from 'phaser';
 import type { SquishyAudio } from '../game/SquishyAudio';
@@ -10,7 +11,7 @@ import type { StudioDecorSection, StudioGestureStage } from './StageGestureRoute
 
 /** The existing SandboxApp remains the only owner of draft, UI, baked texture, save and overlays. */
 export interface PhaserSandboxCallbacks extends Pick<PhaserStudioGestureHost,
-  'paintStamp' | 'paintSegment' | 'paintEnd' | 'addMixin' | 'addSticker' | 'mixProgress'> {
+  'paintStamp' | 'paintSegment' | 'paintEnd' | 'addMixin' | 'addSticker' | 'previewSticker' | 'mixProgress'> {
   /** Draw existing DOM decor layers on Phaser's own update tick, not a second RAF. */
   readonly onFrame: () => void;
   readonly onSquishBegin?: () => void;
@@ -50,6 +51,9 @@ export class PhaserSquishSurface {
   private decorSection: StudioDecorSection = 'face';
   private disposed = false;
   private lastMetricsAt = 0;
+  private readonly personality = new ToyPersonality();
+  private extras = { surprise: 0, blink: 0 };
+  public reactionExtras(): { surprise: number; blink: number } { return this.extras; }
   private quietMs = 0;
   private lastPresentationAt = performance.now();
   private pose: ToyPose = REST_TOY;
@@ -59,7 +63,10 @@ export class PhaserSquishSurface {
   public bodyOffset(): { readonly x: number; readonly y: number } { return this.squish?.viewportFollowOffset() ?? { x: 0, y: 0 }; }
   private readonly reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   public presentation(): ToyPose { return this.pose; }
-  public inclusionOffset(): { x: number; y: number } { return this.lag; }
+  public inclusionOffset(): { x: number; y: number } {
+    const scale = this.material?.materialId === 'jelly' ? 1.25 : this.material?.materialId === 'marshmallow' ? .4 : .75;
+    return { x: this.lag.x * scale, y: this.lag.y * scale };
+  }
   private resetPresentation(): void {
     this.quietMs = 0; this.pose = REST_TOY; this.lag = { x: 0, y: 0 };
     this.lastPresentationAt = performance.now();
@@ -78,10 +85,14 @@ export class PhaserSquishSurface {
     const enabled = this.stage === 'squeeze' && !this.blocked && !this.reducedMotion.matches;
     if (enabled && !sample.active && elapsed < 1000) this.quietMs += elapsed;
     else this.quietMs = 0;
-    this.pose = enabled && !sample.active && sample.maxDisplacement < .025 ? idleToyPose(this.quietMs) : REST_TOY;
+    if (!enabled) this.personality.cancel();
+    this.extras = enabled ? this.personality.sample(now, sample.active, sample.stroking, sample.stretch) : { surprise: 0, blink: 0 };
+    const release = this.personality.releasePose(now);
+    this.pose = enabled && !sample.active ? release !== REST_TOY ? release : sample.maxDisplacement < .025 ? idleToyPose(this.quietMs) : REST_TOY : REST_TOY;
     this.lag = enabled ? { x: inclusionLag(this.lag.x, body.x - this.lastBody.x + (this.pose.rotation - this.lastPose.rotation) * .25, delta), y: inclusionLag(this.lag.y, body.y - this.lastBody.y + this.pose.y - this.lastPose.y, delta) } : { x: 0, y: 0 };
     this.lastBody = body; this.lastPose = this.pose;
-    squish.setPresentation(this.pose, this.lag.x, this.lag.y);
+    const drift = this.inclusionOffset();
+    squish.setPresentation(this.pose, drift.x, drift.y);
     this.canvas.dataset.toyIdle = this.pose.kind;
     this.canvas.dataset.toyRotation = this.pose.rotation.toFixed(4);
     this.canvas.dataset.toySkew = this.pose.skew.toFixed(4);
@@ -127,7 +138,7 @@ export class PhaserSquishSurface {
           beginSecondSquish: (pointer) => squish.beginAt(pointer.id, pointer.x, pointer.y),
           beginSquish: (pointer) => {
             const claimed = squish.beginAt(pointer.id, pointer.x, pointer.y);
-            if (claimed) { owner.resetPresentation(); void owner.audio.prime(); owner.callbacks.onSquishBegin?.(); }
+            if (claimed) { owner.resetPresentation(); owner.personality.begin(performance.now()); void owner.audio.prime(); owner.callbacks.onSquishBegin?.(); }
             return claimed;
           },
           moveSquish: (pointer) => squish.moveAt(pointer.id, pointer.x, pointer.y),
@@ -136,15 +147,17 @@ export class PhaserSquishSurface {
             owner.resetPresentation();
             if (squish.metricsSample().active) return;
             const energy = squish.snapshot().releaseEnergy;
+            owner.personality.release(performance.now(), energy);
             owner.audio.releaseTactile(energy);
             owner.callbacks.onSquishRelease?.(energy);
           },
-          cancelSquish: () => { owner.resetPresentation(); squish.cancel(); owner.audio.releaseTactile(); owner.callbacks.onSquishCancel?.(); },
+          cancelSquish: () => { owner.personality.cancel(); owner.resetPresentation(); squish.cancel(); owner.audio.releaseTactile(); owner.callbacks.onSquishCancel?.(); },
           paintStamp: (point) => owner.callbacks.paintStamp(point),
           paintSegment: (from, to) => owner.callbacks.paintSegment(from, to),
           paintEnd: () => owner.callbacks.paintEnd(),
           addMixin: (point) => owner.callbacks.addMixin(point),
           addSticker: (point) => owner.callbacks.addSticker(point),
+          ...(owner.callbacks.previewSticker ? { previewSticker: (point: AppearancePoint | null) => owner.callbacks.previewSticker?.(point) } : {}),
           mixProgress: (distance, progress) => owner.callbacks.mixProgress(distance, progress),
         });
         owner.syncCanvasSize();
@@ -237,7 +250,9 @@ export class PhaserSquishSurface {
   /** StageGestureRouter owns all Phaser input, including Paint when squish interaction is disabled. */
   public setInteractive(_enabled: boolean): void { /* The old raw-renderer interaction gate is not a Phaser stage. */ }
   public setStudioStage(stage: StudioGestureStage, section: StudioDecorSection): void {
+    const enteredSqueeze = stage !== this.stage && stage === 'squeeze';
     if (stage !== this.stage) {
+      this.personality.cancel();
       this.resetPresentation();
       // A new Studio scene must start from its own centered presentation, even
       // if the player saved immediately after a far Finish drag.
@@ -249,10 +264,11 @@ export class PhaserSquishSurface {
     this.squish?.setViewportFollowEnabled(stage === 'finish' || stage === 'squeeze');
     this.squish?.setPokeEnabled(stage === 'squeeze');
     this.bridge?.setStage(stage, section);
+    if (enteredSqueeze) this.personality.greet(performance.now());
     this.syncCanvasSize();
   }
   public setActivityBlocked(value: boolean): void {
-    if (value !== this.blocked) this.resetPresentation();
+    if (value !== this.blocked) { this.personality.cancel(); this.resetPresentation(); }
     this.blocked = value; this.bridge?.setBlocked(value);
   }
   public resetTiming(): void { this.squish?.resetTiming(); this.frameTimes.length = 0; }
@@ -333,7 +349,7 @@ export class PhaserSquishSurface {
     this.canvas.dataset.squishBodyOffsetX = bodyOffset.x.toFixed(3);
     this.canvas.dataset.squishBodyOffsetY = bodyOffset.y.toFixed(3);
     if (sample.active && sample.tactileActive && !this.muted && !this.blocked) {
-      this.audio.updateTactile(sample.tactileProgress, sample.normalizedVelocity);
+      this.audio.updateTactile(sample.tactileProgress, sample.normalizedVelocity, sample.stroking, sample.stretch);
     }
     this.onMetrics({
       fps: mean > 0 ? 1000 / mean : 0,

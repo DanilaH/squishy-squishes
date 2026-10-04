@@ -1,3 +1,4 @@
+import { mountLibraryPersonality } from './libraryPersonality';
 import { cardPagerMarkup, showCardPage } from './cardPages';
 import { getShape } from '../game/shapes';
 import { SandboxApp, type SandboxAppOptions, type SandboxLanguage } from './SandboxApp';
@@ -226,6 +227,7 @@ export class SandboxLibraryApp {
   private makerStartToken = 0;
   private activityBlocked = false;
   private disposed = false;
+  private readonly personality: ReturnType<typeof mountLibraryPersonality>;
 
   public constructor(
     private readonly root: HTMLDivElement,
@@ -238,12 +240,14 @@ export class SandboxLibraryApp {
     this.muted = options.muted;
     this.root.addEventListener('click', this.handleClick, { signal: this.abortController.signal });
     this.root.addEventListener('keydown', this.handleKeyDown, { signal: this.abortController.signal });
+    this.personality = mountLibraryPersonality(root, id => this.library.find(toy => toy.id === id), () => this.activityBlocked);
     this.renderLibrary();
   }
 
   public setActivityBlocked(blocked: boolean): void {
     if (this.disposed) return;
     this.activityBlocked = blocked;
+    this.personality.schedule();
     this.currentMaker?.setActivityBlocked(blocked);
     this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]')?.classList.toggle('is-blocked', blocked);
   }
@@ -251,6 +255,7 @@ export class SandboxLibraryApp {
   public dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.personality.dispose();
     this.cancelPendingMakerStart();
     this.pendingReplacement?.resolve(null);
     this.pendingReplacement = null;
@@ -262,6 +267,7 @@ export class SandboxLibraryApp {
   }
 
   private renderLibrary(): void {
+    this.personality.stop();
     this.cancelPendingMakerStart();
     this.currentMaker?.dispose();
     this.currentMaker = null;
@@ -322,9 +328,11 @@ export class SandboxLibraryApp {
       </main>
     `;
     this.renderVisibleThumbnails();
+    this.personality.schedule();
   }
 
   private renderIdeas(): void {
+    this.personality.stop();
     this.cancelPendingMakerStart();
     this.currentMaker?.dispose();
     this.currentMaker = null;
@@ -449,6 +457,7 @@ export class SandboxLibraryApp {
 
   private async startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): Promise<void> {
     if (this.disposed) return;
+    this.personality.stop();
     const startToken = ++this.makerStartToken;
     const currentShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
     const origin: 'library' | 'ideas' = currentShell?.hasAttribute('data-sandbox-ideas') ? 'ideas' : 'library';
@@ -493,6 +502,7 @@ export class SandboxLibraryApp {
         if (origin === 'ideas') this.renderIdeas();
         else this.renderLibrary();
       }
+      this.personality.schedule();
       const recoveryShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
       recoveryShell?.removeAttribute('aria-busy');
       const message = recoveryShell?.querySelector<HTMLElement>('[data-library-maker-error]');

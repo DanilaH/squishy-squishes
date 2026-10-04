@@ -395,8 +395,8 @@ export class SquishSimulation {
     // Same solver for every silhouette; soft/default retains the reviewed constants.
     const foam = this.multiTouch && this.material === 'marshmallow';
     const jelly = this.multiTouch && this.material === 'jelly';
-    const restResponse = foam ? .48 : jelly ? .85 : 1;
-    const dampingResponse = foam ? 1.28 : jelly ? .70 : 1;
+    const restResponse = foam ? .40 : jelly ? .82 : 1;
+    const dampingResponse = foam ? 1.35 : jelly ? .62 : 1;
     const second = this.second;
     const axisX = second ? second.startX - this.pinchStartX : 1;
     const axisY = second ? second.startY - this.pinchStartY : 0;

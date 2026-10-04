@@ -1,3 +1,4 @@
+import { REST_FACE, type FaceReaction } from './toyReactions';
 import { drawSeatedAccessories } from './decor';
 import { getMaterial, getPalette } from '../game/content';
 import { createShapeField, getShape, type ShapeId } from '../game/shapes';
@@ -158,7 +159,7 @@ class StudioThumbnailRenderer {
     }
   }
 
-  public render(destination: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512 = SIZE): void {
+  public render(destination: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512 = SIZE, reaction: FaceReaction = REST_FACE): void {
     const gl = this.gl;
     // A single context switches drawing-buffer size for the 256px benchmark;
     // production Pages exhibits always use 512px. No extra context is made.
@@ -188,7 +189,7 @@ class StudioThumbnailRenderer {
       // Flatten rigid pearl mix-ins only in the static thumbnail; Studio's live
       // squeeze scene draws those separately, but a saved decoration must not vanish.
       replayAppearanceDocument(this.appearanceContext, toy.appearance, { materialId: toy.materialId, shapeId: toy.shapeId });
-      renderSurfaceDecor(this.appearanceContext, toy.decor, getShape(toy.shapeId));
+      renderSurfaceDecor(this.appearanceContext, toy.decor, getShape(toy.shapeId), reaction);
     }
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.appearanceTexture);
@@ -268,12 +269,12 @@ let shared: StudioThumbnailRenderer | null = null;
 let unavailable = false;
 /** Return false without changing destination on absence or loss of WebGL2. */
 export const renderStudioLibraryThumbnail = (
-  context: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512 = SIZE,
+  context: CanvasRenderingContext2D, toy: SavedSquishy, snapshotSize: 256 | 512 = SIZE, reaction: FaceReaction = REST_FACE,
 ): boolean => {
   if (unavailable) return false;
   try {
     shared ??= new StudioThumbnailRenderer();
-    shared.render(context, toy, snapshotSize);
+    shared.render(context, toy, snapshotSize, reaction);
     return true;
   } catch (error) {
     console.warn('Pages Library static Studio shader unavailable; using Canvas2D fallback.', error);
