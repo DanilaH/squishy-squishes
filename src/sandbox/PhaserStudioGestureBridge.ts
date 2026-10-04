@@ -20,7 +20,6 @@ export class PhaserStudioGestureBridge {
   private readonly router: StageGestureRouter;
   private readonly abort = new AbortController();
   private disposed = false;
-  private releasedNativePointer: number | null = null;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -45,11 +44,6 @@ export class PhaserStudioGestureBridge {
     scene.input.on('pointermove', this.handleMove);
     scene.input.on('pointerup', this.handleUp);
     scene.input.on('pointerupoutside', this.handleUp);
-    // Touch implicitly loses capture before Phaser receives touchend. Remember
-    // a normal native release only to classify that interruption; Phaser still
-    // exclusively owns the actual gesture end and authoring callbacks.
-    canvas.addEventListener('pointerdown', () => { this.releasedNativePointer = null; }, { signal: this.abort.signal });
-    canvas.addEventListener('pointerup', (event) => { this.releasedNativePointer = event.pointerId; }, { signal: this.abort.signal });
     canvas.addEventListener('pointercancel', this.handleCancel, { signal: this.abort.signal });
     canvas.addEventListener('lostpointercapture', this.handleLostCapture, { signal: this.abort.signal });
     window.addEventListener('blur', this.handleCancel, { signal: this.abort.signal });
@@ -128,11 +122,7 @@ export class PhaserStudioGestureBridge {
 
   private readonly handleCancel = (): void => { this.cancel(); };
   private readonly handleVisibility = (): void => { if (document.hidden) this.cancel(); };
-  private readonly handleLostCapture = (event: PointerEvent): void => {
-    if (event.pointerId === this.releasedNativePointer) {
-      this.releasedNativePointer = null;
-      return;
-    }
+  private readonly handleLostCapture = (): void => {
     if (this.router.snapshot().owner !== null) this.cancel();
   };
 

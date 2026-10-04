@@ -46,7 +46,7 @@ for (const [locale, width, height, shapeId] of [
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect(shell).toHaveAttribute('data-squish-active', 'false');
     await expect.poll(async () => Number(await shell.getAttribute('data-sandbox-squeezes'))).toBe(1);
-    await expect.poll(async () => JSON.parse(await shell.getAttribute('data-touch-reactions') ?? '[]').some((v: string) => /^0:[^0]/.test(v))).toBe(true);
+    await expect.poll(async () => JSON.parse(await shell.getAttribute('data-touch-reactions') ?? '[]').some((v: string) => Number(v.split(':')[0]) === 0 && Number(v.split(':')[1]) > 0)).toBe(true);
     await page.screenshot({ path: `migration-baseline-evidence/hold-${width}-released.png` });
     await expect(shell).toHaveAttribute('data-face-reaction', '0:0');
     const count = await shell.getAttribute('data-sandbox-squeezes');
