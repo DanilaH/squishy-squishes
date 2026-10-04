@@ -115,7 +115,9 @@ export class PhaserStudioGestureBridge {
 
   private readonly handleUp = (pointer: Phaser.Input.Pointer): void => {
     if (this.disposed) return;
-    this.router.up(pointer.id);
+    // Phaser emits pointerup for TOUCH_CANCEL too; native pointercancel may
+    // already have cleared ownership, but the engine flag must also be honored.
+    this.router.up(pointer.id, pointer.wasCanceled);
   };
 
   private readonly handleCancel = (): void => { this.cancel(); };
