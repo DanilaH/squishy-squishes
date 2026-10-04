@@ -144,7 +144,13 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
     const b = { ...a, x: a.x + box.width * .07 };
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [a] });
     await expect(page.locator('[data-sticker-preview]')).toBeVisible(); await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [b] });
+    const preview = page.locator('[data-sticker-preview]');
+    const previewColors = new Set([await preview.evaluate(el => (el as HTMLElement).style.backgroundImage)]);
+    for (const step of [.015, .035, .055, .07]) {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...a, x: a.x + box.width * step }] });
+      previewColors.add(await preview.evaluate(el => (el as HTMLElement).style.backgroundImage));
+    }
+    expect(previewColors.size).toBeGreaterThan(1);
     await page.screenshot({ path: `migration-baseline-evidence/personality-${width}-preview.png` });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
     await expect(page.locator('[data-sticker-preview]')).toHaveCount(0); await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');

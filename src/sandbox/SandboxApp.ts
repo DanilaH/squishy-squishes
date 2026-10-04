@@ -1341,7 +1341,7 @@ export class SandboxApp {
     if (this.stickerErase && target < 0) { this.previewStickerAt(null); return; }
     if (!this.stickerErase && this.draft.decor.stickers.length >= MAX_DECOR_STICKERS) { this.previewStickerAt(null); return; }
     const placement = this.stickerErase ? this.draft.decor.stickers[target]! : createStickerPlacement(this.selectedSticker, point, this.draft.decor.stickers.length);
-    const key = `${this.stickerErase}:${placement.t}:${placement.s}:${placement.r}:${target}`;
+    const key = `${this.stickerErase}:${placement.t}:${placement.s}:${placement.r}:${target}:${placement.x}:${placement.y}`;
     if (!this.stickerPreview) {
       this.stickerPreview = document.createElement('span'); this.stickerPreview.className = 'toy-sticker-preview';
       this.stickerPreview.setAttribute('aria-hidden', 'true'); this.stickerPreview.dataset.stickerPreview = 'true';
@@ -1354,8 +1354,9 @@ export class SandboxApp {
       const art = document.createElement('canvas'); art.width = art.height = 96;
       const ctx = art.getContext('2d');
       if (ctx) {
-        ctx.translate(48 - 128, 48 - 128);
-        renderSurfaceStickers(ctx, { ...this.draft.decor, stickers: [{ ...placement, x: 128, y: 128 }] }, getShape(this.draft.shapeId));
+        // Move the drawing origin, preserving position-dependent color and face fade.
+        ctx.translate(48 - placement.x / 255 * APPEARANCE_TEXTURE_SIZE, 48 - (1 - placement.y / 255) * APPEARANCE_TEXTURE_SIZE);
+        renderSurfaceStickers(ctx, { ...this.draft.decor, stickers: [placement] }, getShape(this.draft.shapeId));
       }
       element.style.backgroundImage = `url(${art.toDataURL()})`; this.stickerPreviewKey = key;
     }
