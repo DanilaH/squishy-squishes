@@ -117,3 +117,21 @@ test('M1: the production Phaser sandbox renders, accepts a real drag and reports
   await page.locator('[data-action="home"]').click();
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
 });
+
+
+test('stationary hold releases through the existing spring impulse without the tap kick', () => {
+  const held = new SquishSimulation(), ordinary = new SquishSimulation();
+  for (const simulation of [held, ordinary]) {
+    expect(simulation.begin(1, 0, 0)).toBe(true);
+    for (let n = 1; n <= 60; n++) simulation.advance(16, n * 16);
+  }
+  expect(held.end(1, true)).toBe(ordinary.end(1, false));
+  expect(vertexTrace(held)).toEqual(vertexTrace(ordinary));
+  expect(held.snapshot().squeezes).toBe(1);
+  const tapped = new SquishSimulation(), plain = new SquishSimulation();
+  for (const simulation of [tapped, plain]) {
+    simulation.begin(1, 0, 0); simulation.advance(16, 16);
+  }
+  tapped.end(1, true); plain.end(1, false);
+  expect(vertexTrace(tapped)).not.toEqual(vertexTrace(plain));
+});

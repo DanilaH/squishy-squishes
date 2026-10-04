@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp } from '../../src/sandbox/creativeTools';
 import { decodeAppearanceDocument, decodeAppearancePoints } from '../../src/sandbox/appearance';
-import { accessorySway, faceReaction } from '../../src/sandbox/toyReactions';
+import { accessorySway, faceReaction, heldFaceStrength } from '../../src/sandbox/toyReactions';
 import { createDefaultSaveV3 } from '../../src/platform/saveV3';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
@@ -101,7 +101,7 @@ for (const reduced of [false, true]) test(`saved face reacts and returns to rest
   await page.mouse.move(x, y); await page.mouse.down();
   await page.mouse.move(x + 40, y + 25, { steps: 12 });
   await expect(shell).toHaveAttribute('data-squish-active', 'true');
-  if (!reduced) await expect.poll(() => shell.getAttribute('data-face-reaction')).toMatch(/^[^0]/);
+  if (!reduced) await expect.poll(async () => Number((await shell.getAttribute('data-face-reaction'))?.split(':')[0])).toBeGreaterThan(0);
   await mkdir('migration-baseline-evidence', { recursive: true });
   await page.screenshot({ path: `migration-baseline-evidence/reaction-held-${reduced}.png` });
   if (!reduced) await shell.evaluate(el => {
@@ -117,7 +117,7 @@ for (const reduced of [false, true]) test(`saved face reacts and returns to rest
   await page.mouse.up();
   if (!reduced) await expect.poll(async () => {
     const samples: string[] = JSON.parse(await shell.getAttribute('data-release-reaction-samples') ?? '[]');
-    return samples.some(value => /^0:[^0]/.test(value));
+    return samples.some(value => Number(value.split(':')[0]) === 0 && Number(value.split(':')[1]) > 0);
   }).toBe(true);
   await expect.poll(async () => Number(await page.locator('[data-sandbox-accessory]').getAttribute('data-accessory-sway'))).toBe(0);
   if (!reduced) await expect(shell).toHaveAttribute('data-face-reaction', '0:0');
@@ -127,4 +127,16 @@ for (const reduced of [false, true]) test(`saved face reacts and returns to rest
   await page.locator('[data-library-play-id="reaction"]').click();
   await expect(shell).toHaveAttribute('data-paint-strokes', '4');
   await page.screenshot({ path: `migration-baseline-evidence/stamps-reloaded-${reduced}.png` });
+});
+
+
+test('stationary face hold is gentler than a pull and release follows its strength', () => {
+  const early = heldFaceStrength(.9, .2, .02, 100);
+  const held = heldFaceStrength(1, .22, .03, 900);
+  expect(early).toBeGreaterThan(0);
+  expect(held).toBeGreaterThan(early);
+  expect(held).toBeLessThan(1);
+  expect(heldFaceStrength(1, .8, .5, 200)).toBe(1);
+  expect(faceReaction(0, 0, .2).delight).toBeLessThan(faceReaction(0, 0, .9).delight);
+  expect(faceReaction(0, 650, .9)).toEqual({ squeeze: 0, delight: 0 });
 });

@@ -349,3 +349,23 @@ covers PRs changing any src/art asset, visual baseline, camera test or related
 config. Before/after evidence and assertions remain intact. Local collection
 verifies the disjoint 116 + 18 union equals the original 134 cases. The camera
 has zero retries; the existing functional/Pages retry policy is unchanged.
+
+
+## Press/hold/release feedback — 4 October 2026
+
+The owner authorized the next tactile stage after PR #75. This first slice fixes
+observed feedback mismatches: stationary holding saturated the face almost at
+once; every stationary release was a poke regardless of duration; and Phaser
+queried simulation.snapshot(), whose tactileActive is deliberately false, so the
+continuous audio update was never reached. The adapter now retains the actual
+advance() sample and preserves immediate pointer ownership. Existing audio gain,
+material identities, automatic idle decay, mute and activity lifecycle remain.
+
+Presentation receives explicit begin/release/cancel callbacks from the existing
+stage router: a cancelled pointer never gets release delight or sway. Face hold
+strength grows within a bounded range, pulling stays stronger, and release delight
+is proportional. Eight expression levels keep texture uploads finite. The spring
+coefficients, radii, mesh, body travel and canonical shape boundaries are unchanged;
+only poke classification adds a 220 ms duration bound. Save V3, progression,
+accessory seats/layers and UI geometry are unchanged. Multi-touch and material
+physics are separate later prototypes, not bundled into this fix.
