@@ -3,7 +3,7 @@ import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats, type Acce
 import { getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
 
-export const MAX_DECOR_STICKERS = 12;
+export const MAX_DECOR_STICKERS = 128;
 
 export const EYE_STYLE_IDS = ['dot', 'happy', 'sleepy'] as const;
 export const MOUTH_STYLE_IDS = ['smile', 'o', 'cat'] as const;

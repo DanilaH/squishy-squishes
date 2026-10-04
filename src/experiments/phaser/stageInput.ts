@@ -1,13 +1,10 @@
 import Phaser from 'phaser';
 import type { ShapeId } from '../../game/shapes';
 import {
-  APPEARANCE_TARGET_BYTES,
-  MAX_APPEARANCE_STROKES,
   MAX_MIXIN_PLACEMENTS,
   createAppearanceStroke,
   createEmptyAppearanceDocument,
   createMixInPlacement,
-  estimateAppearanceBytes,
   type AppearanceDocumentV1,
   type AppearancePoint,
 } from '../../sandbox/appearance';
@@ -114,15 +111,14 @@ class StudioInputScene extends Phaser.Scene {
       cancelSquish: () => squish.cancel(),
       paintStamp: (point) => { this.strokePoints = [point]; this.replay(); },
       paintSegment: (_from, to) => {
-        // The transient V1 document must remain under its encoded point ceiling.
-        if (this.strokePoints.length < 320) this.strokePoints.push(to);
+        this.strokePoints.push(to);
         this.replay();
       },
       paintEnd: () => {
-        if (this.strokePoints.length > 0 && this.appearance.value.strokes.length < MAX_APPEARANCE_STROKES) {
+        if (this.strokePoints.length > 0) {
           const stroke = createAppearanceStroke(0, 0xff1764, 40, this.strokePoints);
           const next = { ...this.appearance.value, strokes: [...this.appearance.value.strokes, stroke] };
-          if (estimateAppearanceBytes(next) <= APPEARANCE_TARGET_BYTES) this.appearance.value = next;
+          this.appearance.value = next;
         }
         this.strokePoints = [];
         this.replay();
@@ -130,7 +126,7 @@ class StudioInputScene extends Phaser.Scene {
       addMixin: (point) => {
         if (this.appearance.value.mixins.length >= MAX_MIXIN_PLACEMENTS) return;
         const next = { ...this.appearance.value, mixins: [...this.appearance.value.mixins, createMixInPlacement('stars', point, 26, 0)] };
-        if (estimateAppearanceBytes(next) <= APPEARANCE_TARGET_BYTES) this.appearance.value = next;
+        this.appearance.value = next;
         this.replay();
       },
       addSticker: (point) => {

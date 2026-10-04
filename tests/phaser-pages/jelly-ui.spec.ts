@@ -73,7 +73,7 @@ test('A missing jelly asset leaves all original CSS controls usable', async ({ p
 });
 
 
-test('dirty craft exit confirms, and appearance limit stays explicit without blocking Continue', async ({ page }) => {
+test('dirty craft exit confirms, and painting continues beyond the former detail quota', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/phaser/');
   await page.locator('[data-library-new]').first().click();
@@ -105,14 +105,14 @@ test('dirty craft exit confirms, and appearance limit stays explicit without blo
   await page.locator('[data-paint-tool="paint"]').click();
   await expect(page.locator('[data-tools-overlay]')).toBeVisible();
   await page.locator('[data-paint-stamp="none"]').click();
-  for (let index = 0; index < 96; index += 1) {
+  for (let index = 0; index < 180; index += 1) {
     await page.mouse.click(x, y);
   }
 
-  await expect(shell).toHaveAttribute('data-appearance-full', 'true');
-  await expect(page.locator('[data-sandbox-status]')).toHaveAttribute('data-limit', '');
-  await expect(page.locator('[data-sandbox-status]')).toContainText(/Detail limit|Лимит деталей/);
-  await expect(page.locator('[data-paint-tool="fill"]')).toBeDisabled();
+  await expect(shell).toHaveAttribute('data-paint-strokes', '180');
+  await expect(shell).toHaveAttribute('data-appearance-full', 'false');
+  await expect(page.locator('[data-sandbox-status]')).not.toHaveAttribute('data-limit', '');
+  await expect(page.locator('[data-paint-tool="fill"]')).toBeEnabled();
   await expect(page.locator('[data-action="paint-continue"]')).toBeEnabled();
 
   await page.locator('[data-action="paint-clear"]').click();
