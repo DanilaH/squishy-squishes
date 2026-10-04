@@ -1,0 +1,51 @@
+name: Living squishy public QA
+on:
+  push:
+    branches: [qa/living-public-evidence]
+permissions:
+  contents: read
+jobs:
+  public-idle-touch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: 6e0e0bbc0373cbe5cdc780ebcf7ce6e40f427577
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run release:check
+      - name: Require the exact published entry bytes
+        env:
+          GITHUB_SHA: 6e0e0bbc0373cbe5cdc780ebcf7ce6e40f427577
+        run: node scripts/ci-wait-for-pages.mjs
+      - name: Exercise new idle and touch presentation on the public site
+        run: |
+          cat > playwright.living-public.config.ts <<'CONFIG'
+          import { defineConfig } from '@playwright/test';
+          export default defineConfig({
+            testDir: './tests/release', testMatch: 'living-toy.spec.ts',
+            timeout: 45000, expect: { timeout: 6000 }, workers: 1, retries: 0,
+            reporter: [['line']], use: {
+              baseURL: 'https://danilah.github.io', headless: true,
+              trace: 'retain-on-failure', screenshot: 'only-on-failure',
+              launchOptions: { args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
+            },
+          });
+          CONFIG
+          npx playwright test --config=playwright.living-public.config.ts --grep 'living toy stays'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: living-public-evidence
+          path: |
+            hosted-source.json
+            migration-baseline-evidence/living-*.png
+            test-results/*/error-context.md
+            test-results/*/test-failed*.png
+          if-no-files-found: error
+          retention-days: 7
