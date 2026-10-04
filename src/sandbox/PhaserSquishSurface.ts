@@ -51,6 +51,7 @@ export class PhaserSquishSurface {
   private disposed = false;
   private lastMetricsAt = 0;
   private quietMs = 0;
+  private lastPresentationAt = performance.now();
   private pose: ToyPose = REST_TOY;
   private lag = { x: 0, y: 0 };
   private lastBody = { x: 0, y: 0 };
@@ -61,6 +62,7 @@ export class PhaserSquishSurface {
   public inclusionOffset(): { x: number; y: number } { return this.lag; }
   private resetPresentation(): void {
     this.quietMs = 0; this.pose = REST_TOY; this.lag = { x: 0, y: 0 };
+    this.lastPresentationAt = performance.now();
     this.lastPose = REST_TOY;
     this.lastBody = this.squish?.viewportFollowOffset() ?? { x: 0, y: 0 };
     this.squish?.setPresentation(REST_TOY);
@@ -69,10 +71,14 @@ export class PhaserSquishSurface {
     const squish = this.squish;
     if (!squish) return;
     const sample = squish.metricsSample(), body = squish.viewportFollowOffset();
+    // Phaser smooths/clamps delta on slow frames. Idle delay is elapsed quiet
+    // time, while spring integration and inclusion damping retain that delta.
+    const now = performance.now(), elapsed = Math.max(0, now - this.lastPresentationAt);
+    this.lastPresentationAt = now;
     const enabled = this.stage === 'squeeze' && !this.blocked && !this.reducedMotion.matches;
-    if (enabled && !sample.active && sample.maxDisplacement < .025) this.quietMs += delta > 500 ? 0 : Math.max(0, delta);
+    if (enabled && !sample.active && elapsed < 1000) this.quietMs += elapsed;
     else this.quietMs = 0;
-    this.pose = enabled && !sample.active ? idleToyPose(this.quietMs) : REST_TOY;
+    this.pose = enabled && !sample.active && sample.maxDisplacement < .025 ? idleToyPose(this.quietMs) : REST_TOY;
     this.lag = enabled ? { x: inclusionLag(this.lag.x, body.x - this.lastBody.x + (this.pose.rotation - this.lastPose.rotation) * .25, delta), y: inclusionLag(this.lag.y, body.y - this.lastBody.y + this.pose.y - this.lastPose.y, delta) } : { x: 0, y: 0 };
     this.lastBody = body; this.lastPose = this.pose;
     squish.setPresentation(this.pose, this.lag.x, this.lag.y);
@@ -245,7 +251,10 @@ export class PhaserSquishSurface {
     this.bridge?.setStage(stage, section);
     this.syncCanvasSize();
   }
-  public setActivityBlocked(value: boolean): void { this.blocked = value; this.bridge?.setBlocked(value); }
+  public setActivityBlocked(value: boolean): void {
+    if (value !== this.blocked) this.resetPresentation();
+    this.blocked = value; this.bridge?.setBlocked(value);
+  }
   public resetTiming(): void { this.squish?.resetTiming(); this.frameTimes.length = 0; }
   public primeAudio(): Promise<void> { return this.audio.prime(); }
 
