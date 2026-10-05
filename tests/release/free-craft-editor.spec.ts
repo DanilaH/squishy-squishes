@@ -3,6 +3,7 @@ import { createEmptyDecorDocument, decodeDecorDocument, encodeDecorDocument } fr
 import { createDefaultSaveV3, decodeSaveStateV3, encodeSaveStateV3 } from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
 import { DraftHistory } from '../../src/sandbox/draftHistory';
+import { createBodyFillStroke } from '../../src/sandbox/appearance';
 
 test('old compact decor stays byte-identical; placed, locked and facial data round-trip in V3', () => {
   const legacy = {...createEmptyDecorDocument(), accessory:'bow' as const, stickers:[{t:0,x:100,y:130,s:28,r:0}]};
@@ -59,6 +60,7 @@ test('accessory colours retain soft alpha, and mirrored pieces preserve the refl
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/squishy-squishes/');
   const toy = { ...createSandboxDraft(), id: 'colour-proof', createdAt: 1700000000000,
+    appearance: { v: 1, strokes: [createBodyFillStroke(0x88bbcc)], mixins: [] },
     decor: { ...createEmptyDecorDocument(), accessory: 'handbag' } };
   await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)),
     { ...createDefaultSaveV3(), library: [toy], totalCrafts: 1 });
@@ -68,6 +70,12 @@ test('accessory colours retain soft alpha, and mirrored pieces preserve the refl
   const piece = page.locator('[data-accessory-index="0"]');
   const pixels = () => piece.evaluate((canvas: HTMLCanvasElement) => [...canvas.getContext('2d')!.getImageData(0, 0, 180, 120).data]);
   const before = await pixels();
+  await page.locator('[data-object-action="color:body"]').click();
+  const matched = await pixels();
+  expect(matched).not.toEqual(before);
+  expect(matched.filter((_, i) => i % 4 === 3)).toEqual(before.filter((_, i) => i % 4 === 3));
+  await page.locator('[data-panel="decor"] [data-action="draft-undo"]').click();
+  expect(await pixels()).toEqual(before);
   for (const color of [0xffa6cb, 0xcab0e8, 0xa1e2ce, 0xffcea8]) {
     await page.locator(`[data-object-action="color:${color}"]`).click();
     const coloured = await pixels();

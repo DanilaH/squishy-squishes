@@ -121,12 +121,11 @@ test('paw pads remain intact throughout a live stroke and adding sprinkles', asy
   await checkPad();
 });
 
-test('all molds seat bows and crowns in front, mirrored ears and horns behind', async ({ page }) => {
+for (const accessory of ['bow', 'crown', 'cat-ears', 'bunny-ears', 'horns'] as const) test(`all fifteen molds preserve ${accessory} seats and depth through real squeeze`, async ({ page }) => {
   test.setTimeout(150_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/squishy-squishes/');
-  for (const accessory of ['bow', 'crown', 'cat-ears', 'bunny-ears', 'horns'] as const) {
     await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), {
       ...createDefaultSaveV3(), totalCrafts: 8,
       libraryCapacity: 24, library: SHAPES.map((shape, n) => ({ id: shape.id, createdAt: 1700000000000 + n, shapeId: shape.id, materialId: 'soft',
@@ -155,5 +154,4 @@ test('all molds seat bows and crowns in front, mirrored ears and horns behind', 
       await mkdir('migration-baseline-evidence', { recursive: true });
       await page.screenshot({ path: `migration-baseline-evidence/decor-seats-${shape.id}-${accessory}.png` });
     }
-  }
 });

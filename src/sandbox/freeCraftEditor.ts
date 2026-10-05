@@ -3,6 +3,7 @@ import { getDecorFrame, type DecorDocumentV1 } from './decor';
 import { accessoryPlacements, initialAccessoryPlacements, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
 import type { SandboxDraft } from './types';
 import type { StagePointer } from './StageGestureRouter';
+import { isBodyFillStroke } from './appearance';
 
 type Selection = { kind: 'face' } | { kind: 'accessory' | 'sticker'; index: number };
 interface EditorPort {
@@ -30,7 +31,7 @@ export class FreeCraftEditor {
         this.selection = kind === 'face' ? { kind } : { kind: kind as 'accessory' | 'sticker', index: Number(raw) };
         this.refresh(); return;
       }
-      if(button.dataset.objectAction?.startsWith('color:')){const draft=this.port.get(),items=[...accessoryPlacements(draft.decor,getShape(draft.shapeId))];if(this.selection.kind==='accessory'){const item=items[this.selection.index]!;if(!item.locked){items[this.selection.index]={...item,color:Number(button.dataset.objectAction.slice(6))};this.port.set({...draft.decor,accessory:null,accessories:items});this.refresh();}}return;}
+      if(button.dataset.objectAction?.startsWith('color:')){const draft=this.port.get(),items=[...accessoryPlacements(draft.decor,getShape(draft.shapeId))];if(this.selection.kind==='accessory'){const item=items[this.selection.index]!;if(!item.locked){const value=button.dataset.objectAction.slice(6);items[this.selection.index]={...item,color:value==='body'?this.bodyColor():Number(value)};this.port.set({...draft.decor,accessory:null,accessories:items});this.refresh();}}return;}
       this.action(button.dataset.objectAction!);
     }, { signal: this.abort.signal });
     root.addEventListener('input', event => {
@@ -44,6 +45,10 @@ export class FreeCraftEditor {
     }, { signal: this.abort.signal });
   }
   public dispose(): void { this.abort.abort(); }
+  private bodyColor(): number {
+    const strokes = [...this.port.get().appearance.strokes].reverse();
+    return strokes.find(isBodyFillStroke)?.c ?? strokes.find(stroke => stroke.m === 0)?.c ?? 0xf2dcae;
+  }
   private face(decor = this.port.get().decor) {
     if (decor.face) return decor.face;
     const frame = getDecorFrame(getShape(this.port.get().shapeId));
@@ -71,7 +76,7 @@ export class FreeCraftEditor {
       <p class="free-object-hint">${t('Drag a detail on your squishy. Select overlapping pieces here.', 'Тяни деталь на сквише. Перекрытые детали выбирай здесь.')}</p>
       <label>${t('Size', 'Размер')} <input data-object-control="scale" type="range" min="${selected.kind === 'face' ? .45 : selected.kind === 'sticker' ? .5 : .25}" max="${selected.kind === 'face' ? 1.65 : 2.5}" step=".01" value="${scale}" ${locked ? 'disabled' : ''}></label>
       ${selected.kind === 'face' ? '' : `<label>${t('Rotation', 'Поворот')} <input data-object-control="rotation" type="range" min="-180" max="180" step="1" value="${rotation > 180 ? rotation - 360 : rotation}" ${locked ? 'disabled' : ''}></label>`}
-      ${selected.kind === 'accessory' ? `<div class="free-color-choices" aria-label="${t('Color','Цвет')}">${[[0xffa6cb,t('Pink','Розовый')],[0xcab0e8,t('Lavender','Лаванда')],[0xa1e2ce,t('Mint','Мята')],[0xffcea8,t('Peach','Персик')],[0xeec984,t('Gold','Золото')],[0xe8e5f0,t('Pearl','Перламутр')]].map(([color,label])=>`<button type="button" data-object-action="color:${color}" aria-label="${label}" style="--craft-color:#${Number(color).toString(16)}">●</button>`).join('')}</div>` : ''}
+      ${selected.kind === 'accessory' ? `<div class="free-color-choices" aria-label="${t('Color','Цвет')}">${[[0xffa6cb,t('Pink','Розовый')],[0xcab0e8,t('Lavender','Лаванда')],[0xa1e2ce,t('Mint','Мята')],[0xffcea8,t('Peach','Персик')],[0xeec984,t('Gold','Золото')],[0xe8e5f0,t('Pearl','Перламутр')]].map(([color,label])=>`<button type="button" data-object-action="color:${color}" aria-label="${label}" style="--craft-color:#${Number(color).toString(16)}">●</button>`).join('')}<button type="button" data-object-action="color:body" aria-label="${t('Body colour','Цвет тела')}" style="--craft-color:#${this.bodyColor().toString(16)}">●</button></div>` : ''}
       <div class="free-object-actions">${['reset', ...(selected.kind === 'face' ? [] : ['lock', 'duplicate', 'mirror', 'delete'])].map(action => `<button type="button" data-object-action="${action}">${({reset:t('Reset','Сброс'),lock:locked?t('Unlock','Открепить'):t('Lock','Закрепить'),duplicate:t('Copy','Копия'),mirror:t('Mirror','Зеркало'),delete:t('Delete','Удалить')} as Record<string,string>)[action]}</button>`).join('')}</div>`;
     if (focusKey && focusValue) {
       const attribute = focusKey.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase());
