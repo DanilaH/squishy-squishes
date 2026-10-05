@@ -594,8 +594,10 @@ physical behaviour; the owner's phone feel remains the final product judgment.
 
 After testing #84 the owner found Jelly the clearest contrast and authorized
 another focused pass. Soft remains the baseline and Jelly keeps its accepted
-travel, tether and recovery. Marshmallow has a wider/deeper hold dent, lower
-rest stiffness and an up-to-65% transient imprint with 1.4s exponential decay.
+travel, tether and recovery. Marshmallow has a wider/deeper hold dent
+and an up-to-65% transient imprint with 1.4s exponential decay measured against the host clock,
+independently of the bounded spring step. Recovery is tuned to settle before
+the first idle blink even on slow frames; idle timing/gates are unchanged.
 Pearl has denser rest response, a visible compact rebound and stronger bounded
 two-finger compression/side growth. Holo reaches tension sooner with a shorter
 travel reserve and brisk recovery. Metallic has narrower but clearer local

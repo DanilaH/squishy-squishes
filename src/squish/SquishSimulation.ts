@@ -74,7 +74,7 @@ interface TactileProfile {
 const TACTILE_PROFILES: Record<MaterialId, TactileProfile> = {
   soft: { knee: .65, travel: 1, rest: 1, damping: 1.4, pressRadius: .46, dent: .20, ring: .07, holdDent: .12, bulge: .085, kick: .65, poke: .7, stretch: .45, compression: .38 },
   jelly: { knee: 1.2, travel: 3.1, rest: .95, damping: .48, pressRadius: .46, dent: .20, ring: .07, holdDent: 0, bulge: .085, kick: 1, poke: 1, stretch: .45, compression: .38 },
-  marshmallow: { knee: .35, travel: .65, rest: .25, damping: 1.3, pressRadius: .60, dent: .38, ring: .04, holdDent: 1.2, bulge: .065, kick: .25, poke: .45, stretch: .26, compression: .38 },
+  marshmallow: { knee: .35, travel: .65, rest: .45, damping: 1.3, pressRadius: .60, dent: .38, ring: .04, holdDent: 1.2, bulge: .065, kick: .25, poke: .45, stretch: .26, compression: .38 },
   pearl: { knee: .30, travel: .78, rest: 2, damping: .85, pressRadius: .40, dent: .10, ring: .14, holdDent: 0, bulge: .14, kick: .9, poke: .9, stretch: .26, compression: .45 },
   holo: { knee: .32, travel: .58, rest: 2.2, damping: 1.25, pressRadius: .40, dent: .16, ring: .045, holdDent: 0, bulge: .07, kick: .65, poke: .75, stretch: .40, compression: .30 },
   chrome: { knee: .06, travel: .32, rest: 2.3, damping: 1.8, pressRadius: .26, dent: .12, ring: .02, holdDent: 0, bulge: .085, kick: .3, poke: .35, stretch: .12, compression: .12 },
@@ -485,7 +485,9 @@ export class SquishSimulation {
     const profile = TACTILE_PROFILES[this.material];
     const restResponse = this.multiTouch ? profile.rest : 1;
     const dampingResponse = this.multiTouch ? profile.damping : 1;
-    this.foamMemoryWeight *= Math.exp(-dt / 1.4);
+    // Temporary foam memory follows elapsed time, not the bounded spring step.
+    // Slow frames must not keep an imprint alive past the first idle blink.
+    this.foamMemoryWeight *= Math.exp(-Math.max(0, nowMs - this.previousSampleAt) / 1400);
     if (this.foamMemoryWeight < .0001) this.foamMemoryWeight = 0;
     const second = this.second;
     const axisX = second ? second.startX - this.pinchStartX : 1;

@@ -85,6 +85,23 @@ test('foam keeps an imprint, Pearl rebounds and Holo becomes taut after its free
   expect(metal.projectUvToLocal(.7, .5).x - .4).toBeGreaterThan(.002);
 });
 
+test('foam memory fades in wall time and permits the first idle blink on slow frames', () => {
+  for (const delta of [16, 33, 50, 66, 100]) {
+    const sim = new SquishSimulation(getShape('dumpling'));
+    sim.setTactileFeatures(true, 'marshmallow'); sim.setViewportFollowEnabled(true);
+    sim.begin(1, 0, 0); let now = 0;
+    for (let f = 0; f < 30; f++) {
+      sim.move(1, .18 * f / 30, 0); now += 32; sim.advance(32, now);
+    }
+    sim.end(1);
+    for (let f = 0; f < Math.ceil(5000 / delta); f++) {
+      now += delta; sim.advance(delta, now);
+    }
+    expect(sim.snapshot().maxDisplacement).toBeLessThan(.025);
+    expect(sim.snapshot().squeezes).toBe(1);
+  }
+});
+
 for (const shape of SHAPES) test(`every material survives reversals, pinch handoff and interruption: ${shape.id}`, () => {
   for (const material of materials) {
     const sim = new SquishSimulation(shape); sim.setTactileFeatures(true, material); sim.setViewportFollowEnabled(true);
