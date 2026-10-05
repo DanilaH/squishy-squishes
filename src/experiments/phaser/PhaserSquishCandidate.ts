@@ -1,3 +1,4 @@
+import { moldFactors, containClipAxis } from '../../squish/projection';
 import { REST_TOY, posePoint, unposePoint, type ToyPose } from '../../sandbox/livingToy';
 import Phaser from 'phaser';
 import { hasShapeRelief } from '../../sandbox/shapeRelief';
@@ -26,6 +27,9 @@ interface GpuResources {
   readonly shapeField: WebGLTexture;
   readonly appearance: WebGLTexture;
   readonly face: WebGLTexture | null;
+  readonly inclusion: WebGLTexture | null;
+  readonly inclusionTextureUniform: WebGLUniformLocation | null;
+  readonly inclusionEnabledUniform: WebGLUniformLocation | null;
   readonly faceTextureUniform: WebGLUniformLocation | null;
   readonly faceEnabledUniform: WebGLUniformLocation | null;
   readonly uniforms: ReadonlyMap<string, WebGLUniformLocation>;
@@ -82,6 +86,10 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private readonly appearanceContext: CanvasRenderingContext2D;
   private readonly faceCanvas = document.createElement('canvas');
   private readonly faceContext: CanvasRenderingContext2D;
+  private readonly inclusionCanvas = document.createElement('canvas');
+  private inclusionEnabled = false;
+  private inclusionRevision = 0;
+  private uploadedInclusionRevision = -1;
   private appearanceDocument: AppearanceDocumentV1 | null = null;
   private decorDocument: DecorDocumentV1 | null = null;
   private appearanceEnabled = false;
@@ -179,9 +187,10 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private localPoint(x: number, y: number): { x: number; y: number } {
     const { width, height } = this.scene.scale;
     const radius = this.radius();
+    const mold = moldFactors(this.moldProgress);
     return {
-      x: (x - width / 2) / radius,
-      y: (height / 2 - y) / radius - this.renderCenterOffsetY,
+      x: (x - width / 2) / radius / mold.x,
+      y: ((height / 2 - y) / radius + mold.offsetY) / mold.y - this.renderCenterOffsetY,
     };
   }
 
@@ -204,9 +213,10 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const radius = this.radius();
     const local = this.simulation.projectUvToLocal(u, v);
     const point = posePoint(local.x, local.y, this.pose);
+    const mold = moldFactors(this.moldProgress);
     return {
-      x: width / 2 + point.x * radius,
-      y: height / 2 - (point.y + this.renderCenterOffsetY) * radius,
+      x: width / 2 + containClipAxis(point.x * mold.x * radius * 2 / width) * width / 2,
+      y: height / 2 - containClipAxis(((point.y + this.renderCenterOffsetY) * mold.y - mold.offsetY) * radius * 2 / height) * height / 2,
     };
   }
 
@@ -227,6 +237,14 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.appearanceEnabled = source !== null;
     if (source) this.appearanceContext.drawImage(source, 0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
     this.appearanceRevision += 1;
+  }
+
+  public setInclusionCanvas(source: HTMLCanvasElement | null): void {
+    this.inclusionCanvas.width = APPEARANCE_TEXTURE_SIZE;
+    this.inclusionCanvas.height = APPEARANCE_TEXTURE_SIZE;
+    if (source) this.inclusionCanvas.getContext('2d')?.drawImage(source, 0, 0);
+    this.inclusionEnabled = source !== null;
+    this.inclusionRevision += 1;
   }
 
   public setFaceCanvas(source: HTMLCanvasElement | null): void {
@@ -351,6 +369,30 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.uploadedFaceRevision = this.faceRevision;
   }
 
+  private uploadInclusion(gpu: GpuResources): void {
+    if (!this.pagesVolume || !gpu.inclusion || !gpu.inclusionTextureUniform || !gpu.inclusionEnabledUniform
+      || this.uploadedInclusionRevision === this.inclusionRevision) return;
+    const gl = this.gl;
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, gpu.inclusion);
+    if (!this.inclusionEnabled) {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+    } else {
+      const previousFlip = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL) as boolean;
+      const previousPremultiply = gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL) as boolean;
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+      try {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.inclusionCanvas);
+      } finally {
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, previousFlip ? 1 : 0);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, previousPremultiply ? 1 : 0);
+      }
+    }
+    gl.activeTexture(gl.TEXTURE0);
+    this.uploadedInclusionRevision = this.inclusionRevision;
+  }
+
   private createGpu(): GpuResources {
     const gl = this.gl;
     const vertexShader = compile(gl, gl.VERTEX_SHADER, vertexShaderSource);
@@ -374,7 +416,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const shapeField = gl.createTexture();
     const appearance = gl.createTexture();
     const face = this.pagesVolume ? gl.createTexture() : null;
-    if (!vao || !vertices || !indices || !lines || !shapeField || !appearance || (this.pagesVolume && !face)) {
+    const inclusion = this.pagesVolume ? gl.createTexture() : null;
+    if (!vao || !vertices || !indices || !lines || !shapeField || !appearance || (this.pagesVolume && (!face || !inclusion))) {
       gl.deleteProgram(program);
       throw new Error('Cannot allocate candidate GPU resources');
     }
@@ -421,12 +464,27 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       faceEnabledUniform = gl.getUniformLocation(program, 'uFaceEnabled');
       if (!faceTextureUniform || !faceEnabledUniform) throw new Error('Missing clean face uniforms');
     }
-    const gpu = { program, vao, vertices, indices, lines, shapeField, appearance, face, faceTextureUniform, faceEnabledUniform, uniforms };
+    let inclusionTextureUniform: WebGLUniformLocation | null = null;
+    let inclusionEnabledUniform: WebGLUniformLocation | null = null;
+    if (inclusion) {
+      gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, inclusion);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      inclusionTextureUniform = gl.getUniformLocation(program, 'uInclusionTexture');
+      inclusionEnabledUniform = gl.getUniformLocation(program, 'uInclusionEnabled');
+      if (!inclusionTextureUniform || !inclusionEnabledUniform) throw new Error('Missing inclusion uniforms');
+    }
+    const gpu = { program, vao, vertices, indices, lines, shapeField, appearance, face, inclusion,
+      inclusionTextureUniform, inclusionEnabledUniform, faceTextureUniform, faceEnabledUniform, uniforms };
     this.uploadShapeField(gpu);
     this.uploadedAppearanceRevision = -1;
     this.uploadAppearance(gpu);
     this.uploadedFaceRevision = -1;
+    this.uploadedInclusionRevision = -1;
     this.uploadFace(gpu);
+    this.uploadInclusion(gpu);
     return gpu;
   }
 
@@ -438,6 +496,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const gpu = this.gpu;
     this.uploadAppearance(gpu);
     this.uploadFace(gpu);
+    this.uploadInclusion(gpu);
     const material = this.materialStyle ?? getStyle(this.paletteId, this.materialId);
     const sample = this.simulation.snapshot();
     for (let index = 0; index < this.simulation.vertices.length; index += 1) {
@@ -483,6 +542,11 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       gl.bindTexture(gl.TEXTURE_2D, gpu.face);
       gl.uniform1i(gpu.faceTextureUniform, 2);
       gl.uniform1i(gpu.faceEnabledUniform, this.faceEnabled ? 1 : 0);
+    }
+    if (gpu.inclusion && gpu.inclusionTextureUniform && gpu.inclusionEnabledUniform) {
+      gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, gpu.inclusion);
+      gl.uniform1i(gpu.inclusionTextureUniform, 3);
+      gl.uniform1i(gpu.inclusionEnabledUniform, this.inclusionEnabled ? 1 : 0);
     }
     gl.uniform2f(u('uScale'), radius * 2 / width, radius * 2 / height);
     gl.uniform1f(u('uMoldProgress'), this.moldProgress);
@@ -546,6 +610,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.gpu = null;
     this.uploadedAppearanceRevision = -1;
     this.uploadedFaceRevision = -1;
+    this.uploadedInclusionRevision = -1;
     this.cancel();
   }
 
@@ -564,6 +629,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     this.gl.deleteTexture(gpu.shapeField);
     this.gl.deleteTexture(gpu.appearance);
     if (gpu.face) this.gl.deleteTexture(gpu.face);
+    if (gpu.inclusion) this.gl.deleteTexture(gpu.inclusion);
     this.gl.deleteVertexArray(gpu.vao);
     this.gl.deleteProgram(gpu.program);
   }

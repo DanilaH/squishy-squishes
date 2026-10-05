@@ -79,7 +79,7 @@ export class StageGestureRouter {
   public down(pointer: StagePointer): boolean {
     if (this.blocked) return false;
     if (this.owner !== null) {
-      if (this.stage !== 'squeeze' || this.secondOwner !== null || pointer.id === this.owner) return false;
+      if ((this.stage !== 'squeeze' && this.stage !== 'finish') || this.secondOwner !== null || pointer.id === this.owner) return false;
       if (!this.host.beginSecondSquish?.(pointer)) return false;
       this.secondOwner = pointer.id;
       return true;

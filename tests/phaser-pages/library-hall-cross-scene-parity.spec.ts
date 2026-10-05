@@ -23,18 +23,19 @@ for (const specimen of specimens) {
     await page.locator('[data-paint-color]').nth(2).click();
     const paint = await page.locator('[data-sandbox-canvas]').boundingBox();
     if (!paint) throw new Error('No paint surface');
-    await page.mouse.move(paint.x + paint.width * .43, paint.y + paint.height * .64);
+    const paintRadius = await page.locator('[data-sandbox-canvas]').evaluate(el => el.clientWidth * parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
+    await page.mouse.move(paint.x + paint.width * .5 - paintRadius * .4, paint.y + paint.height * .5 + paintRadius * .3);
     await page.mouse.down();
-    await page.mouse.move(paint.x + paint.width * .59, paint.y + paint.height * .64, { steps: 12 });
+    await page.mouse.move(paint.x + paint.width * .5 + paintRadius * .4, paint.y + paint.height * .5 + paintRadius * .3, { steps: 12 });
     await page.mouse.up();
     await page.locator('[data-action="paint-continue"]').click();
     if (specimen.mixin !== 'none') {
       await page.locator(`[data-mixin="${specimen.mixin}"]`).click();
       const mixinSurface = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!mixinSurface) throw new Error('No mix-in surface');
-      await page.mouse.move(mixinSurface.x + mixinSurface.width * .40, mixinSurface.y + mixinSurface.height * .48);
+      await page.mouse.move(mixinSurface.x + mixinSurface.width * .5 - paintRadius * .4, mixinSurface.y + mixinSurface.height * .5 - paintRadius * .15);
       await page.mouse.down();
-      await page.mouse.move(mixinSurface.x + mixinSurface.width * .62, mixinSurface.y + mixinSurface.height * .56, { steps: 6 });
+      await page.mouse.move(mixinSurface.x + mixinSurface.width * .5 + paintRadius * .4, mixinSurface.y + mixinSurface.height * .5 + paintRadius * .15, { steps: 6 });
       await page.mouse.up();
     }
     await page.locator('[data-action="mixin-continue"]').click();

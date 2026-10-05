@@ -36,7 +36,7 @@ export interface AppearanceDocumentV1 {
   readonly mixins: readonly MixInPlacementV1[];
 }
 
-const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti'];
+export const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti'];
 const mixinCodeById = new Map<MixInId, number>(MIXIN_IDS.map((id, index) => [id, index]));
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));

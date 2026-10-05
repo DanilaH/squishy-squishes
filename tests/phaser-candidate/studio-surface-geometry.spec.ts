@@ -10,9 +10,9 @@ test('M4: studio input and renderer share canonical shape UV for all eight shape
     const result = await page.evaluate((id) => {
       const fixture = window.__squishyStageInput!;
       fixture.shape(id);
-      const middle = fixture.pointToUv(210, 210);
-      const upperLeft = fixture.pointToUv(10, 10);
       const projected = fixture.projectUvToCanvas(0.5, 0.5);
+      const middle = fixture.pointToUv(projected.x, projected.y);
+      const upperLeft = fixture.pointToUv(10, 10);
       return { middle, upperLeft, projected, canvasCount: fixture.snapshot().canvasCount };
     }, shapeId);
     expect(result.canvasCount, `${shapeId}: one Phaser renderer`).toBe(1);
@@ -21,7 +21,7 @@ test('M4: studio input and renderer share canonical shape UV for all eight shape
     expect(result.middle?.v, `${shapeId}: centered V`).toBeCloseTo(0.5, 4);
     expect(result.upperLeft, `${shapeId}: avoid painting outside the canonical boundary`).toBeNull();
     expect(result.projected.x, `${shapeId}: mesh center X`).toBeCloseTo(210, 2);
-    expect(result.projected.y, `${shapeId}: mesh center Y`).toBeCloseTo(210, 2);
+    expect(result.projected.y, `${shapeId}: molded mesh center Y`).toBeCloseTo(210 + 420 * .34 * .018, 2);
   }
 });
 
@@ -44,8 +44,9 @@ test('M4: UV projection follows the same animated spring mesh, not a static over
     return Math.hypot(projected.x - anchor.x, projected.y - anchor.y);
   }, { timeout: 4_000 }).toBeGreaterThan(2);
   const uv = await page.evaluate(() => window.__squishyStageInput!.pointToUv(210, 210));
-  // Keep the original static hit-coordinate convention until a separate UX change is approved.
-  expect(uv).toEqual({ u: 0.5, v: 0.5 });
+  // Input inverts the shader's mold, while attachment projection follows deformation.
+  expect(uv?.u).toBeCloseTo(.5, 4);
+  expect(uv?.v).toBeCloseTo(.5 + .018 / .905 / 2, 4);
   await page.mouse.up();
   await page.evaluate(() => window.__squishyStageInput!.destroy());
   expect(await canvas.count()).toBe(0);

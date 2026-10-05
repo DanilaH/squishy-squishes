@@ -14,11 +14,21 @@ const art = {
 } as const;
 
 const PER_ROOM = 2;
+const decodedArt = new Map<string, string>();
+const retainedImages = new Map<string, HTMLImageElement>();
 const decode = async (url: string): Promise<void> => {
   const image = new Image();
   image.src = url;
   await image.decode();
   if (!image.naturalWidth || !image.naturalHeight) throw new Error(`Empty Library image: ${url}`);
+  retainedImages.set(url, image);
+  // Furniture and podiums must not start a second CSS request after readiness.
+  // Keep decoded pixels for the room; source files and their provenance stay intact.
+  if ([art.cabinet, art.shelf, art.plant, art.pedestal].includes(url)) {
+    const canvas = document.createElement('canvas'); canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+    canvas.getContext('2d')!.drawImage(image, 0, 0);
+    decodedArt.set(url, canvas.toDataURL('image/png'));
+  }
 };
 
 let hallAssetsReady: Promise<void> | null = null;
@@ -92,10 +102,10 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
     scene.innerHTML = `<div class="library-hall-scene__wall"></div><div class="library-hall-scene__floor"></div><div class="library-hall-scene__cabinet"></div><div class="library-hall-scene__shelf"></div><div class="library-hall-scene__plant"></div>`;
     scene.style.setProperty('--hall-wall', `url("${art.wall}")`);
     scene.style.setProperty('--hall-floor', `url("${art.floor}")`);
-    scene.style.setProperty('--hall-cabinet', `url("${art.cabinet}")`);
-    scene.style.setProperty('--hall-shelf', `url("${art.shelf}")`);
-    scene.style.setProperty('--hall-plant', `url("${art.plant}")`);
-    shell.style.setProperty('--hall-pedestal', `url("${art.pedestal}")`);
+    scene.style.setProperty('--hall-cabinet', `url("${decodedArt.get(art.cabinet) ?? art.cabinet}")`);
+    scene.style.setProperty('--hall-shelf', `url("${decodedArt.get(art.shelf) ?? art.shelf}")`);
+    scene.style.setProperty('--hall-plant', `url("${decodedArt.get(art.plant) ?? art.plant}")`);
+    shell.style.setProperty('--hall-pedestal', `url("${decodedArt.get(art.pedestal) ?? art.pedestal}")`);
     shell.style.setProperty('--hall-ground-shadow', `url("${art.groundShadow}")`);
     shell.prepend(scene);
 
@@ -138,12 +148,12 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
       .catch((error: unknown) => {
         if (disposed) return;
         console.warn('[squishy:library-hall] Art decode failed; keeping the original Library grid until a later retry.', error);
-        if (assetRetryCount < 1 && root.querySelector('[data-sandbox-library]')) {
+        if (assetRetryCount < 3 && root.querySelector('[data-sandbox-library]')) {
           assetRetryCount += 1;
           assetRetryTimer = globalThis.setTimeout(() => {
             assetRetryTimer = 0;
             ensureAssets();
-          }, 900);
+          }, 900 * assetRetryCount);
         }
       })
       .finally(() => {

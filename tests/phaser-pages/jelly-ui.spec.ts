@@ -59,7 +59,8 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
   await expect(page.locator('button[data-shape="heart"]')).toHaveAttribute('aria-pressed', 'true');
   await continueButton.click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
-  await expect(page.locator('[data-action="paint-clear"]')).toHaveCSS('background-image', /red-wide.*webp/);
+  await expect(page.locator('[data-action="paint-clear"]')).toHaveCSS('background-image', 'none');
+  await expect(page.locator('[data-action="paint-clear"]')).toHaveCSS('background-color', 'rgb(255, 253, 250)');
 });
 
 test('A missing jelly asset leaves all original CSS controls usable', async ({ page }) => {
@@ -148,4 +149,3 @@ test('a transient Library jelly-art failure recovers in-place without delaying p
   expect(requests).toBeGreaterThanOrEqual(2);
   await expect(page.locator('[data-library-new]').first()).toHaveCSS('background-image', /honey-wide.*webp/);
 });
-

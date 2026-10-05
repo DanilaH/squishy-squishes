@@ -28,7 +28,8 @@ const saveRealToy = async (page: import('@playwright/test').Page): Promise<void>
   await page.locator('[data-decor-eyes="dot"]').click();
   await page.locator('[data-decor-mouth="smile"]').click();
   await page.locator('[data-decor-section="stickers"]').click();
-  await page.locator('[data-sandbox-canvas]').click({ position: { x: box.width * .28, y: box.height * .53 } });
+  const radius = await page.locator('[data-sandbox-canvas]').evaluate(el => el.clientWidth * parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
+  await page.locator('[data-sandbox-canvas]').click({ position: { x: box.width * .5 - radius * .4, y: box.height * .5 + radius * .2 } });
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-decor-sticker-count', '1');
   await page.locator('[data-decor-section="accessory"]').click();
   await page.locator('[data-decor-accessory="bow"]').click();

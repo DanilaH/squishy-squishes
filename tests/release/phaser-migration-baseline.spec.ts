@@ -141,7 +141,10 @@ test('M0: a Paint stroke beginning outside the silhouette starts on entry', asyn
   await expect(shell).toHaveAttribute('data-stage', 'paint');
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!box) throw new Error('Missing original squishy canvas');
-  await page.mouse.move(box.x + 5, box.y + 5);
+  // The shared render buffer extends beyond the viewport. Start outside the
+  // visible silhouette, inside the actual playfield, rather than offscreen.
+  const radius = await page.locator('[data-sandbox-canvas]').evaluate(el => el.clientWidth * parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
+  await page.mouse.move(box.x + box.width / 2 - radius * 1.3, box.y + box.height / 2 - radius * 1.3);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 12 });
   await page.mouse.up();
