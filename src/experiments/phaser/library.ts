@@ -7,6 +7,7 @@ import '../../ui-ux-pass-01.css';
 import '../../feel-art-audio-pass-01.css';
 import '../../ui-ux-overhaul-02.css';
 import '../../sandbox-core.css';
+import '../../app/styles/editor-layout.css';
 import '../../sandbox-library.css';
 import '../../sandbox-ideas.css';
 import '../../sandbox-polish-01.css';

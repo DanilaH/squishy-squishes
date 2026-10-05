@@ -60,3 +60,61 @@ test('rich new-content toys keep identity, face priority and complete gear acros
   expect(decodeSaveStateV3(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!))).library).toEqual(library);
   expect(errors).toEqual([]);
 });
+
+test('Hall frames the whole craft when freely enlarged decorations extend beyond its body', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/squishy-squishes/');
+  const ordinary = { id: 'ordinary', createdAt: 1700000000000, shapeId: 'mochi', materialId: 'soft',
+    appearance: { v: 1, strokes: [], mixins: [] }, decor: createEmptyDecorDocument() };
+  const rich = { ...ordinary, id: 'wide-craft', decor: { ...ordinary.decor, accessories: [
+    { a: 'handbag', x: 8, y: 245, s: 2.5, r: -.7, side: 'whole', color: 0xa1e2ce },
+    { a: 'wings', x: 247, y: 140, s: 2.5, r: .8, side: 'right' },
+  ] } };
+  await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)),
+    { ...createDefaultSaveV3(), totalCrafts: 2, library: [ordinary, rich] });
+  await page.reload();
+  const old = page.locator('[data-library-play-id="ordinary"] canvas'), craft = page.locator('[data-library-play-id="wide-craft"] canvas');
+  await expect(old).toHaveAttribute('data-library-craft-scale', '1.0000');
+  await expect.poll(async () => Number(await craft.getAttribute('data-library-craft-scale'))).toBeLessThan(.8);
+  const edge = await craft.evaluate((canvas: HTMLCanvasElement) => {
+    const data = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+    let opaque = 0, clipped = 0;
+    for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+      const alpha = data[(y * canvas.width + x) * 4 + 3]!;
+      if (alpha > 20) opaque++;
+      if (alpha > 20 && (x === 0 || y === 0 || x === canvas.width - 1 || y === canvas.height - 1)) clipped++;
+    }
+    return { opaque, clipped };
+  });
+  expect(edge.opaque).toBeGreaterThan(5000); expect(edge.clipped).toBe(0);
+  await page.locator('[data-library-play-id="wide-craft"]').screenshot({ path: 'migration-baseline-evidence/free-craft/wide-hall.png' });
+});
+
+test('new front and rear gear stays attached through full-screen downward pulls', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/squishy-squishes/');
+  for (const shapeId of ['paw', 'donut', 'ice-cream'] as const) {
+    const shape = SHAPES.find(shape => shape.id === shapeId)!;
+    const toy = { id: 'pull-gear', createdAt: 1700000000000, shapeId, materialId: 'jelly',
+      appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [] },
+      decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', accessories:
+        (['handbag', 'wings', 'crown'] as const).flatMap(id => initialAccessoryPlacements(shape, id)) } };
+    await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)),
+      { ...createDefaultSaveV3(), totalCrafts: 1, library: [toy] });
+    await page.reload(); await page.locator('[data-library-play-id="pull-gear"]').click();
+    const canvas = page.locator('[data-sandbox-canvas]'), shell = page.locator('[data-sandbox-app]');
+    await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
+    const box = (await canvas.boundingBox())!;
+    const x = box.x + box.width / 2 + (shapeId === 'donut' ? 70 : 0), y = box.y + box.height / 2;
+    await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 60, 820, { steps: 20 });
+    await expect(shell).toHaveAttribute('data-squish-active', 'true');
+    await page.screenshot({ path: `migration-baseline-evidence/free-craft/${shapeId}-gear-down.png` });
+    const positions = await page.locator('[data-accessory-index]').evaluateAll(nodes => nodes.map(node => {
+      const rect = node.getBoundingClientRect(); return [rect.x, rect.y, rect.width, rect.height];
+    }));
+    expect(positions.flat().every(Number.isFinite)).toBe(true);
+    await page.mouse.up(); await expect(shell).toHaveAttribute('data-squish-active', 'false');
+    expect(decodeSaveStateV3(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!))).library[0]).toEqual(toy);
+  }
+});

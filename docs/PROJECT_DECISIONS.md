@@ -715,3 +715,27 @@ changes for an actual hole in rendering, hits and paint; it does not authorize
 per-shape physics or another renderer. No liquids/heating/experimental simulator
 is included. Publication still requires the final head's PR checks and actual
 hosted acceptance, not a deadline or a successful local build.
+
+### Free-craft implementation boundaries — 6 October 2026
+
+Optional V1 decor placement/face fields and appearance light/brush fields retain
+V3 and exact old compact encoding. Existing filler ordinals stay fixed. Paired
+pieces share authored art and independent transforms; the complete face remains
+above front gear through the same projected mesh. History stores immutable drafts
+and coalesces pointer/slider gestures into one action; cancelled placement restores
+the original document. It replaces the former separate per-tool history arrays.
+
+The canonical shape definition now supplies inner contours. SDF, hit tests,
+authoring masks, SVG previews and front/back rim strips all use that definition;
+the donut retains the generic 289-vertex simulation. An observed interpolated
+watermelon contour crossed the generic floor by 0.00528 after mesh ordering. A
+residual rigid mesh translation corrects contact without changing triangle areas
+or any reviewed material spring/response constants. The 90 form/material extreme
+reversal matrix passed locally after that correction.
+
+Historical candidate entrypoints import the shared editor layout so catalog growth
+also remains usable in their fallback UI. Long catalogs/settings alone may scroll;
+button reachability tests visit every item through those trays while preserving
+page overflow and 44px checks. Static Hall snapshots frame enlarged free gear as
+one composition, retaining the ordinary toy camera when its art already fits.
+No per-card GPU context or persistent frame loop is added for this framing/props.

@@ -181,8 +181,8 @@
 #app[data-jelly-ui-ready] .sandbox-shell[data-stage] [data-decor-panel='accessory'] > .sandbox-decor-grid {
   height: 100%; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; align-content: start;
 }
-#app .free-color-choices { display: flex; gap: 5px; }
-#app .free-color-choices button { color: var(--craft-color); font-size: 24px; min-width: 44px; padding: 0; }
+#app .free-color-choices { display: flex; gap: 5px; overflow-x: auto; overscroll-behavior: contain; }
+#app .free-color-choices button { color: var(--craft-color); font-size: 24px; min-width: 44px; flex-shrink: 0; padding: 0; }
 #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-object-panel > label {
   position: static; width: auto; height: auto; clip-path: none; overflow: visible;
 }
@@ -227,3 +227,8 @@
   display: block; width: 48px; max-width: 100%; height: auto; max-height: 28px;
   margin-inline: auto; pointer-events: none;
 }
+/* Glyph history controls need one icon, including the decoded-art profile. */
+#app[data-jelly-ui-ready] .sandbox-shell [data-action$='-undo']::before { display: none !important; }
+/* Object lists and colours need horizontal swipes inside vertical settings. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-object-panel,
+#app .free-object-panel { touch-action: pan-x pan-y; }
