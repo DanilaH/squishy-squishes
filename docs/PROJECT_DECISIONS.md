@@ -566,3 +566,26 @@ radius and center across stages while avoiding a flat cut at the old canvas edge
 Long visible deformation
 still respects the playfield projection and desk floor; tracking covers the
 viewport, not movement outside the browser window.
+
+## Six tactile material profiles — 5 October 2026
+
+The owner authorized all six materials as one tactile set. The existing shared
+solver uses a typed parameter table for resisted travel, local pressure/ring,
+rest response, damping, release/poke and bounded pinch. Soft returns calmly and
+relaxes slightly during a hold; Marshmallow dents more deeply, stretches less
+and retains a stronger temporary imprint after a longer hold; Pearl resists
+earlier, bulges more at the sides and returns with a compact rebound; Holo has
+a free initial pull followed by a shorter tension ceiling and brisk recovery.
+Jelly and Metallic retain the accepted long/short pull and return parameters.
+Metallic's pinch is also short to avoid a stiff material becoming freely
+stretchable with two fingers. Foam memory decays over 900ms and is discarded
+on cancellation, material or stage changes; it is never saved.
+
+These owner-approved tactile parameters supersede the earlier default-only
+constants in Finish/Squeeze. Raw/Mix constants, common pinch damping, floor/fold
+guards, 289 vertices, visible-surface grabs, full-viewport capture, faces/decor,
+layout, save V3, material IDs, slots, rewards and progression remain unchanged.
+Tests compare actual local dents, held/released fields and observable material
+signatures, stress all six materials on all eight shapes, and open saved
+materials in both Finish and Squeeze. Automated distinction is evidence for
+physical behaviour; the owner's phone feel remains the final product judgment.
