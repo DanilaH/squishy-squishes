@@ -8,3 +8,9 @@ export const containClipAxis = (value: number): number => {
   const excess = Math.abs(value) - .88;
   return excess <= 0 ? value : Math.sign(value) * (.88 + .08 * excess / (.08 + excess));
 };
+/** Invert viewport containment before mold/pose/hit testing. */
+export const uncontainClipAxis = (value: number): number => {
+  const excess = Math.abs(value) - .88;
+  if (excess <= 0) return value;
+  return Math.sign(value) * (.88 + .08 * excess / Math.max(.0001, .08 - excess));
+};

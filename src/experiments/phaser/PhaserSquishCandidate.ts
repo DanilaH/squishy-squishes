@@ -1,4 +1,4 @@
-import { moldFactors, containClipAxis } from '../../squish/projection';
+import { moldFactors, containClipAxis, uncontainClipAxis } from '../../squish/projection';
 import { REST_TOY, posePoint, unposePoint, type ToyPose } from '../../sandbox/livingToy';
 import Phaser from 'phaser';
 import { hasShapeRelief } from '../../sandbox/shapeRelief';
@@ -189,8 +189,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const radius = this.radius();
     const mold = moldFactors(this.moldProgress);
     return {
-      x: (x - width / 2) / radius / mold.x,
-      y: ((height / 2 - y) / radius + mold.offsetY) / mold.y - this.renderCenterOffsetY,
+      x: uncontainClipAxis((x - width / 2) * 2 / width) * width / 2 / radius / mold.x,
+      y: (uncontainClipAxis((height / 2 - y) * 2 / height) * height / 2 / radius + mold.offsetY) / mold.y - this.renderCenterOffsetY,
     };
   }
 
@@ -274,7 +274,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     if (this.disposed) return false;
     const point = this.localPoint(canvasX, canvasY);
     const hit = unposePoint(point.x, point.y, this.pose);
-    if (!this.simulation.begin(pointerId, hit.x, hit.y)) return false;
+    const edgeTolerance = this.pokeEnabled ? Math.min(.12, 8 / this.radius() / Math.min(moldFactors(this.moldProgress).x, moldFactors(this.moldProgress).y)) : 0;
+    if (!this.simulation.begin(pointerId, hit.x, hit.y, edgeTolerance)) return false;
     this.pose = REST_TOY;
     return true;
   }
