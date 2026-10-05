@@ -6,6 +6,8 @@ import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
 import { reachableControlIssues } from '../phaser-pages/helpers/reachableControls';
 
+test.use({ hasTouch: true });
+
 for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 568, height: 320 }]) {
   test(`light, try-on and local mixed brush preserve craft at ${viewport.width}`, async ({ page }, info) => {
     await page.setViewportSize(viewport);
@@ -66,6 +68,24 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
     for (let i = 0; i < sunset.length; i++) if (Math.abs(sunset[i]! - moon[i]!) > 6) changed++;
     expect(changed).toBeGreaterThan(500);
     const axis = page.locator('[data-light-axis="x"]');
+    await axis.scrollIntoViewIfNeeded();
+    expect(await axis.evaluate(node => {
+      const r = node.getBoundingClientRect();
+      return node === document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    })).toBe(true);
+    const slider = (await axis.boundingBox())!;
+    await page.mouse.click(slider.x + slider.width * .75, slider.y + slider.height / 2);
+    expect(Number(await axis.inputValue())).toBeGreaterThan(0);
+    await expect(shell).not.toHaveAttribute('data-squish-active', 'true');
+    expect(await canvas.boundingBox()).toEqual(stable);
+    expect(await page.locator('[data-studio-desk]').boundingBox()).toEqual(desk);
+    await page.locator('[data-panel="finish"] [data-action="draft-undo"]').click();
+    await expect(axis).toHaveValue('-0.45');
+    await page.touchscreen.tap(slider.x + slider.width * .75, slider.y + slider.height / 2);
+    expect(Number(await axis.inputValue())).toBeGreaterThan(0);
+    await expect(shell).toHaveAttribute('data-squish-active', 'false');
+    await page.locator('[data-panel="finish"] [data-action="draft-undo"]').click();
+    await expect(axis).toHaveValue('-0.45');
     await axis.fill('0.8'); await axis.dispatchEvent('change');
     await page.locator('[data-panel="finish"] [data-action="draft-undo"]').click();
     await expect(axis).toHaveValue('-0.45');

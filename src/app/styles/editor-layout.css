@@ -193,6 +193,8 @@
 #app .free-finish-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; grid-column: 1 / -1; }
 #app .sandbox-shell[data-stage='finish'] .free-finish-tabs > button { min-height: 44px !important; }
 #app .free-light-panel { grid-column: 1 / -1; height: 144px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+#app .sandbox-shell[data-stage='finish']:not(.is-blocked) .free-light-panel { pointer-events: auto; }
+#app .free-light-panel input { height: 44px; margin-block: 0; }
 #app .free-light-presets { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; }
 #app .sandbox-shell[data-stage='finish'] .free-light-panel button { min-height: 44px !important; }
 #app .free-try-return { position: absolute; bottom: 22px; left: 50%; translate: -50% 0; z-index: 20; min-height: 48px; padding: 10px 20px; border: 1px solid #c7a9bc; border-radius: 18px; background: #fff7ed; color: #56375f; font: inherit; font-weight: 800; }
