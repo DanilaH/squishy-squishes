@@ -49,6 +49,13 @@ for (const device of devices) {
           const stepElement = shell.querySelector<HTMLElement>('[data-sandbox-step]');
           const step = stepElement?.getBoundingClientRect();
           const hit = document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2);
+          // Resolve the old seat in the same query-container context. The
+          // stage's border box is not necessarily its container content box.
+          const oldSeat = document.createElement('div');
+          oldSeat.style.cssText = 'position:absolute;width:min(64vh,280px,calc(100cqh - 45px));height:0;visibility:hidden;pointer-events:none';
+          canvas.parentElement!.append(oldSeat);
+          const originalLandscapeRadius = oldSeat.getBoundingClientRect().width * .34;
+          oldSeat.remove();
           return {
             stage: label, canvas: { x: c.left, y: c.top, width: c.width, height: c.height },
             stageTop: s.top, stageHeight: s.height, deskTop: d.top, deskBottom: d.bottom, floorTop: floor.getBoundingClientRect().top,
@@ -70,6 +77,7 @@ for (const device of devices) {
             contactShadowZ: Number.parseInt(getComputedStyle(stage, '::after').zIndex || '0', 10),
             deskZ: Number.parseInt(getComputedStyle(desk).zIndex || '0', 10),
             canvasZ: Number.parseInt(getComputedStyle(canvas).zIndex || '0', 10),
+            originalLandscapeRadius,
             radiusRatio: Number.parseFloat(getComputedStyle(canvas).getPropertyValue('--squish-radius-ratio') || '0.34'),
           };
         }, name);
@@ -108,8 +116,7 @@ for (const device of devices) {
         }
         if (device.name === 'landscape-ru') {
           // The larger draw buffer must preserve the original seat in pixels.
-          const originalRadius = .34 * Math.min(device.height * .64, 280, result.stageHeight - 45);
-          expect(result.canvas.width * result.radiusRatio, `${device.name}: original resting size`).toBeCloseTo(originalRadius, 1);
+          expect(result.canvas.width * result.radiusRatio, `${device.name}: original resting size`).toBeCloseTo(result.originalLandscapeRadius, 1);
           expect(result.canvas.width, `${device.name}: long pulls have drawing room`).toBeGreaterThanOrEqual(device.width);
         } else expect(result.radiusRatio, `${device.name}: every stage shares its resting projection`).toBeCloseTo(.14, 3);
         history.push({ stage: name, canvas: result.canvas, radius: result.canvas.width * result.radiusRatio, stageTop: result.stageTop,
