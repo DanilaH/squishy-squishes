@@ -676,3 +676,17 @@ pass. A shard
 containing only input/geometry tests need not invent screenshots; the aggregate
 requires the original production portrait/desktop/landscape frames and candidate
 desktop, portrait, landscape, compositing and real-studio captures across the complete partition instead of a per-runner any-PNG check.
+
+
+### Verified CI measurements
+
+Run 37357410489 passed all 212 production browser cases, all 82 ordinary Pages
+cases, 31 candidate cases, 35 independent Hall/stress cases and 30 unchanged UI
+baselines. One Hall material capture used the existing retry after a 60s timeout.
+The slowest Pages test step fell from 621s to 354s; the slowest candidate runner
+including setup took 123s. Browser steps ranged from 109s to 439s, so the complete
+pipeline is still governed by its longest runner rather than the shard count.
+This run also incurred a 265s system/Chromium installation on one runner and
+about five minutes of queueing for the final Pages aggregate. These network and
+runner delays must be reported separately from test execution; the measurements
+are not a guaranteed end-to-end budget. No tests or baselines were removed.
