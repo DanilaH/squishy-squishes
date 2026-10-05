@@ -34,6 +34,8 @@ jobs:
           git worktree add /tmp/squishy-before "$BASE_SHA"
           ln -s "$PWD/node_modules" /tmp/squishy-before/node_modules
           cp tests/release/cozy-workshop.spec.ts /tmp/squishy-before/tests/release/
+          mkdir -p /tmp/squishy-before/tests/phaser-pages/helpers
+          cp tests/phaser-pages/helpers/reachableControls.ts /tmp/squishy-before/tests/phaser-pages/helpers/
           cp playwright.art-review.config.ts /tmp/squishy-before/
           cd /tmp/squishy-before
           npm run build:app
