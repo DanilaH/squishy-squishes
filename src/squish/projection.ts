@@ -14,3 +14,9 @@ export const uncontainClipAxis = (value: number): number => {
   if (excess <= 0) return value;
   return Math.sign(value) * (.88 + .08 * excess / Math.max(.0001, .08 - excess));
 };
+/** Captured travel continues linearly past the viewport's soft edge. The
+ * exact inverse above is still used for hits, without a singular drag wall. */
+export const uncontainGestureAxis = (value: number): number => {
+  const magnitude = Math.abs(value);
+  return magnitude <= .92 ? uncontainClipAxis(value) : Math.sign(value) * (.96 + (magnitude - .92) * 4);
+};

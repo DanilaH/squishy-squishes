@@ -538,3 +538,31 @@ Marshmallow briefly retains 28% of the caught field after a hold over 350ms, wit
 a 550ms exponential decay. This transient field clears on cancellation, stage or
 material changes and never persists in save V3. Floor/fold/displacement bounds,
 289 vertices, pinch damping, grab anchors, squeeze credit and progression remain.
+
+## Material travel and captured viewport gestures — 5 October 2026
+
+The owner authorized a stiff, locally dentable Metallic (existing `chrome` ID),
+longer Jelly tethers and continuous tracking outside the original playfield.
+This intentionally replaces the shared tactile travel ceiling: Metallic has a
+short resisted pull and faster damped recovery; Jelly has a long progressively
+resisted pull, with a monotone axial field to prevent the extended mesh folding.
+Other tactile materials gain a smooth resistance knee. Raw/Mix limits remain.
+Whole-body travel stays bounded; generic floor/triangle guards, canonical shapes,
+289 vertices, saves, rewards, pinch damping and release credit are preserved.
+
+A captured gesture extrapolates the viewport inverse smoothly instead of entering
+its asymptote. Initial hits still invert the actual rendered mesh; per-pointer
+offsets keep returning-surface and posed grabs continuous. Mouse down captures
+the native pointer even when Phaser supplies its compatibility MouseEvent.
+Phaser 4.2.1 discards touchmove over other DOM elements despite implicit touch
+capture. The bridge therefore extends its existing TouchManager listener only
+for already-owned Finish/Squeeze pointers outside the canvas. It restores that
+listener on disposal; no second input router, renderer or frame loop is added.
+Normal authoring, two-pointer ownership, interruption/activity cancellation and
+UI click-through remain under the existing stage router. Toy/table layout,
+no-scroll controls and 44px Paint zones are unchanged. Short landscape expands
+the draw buffer with a computed CSS seat length, preserving the original pixel
+radius and center across stages while avoiding a flat cut at the old canvas edge.
+Long visible deformation
+still respects the playfield projection and desk floor; tracking covers the
+viewport, not movement outside the browser window.

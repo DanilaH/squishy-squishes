@@ -207,7 +207,12 @@ export class PhaserSquishSurface {
     if (this.disposed || !this.scene) return;
     const rect = this.canvas.getBoundingClientRect();
     const style = getComputedStyle(this.canvas);
-    const cssRatio = Number.parseFloat(style.getPropertyValue('--squish-radius-ratio'));
+    const seatSize = Number.parseFloat(style.getPropertyValue('--squish-seat-size'));
+    // Short landscape needs drawing room for Jelly beyond the resting seat.
+    // All stages keep the same pixel radius and center while the buffer expands.
+    if (seatSize > 0) this.canvas.style.setProperty('--squish-radius-ratio', String(.34 * seatSize / Math.max(1, Math.min(rect.width, rect.height))));
+    else this.canvas.style.removeProperty('--squish-radius-ratio');
+    const cssRatio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio'));
     const cssCenterOffsetY = Number.parseFloat(style.getPropertyValue('--squish-center-offset-y'));
     this.squish?.setRenderRadiusRatio(Number.isFinite(cssRatio) ? cssRatio : 0.34);
     this.squish?.setRenderCenterOffsetY(Number.isFinite(cssCenterOffsetY) ? cssCenterOffsetY : 0);

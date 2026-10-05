@@ -28,9 +28,10 @@ next personality, audio, Hall life, decor-preview and workshop-response pass,
 shipped in #79. On 5 October the owner authorized fixing scene consistency,
 extreme pulls, loading, idle and the crowded editor; this shipped in #80.
 Visible/returning surface grabs, local pressure, volume cues and release shipped
-in #81. The next authorized iteration repairs the strawberry silhouette and
-relief, adds side-aware facial response, and strengthens tactile material identity;
-its contract is in PROJECT_DECISIONS.
+in #81. Strawberry silhouette/relief, side-aware facial response and stronger
+material identity shipped in #82. The owner next authorized stiff Metallic,
+longer Jelly pulls and full-viewport tracking of owned mouse/touch gestures;
+the contract is in PROJECT_DECISIONS.
 The full optional
 idea bank is not a release checklist.
 

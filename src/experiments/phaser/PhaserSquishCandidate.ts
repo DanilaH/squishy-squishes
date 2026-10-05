@@ -1,4 +1,4 @@
-import { moldFactors, containClipAxis, uncontainClipAxis } from '../../squish/projection';
+import { moldFactors, containClipAxis, uncontainClipAxis, uncontainGestureAxis } from '../../squish/projection';
 import { REST_TOY, posePoint, unposePoint, type ToyPose } from '../../sandbox/livingToy';
 import Phaser from 'phaser';
 import { hasShapeRelief } from '../../sandbox/shapeRelief';
@@ -119,6 +119,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private renderRadiusRatio = 0.34;
   /** Local simulation-space render offset; positive Y points upward. */
   private renderCenterOffsetY = 0;
+  private readonly gestureOffsets = new Map<number, { x: number; y: number }>();
 
   public constructor(scene: Phaser.Scene, private readonly gl: WebGL2RenderingContext, private readonly pagesVolume = false) {
     super(scene);
@@ -158,7 +159,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public setMoldProgress(progress: number): void { this.moldProgress = clamp01(progress); }
   public setWireframe(enabled: boolean): void { this.wireframe = enabled; }
   public setRenderRadiusRatio(value: number): void {
-    this.renderRadiusRatio = Math.min(0.42, Math.max(0.10, Number.isFinite(value) ? value : 0.34));
+    this.renderRadiusRatio = Math.min(0.42, Math.max(0.04, Number.isFinite(value) ? value : 0.34));
   }
   public setRenderCenterOffsetY(value: number): void {
     this.renderCenterOffsetY = Math.min(0.30, Math.max(-0.30, Number.isFinite(value) ? value : 0));
@@ -184,13 +185,14 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   }
 
   /** One canonical UV transform for the Extern and the studio input bridge. */
-  private localPoint(x: number, y: number): { x: number; y: number } {
+  private localPoint(x: number, y: number, captured = false): { x: number; y: number } {
     const { width, height } = this.scene.scale;
     const radius = this.radius();
     const mold = moldFactors(this.moldProgress);
+    const inverse = captured ? uncontainGestureAxis : uncontainClipAxis;
     return {
-      x: uncontainClipAxis((x - width / 2) * 2 / width) * width / 2 / radius / mold.x,
-      y: (uncontainClipAxis((height / 2 - y) * 2 / height) * height / 2 / radius + mold.offsetY) / mold.y - this.renderCenterOffsetY,
+      x: inverse((x - width / 2) * 2 / width) * width / 2 / radius / mold.x,
+      y: (inverse((height / 2 - y) * 2 / height) * height / 2 / radius + mold.offsetY) / mold.y - this.renderCenterOffsetY,
     };
   }
 
@@ -276,17 +278,21 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const hit = unposePoint(point.x, point.y, this.pose);
     const edgeTolerance = this.pokeEnabled ? Math.min(.12, 8 / this.radius() / Math.min(moldFactors(this.moldProgress).x, moldFactors(this.moldProgress).y)) : 0;
     if (!this.simulation.begin(pointerId, hit.x, hit.y, edgeTolerance)) return false;
+    const gesture = this.localPoint(canvasX, canvasY, this.pokeEnabled);
+    this.gestureOffsets.set(pointerId, { x: hit.x - gesture.x, y: hit.y - gesture.y });
     this.pose = REST_TOY;
     return true;
   }
 
   public moveAt(pointerId: number, canvasX: number, canvasY: number): void {
-    const point = this.localPoint(canvasX, canvasY);
-    this.simulation.move(pointerId, point.x, point.y);
+    const point = this.localPoint(canvasX, canvasY, this.pokeEnabled);
+    const offset = this.gestureOffsets.get(pointerId);
+    this.simulation.move(pointerId, point.x + (offset?.x ?? 0), point.y + (offset?.y ?? 0));
   }
 
   public endById(pointerId: number): void {
     this.lastReleaseEnergy = this.simulation.end(pointerId, this.pokeEnabled) ?? 0;
+    this.gestureOffsets.delete(pointerId);
   }
 
   public begin(pointer: Phaser.Input.Pointer): boolean { return this.beginAt(pointer.id, pointer.x, pointer.y); }
@@ -294,6 +300,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   public end(pointer: Phaser.Input.Pointer): void { this.endById(pointer.id); }
 
   public cancel(): void {
+    this.gestureOffsets.clear();
     this.simulation.cancel();
   }
 
