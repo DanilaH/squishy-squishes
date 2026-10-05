@@ -16,7 +16,22 @@ permissions:
   contents: read
 
 jobs:
-  phaser-yandex-draft:
+  change-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      docs-only: ${{ steps.scope.outputs.docs-only }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/ci-change-scope.mjs
+  phaser-yandex-draft-tests:
+    needs: change-scope
+    if: needs.change-scope.outputs.docs-only != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -56,3 +71,18 @@ jobs:
             playwright-report
           if-no-files-found: ignore
           retention-days: 14
+
+  phaser-yandex-draft:
+    needs: [change-scope, phaser-yandex-draft-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require the DRAFT audit or a confirmed documentation-only change
+        env:
+          SCOPE_RESULT: ${{ needs.change-scope.result }}
+          DOCS_ONLY: ${{ needs.change-scope.outputs.docs-only }}
+          DRAFT_RESULT: ${{ needs.phaser-yandex-draft-tests.result }}
+        run: |
+          test "$SCOPE_RESULT" = success
+          if [ "$DOCS_ONLY" != true ]; then test "$DRAFT_RESULT" = success; fi

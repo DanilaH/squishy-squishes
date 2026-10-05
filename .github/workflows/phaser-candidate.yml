@@ -16,7 +16,26 @@ permissions:
   contents: read
 
 jobs:
-  candidate-qa:
+  change-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      docs-only: ${{ steps.scope.outputs.docs-only }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/ci-change-scope.mjs
+  candidate-qa-shard:
+    needs: change-scope
+    if: needs.change-scope.outputs.docs-only != 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -32,23 +51,51 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Build and test isolated Phaser candidate
-        run: npm run candidate:qa
+        run: npm run candidate:qa -- --shard=${{ matrix.shard }}/3
       - name: Upload passing candidate screenshots
         if: success() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: phaser-m2-candidate-evidence
+          name: phaser-m2-candidate-evidence-${{ matrix.shard }}
           path: phaser-candidate-evidence/*.png
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 14
       - name: Upload candidate failure diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: phaser-m2-candidate-failure
+          name: phaser-m2-candidate-failure-${{ matrix.shard }}
           path: |
             test-results
             playwright-report
             phaser-candidate-evidence
           if-no-files-found: ignore
           retention-days: 14
+
+  candidate-qa:
+    needs: [change-scope, candidate-qa-shard]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require all candidate shards or a confirmed documentation-only change
+        env:
+          SCOPE_RESULT: ${{ needs.change-scope.result }}
+          DOCS_ONLY: ${{ needs.change-scope.outputs.docs-only }}
+          SHARDS_RESULT: ${{ needs.candidate-qa-shard.result }}
+        run: |
+          test "$SCOPE_RESULT" = success
+          if [ "$DOCS_ONLY" != true ]; then test "$SHARDS_RESULT" = success; fi
+      - name: Collect candidate screenshots from the complete partition
+        if: needs.change-scope.outputs.docs-only != 'true' && github.event_name == 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: phaser-m2-candidate-evidence-*
+          merge-multiple: true
+          path: phaser-candidate-evidence
+      - name: Require the original candidate and real-studio evidence
+        if: needs.change-scope.outputs.docs-only != 'true' && github.event_name == 'pull_request'
+        run: |
+          for image in desktop portrait-phone existing-landscape compositing-overlay-visible compositing-overlay-hidden real-studio-saved-portrait real-studio-shape-portrait real-studio-decor-portrait; do
+            test -s "phaser-candidate-evidence/$image.png"
+          done

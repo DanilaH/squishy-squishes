@@ -21,20 +21,31 @@ jobs:
   release-check:
     outputs:
       build-artifact-id: ${{ steps.shared-build.outputs.artifact-id }}
+      docs-only: ${{ steps.scope.outputs.docs-only }}
       qa-reused: ${{ steps.verify-pr.outputs.qa-reused }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - name: Classify documentation-only changes conservatively
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/ci-change-scope.mjs
+      - name: Verify change-scope rules
+        run: node --test tests/tooling/ci-change-scope.test.mjs
       - name: Setup Node
+        if: steps.scope.outputs.docs-only != 'true'
         uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
       - name: Find successful merged PR evidence
         id: merged-pr
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.scope.outputs.docs-only != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/ci-release-reuse.mjs find
@@ -50,20 +61,21 @@ jobs:
           path: ci-build
       - name: Verify exact source tree, provenance and archive checksum
         id: verify-pr
+        if: steps.scope.outputs.docs-only != 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/ci-release-reuse.mjs verify
       - name: Install dependencies
-        if: steps.verify-pr.outputs.qa-reused != 'true'
+        if: steps.scope.outputs.docs-only != 'true' && steps.verify-pr.outputs.qa-reused != 'true'
         run: npm ci
       - name: Validate Pages and Yandex builds
-        if: steps.verify-pr.outputs.qa-reused != 'true'
+        if: steps.scope.outputs.docs-only != 'true' && steps.verify-pr.outputs.qa-reused != 'true'
         run: npm run release:check
       - name: Build and stage the isolated Pages preview once
-        if: steps.verify-pr.outputs.qa-reused != 'true'
+        if: steps.scope.outputs.docs-only != 'true' && steps.verify-pr.outputs.qa-reused != 'true'
         run: npm run pages:build:app
       - name: Package shared build with source identity and checksum
-        if: steps.verify-pr.outputs.qa-reused != 'true'
+        if: steps.scope.outputs.docs-only != 'true' && steps.verify-pr.outputs.qa-reused != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -74,6 +86,7 @@ jobs:
           (cd ci-build && sha256sum release-build.tar.gz > SHA256SUMS)
       - name: Upload the exact build for QA and deployment
         id: shared-build
+        if: steps.scope.outputs.docs-only != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: release-build-${{ github.run_attempt }}
@@ -84,10 +97,12 @@ jobs:
         if: steps.verify-pr.outputs.qa-reused == 'true'
         run: tar -xzf ci-build/release-build.tar.gz
       - name: Package Yandex archive
+        if: steps.scope.outputs.docs-only != 'true'
         run: |
           cd dist-yandex
           zip -r ../squishy-squishes-yandex.zip .
       - name: Upload Yandex archive
+        if: steps.scope.outputs.docs-only != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: squishy-squishes-yandex
@@ -97,11 +112,11 @@ jobs:
 
   browser-qa-shard:
     needs: release-check
-    if: needs.release-check.outputs.qa-reused != 'true'
+    if: needs.release-check.outputs.docs-only != 'true' && needs.release-check.outputs.qa-reused != 'true'
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -132,11 +147,8 @@ jobs:
           test -f dist/index.html
           test -f dist/phaser/index.html
           test -f dist-yandex/index.html
-      - name: Compare production UI with reviewed visual baselines
-        if: matrix.shard == 1
-        run: npm run qa:visual
       - name: Run release browser QA
-        run: npm run qa:browser -- --shard=${{ matrix.shard }}/3
+        run: npm run qa:browser -- --shard=${{ matrix.shard }}/4
       - name: Upload passing migration baseline evidence
         if: success() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
@@ -144,7 +156,7 @@ jobs:
           name: phaser-m0-old-engine-evidence-${{ matrix.shard }}
           overwrite: true
           path: migration-baseline-evidence/*.png
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 14
       - name: Upload failure diagnostics
         if: failure()
@@ -159,8 +171,54 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  visual-qa:
+    needs: release-check
+    if: needs.release-check.outputs.docs-only != 'true' && needs.release-check.outputs.qa-reused != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Download this run's shared build
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.release-check.outputs.build-artifact-id }}
+          merge-multiple: true
+          path: ci-build
+      - name: Verify source identity and restore the exact build
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat ci-build/source-sha)" = "$GITHUB_SHA"
+          (cd ci-build && sha256sum --check SHA256SUMS)
+          tar -xzf ci-build/release-build.tar.gz
+          test -f dist/index.html
+          test -f dist/phaser/index.html
+          test -f dist-yandex/index.html
+      - name: Compare production UI with reviewed visual baselines
+        run: npm run qa:visual
+      - name: Upload visual failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-visual-qa-failure
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
   browser-qa:
-    needs: [release-check, browser-qa-shard]
+    needs: [release-check, browser-qa-shard, visual-qa]
     if: always() && needs.release-check.outputs.qa-reused != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -168,16 +226,36 @@ jobs:
       - name: Require all browser shards and visual comparisons
         env:
           BUILD_RESULT: ${{ needs.release-check.result }}
+          DOCS_ONLY: ${{ needs.release-check.outputs.docs-only }}
+          VISUAL_RESULT: ${{ needs.visual-qa.result }}
           SHARDS_RESULT: ${{ needs.browser-qa-shard.result }}
-        run: test "$BUILD_RESULT" = success && test "$SHARDS_RESULT" = success
+        run: |
+          test "$BUILD_RESULT" = success
+          if [ "$DOCS_ONLY" != true ]; then
+            test "$SHARDS_RESULT" = success && test "$VISUAL_RESULT" = success
+          fi
+
+      - name: Collect production screenshots from the complete partition
+        if: needs.release-check.outputs.docs-only != 'true' && github.event_name == 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: phaser-m0-old-engine-evidence-*
+          merge-multiple: true
+          path: migration-baseline-evidence
+      - name: Require the original production responsive evidence
+        if: needs.release-check.outputs.docs-only != 'true' && github.event_name == 'pull_request'
+        run: |
+          for viewport in portrait-phone desktop existing-landscape; do
+            test -s "migration-baseline-evidence/production-engine-$viewport.png"
+          done
 
   pages-preview-shard:
     needs: release-check
-    if: needs.release-check.outputs.qa-reused != 'true'
+    if: needs.release-check.outputs.docs-only != 'true' && needs.release-check.outputs.qa-reused != 'true'
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -209,7 +287,7 @@ jobs:
           test -f dist/phaser/index.html
           test -f dist-yandex/index.html
       - name: Test the shared staged Pages tree, including touch gestures
-        run: npx playwright test --config=playwright.phaser-pages.config.ts --shard=${{ matrix.shard }}/2
+        run: npx playwright test --config=playwright.phaser-pages.config.ts --shard=${{ matrix.shard }}/4
       - name: Upload Shape and Finish visual review snapshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -232,7 +310,7 @@ jobs:
           retention-days: 14
 
   # Keep the reviewed gate name for required checks and exact-PR reuse proof.
-  # A successful aggregate is possible only after BOTH isolated runners pass.
+  # A successful full-QA aggregate requires every isolated runner to pass.
   pages-preview:
     needs: [release-check, pages-preview-shard]
     if: >-
@@ -242,13 +320,17 @@ jobs:
     steps:
       - name: Require every Pages shard to pass
         env:
+          BUILD_RESULT: ${{ needs.release-check.result }}
+          DOCS_ONLY: ${{ needs.release-check.outputs.docs-only }}
           PAGES_SHARDS_RESULT: ${{ needs.pages-preview-shard.result }}
-        run: test "$PAGES_SHARDS_RESULT" = success
+        run: |
+          test "$BUILD_RESULT" = success
+          if [ "$DOCS_ONLY" != true ]; then test "$PAGES_SHARDS_RESULT" = success; fi
 
   build-and-deploy:
     needs: [release-check, browser-qa, pages-preview]
     if: >-
-      !cancelled() && github.ref == 'refs/heads/main' &&
+      !cancelled() && needs.release-check.outputs.docs-only != 'true' && github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       needs.release-check.result == 'success' &&
       ((needs.release-check.outputs.qa-reused == 'true' &&
