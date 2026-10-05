@@ -74,10 +74,10 @@ interface TactileProfile {
 const TACTILE_PROFILES: Record<MaterialId, TactileProfile> = {
   soft: { knee: .65, travel: 1, rest: 1, damping: 1.4, pressRadius: .46, dent: .20, ring: .07, holdDent: .12, bulge: .085, kick: .65, poke: .7, stretch: .45, compression: .38 },
   jelly: { knee: 1.2, travel: 3.1, rest: .95, damping: .48, pressRadius: .46, dent: .20, ring: .07, holdDent: 0, bulge: .085, kick: 1, poke: 1, stretch: .45, compression: .38 },
-  marshmallow: { knee: .35, travel: .65, rest: .40, damping: 1.35, pressRadius: .55, dent: .34, ring: .05, holdDent: .55, bulge: .065, kick: .25, poke: .45, stretch: .26, compression: .38 },
-  pearl: { knee: .30, travel: .78, rest: 1.65, damping: 1.3, pressRadius: .40, dent: .12, ring: .115, holdDent: 0, bulge: .14, kick: .9, poke: .9, stretch: .30, compression: .26 },
-  holo: { knee: .55, travel: .85, rest: 1.8, damping: 1.1, pressRadius: .40, dent: .16, ring: .045, holdDent: 0, bulge: .07, kick: .65, poke: .75, stretch: .40, compression: .30 },
-  chrome: { knee: .06, travel: .32, rest: 2.3, damping: 1.8, pressRadius: .32, dent: .065, ring: .02, holdDent: 0, bulge: .085, kick: .3, poke: .35, stretch: .12, compression: .12 },
+  marshmallow: { knee: .35, travel: .65, rest: .25, damping: 1.3, pressRadius: .60, dent: .38, ring: .04, holdDent: 1.2, bulge: .065, kick: .25, poke: .45, stretch: .26, compression: .38 },
+  pearl: { knee: .30, travel: .78, rest: 2, damping: .85, pressRadius: .40, dent: .10, ring: .14, holdDent: 0, bulge: .14, kick: .9, poke: .9, stretch: .26, compression: .45 },
+  holo: { knee: .32, travel: .58, rest: 2.2, damping: 1.25, pressRadius: .40, dent: .16, ring: .045, holdDent: 0, bulge: .07, kick: .65, poke: .75, stretch: .40, compression: .30 },
+  chrome: { knee: .06, travel: .32, rest: 2.3, damping: 1.8, pressRadius: .26, dent: .12, ring: .02, holdDent: 0, bulge: .085, kick: .3, poke: .35, stretch: .12, compression: .12 },
 };
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
@@ -377,7 +377,7 @@ export class SquishSimulation {
     const rememberFoam = this.multiTouch && this.material === 'marshmallow' && this.gestureDurationMs > 350;
     this.cancel();
     if (rememberFoam) {
-      this.foamMemoryWeight = .22 + .28 * smoothstep01((this.gestureDurationMs - 350) / 1000);
+      this.foamMemoryWeight = .25 + .40 * smoothstep01((this.gestureDurationMs - 350) / 1000);
       for (let i = 0; i < this.vertices.length; i++) {
         const vertex = this.vertices[i]!;
         this.foamMemory[i * 2] = vertex.x - vertex.restX - this.bodyOffsetX;
@@ -485,7 +485,7 @@ export class SquishSimulation {
     const profile = TACTILE_PROFILES[this.material];
     const restResponse = this.multiTouch ? profile.rest : 1;
     const dampingResponse = this.multiTouch ? profile.damping : 1;
-    this.foamMemoryWeight *= Math.exp(-dt / .9);
+    this.foamMemoryWeight *= Math.exp(-dt / 1.4);
     if (this.foamMemoryWeight < .0001) this.foamMemoryWeight = 0;
     const second = this.second;
     const axisX = second ? second.startX - this.pinchStartX : 1;
