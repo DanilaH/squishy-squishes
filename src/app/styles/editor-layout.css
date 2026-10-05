@@ -191,8 +191,10 @@
 #app .free-mixin-settings label, #app .free-light-panel label { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 12px; }
 #app .free-mixin-settings input, #app .free-light-panel input { flex: 1; min-width: 0; accent-color: #a16eaa; }
 #app .free-finish-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; grid-column: 1 / -1; }
+#app .sandbox-shell[data-stage='finish'] .free-finish-tabs > button { min-height: 44px !important; }
 #app .free-light-panel { grid-column: 1 / -1; height: 144px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
 #app .free-light-presets { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; }
+#app .sandbox-shell[data-stage='finish'] .free-light-panel button { min-height: 44px !important; }
 #app .free-try-return { position: absolute; bottom: 22px; left: 50%; translate: -50% 0; z-index: 20; min-height: 48px; padding: 10px 20px; border: 1px solid #c7a9bc; border-radius: 18px; background: #fff7ed; color: #56375f; font: inherit; font-weight: 800; }
 #app [data-try-on='true'] .sandbox-controls { visibility: hidden; pointer-events: none; }
 @media (max-height: 500px) { #app .free-mixin-catalog { height: 128px; } #app .free-light-panel { height: 128px; } }

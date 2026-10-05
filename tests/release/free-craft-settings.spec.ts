@@ -4,9 +4,10 @@ import { createDefaultSaveV3, decodeSaveStateV3 } from '../../src/platform/saveV
 import { createSandboxDraft } from '../../src/sandbox/types';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
+import { reachableControlIssues } from '../phaser-pages/helpers/reachableControls';
 
 for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 568, height: 320 }]) {
-  test(`light, try-on and local mixed brush preserve craft at ${viewport.width}`, async ({ page }) => {
+  test(`light, try-on and local mixed brush preserve craft at ${viewport.width}`, async ({ page }, info) => {
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/squishy-squishes/');
@@ -48,6 +49,8 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
     const stable = await canvas.boundingBox();
     const desk = await page.locator('[data-studio-desk]').boundingBox();
     await page.locator('[data-finish-tab="light"]').click();
+    expect(await reachableControlIssues(page)).toEqual([]);
+    await page.screenshot({ path: info.outputPath('free-craft-light.png') });
     for (const action of await page.locator('.sandbox-finish-actions button').all()) {
       expect(await action.evaluate(node => {
         const r = node.getBoundingClientRect();
