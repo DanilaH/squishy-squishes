@@ -106,7 +106,7 @@ export class PhaserSquishSurface {
     private readonly onMetrics: (metrics: SquishMetrics) => void,
     private readonly audio: SquishyAudio,
     private readonly callbacks: PhaserSandboxCallbacks,
-    private readonly volumeProfile = false,
+    private readonly volumeProfile = true,
   ) {
     this.appearanceSnapshot.width = 256;
     this.appearanceSnapshot.height = 256;

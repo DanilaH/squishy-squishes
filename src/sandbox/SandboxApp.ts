@@ -1226,7 +1226,12 @@ export class SandboxApp {
     };
     this.remember(this.mixinHistory, this.draft.appearance.mixins);
     this.draft = { ...this.draft, appearance: next };
-    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: this.overlayMixinIds(), materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
+    if (this.options.rendererBackend === 'phaser') {
+      this.replayAndUpload();
+      this.showMixinSprinkle(point);
+      return;
+    }
+    replayAppearanceDocument(this.appearanceContext, next, { excludeMixIns: this.overlayMixinIds(), materialId: this.draft.materialId, shapeId: this.draft.shapeId });
     this.scheduleTextureUpload();
     this.refreshRigidMixins();
     this.updateAppearanceDataset();

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import sharp from 'sharp';
 
 const enter = async (page: Page, stage: string): Promise<void> => {
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', stage);
@@ -7,7 +8,15 @@ const enter = async (page: Page, stage: string): Promise<void> => {
 const canvasCenter = async (page: Page): Promise<{ x: number; y: number; radius: number }> => {
   const rect = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!rect || rect.width < 100 || rect.height < 100) throw new Error('Real studio has no visible playfield');
-  return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, radius: Math.min(rect.width, rect.height) * 0.34 };
+  const ratio = await page.locator('[data-sandbox-canvas]').evaluate(el => parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')) || .34);
+  return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, radius: Math.min(rect.width, rect.height) * ratio };
+};
+
+const centerPixels = async (page: Page): Promise<Buffer> => {
+  const uri = await page.locator('[data-sandbox-canvas]').evaluate(el => new Promise<string>(resolve => requestAnimationFrame(() => resolve((el as HTMLCanvasElement).toDataURL()))));
+  const image = sharp(Buffer.from(uri.split(',')[1]!, 'base64'));
+  const metadata = await image.metadata();
+  return image.extract({ left: Math.round(metadata.width! / 2) - 6, top: Math.round(metadata.height! / 2) - 6, width: 12, height: 12 }).removeAlpha().raw().toBuffer();
 };
 
 const open = async (page: Page): Promise<void> => {
@@ -39,9 +48,15 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
 
   await page.locator('[data-mixin="pearls"]').click();
   const mixin = await canvasCenter(page);
+  const beforePearl = await centerPixels(page);
   await page.mouse.click(mixin.x, mixin.y);
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-mixin-count', '1');
-  await expect(page.locator('[data-sandbox-rigid-mixins]')).toBeVisible();
+  await expect.poll(async () => {
+    const after = await centerPixels(page);
+    return after.reduce((sum, value, index) => sum + Math.abs(value - beforePearl[index]!), 0) / after.length;
+  }).toBeGreaterThan(4);
+  // Pearls now belong to the deforming WebGL surface; the old DOM overlay hid faces.
+  await expect(page.locator('[data-sandbox-rigid-mixins]')).toBeHidden();
   await page.locator('[data-action="mixin-continue"]').click();
   await enter(page, 'mix');
   const mixing = await canvasCenter(page);
@@ -94,7 +109,8 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
   await enter(page, 'squeeze');
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-shape', 'heart');
   await expect(page.locator('[data-sandbox-accessory]')).toBeVisible();
-  await expect(page.locator('[data-sandbox-rigid-mixins]')).toBeVisible();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-mixin-count', '1');
+  await expect(page.locator('[data-sandbox-rigid-mixins]')).toBeHidden();
   expect(await page.evaluate(() => window.__squishyRealStudio!.snapshot().canvasCount)).toBe(1);
   await page.evaluate(() => window.__squishyRealStudio!.dispose());
   await expect(page.locator('[data-sandbox-canvas]')).toHaveCount(0);

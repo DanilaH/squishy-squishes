@@ -90,6 +90,7 @@
   #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-decor-grid { gap: 4px; }
 }
 @media (max-width: 360px) {
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='paint'] .sandbox-panel { padding-block: 4px; }
   #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-paint-tools { gap: 2px; }
   #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-paint-tools [data-paint-tool] { padding-inline: 0; }
 }
@@ -107,10 +108,14 @@
     --squish-radius-ratio: .34;
   }
   #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-panel { padding: 6px; border-radius: 16px; gap: 4px; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='paint'] .sandbox-panel { padding-block: 2px; }
   #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-panel--decor { grid-template-rows: 44px 128px 44px; }
 }
 #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-face-group {
   grid-column: 1; display: grid; grid-template-rows: 14px minmax(44px, 1fr); gap: 2px;
+}
+@media (max-height: 350px) and (orientation: landscape) {
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='paint'] .sandbox-palette-grid { row-gap: 1px; }
 }
 #app .sandbox-face-group > span { font-size: 11px; font-weight: 850; color: #765b79; }
 #app[data-jelly-ui-ready] .sandbox-shell[data-stage] :is(.sandbox-shape,.sandbox-mixin,.sandbox-material) {
