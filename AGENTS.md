@@ -12,7 +12,11 @@ Production retains `squishy.save.v3`. `/phaser/` review and Yandex DRAFT use sep
 
 ## Interface contract
 
-The owner explicitly requires **no scrolling** in the game interface: no page scroll and no nested control trays. Keep all current-stage controls visible. Use the shared production styles in `src/app/styles`; historical jelly CSS entrypoints forward there for preview compatibility. Keep secondary controls calm and readable, reserve golden artwork for primary actions, and preserve 44px Paint hit areas even when visible color dots are smaller.
+On 6 October 2026 the owner replaced the blanket no-scroll rule: **the page and game scene remain fixed**, while long content catalogs and contextual settings may scroll internally where needed. Keep primary actions, undo and stage navigation visible; separate panel scrolling from Paint/Squeeze gestures. Existing no-overflow tests must continue to protect the page, with intentional panel scrolling tested explicitly. Use the shared production styles in `src/app/styles`; historical jelly CSS entrypoints forward there for preview compatibility. Keep secondary controls calm and readable, reserve golden artwork for primary actions, and preserve 44px Paint hit areas even when visible color dots are smaller.
+
+## Active approved implementation scope
+
+Follow [`docs/FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md`](docs/FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md): free decor/face editing, mix-in controls, lighting, try-on, new accessories/mix-ins, seven new shapes and the agreed Library atmosphere pass. This checklist separates implementation from verification and records deferred ideas. Preserve V3 compatibility and current material feel. A real donut hole is explicitly authorized; extend the common geometry/rendering/hit/paint pipeline only as needed, keeping one renderer and generic physics. Verify hole feasibility early. A recorded plan does not establish implementation or release.
 
 ## Current polish invariants
 

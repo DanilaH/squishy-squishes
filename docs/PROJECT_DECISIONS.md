@@ -690,3 +690,28 @@ This run also incurred a 265s system/Chromium installation on one runner and
 about five minutes of queueing for the final Pages aggregate. These network and
 runner delays must be reported separately from test execution; the measurements
 are not a guaranteed end-to-end budget. No tests or baselines were removed.
+
+
+## Free craft scope and selective scrolling — 6 October 2026
+
+The owner approved the complete scope in
+[FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md](FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md).
+It includes object transforms/combinations/locks/mirroring, face transforms,
+local mix-in editing, movable/preset lighting, try-on, contextual UI, eleven
+accessory groups (wings are a left/right pair), the agreed mix-ins/color variants,
+seven forms including a real donut hole, and four Library atmosphere directions.
+Implementation and evidence are tracked separately; recording this scope ships
+no game feature. Preserve old V3 saves, material feel and the pastel volume style.
+Existing hearts/confetti must be audited and improved where needed rather than
+assigned duplicate content IDs. The later traditional-shape list supersedes
+the initial cloud/flower/drop proposal. Selectable stands and toy names remain
+deferred; they are not part of the approved Library subset.
+
+The former global no-scroll instruction is superseded: the page and game scene
+stay fixed, while long catalogs/settings may scroll internally when appropriate.
+Primary actions, undo and stage navigation stay visible with touch gesture
+ownership and 44px Paint targets. The donut authorizes minimal shared geometry
+changes for an actual hole in rendering, hits and paint; it does not authorize
+per-shape physics or another renderer. No liquids/heating/experimental simulator
+is included. Publication still requires the final head's PR checks and actual
+hosted acceptance, not a deadline or a successful local build.
