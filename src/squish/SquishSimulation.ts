@@ -100,7 +100,7 @@ export class SquishSimulation {
   private maxGestureCompression = 0;
   private squeezes = 0;
   private gestureDurationMs = 0;
-  private second: { id: number; x: number; y: number; startX: number; startY: number } | null = null;
+  private second: { id: number; x: number; y: number; startX: number; startY: number; anchorX: number; anchorY: number } | null = null;
   private pinchStartX = 0;
   private pinchStartY = 0;
   private multiTouch = false;
@@ -112,6 +112,10 @@ export class SquishSimulation {
   private previousPointerX = 0;
   private previousPointerY = 0;
   private material: MaterialId = 'soft';
+  private readonly previousField = new Float32Array((SQUISH_GRID_CELLS + 1) ** 2 * 2);
+  private readonly capturedField = new Float32Array((SQUISH_GRID_CELLS + 1) ** 2 * 2);
+  private capturedX = 0;
+  private capturedY = 0;
 
   public setTactileFeatures(enabled: boolean, material: MaterialId = 'soft'): void {
     if (this.multiTouch && !enabled) this.cancel();
@@ -231,6 +235,35 @@ export class SquishSimulation {
     return { u: clamp01(localX * 0.5 + 0.5), v: clamp01(localY * 0.5 + 0.5) };
   }
 
+  /** Inverse of the actual rendered triangles, clipped by canonical pigment UVs.
+   * Called on grab only; authoring keeps the static pointToUv convention. */
+  public surfacePointToUv(x: number, y: number, edgeTolerance = 0): { u: number; v: number } | null {
+    for (let i = 0; i < this.triangleIndices.length; i += 3) {
+      const a = this.vertices[this.triangleIndices[i]!]!, b = this.vertices[this.triangleIndices[i + 1]!]!, c = this.vertices[this.triangleIndices[i + 2]!]!;
+      const bx = b.x - a.x, by = b.y - a.y, cx = c.x - a.x, cy = c.y - a.y;
+      const determinant = bx * cy - by * cx;
+      if (Math.abs(determinant) < 1e-9) continue;
+      const px = x - a.x, py = y - a.y;
+      const wb = (px * cy - py * cx) / determinant, wc = (bx * py - by * px) / determinant;
+      if (wb < -1e-7 || wc < -1e-7 || wb + wc > 1 + 1e-7) continue;
+      const u = a.u + (b.u - a.u) * wb + (c.u - a.u) * wc;
+      const v = a.v + (b.v - a.v) * wb + (c.v - a.v) * wc;
+      if (isPointInsideShape(this.shape, u * 2 - 1, v * 2 - 1)) return { u: clamp01(u), v: clamp01(v) };
+    }
+    if (!(edgeTolerance > 0)) return null;
+    let closest = edgeTolerance ** 2, result: { u: number; v: number } | null = null;
+    const boundary = this.shape.boundary;
+    for (let i = 0; i < boundary.length; i++) {
+      const a = boundary[i]!, b = boundary[(i + 1) % boundary.length]!;
+      const pa = this.projectUvToLocal(a.x * .5 + .5, a.y * .5 + .5), pb = this.projectUvToLocal(b.x * .5 + .5, b.y * .5 + .5);
+      const dx = pb.x - pa.x, dy = pb.y - pa.y;
+      const t = clamp01(((x - pa.x) * dx + (y - pa.y) * dy) / Math.max(1e-9, dx * dx + dy * dy));
+      const distance = (x - pa.x - dx * t) ** 2 + (y - pa.y - dy * t) ** 2;
+      if (distance <= closest) { closest = distance; result = { u: (a.x + (b.x - a.x) * t) * .5 + .5, v: (a.y + (b.y - a.y) * t) * .5 + .5 }; }
+    }
+    return result;
+  }
+
   /** Project a normalized appearance coordinate through the current deformed mesh. */
   public projectUvToLocal(u: number, v: number): { x: number; y: number } {
     const gridU = clamp01(u) * SQUISH_GRID_CELLS;
@@ -246,25 +279,25 @@ export class SquishSimulation {
     const b = this.vertices[y0 * row + x1]!;
     const c = this.vertices[y1 * row + x0]!;
     const d = this.vertices[y1 * row + x1]!;
-    const topX = a.x + (b.x - a.x) * tx;
-    const topY = a.y + (b.y - a.y) * tx;
-    const bottomX = c.x + (d.x - c.x) * tx;
-    const bottomY = c.y + (d.y - c.y) * tx;
-    return { x: topX + (bottomX - topX) * ty, y: topY + (bottomY - topY) * ty };
+    // Match the a/c/b and b/c/d GPU triangles, rather than a bilinear quad.
+    return tx + ty <= 1
+      ? { x: a.x + (b.x - a.x) * tx + (c.x - a.x) * ty, y: a.y + (b.y - a.y) * tx + (c.y - a.y) * ty }
+      : { x: d.x + (c.x - d.x) * (1 - tx) + (b.x - d.x) * (1 - ty), y: d.y + (c.y - d.y) * (1 - tx) + (b.y - d.y) * (1 - ty) };
   }
 
   /** Returns true only when a valid object hit claims this pointer. */
-  public begin(pointerId: number, x: number, y: number): boolean {
-    const localX = x - this.bodyOffsetX;
-    const localY = y - this.bodyOffsetY;
-    if (!isPointInsideShape(this.shape, localX, localY)) return false;
+  public begin(pointerId: number, x: number, y: number, edgeTolerance = 0): boolean {
+    const hit = this.multiTouch ? this.surfacePointToUv(x, y, edgeTolerance) : this.pointToUv(x, y);
+    if (!hit) return false;
+    const localX = hit.u * 2 - 1, localY = hit.v * 2 - 1;
     if (this.pointerId !== null) {
       if (!this.multiTouch || this.second || pointerId === this.pointerId) return false;
       if (Math.hypot(x - this.pointerX, y - this.pointerY) < 0.12) return false;
-      this.second = { id: pointerId, x, y, startX: x, startY: y };
+      this.second = { id: pointerId, x, y, startX: x, startY: y, anchorX: localX, anchorY: localY };
       this.pinchStartX = this.pointerX;
       this.pinchStartY = this.pointerY;
       this.hadSecond = true;
+      this.captureField();
       return true;
     }
     this.pointerId = pointerId;
@@ -276,6 +309,7 @@ export class SquishSimulation {
     this.grabPointerStartY = y;
     this.grabBodyStartX = this.bodyOffsetX;
     this.grabBodyStartY = this.bodyOffsetY;
+    this.captureField();
     this.maxGestureCompression = 0;
     this.gestureDurationMs = 0;
     this.hadSecond = false;
@@ -300,24 +334,23 @@ export class SquishSimulation {
         // Transfer ownership without a mesh reset or a credited release.
         this.pointerId = this.second.id;
         this.pointerX = this.second.x; this.pointerY = this.second.y;
-        this.grabStartX = this.pointerX - this.bodyOffsetX;
-        this.grabStartY = this.pointerY - this.bodyOffsetY;
+        this.grabStartX = this.second.anchorX;
+        this.grabStartY = this.second.anchorY;
       }
       this.second = null;
       this.grabPointerStartX = this.pointerX; this.grabPointerStartY = this.pointerY;
       this.grabBodyStartX = this.bodyOffsetX; this.grabBodyStartY = this.bodyOffsetY;
+      this.captureField();
       this.previousPointerX = this.pointerX; this.previousPointerY = this.pointerY;
       return null;
     }
     if (pointerId !== this.pointerId) return null;
-    const localPointerX = this.pointerX - this.bodyOffsetX;
-    const localPointerY = this.pointerY - this.bodyOffsetY;
-    const tapTravel = Math.hypot(localPointerX - this.grabStartX, localPointerY - this.grabStartY);
+    const tapTravel = Math.hypot(this.pointerX - this.grabPointerStartX, this.pointerY - this.grabPointerStartY);
     const poke = pokeOnTap && !this.hadSecond && tapTravel <= POKE_MAX_TRAVEL && this.gestureDurationMs <= POKE_MAX_DURATION_MS;
     const energy = clamp01(Math.max(this.maxGestureCompression, this.pressDepth * PRESS_COMPRESSION_WEIGHT));
     if (energy >= 0.08) {
       this.squeezes += 1;
-      this.applyReleaseImpulse();
+      if (!poke || !this.multiTouch) this.applyReleaseImpulse();
     }
     if (poke) this.applyPokeImpulse();
     this.cancel();
@@ -330,7 +363,7 @@ export class SquishSimulation {
       const lx = vertex.restX - this.grabStartX;
       const ly = vertex.restY - this.grabStartY;
       const distance = Math.hypot(lx, ly);
-      const influence = smoothstep01(1 - distance / PRESS_RADIUS) ** 2;
+      const influence = smoothstep01(1 - distance / this.pressRadius()) ** 2;
       if (influence <= 0) continue;
       const inverse = distance > 0.0001 ? 1 / distance : 0;
       const radialX = distance > 0.0001 ? lx * inverse : 0;
@@ -353,9 +386,22 @@ export class SquishSimulation {
     return GRAB_RADIUS * (1 - edge * .28);
   }
 
+  private pressRadius(): number { return this.multiTouch ? .46 : PRESS_RADIUS; }
+
+  private captureField(): void {
+    this.capturedX = this.pointerX - this.bodyOffsetX - this.grabStartX;
+    this.capturedY = this.pointerY - this.bodyOffsetY - this.grabStartY;
+    for (let i = 0; i < this.vertices.length; i++) {
+      const vertex = this.vertices[i]!;
+      this.capturedField[i * 2] = vertex.x - vertex.restX - this.bodyOffsetX;
+      this.capturedField[i * 2 + 1] = vertex.y - vertex.restY - this.bodyOffsetY;
+    }
+  }
+
   private applyReleaseImpulse(): void {
     let dx = (this.pointerX - this.bodyOffsetX) - this.grabStartX;
     let dy = (this.pointerY - this.bodyOffsetY) - this.grabStartY;
+    if (this.multiTouch) { dx -= this.capturedX; dy -= this.capturedY; }
     const magnitude = Math.hypot(dx, dy);
     if (magnitude > MAX_POINTER_DISPLACEMENT) {
       const scale = MAX_POINTER_DISPLACEMENT / magnitude;
@@ -367,7 +413,7 @@ export class SquishSimulation {
       const ly = vertex.restY - this.grabStartY;
       const distance = Math.hypot(lx, ly);
       const dragInfluence = smoothstep01(1 - distance / this.grabRadius()) ** 2;
-      const pressInfluence = smoothstep01(1 - distance / PRESS_RADIUS) ** 2;
+      const pressInfluence = smoothstep01(1 - distance / this.pressRadius()) ** 2;
       vertex.vx -= dx * dragInfluence * RELEASE_DRAG_KICK;
       vertex.vy -= dy * dragInfluence * RELEASE_DRAG_KICK;
       if (distance > 0.0001) {
@@ -437,6 +483,7 @@ export class SquishSimulation {
     const heldY = second ? this.pinchStartY + ((this.pointerY + second.y) - (this.pinchStartY + second.startY)) * .5 : this.pointerY;
     let dx = active ? heldX - this.bodyOffsetX - this.grabStartX : 0;
     let dy = active ? heldY - this.bodyOffsetY - this.grabStartY : 0;
+    if (active && this.multiTouch) { dx -= this.capturedX; dy -= this.capturedY; }
     const magnitude = Math.hypot(dx, dy);
     if (magnitude > MAX_POINTER_DISPLACEMENT) {
       const scale = MAX_POINTER_DISPLACEMENT / magnitude;
@@ -460,8 +507,8 @@ export class SquishSimulation {
     this.gestureX += (targetDirX - this.gestureX) * directionBlend;
     this.gestureY += (targetDirY - this.gestureY) * directionBlend;
     const sheenBlend = 1 - Math.exp(-(active ? 9 : 3) * dt);
-    this.sheenX += ((active ? localPointerX : 0) - this.sheenX) * sheenBlend;
-    this.sheenY += ((active ? localPointerY : 0) - this.sheenY) * sheenBlend;
+    this.sheenX += ((active ? this.multiTouch ? this.grabStartX : localPointerX : 0) - this.sheenX) * sheenBlend;
+    this.sheenY += ((active ? this.multiTouch ? this.grabStartY : localPointerY : 0) - this.sheenY) * sheenBlend;
     const sample = sampleContinuousInteraction(
       this.compression,
       this.previousCompression,
@@ -476,12 +523,19 @@ export class SquishSimulation {
     const gestureMagnitude = Math.max(0.0001, dragMagnitude);
     const gestureDirX = dx / gestureMagnitude;
     const gestureDirY = dy / gestureMagnitude;
+    if (this.multiTouch) for (let i = 0; i < this.vertices.length; i++) {
+      const vertex = this.vertices[i]!;
+      this.previousField[i * 2] = vertex.x - vertex.restX;
+      this.previousField[i * 2 + 1] = vertex.y - vertex.restY;
+    }
     let frameMax = 0;
-    for (const vertex of this.vertices) {
+    for (let index = 0; index < this.vertices.length; index++) {
+      const vertex = this.vertices[index]!;
       const bodyRestX = vertex.restX + this.bodyOffsetX;
       const bodyRestY = vertex.restY + this.bodyOffsetY;
       let targetX = bodyRestX;
       let targetY = bodyRestY;
+      let heldRestX = bodyRestX, heldRestY = bodyRestY;
       let responseInfluence = 0;
       if (active) {
         const lx = vertex.restX - this.grabStartX;
@@ -489,15 +543,25 @@ export class SquishSimulation {
         const grabDistance = Math.hypot(lx, ly);
         const influence = smoothstep01(1 - grabDistance / this.grabRadius());
         const weighted = influence * influence;
-        const pressInfluence = smoothstep01(1 - grabDistance / PRESS_RADIUS) ** 2;
+        if (this.multiTouch) {
+          // Preserve the caught deformation locally. Away from the grab it
+          // blends back to rest, without resetting a returning mesh on down.
+          const keep = weighted + (1 - weighted) * Math.exp(-this.gestureDurationMs / 180);
+          heldRestX += this.capturedField[index * 2]! * keep;
+          heldRestY += this.capturedField[index * 2 + 1]! * keep;
+          targetX = heldRestX; targetY = heldRestY;
+        }
+        const pressRadius = this.pressRadius();
+        const pressInfluence = smoothstep01(1 - grabDistance / pressRadius) ** 2;
+        const dent = this.multiTouch ? .20 : PRESS_DENT_STRENGTH;
         responseInfluence = Math.max(weighted, pressInfluence * 0.9);
-        targetX += dx * weighted - lx * pressInfluence * this.pressDepth * PRESS_DENT_STRENGTH;
-        targetY += dy * weighted - ly * pressInfluence * this.pressDepth * PRESS_DENT_STRENGTH;
+        targetX += dx * weighted - lx * pressInfluence * this.pressDepth * dent;
+        targetY += dy * weighted - ly * pressInfluence * this.pressDepth * dent;
         if (grabDistance > 0.0001) {
           const rx = lx / grabDistance;
           const ry = ly / grabDistance;
-          const ring = smoothstep01(1 - Math.abs(grabDistance - PRESS_RADIUS * 0.72) / (PRESS_RADIUS * 0.38));
-          const bulge = ring * this.pressDepth * PRESS_RING_BULGE * (1 - pressInfluence * 0.65);
+          const ring = smoothstep01(1 - Math.abs(grabDistance - pressRadius * 0.72) / (pressRadius * 0.38));
+          const bulge = ring * this.pressDepth * (this.multiTouch ? .07 : PRESS_RING_BULGE) * (1 - pressInfluence * 0.65);
           targetX += rx * bulge;
           targetY += ry * bulge;
         }
@@ -508,13 +572,21 @@ export class SquishSimulation {
         const bulge = dragCompression * BULGE_STRENGTH * sideWeight * (1 - weighted * 0.75);
         targetX += radialX * bulge;
         targetY += radialY * bulge;
+        if (this.multiTouch && !second) {
+          // A stretched local section narrows across the pull, retaining volume.
+          const across = -lx * gestureDirY + ly * gestureDirX;
+          const narrowing = dragCompression * .10 * influence;
+          targetX += gestureDirY * across * narrowing;
+          targetY -= gestureDirX * across * narrowing;
+        }
       }
       if (second) {
         // Axial stretch/compression with sideways bulge.
         // Bounded common field; the canonical mesh/UVs and silhouette stay shared.
         const along = vertex.restX * ux + vertex.restY * uy;
         const across = -vertex.restX * uy + vertex.restY * ux;
-        const sideways = -pinch * .45;
+        // Axial scale × both transverse scales = 1: bounded volume proxy.
+        const sideways = Math.pow(1 + pinch, -.5) - 1;
         targetX += ux * along * pinch - uy * across * sideways;
         targetY += uy * along * pinch + ux * across * sideways;
         responseInfluence = Math.max(responseInfluence, .65);
@@ -524,10 +596,25 @@ export class SquishSimulation {
       const stiffness = active ? GRAB_STIFFNESS_FAR + (GRAB_STIFFNESS_NEAR - GRAB_STIFFNESS_FAR) * responseInfluence : 0;
       const dampingRate = second ? PINCH_DAMPING : DAMPING * dampingResponse;
       const damping = Math.exp(-(dampingRate * (0.88 + responseInfluence * 0.12)) * dt);
-      const ax = (targetX - vertex.x) * stiffness + (bodyRestX - vertex.x) * REST_STIFFNESS * restResponse;
-      const ay = (targetY - vertex.y) * stiffness + (bodyRestY - vertex.y) * REST_STIFFNESS * restResponse;
-      vertex.vx = (vertex.vx + ax * dt) * damping;
-      vertex.vy = (vertex.vy + ay * dt) * damping;
+      const ax = (targetX - vertex.x) * stiffness + (heldRestX - vertex.x) * REST_STIFFNESS * restResponse;
+      const ay = (targetY - vertex.y) * stiffness + (heldRestY - vertex.y) * REST_STIFFNESS * restResponse;
+      // A weak shared elastic field spreads release into nearby vertices.
+      // Read the previous frame so traversal order cannot bias the wave.
+      let waveX = 0, waveY = 0;
+      if (this.multiTouch) {
+        const row = SQUISH_GRID_CELLS + 1;
+        let count = 0;
+        for (let direction = 0; direction < 4; direction++) {
+          if ((direction === 0 && index % row === 0) || (direction === 1 && index % row === SQUISH_GRID_CELLS)) continue;
+          const neighbour = index + (direction === 0 ? -1 : direction === 1 ? 1 : direction === 2 ? -row : row);
+          if (neighbour < 0 || neighbour >= this.vertices.length) continue;
+          waveX += this.previousField[neighbour * 2]!; waveY += this.previousField[neighbour * 2 + 1]!; count++;
+        }
+        waveX = (waveX / count - this.previousField[index * 2]!) * 12;
+        waveY = (waveY / count - this.previousField[index * 2 + 1]!) * 12;
+      }
+      vertex.vx = (vertex.vx + (ax + waveX) * dt) * damping;
+      vertex.vy = (vertex.vy + (ay + waveY) * dt) * damping;
       vertex.x += vertex.vx * dt;
       vertex.y += vertex.vy * dt;
       const deformationX = vertex.x - bodyRestX;

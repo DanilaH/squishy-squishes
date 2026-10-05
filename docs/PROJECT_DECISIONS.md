@@ -490,3 +490,25 @@ composed onto the existing thumbnail transform without moving its base seat.
 One sparse timer launches one short frame burst; interruptions restore the
 exact snapshot and transform. Visibility, activity and reduced-motion guards
 remain. Save V3, slot limits, rewards and progression are unchanged.
+
+## Visible-surface grabbing and tactile mesh — 5 October 2026
+
+The owner confirmed that the visible edge and returning protrusions could not
+be caught, and authorized the nearest tactile iteration: reliable grabbing,
+local pressure/volume cues and a pleasant release. Other optional ideas remain
+outside this iteration; no vertex-count increase or new renderer is required.
+
+Finish/Squeeze physical down events invert the current GPU triangles and mold,
+pose and viewport containment. A bounded approximately 8 CSS-pixel edge allowance
+snaps to the visible canonical contour. Paint, stickers and mix-in authoring keep
+their existing canonical coordinates. Grab anchors retain material UVs and the
+caught local deformation; pointer handoff snapshots the current field without
+resetting vertices, velocities, saved content or crediting an extra release.
+
+The same 289 vertices now share a weak, previous-frame elastic field in tactile
+stages. Local pressure is narrower with a surrounding bulge; pulls narrow their
+transverse section. Pinch uses an inverse-square-root transverse scale as a
+bounded volume cue in the existing 2D solver, not a physical 3D volume simulation.
+A tap uses one local rebound rather than adding two release kicks. Original raw
+and Mix constants, limits, floor/fold guards and material profiles remain.
+No changes to art, UI layout, save V3, progression, rewards or storage namespaces.
