@@ -232,3 +232,8 @@
 /* Object lists and colours need horizontal swipes inside vertical settings. */
 #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-object-panel,
 #app .free-object-panel { touch-action: pan-x pan-y; }
+/* Keep complete Finish actions inside the shared 248px short-phone tray. */
+@media (max-height: 620px) and (orientation: portrait) {
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='finish'] .sandbox-material { min-height: 60px !important; }
+  #app .free-light-panel { height: 128px; }
+}

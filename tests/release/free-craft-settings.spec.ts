@@ -5,7 +5,7 @@ import { createSandboxDraft } from '../../src/sandbox/types';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
 
-for (const viewport of [{ width: 390, height: 844 }, { width: 568, height: 320 }]) {
+for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 568, height: 320 }]) {
   test(`light, try-on and local mixed brush preserve craft at ${viewport.width}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -48,6 +48,12 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 568, height: 320 }
     const stable = await canvas.boundingBox();
     const desk = await page.locator('[data-studio-desk]').boundingBox();
     await page.locator('[data-finish-tab="light"]').click();
+    for (const action of await page.locator('.sandbox-finish-actions button').all()) {
+      expect(await action.evaluate(node => {
+        const r = node.getBoundingClientRect();
+        return [r.top + 2, r.bottom - 2].every(y => node.contains(document.elementFromPoint(r.x + r.width / 2, y)));
+      })).toBe(true);
+    }
     const pixels = async () => sharp(await canvas.screenshot()).removeAlpha().raw().toBuffer();
     await page.locator('[data-light-preset="sunset"]').click();
     const sunset = await pixels();

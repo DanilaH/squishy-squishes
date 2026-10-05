@@ -13,6 +13,10 @@ export const reachableControlIssues = async (page: Page): Promise<string[]> => {
       if (r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || r.bottom > innerHeight + 1) errors.push(`${id}: outside viewport`);
       if (r.width < 43.9 || r.height < 43.9) errors.push(`${id}: touch target smaller than 44px`);
       if (!hit || !node.contains(hit)) errors.push(`${id}: target intercepted`);
+      for (const y of [r.top + 2, r.bottom - 2]) {
+        const edge = document.elementFromPoint(r.x + r.width / 2, y);
+        if (!edge || !node.contains(edge)) errors.push(`${id}: top/bottom clipped`);
+      }
       return errors;
     }));
   }

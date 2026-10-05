@@ -36,7 +36,11 @@ export const fitLibraryCraft = (ctx: CanvasRenderingContext2D, shape: ShapeDefin
       top = Math.min(top, py - 2); bottom = Math.max(bottom, py + 2);
     }
   }
-  const scale = Math.min(1, 256 / (right - left), 256 / (bottom - top));
+  // Hall CSS enlarges thumbnails by up to 1.7. A freely extended composition
+  // needs that transparent margin too, otherwise its canvas fits while the
+  // displayed wing or strap still runs outside the card.
+  const needsFit = left < 0 || top < 0 || right > 256 || bottom > 256;
+  const scale = needsFit ? Math.min(144 / (right - left), 144 / (bottom - top)) : 1;
   if (scale < 1) {
     ctx.translate(128, 128); ctx.scale(scale, scale);
     ctx.translate(-(left + right) / 2, -(top + bottom) / 2);

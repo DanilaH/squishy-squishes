@@ -78,15 +78,22 @@ test('Hall frames the whole craft when freely enlarged decorations extend beyond
   await expect.poll(async () => Number(await craft.getAttribute('data-library-craft-scale'))).toBeLessThan(.8);
   const edge = await craft.evaluate((canvas: HTMLCanvasElement) => {
     const data = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
-    let opaque = 0, clipped = 0;
+    let opaque = 0, clipped = 0, left = canvas.width, right = 0;
     for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
       const alpha = data[(y * canvas.width + x) * 4 + 3]!;
-      if (alpha > 20) opaque++;
+      if (alpha > 20) { opaque++; left = Math.min(left, x); right = Math.max(right, x + 1); }
       if (alpha > 20 && (x === 0 || y === 0 || x === canvas.width - 1 || y === canvas.height - 1)) clipped++;
     }
-    return { opaque, clipped };
+    const rect = canvas.getBoundingClientRect(), card = canvas.closest('button')!.getBoundingClientRect();
+    const size = Math.min(rect.width, rect.height);
+    return { opaque, clipped,
+      displayedLeft: rect.x + rect.width / 2 + (left / canvas.width - .5) * size,
+      displayedRight: rect.x + rect.width / 2 + (right / canvas.width - .5) * size,
+      cardLeft: card.left, cardRight: card.right };
   });
   expect(edge.opaque).toBeGreaterThan(5000); expect(edge.clipped).toBe(0);
+  expect(edge.displayedLeft).toBeGreaterThanOrEqual(edge.cardLeft + 1);
+  expect(edge.displayedRight).toBeLessThanOrEqual(edge.cardRight - 1);
   await page.locator('[data-library-play-id="wide-craft"]').screenshot({ path: 'migration-baseline-evidence/free-craft/wide-hall.png' });
 });
 

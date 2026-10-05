@@ -136,7 +136,8 @@ test('all molds seat bows and crowns in front, mirrored ears and horns behind', 
       await page.reload();
       const play = page.locator(`[data-library-play-id="${shape.id}"]`);
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
-      for (let n = 0; n < 3 && !await play.isVisible(); n++) await page.locator('[data-library-hall-next]').click();
+      const rooms = Number(await page.locator('[data-sandbox-library]').getAttribute('data-library-hall-rooms'));
+      for (let n = 0; n < rooms - 1 && !await play.isVisible(); n++) await page.locator('[data-library-hall-next]').click();
       await mkdir('migration-baseline-evidence', { recursive: true });
       await page.screenshot({ path: `migration-baseline-evidence/decor-hall-${shape.id}-${accessory}.png` });
       await play.click();

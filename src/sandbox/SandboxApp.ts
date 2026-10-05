@@ -871,12 +871,14 @@ export class SandboxApp {
     if(target.dataset.action==='mixin-erase'){this.mixinErase=!this.mixinErase;target.setAttribute('aria-pressed',String(this.mixinErase));return;}
     const shapeId = target.dataset.shape as ShapeId | undefined;
     if (shapeId && SHAPES.some((shape) => shape.id === shapeId)) {
+      this.draftHistory.begin(this.draft);
       this.draft = { ...this.draft, shapeId };
       if (shapeId === 'strawberry' && this.stage === 'shape' && !this.editingId && this.draft.appearance.strokes.length === 0) {
         // A normal editable pigment fill; never recolour an existing toy.
         this.draft = { ...this.draft, appearance: { ...this.draft.appearance, strokes: [createBodyFillStroke(0xff92b2)] } };
 
       }
+      this.draftHistory.end(this.draft);
       this.applyDraftToRenderer();
       this.replayAndUpload();
       this.updatePressed('[data-shape]', 'shape', shapeId);
