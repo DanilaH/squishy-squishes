@@ -719,6 +719,20 @@ export class SquishSimulation {
       }
       frameMax *= low;
     }
+    // The visible contour is interpolated between grid vertices. Vertex-only
+    // contact can leave its rounded edge just below the tabletop after the
+    // ordering correction. Translate the whole mesh by that residual clearance;
+    // this preserves triangle area and all material spring/response constants.
+    if (this.viewportFollowEnabled) {
+      let lowest = Infinity;
+      for (const point of this.shape.boundary) lowest = Math.min(lowest,
+        this.projectUvToLocal((point.x + 1) / 2, (point.y + 1) / 2).y);
+      const clearance = Math.max(0, floor - lowest);
+      if (clearance > 0) {
+        for (const vertex of this.vertices) vertex.y += clearance;
+        this.bodyOffsetY += clearance;
+      }
+    }
     this.maxDisplacement = frameMax;
     return {
       active, compression: this.compression, pressDepth: this.pressDepth,

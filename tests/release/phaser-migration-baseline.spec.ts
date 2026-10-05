@@ -114,7 +114,7 @@ for (const viewport of [
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
     const canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toBeVisible();
-    await expect(page.locator('.sandbox-shape[data-shape]')).toHaveCount(8);
+    await expect(page.locator('.sandbox-shape[data-shape]')).toHaveCount(15);
     expect(await canvas.evaluate((node) => (node as HTMLCanvasElement)
       .getContext('webgl2')?.getContextAttributes()?.alpha)).toBe(true);
     const box = await canvas.boundingBox();

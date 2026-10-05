@@ -11,6 +11,7 @@ export interface AccessoryPlacement {
   readonly side: 'whole' | 'left' | 'right';
   readonly locked?: true;
   readonly color?: number;
+  readonly mirrored?: true;
 }
 export interface FaceTransform { readonly x: number; readonly y: number; readonly s: number }
 export const MAX_ACCESSORY_PLACEMENTS = 128;
@@ -40,19 +41,33 @@ export const withFaceTransform = (context: CanvasRenderingContext2D, decor: Deco
   draw(); context.restore();
 };
 
+/** Recolour pigment while retaining its authored shading, highlights and alpha. */
+export const tintAccessory = (context: CanvasRenderingContext2D, width: number, height: number, color: number): void => {
+  const pixels = context.getImageData(0, 0, width, height), bytes = pixels.data;
+  const channels = [(color >> 16) & 255, (color >> 8) & 255, color & 255];
+  for (let i = 0; i < bytes.length; i += 4) {
+    if (!bytes[i + 3]) continue;
+    const luminance = (bytes[i]! * .2126 + bytes[i + 1]! * .7152 + bytes[i + 2]! * .0722) / 255;
+    const shade = Math.min(1.1, Math.max(.38, luminance / .72));
+    const highlight = Math.max(0, (luminance - .86) / .14) * .8;
+    for (let channel = 0; channel < 3; channel++) {
+      const pigment = Math.min(255, channels[channel]! * shade);
+      bytes[i + channel] = Math.round(pigment + (255 - pigment) * highlight);
+    }
+  }
+  context.putImageData(pixels, 0, 0);
+};
+
 /** Canvas and Hall share placement, rotation, scale, mirroring and depth. */
 export const composeAccessory = (ctx: CanvasRenderingContext2D, shape: ShapeDefinition, placement: AccessoryPlacement,
   project: (u: number, v: number) => readonly [number, number], width: number, height: number,
-  draw: (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, side: AccessoryPlacement['side']) => void): void => {
+  draw: (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, side: AccessoryPlacement['side'], mirrored?: boolean) => void): void => {
   const [x, y] = project(placement.x / 255, placement.y / 255);
   const canvas = document.createElement('canvas'); canvas.width = 180; canvas.height = 120;
   const art = canvas.getContext('2d'); if (!art) return;
-  draw(art, placement.a, 180, 120, placement.side);
-  if (placement.color !== undefined) {
-    art.globalCompositeOperation = 'source-atop';
-    art.fillStyle = `#${placement.color.toString(16).padStart(6, '0')}`;
-    art.globalAlpha = .38; art.fillRect(0, 0, 180, 120);
-  }
+  draw(art, placement.a, 180, 120, placement.side, placement.mirrored);
+  if (placement.color !== undefined) tintAccessory(art, 180, 120, placement.color);
+
   ctx.save(); ctx.translate(x, y); ctx.rotate(placement.r); ctx.scale(placement.s, placement.s);
   ctx.drawImage(canvas, -width / 2, -height * getAccessorySeatFactor(shape, placement.a), width, height);
   ctx.restore();

@@ -68,11 +68,11 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     await page.locator('[data-action="decor-erase"]').click();
     await tap(sx - 35, sy);
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
-    await page.locator('[data-action="decor-undo"]').click();
+    await page.locator('[data-panel="decor"] [data-action="draft-undo"]').click();
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '2');
     await page.locator('[data-action="decor-clear"]').click();
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');
-    await page.locator('[data-action="decor-undo"]').click();
+    await page.locator('[data-panel="decor"] [data-action="draft-undo"]').click();
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '2');
     await page.locator('[data-decor-section="accessory"]').click();
     await page.locator('[data-decor-accessory="bow"]').click();

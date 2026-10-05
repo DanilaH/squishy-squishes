@@ -7,9 +7,10 @@ import type { StagePointer } from './StageGestureRouter';
 type Selection = { kind: 'face' } | { kind: 'accessory' | 'sticker'; index: number };
 interface EditorPort {
   get(): SandboxDraft;
+  blocked(): boolean;
   set(decor: DecorDocumentV1): void;
   project(u: number, v: number): { x: number; y: number };
-  accessoryBounds(index: number): DOMRect;
+  accessoryHit(index: number, x: number, y: number): boolean;
   radius(): number;
   begin(): void;
   end(): void;
@@ -20,6 +21,7 @@ export class FreeCraftEditor {
   private readonly abort = new AbortController();
   constructor(private readonly root: HTMLElement, private readonly ru: boolean, private readonly port: EditorPort) {
     root.addEventListener('click', event => {
+      if (this.port.blocked()) return;
       const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-object],[data-object-action]') : null;
       if (!button) return;
       const object = button.dataset.object;
@@ -32,6 +34,7 @@ export class FreeCraftEditor {
       this.action(button.dataset.objectAction!);
     }, { signal: this.abort.signal });
     root.addEventListener('input', event => {
+      if (this.port.blocked()) return;
       if (!(event.target instanceof HTMLInputElement) || !event.target.dataset.objectControl) return;
       const control = event.target.dataset.objectControl, value = Number(event.target.value);
       this.port.begin(); this.modify(control, value); // change/end coalesces the complete slider gesture
@@ -93,8 +96,8 @@ export class FreeCraftEditor {
       else if (action === 'delete') items.splice(selected.index, 1);
       else if (action === 'reset' && !item.locked) items[selected.index] = { ...initialAccessoryPlacements(getShape(draft.shapeId), item.a).find(p => p.side === item.side) ?? initialAccessoryPlacements(getShape(draft.shapeId), item.a)[0]!, ...(item.color === undefined ? {} : {color:item.color}) };
       else if ((action === 'duplicate' || action === 'mirror') && items.length < MAX_ACCESSORY_PLACEMENTS) {
-        const { locked: _locked, ...copy } = item;
-        items.push(action === 'mirror' ? { ...copy, x: 255 - item.x, r: -item.r, side: item.side === 'left' ? 'right' : item.side === 'right' ? 'left' : 'whole' } : { ...copy, x: Math.min(255, item.x + 12) });
+        const { locked: _locked, mirrored: _mirrored, ...copy } = item;
+        items.push(action === 'mirror' ? { ...copy, x: 255 - item.x, r: -item.r, side: item.side === 'left' ? 'right' : item.side === 'right' ? 'left' : 'whole', ...(item.side === 'whole' && !item.mirrored ? {mirrored:true as const} : item.side !== 'whole' && item.mirrored ? {mirrored:true as const} : {}) } : { ...copy, ...(item.mirrored ? {mirrored:true as const} : {}), x: Math.min(255, item.x + 12) });
         this.selection = {kind:'accessory',index:items.length-1};
       }
       this.port.set({...decor, accessory:null, accessories:items});
@@ -102,9 +105,10 @@ export class FreeCraftEditor {
       const stickers = [...decor.stickers], item = stickers[selected.index]; if (!item) return;
       if (action === 'lock') { const {locked:_locked,...rest}=item; stickers[selected.index]=item.locked?rest:{...item,locked:true}; }
       else if(action==='delete')stickers.splice(selected.index,1);
-      else if(action==='reset'&&!item.locked)stickers[selected.index]={...item,s:28,r:0};
+      else if(action==='reset'&&!item.locked)stickers[selected.index]={...item,x:item.home?.[0]??item.x,y:item.home?.[1]??item.y,s:28,r:0};
       else if((action==='duplicate'||action==='mirror')&&stickers.length<128){
-        const {locked:_locked,...copy}=item;stickers.push(action==='mirror'?{...copy,x:255-item.x,r:255-item.r}:{...copy,x:Math.min(255,item.x+12)});
+        const {locked:_locked,...copy}=item; const x=action==='mirror'?255-item.x:Math.min(255,item.x+12);
+        stickers.push({...copy,x,home:[x,item.y],...(action==='mirror'?{r:255-item.r}:{})});
         this.selection={kind:'sticker',index:stickers.length-1};
       }
       this.port.set({...decor,stickers});
@@ -112,13 +116,13 @@ export class FreeCraftEditor {
     this.refresh();
   }
   public begin(pointer: StagePointer): boolean {
+    if (this.port.blocked()) return false;
     const draft=this.port.get(), items=accessoryPlacements(draft.decor,getShape(draft.shapeId));
     let found:Selection|null=null;
     // Explicit list selection wins when overlapping pieces are under the same finger.
     const hit=(selection:Selection):boolean=>{
       if(selection.kind==='accessory'){
-        const rect=this.port.accessoryBounds(selection.index);
-        return pointer.clientX>=rect.left&&pointer.clientX<=rect.right&&pointer.clientY>=rect.top&&pointer.clientY<=rect.bottom;
+        return this.port.accessoryHit(selection.index, pointer.clientX, pointer.clientY);
       }
       const p=selection.kind==='face'?this.face():draft.decor.stickers[selection.index];if(!p)return false;
       const center=this.port.project(p.x/255,p.y/255), radius=selection.kind==='face'?Math.max(30,this.port.radius()*.23*p.s):Math.max(22,p.s/256*this.port.radius());
@@ -146,7 +150,7 @@ export class FreeCraftEditor {
       const items=[...accessoryPlacements(before,getShape(this.port.get().shapeId))],item=items[selection.index]!;
       items[selection.index]={...item,x:clamp(item.x+dx),y:clamp(item.y+dy)};this.port.set({...before,accessory:null,accessories:items});
     }else{
-      const stickers=[...before.stickers],item=stickers[selection.index]!;stickers[selection.index]={...item,x:clamp(item.x+dx),y:clamp(item.y+dy)};this.port.set({...before,stickers});
+      const stickers=[...before.stickers],item=stickers[selection.index]!;stickers[selection.index]={...item,home:item.home??[item.x,item.y],x:clamp(item.x+dx),y:clamp(item.y+dy)};this.port.set({...before,stickers});
     }
   }
   public end(cancelled=false):void{

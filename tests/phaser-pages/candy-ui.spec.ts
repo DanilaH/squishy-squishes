@@ -15,7 +15,7 @@ for (const viewport of viewports) {
 
     const shell = page.locator('[data-sandbox-app]');
     await expect(shell).toHaveAttribute('data-stage', 'shape');
-    await expect(page.locator('[data-panel="shape"] .sandbox-shape')).toHaveCount(8);
+    await expect(page.locator('[data-panel="shape"] .sandbox-shape')).toHaveCount(15);
     const heart = page.locator('button.sandbox-shape[data-shape="heart"]');
     await heart.click();
     await expect(heart).toHaveAttribute('aria-pressed', 'true');

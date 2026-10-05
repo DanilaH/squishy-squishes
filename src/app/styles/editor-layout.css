@@ -198,3 +198,32 @@
 @media (max-height: 500px) { #app .free-mixin-catalog { height: 128px; } #app .free-light-panel { height: 128px; } }
 #app .free-face-foreground { position: absolute; z-index: 9; pointer-events: none; }
 #app .free-face-foreground[hidden] { display: none; }
+
+/* Primary actions stay visible beside the global history. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-craft-footer > .sandbox-primary { min-height: 44px !important; }
+#app .free-history-bar { gap: 4px; flex-shrink: 0; }
+#app .free-history-bar button { width: 44px; min-width: 44px; padding: 0; font-size: 21px; }
+#app .sandbox-finish-actions:has(.free-history-bar) > .sandbox-primary { min-width: 112px; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-craft-footer > [data-action='shape-continue'] { width: 144px; min-height: 50px !important; flex-shrink: 0; }
+#app .free-craft-footer > [data-action='decor-continue'] { width: 144px; }
+@media (max-width: 520px) {
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-decor-tabs > button { padding-inline: 3px; font-size: 11px; gap: 0; }
+  #app .sandbox-decor-tabs .decor-tab-icon { display: none; }
+}
+/* Shared craft structure remains usable in diagnostics and decoded-art fallback. */
+#app .sandbox-controls { position: relative; z-index: 3; }
+#app .sandbox-panel[data-panel='shape'] { grid-template-columns: 1fr; }
+#app .free-shape-catalog { grid-column: 1 / -1; }
+#app .sandbox-decor-tabs { grid-template-columns: repeat(4,minmax(0,1fr)); }
+#app .free-object-panel { display: block; height: 128px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+#app [data-decor-panel='accessory'] > .sandbox-decor-grid { max-height: 128px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+#app .free-object-panel > label { display: flex; position: static; width: auto; height: auto; clip-path: none; overflow: visible; }
+@media (max-height: 500px) { #app .free-object-panel { height: 96px; } }
+
+/* Same molded objects in the tray and on the toy; retain existing hit geometry. */
+.sandbox-mixin > span:has(.toy-choice-art),
+.sandbox-decor-choice > span:has(.toy-choice-art) { width: 100%; min-width: 0; }
+.toy-choice-art {
+  display: block; width: 48px; max-width: 100%; height: auto; max-height: 28px;
+  margin-inline: auto; pointer-events: none;
+}

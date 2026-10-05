@@ -84,7 +84,7 @@ for (const locale of ['ru-RU', 'en-US']) {
         await page.goto('/squishy-squishes/');
         await page.locator('[data-library-new]').first().click();
         const panel = page.locator('[data-panel="shape"]');
-        await expect(panel.locator('[data-shape]')).toHaveCount(8);
+        await expect(panel.locator('[data-shape]')).toHaveCount(15);
         for (const choice of await panel.getByRole('button').all()) {
           await expect(choice).toBeVisible();
           const rect = await choice.boundingBox();

@@ -70,7 +70,7 @@ test('A missing jelly asset leaves all original CSS controls usable', async ({ p
   await expect(page.locator('#app')).not.toHaveAttribute('data-jelly-ui-ready', '');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
-  await expect(page.locator('[data-panel="shape"] .sandbox-shape')).toHaveCount(8);
+  await expect(page.locator('[data-panel="shape"] .sandbox-shape')).toHaveCount(15);
 });
 
 

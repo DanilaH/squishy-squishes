@@ -2,7 +2,7 @@ import { drawCraftAccessory } from './craftAccessoryArt';
 import { drawFaceForeground } from './faceForeground';
 import { withFaceTransform, accessoryPlacements, composeAccessory, type AccessoryPlacement, type FaceTransform, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
 import { REST_FACE, type FaceReaction } from './toyReactions';
-import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats, type AccessorySeat } from './accessorySeats';
+import { getFaceCenterY, getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats, type AccessorySeat } from './accessorySeats';
 import { getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
 
@@ -19,6 +19,7 @@ export type StickerId = (typeof STICKER_IDS)[number];
 export type AccessoryId = (typeof ACCESSORY_IDS)[number];
 
 export interface StickerPlacementV1 {
+  readonly home?: readonly [number, number];
   readonly locked?: true;
   readonly t: number;
   readonly x: number;
@@ -38,7 +39,7 @@ export interface DecorDocumentV1 {
   readonly face?: FaceTransform;
 }
 
-type EncodedStickerPlacementV1 = readonly [number, number, number, number, number] | readonly [number, number, number, number, number, 1];
+type EncodedStickerPlacementV1 = readonly [number, number, number, number, number] | readonly [number, number, number, number, number, 1] | readonly [number, number, number, number, number, 0 | 1, readonly [number, number]];
 
 interface EncodedDecorDocumentV1 {
   readonly v: 1;
@@ -122,16 +123,20 @@ const readByte = (value: unknown, field: string): number => {
 
 const readSticker = (value: unknown): StickerPlacementV1 => {
   let locked: unknown;
+  let home: unknown;
   let tRaw: unknown;
   let xRaw: unknown;
   let yRaw: unknown;
   let sRaw: unknown;
   let rRaw: unknown;
   if (Array.isArray(value)) {
-    if (value.length !== 5 && value.length !== 6) throw new TypeError('Compact decor sticker tuple is invalid.');
-    [tRaw, xRaw, yRaw, sRaw, rRaw, locked] = value;
+    if (value.length !== 5 && value.length !== 6 && value.length !== 7) throw new TypeError('Compact decor sticker tuple is invalid.');
+    [tRaw, xRaw, yRaw, sRaw, rRaw, locked, home] = value;
+    if (value.length === 7 && locked === 0) locked = undefined;
+    if (value.length === 7 && home === undefined) throw new TypeError('Sticker home is missing.');
   } else if (isRecord(value)) {
     locked = value.locked === true ? 1 : value.locked;
+    home = value.home;
     tRaw = value.t;
     xRaw = value.x;
     yRaw = value.y;
@@ -140,12 +145,14 @@ const readSticker = (value: unknown): StickerPlacementV1 => {
   } else {
     throw new TypeError('Decor sticker must be an object or compact tuple.');
   }
+  if (home !== undefined && (!Array.isArray(home) || home.length !== 2)) throw new TypeError('Sticker home is invalid.');
   if (locked !== undefined && locked !== 1) throw new TypeError('Decor sticker lock is invalid.');
   const t = readByte(tRaw, 'sticker type');
   if (t >= STICKER_IDS.length) throw new TypeError('Decor sticker type is unknown.');
   const s = readByte(sRaw, 'sticker size');
   if (s < 14 || s > 72) throw new TypeError('Decor sticker size is out of range.');
   return {
+    ...(home === undefined ? {} : { home: [readByte((home as unknown[])[0], 'sticker home x'), readByte((home as unknown[])[1], 'sticker home y')] as const }),
     ...(locked === 1 ? { locked: true as const } : {}),
     t,
     x: readByte(xRaw, 'sticker x'),
@@ -202,7 +209,9 @@ export const encodeDecorDocument = (decor: DecorDocumentV1): EncodedDecorDocumen
   if (decor.mouth !== null) encoded.m = decor.mouth;
   if (decor.blush) encoded.b = 1;
   if (decor.stickers.length > 0) {
-    encoded.s = decor.stickers.map(p => p.locked
+    encoded.s = decor.stickers.map(p => p.home
+      ? [p.t, p.x, p.y, p.s, p.r, p.locked ? 1 : 0, p.home] as const
+      : p.locked
       ? [p.t, p.x, p.y, p.s, p.r, 1] as const
       : [p.t, p.x, p.y, p.s, p.r] as const);
   }
@@ -253,7 +262,7 @@ export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | n
   const height = Math.max(0.3, maxY - minY);
   const centerX = (minX + maxX) * 0.5;
   const centerY = (minY + maxY) * 0.5;
-  const faceY = centerY + (shape.id === 'donut' ? -height * .29 : shape.id === 'ice-cream' ? height * .20 : shape.id === 'cupcake' ? height * .03 : shape.id === 'mochi-cat' ? -height * .16 : shape.id === 'mochi-bunny' ? -height * .24 : shape.id === 'dumpling' ? -height * .085 : shape.id === 'paw' ? -height * .045 : shape.id === 'strawberry' ? -height * .02 : 0);
+  const faceY = getFaceCenterY(shape, centerY, height);
   const eyeY = faceY + height * 0.085;
   const eyeDx = width * (shape.id === 'donut' ? .11 : .135);
   const mouthY = faceY - height * 0.075;
@@ -525,6 +534,7 @@ export const drawAccessoryGraphic = (
   height: number,
   shapeId?: ShapeId,
 ): void => {
+  context.clearRect(0, 0, width, height);
   if (drawCraftAccessory(context, accessory, width, height)) return;
   if (pagesDecorArt) { pagesDecorArt.accessory(context, accessory, width, height, shapeId); return; }
   context.clearRect(0, 0, width, height);
@@ -637,7 +647,11 @@ export const drawAccessoryGraphic = (
 };
 
 /** One half of the approved art, mirrored from the same left ear/horn. */
-export const drawAccessoryPiece = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, side: AccessorySeat['side']): void => {
+export const drawAccessoryPiece = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, side: AccessorySeat['side'], mirrored = false): void => {
+  if (mirrored) {
+    ctx.save(); ctx.translate(width, 0); ctx.scale(-1, 1);
+    drawAccessoryPiece(ctx, id, width, height, side); ctx.restore(); return;
+  }
   if (side === 'whole') { drawAccessoryGraphic(ctx, id, width, height); return; }
   const source = document.createElement('canvas'); source.width = 180; source.height = 120;
   const sourceContext = source.getContext('2d'); if (!sourceContext) return;
@@ -676,14 +690,15 @@ const readAccessoryPlacements = (value: unknown): readonly AccessoryPlacement[] 
   if (!Array.isArray(value) || value.length > MAX_ACCESSORY_PLACEMENTS) throw new TypeError('Decor accessory list is invalid.');
   return value.map(item => {
     if (!isRecord(item) || !['whole', 'left', 'right'].includes(String(item.side))
-      || (item.locked !== undefined && item.locked !== true)) throw new TypeError('Decor accessory placement is invalid.');
+      || (item.locked !== undefined && item.locked !== true)
+      || (item.mirrored !== undefined && item.mirrored !== true)) throw new TypeError('Decor accessory placement is invalid.');
     const a = readNullableKnownId<AccessoryId>(item.a, accessoryIdSet, 'accessory');
     if (!a) throw new TypeError('Placed accessory must have a type.');
     const color = item.color === undefined ? undefined : readNumber(item.color, 0, 0xffffff, 'accessory color');
     if (color !== undefined && !Number.isInteger(color)) throw new TypeError('Decor color must be an integer.');
     return { a, x: readByte(item.x, 'accessory x'), y: readByte(item.y, 'accessory y'),
       s: readNumber(item.s, .25, 2.5, 'accessory scale'), r: readNumber(item.r, -Math.PI * 2, Math.PI * 2, 'accessory rotation'),
-      side: item.side as AccessoryPlacement['side'], ...(item.locked ? { locked: true as const } : {}), ...(color === undefined ? {} : { color }) };
+      side: item.side as AccessoryPlacement['side'], ...(item.locked ? { locked: true as const } : {}), ...(item.mirrored ? { mirrored: true as const } : {}), ...(color === undefined ? {} : { color }) };
   });
 };
 

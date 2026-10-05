@@ -16,7 +16,7 @@ test('studio back navigation retains creative work and completed Mix, then reset
   await page.locator('[data-action="shape-continue"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
   await expect(back).toBeVisible();
-  await expect(page.locator('[data-action="paint-undo"]')).toBeDisabled();
+  await expect(page.locator('[data-action="paint-undo"]')).toBeEnabled();
   await expect(page.locator('[data-action="paint-clear"]')).toBeDisabled();
 
   const center = async (): Promise<{ x: number; y: number }> => {
@@ -32,7 +32,7 @@ test('studio back navigation retains creative work and completed Mix, then reset
   await expect(shell).toHaveAttribute('data-paint-strokes', '1');
   await expect(page.locator('[data-action="paint-undo"]')).toBeEnabled();
   await page.locator('[data-action="paint-continue"]').click();
-  await expect(page.locator('[data-action="mixin-undo"]')).toBeDisabled();
+  await expect(page.locator('[data-action="mixin-undo"]')).toBeEnabled();
   await page.locator('[data-mixin="pearls"]').click();
   const mixin = await center();
   await page.mouse.click(mixin.x, mixin.y);
@@ -69,11 +69,11 @@ test('studio back navigation retains creative work and completed Mix, then reset
   await page.locator('[data-action="mix-continue"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
   await page.locator('[data-decor-section="stickers"]').click();
-  await expect(page.locator('[data-action="decor-undo"]')).toBeDisabled();
+  await expect(page.locator('[data-panel="decor"] [data-action="draft-undo"]')).toBeEnabled();
   const decor = await center();
   await page.mouse.click(decor.x, decor.y);
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
-  await expect(page.locator('[data-action="decor-undo"]')).toBeEnabled();
+  await expect(page.locator('[data-panel="decor"] [data-action="draft-undo"]')).toBeEnabled();
   await back.click();
   await expect(shell).toHaveAttribute('data-stage', 'mix');
   await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();

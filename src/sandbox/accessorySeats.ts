@@ -1,4 +1,4 @@
-import { getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
+import { isPointInsideShape, getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import type { AccessoryId } from './decor';
 
 export const getAccessoryDepth = (id: AccessoryId): 'front' | 'rear' =>
@@ -8,6 +8,13 @@ export const getAccessoryDepth = (id: AccessoryId): 'front' | 'rear' =>
 // using the deeper crown overlap suitable for broad convex tops.
 export const getAccessorySeatFactor = (shape: ShapeDefinition, id: AccessoryId): number =>
   id === 'glasses' ? .58 : id === 'headphones' ? .73 : id === 'heart-patch' ? .64 : id === 'handbag' ? .72 : id === 'petal-flower' || id === 'butterfly' ? .64 : id === 'crown' ? (shape.id === 'heart' ? .92 : .80) : id === 'bow' ? .87 : .92;
+
+/** Face and face-zone gear use the same body region for every canonical mold. */
+export const getFaceCenterY = (shape: ShapeDefinition, centerY: number, height: number): number =>
+  centerY + (shape.id === 'donut' ? -height * .29 : shape.id === 'ice-cream' ? height * .20
+    : shape.id === 'cupcake' ? height * .03 : shape.id === 'mochi-cat' ? -height * .16
+    : shape.id === 'mochi-bunny' ? -height * .24 : shape.id === 'dumpling' ? -height * .085
+    : shape.id === 'paw' ? -height * .045 : shape.id === 'strawberry' ? -height * .02 : 0);
 
 export interface AccessorySeat { readonly u: number; readonly v: number; readonly angle: number; readonly side: 'whole' | 'left' | 'right' }
 // Coordinates are fractions of each mold's bounding frame; roots follow its
@@ -39,15 +46,30 @@ export const getAccessorySeats = (shape: ShapeDefinition, id: AccessoryId): read
     return { u: (x + 1) / 2, v: (getShapeTopAtX(shape, x) - height * (getAccessoryDepth(id) === 'rear' ? (shape.id === 'heart' ? .11 : .075) : .045) + height * lift + 1) / 2, angle, side };
   };
   // Face-zone seats follow the actual mold's body region, including the ring.
-  const bodyY = shape.id === 'donut' ? -.50 : shape.id === 'ice-cream' ? .35 : shape.id === 'mochi-bunny' ? -.34 : shape.id === 'mochi-cat' ? -.24 : 0;
-  const bodySeat = (x: number, y: number): readonly AccessorySeat[] => [{u:(x+1)/2,v:(y+1)/2,angle:0,side:'whole'}];
+  const bodyY = getFaceCenterY(shape, (Math.min(...ys) + Math.max(...ys)) / 2, height);
+  const bodySeat = (desiredX: number, y: number): readonly AccessorySeat[] => {
+    let x = desiredX;
+    const direction = Math.sign(x - center);
+    for (let n = 0; n < 100 && direction && !isPointInsideShape(shape, x, y); n++) x -= direction * .01;
+    return [{u:(x+1)/2,v:(y+1)/2,angle:0,side:'whole'}];
+  };
   if (id === 'glasses') return bodySeat(0, bodyY + height * .085);
-  if (id === 'headphones') return bodySeat(0, bodyY + height * .26);
+  if (id === 'headphones') return bodySeat(0, bodyY + height * .10);
   if (id === 'heart-patch') return bodySeat(width * .28, bodyY - height * .08);
   if (id === 'handbag') return bodySeat(width * .20, bodyY - height * .04);
   if (id === 'petal-flower' || id === 'butterfly') return [seat(profile.bow[0], profile.bow[1], 'whole')];
   if (id === 'cream' || id === 'bucket-hat' || id === 'cherry') return [seat(id === 'cherry' ? .13 : 0, id === 'cherry' ? -.12 : 0, 'whole')];
-  if (id === 'wings') return [{u:(center - width * .32 + 1)/2,v:(bodyY + height*.05 + 1)/2,angle:-.2,side:'left'}, {u:(center + width*.32 +1)/2,v:(bodyY+height*.05+1)/2,angle:.2,side:'right'}];
+  if (id === 'wings') {
+    const y = bodyY - height * .08;
+    return [-1, 1].map(direction => {
+      let x = center + direction * width * .43;
+      // Narrow lower shoulders (heart, cone, ring) have their own contour width.
+      // Find an embedded root at this height while retaining the outward wing.
+      for (let n = 0; n < 80 && !isPointInsideShape(shape, x, y); n++) x -= direction * .01;
+      return { u: (x - direction * .012 + 1) / 2, v: (y + 1) / 2,
+        angle: direction * .6, side: direction < 0 ? 'left' as const : 'right' as const };
+    });
+  }
   if (id === 'bow') return [seat(profile.bow[0], profile.bow[1], 'whole')];
   if (id === 'crown') return [seat(0, 0, 'whole', profile.crown)];
   // Tall bunny ears are more upright; horns spread out along the shoulder.

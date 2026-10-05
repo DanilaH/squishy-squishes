@@ -69,7 +69,7 @@ for (const locale of ['ru-RU', 'en-US']) test(`rich saved toy remains editable a
     await page.locator('[data-action="decor-erase"]').click();
     await page.touchscreen.tap(sx, sy);
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '127');
-    await page.locator('[data-action="decor-undo"]').click();
+    await page.locator('[data-panel="decor"] [data-action="draft-undo"]').click();
     await page.locator('[data-action="decor-continue"]').click();
     await page.locator('[data-action="save"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'squeeze');
