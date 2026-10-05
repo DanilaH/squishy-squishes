@@ -58,6 +58,9 @@ export class FreeCraftEditor {
   public selectAccessory(index: number): void { this.selection = { kind: 'accessory', index }; this.refresh(); }
   public refresh(): void {
     const panel = this.root.querySelector<HTMLElement>('[data-free-objects]'); if (!panel) return;
+    const panelTop = panel.scrollTop;
+    const listLeft = panel.querySelector('.free-object-list')?.scrollLeft ?? 0;
+    const colorsLeft = panel.querySelector('.free-color-choices')?.scrollLeft ?? 0;
     const focused = document.activeElement instanceof HTMLElement && panel.contains(document.activeElement) ? document.activeElement : null;
     const focusKey = focused ? ['object', 'objectAction', 'objectControl'].find(key => focused.dataset[key] !== undefined) : undefined;
     const focusValue = focusKey ? focused!.dataset[focusKey] : undefined;
@@ -78,6 +81,9 @@ export class FreeCraftEditor {
       ${selected.kind === 'face' ? '' : `<label>${t('Rotation', 'Поворот')} <input data-object-control="rotation" type="range" min="-180" max="180" step="1" value="${rotation > 180 ? rotation - 360 : rotation}" ${locked ? 'disabled' : ''}></label>`}
       ${selected.kind === 'accessory' ? `<div class="free-color-choices" aria-label="${t('Color','Цвет')}">${[[0xffa6cb,t('Pink','Розовый')],[0xcab0e8,t('Lavender','Лаванда')],[0xa1e2ce,t('Mint','Мята')],[0xffcea8,t('Peach','Персик')],[0xeec984,t('Gold','Золото')],[0xe8e5f0,t('Pearl','Перламутр')]].map(([color,label])=>`<button type="button" data-object-action="color:${color}" aria-label="${label}" style="--craft-color:#${Number(color).toString(16)}">●</button>`).join('')}<button type="button" data-object-action="color:body" aria-label="${t('Body colour','Цвет тела')}" style="--craft-color:#${this.bodyColor().toString(16)}">●</button></div>` : ''}
       <div class="free-object-actions">${['reset', ...(selected.kind === 'face' ? [] : ['lock', 'duplicate', 'mirror', 'delete'])].map(action => `<button type="button" data-object-action="${action}">${({reset:t('Reset','Сброс'),lock:locked?t('Unlock','Открепить'):t('Lock','Закрепить'),duplicate:t('Copy','Копия'),mirror:t('Mirror','Зеркало'),delete:t('Delete','Удалить')} as Record<string,string>)[action]}</button>`).join('')}</div>`;
+    panel.scrollTop = panelTop;
+    const list = panel.querySelector('.free-object-list'); if (list) list.scrollLeft = listLeft;
+    const colors = panel.querySelector('.free-color-choices'); if (colors) colors.scrollLeft = colorsLeft;
     if (focusKey && focusValue) {
       const attribute = focusKey.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase());
       panel.querySelector<HTMLElement>(`[data-${attribute}="${CSS.escape(focusValue)}"]`)?.focus({ preventScroll: true });

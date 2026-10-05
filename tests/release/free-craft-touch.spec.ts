@@ -63,6 +63,7 @@ test('overlapping objects remain reachable with a native horizontal swipe', asyn
     expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(saved);
     await page.locator('[data-object="accessory:11"]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-selected-object', 'accessory:11');
+    expect(await list.evaluate(node => node.scrollLeft)).toBeGreaterThan(80);
     const slider = page.locator('[data-object-control="scale"]'); await slider.focus();
     await page.keyboard.press('ArrowRight'); await expect(slider).toBeFocused();
     await page.keyboard.press('ArrowRight'); await expect(slider).toHaveValue('0.72');
