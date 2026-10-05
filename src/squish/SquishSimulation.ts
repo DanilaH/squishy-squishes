@@ -418,6 +418,10 @@ export class SquishSimulation {
       targetBodyX *= scale;
       targetBodyY *= scale;
     }
+    // The workshop surface supplies the same generic floor for every mold.
+    // Upward travel stays free; downward body travel meets the tabletop.
+    if (this.viewportFollowEnabled) targetBodyY = Math.max(-.08, targetBodyY);
+    const floor = Math.min(...this.shape.boundary.map(point => point.y)) - .10;
     const followRate = active ? VIEWPORT_FOLLOW_ATTACK : VIEWPORT_FOLLOW_RELEASE;
     const followBlend = 1 - Math.exp(-followRate * dt);
     this.bodyOffsetX += (targetBodyX - this.bodyOffsetX) * followBlend;
@@ -515,6 +519,8 @@ export class SquishSimulation {
         targetY += uy * along * pinch + ux * across * sideways;
         responseInfluence = Math.max(responseInfluence, .65);
       }
+      const vertexFloor = Math.min(vertex.restY - .08, floor);
+      if (this.viewportFollowEnabled) targetY = Math.max(vertexFloor, targetY);
       const stiffness = active ? GRAB_STIFFNESS_FAR + (GRAB_STIFFNESS_NEAR - GRAB_STIFFNESS_FAR) * responseInfluence : 0;
       const dampingRate = second ? PINCH_DAMPING : DAMPING * dampingResponse;
       const damping = Math.exp(-(dampingRate * (0.88 + responseInfluence * 0.12)) * dt);
@@ -534,9 +540,37 @@ export class SquishSimulation {
         vertex.vx *= 0.55;
         vertex.vy *= 0.55;
       }
+      if (this.viewportFollowEnabled && vertex.y < vertexFloor) {
+        vertex.y = vertexFloor; vertex.vy = Math.max(0, vertex.vy);
+      }
       // maxDisplacement is the deformation contract, not screen-space travel.
       // Whole-body viewport follow is published separately by the Pages adapter.
       frameMax = Math.max(frameMax, deformation);
+    }
+    // Extreme impulses can invert neighbouring triangles despite each vertex
+    // staying inside its displacement bound. Limit only that invalid residual,
+    // preserving the spring field and body travel during normal interaction.
+    const valid = (factor: number): boolean => {
+      const minimumArea = .15 * (2 / SQUISH_GRID_CELLS) ** 2;
+      for (let i = 0; i < this.triangleIndices.length; i += 3) {
+        const a = this.vertices[this.triangleIndices[i]!]!, b = this.vertices[this.triangleIndices[i + 1]!]!, c = this.vertices[this.triangleIndices[i + 2]!]!;
+        const bx = (b.restX - a.restX) * (1 - factor) + (b.x - a.x) * factor;
+        const by = (b.restY - a.restY) * (1 - factor) + (b.y - a.y) * factor;
+        const cx = (c.restX - a.restX) * (1 - factor) + (c.x - a.x) * factor;
+        const cy = (c.restY - a.restY) * (1 - factor) + (c.y - a.y) * factor;
+        if (by * cx - bx * cy < minimumArea) return false;
+      }
+      return true;
+    };
+    if (!valid(1)) {
+      let low = 0, high = 1;
+      for (let i = 0; i < 10; i++) { const middle = (low + high) * .5; if (valid(middle)) low = middle; else high = middle; }
+      for (const vertex of this.vertices) {
+        const rx = vertex.restX + this.bodyOffsetX, ry = vertex.restY + this.bodyOffsetY;
+        vertex.x = rx + (vertex.x - rx) * low; vertex.y = ry + (vertex.y - ry) * low;
+        vertex.vx *= low; vertex.vy *= low;
+      }
+      frameMax *= low;
     }
     this.maxDisplacement = frameMax;
     return {

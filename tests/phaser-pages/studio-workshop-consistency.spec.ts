@@ -96,8 +96,7 @@ for (const device of devices) {
         }
         if (device.name !== 'landscape-ru') expect(result.deskVisible, `${device.name}/${name} has a visible desk`).toBe(true);
         const first = history[0];
-        const tactileStage = actualStage === 'finish' || actualStage === 'squeeze';
-        if (first && !tactileStage) {
+        if (first) {
           for (const axis of ['x', 'y', 'width', 'height'] as const) {
             expect(Math.abs(result.canvas[axis] - first.canvas[axis]), `${device.name}/${name}: ${axis} never jumps`).toBeLessThan(2);
           }
@@ -106,13 +105,7 @@ for (const device of devices) {
           expect(Math.abs(result.deskTop - first.deskTop), `${device.name}/${name}: desk never jumps`).toBeLessThan(2);
           expect(Math.abs(result.floorTop - first.floorTop), `${device.name}/${name}: floor never jumps`).toBeLessThan(2);
         }
-        if (first && tactileStage && device.name !== 'landscape-ru') {
-          expect(result.canvas.width, `${device.name}: tactile stage gains transparent deformation headroom`).toBeGreaterThan(first.canvas.width * 1.10);
-          expect(result.radiusRatio, `${device.name}: headroom compensates radius so the resting hero is not shrunk`).toBeLessThanOrEqual(0.301);
-        }
-        if (first && !tactileStage) {
-          expect(result.radiusRatio, `${device.name}: craft keeps the accepted render scale`).toBeGreaterThanOrEqual(0.339);
-        }
+        expect(result.radiusRatio, `${device.name}: every stage shares its resting projection`).toBeCloseTo(device.name === 'landscape-ru' ? .34 : .14, 3);
         history.push({ stage: name, canvas: result.canvas, stageTop: result.stageTop,
           stageHeight: result.stageHeight, deskTop: result.deskTop, deskBottom: result.deskBottom, floorTop: result.floorTop });
         await page.screenshot({ path: info.outputPath(`workshop-${device.name}-${name}.png`), animations: 'disabled' });
@@ -124,9 +117,10 @@ for (const device of devices) {
       await sample('paint');
       const paint = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!paint) throw new Error('Missing paint surface');
-      await page.mouse.move(paint.x + paint.width * .45, paint.y + paint.height * .60);
+      const radius = await page.locator('[data-sandbox-canvas]').evaluate(el => el.clientWidth * parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
+      await page.mouse.move(paint.x + paint.width * .5 - radius * .3, paint.y + paint.height * .5 + radius * .3);
       await page.mouse.down();
-      await page.mouse.move(paint.x + paint.width * .55, paint.y + paint.height * .60, { steps: 5 });
+      await page.mouse.move(paint.x + paint.width * .5 + radius * .3, paint.y + paint.height * .5 + radius * .3, { steps: 5 });
       await page.mouse.up();
       await page.locator('[data-action="paint-continue"]').click();
       await sample('mixins');
@@ -159,8 +153,12 @@ for (const device of devices) {
         : Math.min(device.width - 12, finishSurface.x + finishSurface.width + 90);
       const farY = Math.max(24, finishSurface.y + finishSurface.height * .22);
       await page.mouse.move(farX, farY, { steps: 18 });
+      // Extreme drags must retain bounded body travel. The fold-prevention
+      // regression checks actual triangle orientation for every shape/material;
+      // demanding the old large residual here would require those folds again.
       await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-squish-max-displacement') ?? 0))
-        .toBeGreaterThan(0.55);
+        .toBeGreaterThan(0);
+      expect(Number(await page.locator('[data-sandbox-app]').getAttribute('data-squish-max-displacement'))).toBeLessThanOrEqual(.72);
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'true');
       if (device.name === 'phone-ru' || device.name === 'desktop-en') {
         await expect.poll(readBodyOffsetX, { message: `${device.name}: captured pointer translates the whole squish toward the cursor` })

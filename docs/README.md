@@ -24,7 +24,10 @@ The pastel workshop graphics pass shipped in #75. The owner authorized the
 next tactile stage: press/hold/release shipped in #76; the remaining authorized
 work shipped in #77: two-finger Squeeze, material response, stroking and sparse
 idle blinks. Living-toy/contact/idle shipped in #78. The owner authorized the
-next personality, audio, Hall life, decor-preview and workshop-response pass. The full optional
+next personality, audio, Hall life, decor-preview and workshop-response pass,
+shipped in #79. On 5 October the owner authorized fixing scene consistency,
+extreme pulls, loading, idle and the crowded editor; its current contract is in
+PROJECT_DECISIONS. The full optional
 idea bank is not a release checklist.
 
 ## Latest independent review

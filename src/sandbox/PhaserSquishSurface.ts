@@ -40,6 +40,7 @@ export class PhaserSquishSurface {
   private faceContext: CanvasRenderingContext2D;
   private face: HTMLCanvasElement | null = null;
   private faceDefined = false;
+  private inclusion: HTMLCanvasElement | null = null;
   private fillingAmount = 0;
   private fillingStyle: SquishFillingStyle = 'none';
   private fillProgress = 1;
@@ -82,7 +83,7 @@ export class PhaserSquishSurface {
     // time, while spring integration and inclusion damping retain that delta.
     const now = performance.now(), elapsed = Math.max(0, now - this.lastPresentationAt);
     this.lastPresentationAt = now;
-    const enabled = this.stage === 'squeeze' && !this.blocked && !this.reducedMotion.matches;
+    const enabled = (this.stage === 'squeeze' || this.stage === 'finish') && !this.blocked && !this.reducedMotion.matches;
     if (enabled && !sample.active && elapsed < 1000) this.quietMs += elapsed;
     else this.quietMs = 0;
     if (!enabled) this.personality.cancel();
@@ -228,12 +229,13 @@ export class PhaserSquishSurface {
     squish.setMoldProgress(this.moldProgress);
     squish.setWireframe(this.wireframe);
     squish.setViewportFollowEnabled(this.stage === 'finish' || this.stage === 'squeeze');
-    squish.setPokeEnabled(this.stage === 'squeeze');
+    squish.setPokeEnabled(this.stage === 'squeeze' || this.stage === 'finish');
     if (this.appearanceDefined) squish.setAppearanceCanvas(this.appearance);
     if (this.faceDefined) squish.setFaceCanvas(this.face);
+    squish.setInclusionCanvas(this.inclusion);
     this.bridge?.setStage(this.stage, this.decorSection);
     this.bridge?.setBlocked(this.blocked);
-    if (this.stage === 'squeeze' && !this.blocked && !this.reducedMotion.matches) this.personality.greet(performance.now());
+    if ((this.stage === 'squeeze' || this.stage === 'finish') && !this.blocked && !this.reducedMotion.matches) this.personality.greet(performance.now());
   }
 
   public setShape(shape: ShapeDefinition): void {
@@ -263,7 +265,7 @@ export class PhaserSquishSurface {
     this.stage = stage;
     this.decorSection = section;
     this.squish?.setViewportFollowEnabled(stage === 'finish' || stage === 'squeeze');
-    this.squish?.setPokeEnabled(stage === 'squeeze');
+    this.squish?.setPokeEnabled(stage === 'squeeze' || stage === 'finish');
     this.bridge?.setStage(stage, section);
     if (enteredSqueeze) this.personality.greet(performance.now());
     this.syncCanvasSize();
@@ -281,6 +283,11 @@ export class PhaserSquishSurface {
     if (source) this.appearanceContext.drawImage(source, 0, 0, 256, 256);
     this.appearance = source ? this.appearanceSnapshot : null;
     this.squish?.setAppearanceCanvas(this.appearance);
+  }
+
+  public setInclusionTexture(source: HTMLCanvasElement | null): void {
+    this.inclusion = source;
+    this.squish?.setInclusionCanvas(source);
   }
 
   public setFaceTexture(source: HTMLCanvasElement | null): void {

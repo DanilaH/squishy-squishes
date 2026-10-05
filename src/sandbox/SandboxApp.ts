@@ -1,3 +1,4 @@
+import { renderToyInclusions, renderToyInk, renderToyPigment } from './toySurfaceLayers';
 import { accessoryMotion } from './toyPersonality';
 import { contactFeedback } from './livingToy';
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp, type PaintStampId } from './creativeTools';
@@ -6,7 +7,7 @@ import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats } from './
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
 import { drawToyMixIn } from './toyMixins';
-import { drawShapeRelief, hasShapeRelief, shapeReliefSvg } from './shapeRelief';
+import { hasShapeRelief, shapeReliefSvg } from './shapeRelief';
 import { MATERIALS, getMaterial, getPalette, type MaterialId } from '../game/content';
 import { SquishyAudio } from '../game/SquishyAudio';
 import { SHAPES, getShape, isPointInsideShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
@@ -43,7 +44,6 @@ import {
   getDecorFrame,
   hasSurfaceDecor,
   renderSurfaceDecor,
-  renderSurfaceFace,
   renderSurfaceStickers,
   type AccessoryId,
   type EyeStyleId,
@@ -371,6 +371,7 @@ export class SandboxApp {
   private readonly audio = new SquishyAudio();
   private readonly appearanceCanvas = document.createElement('canvas');
   private readonly appearanceContext: CanvasRenderingContext2D;
+  private readonly inclusionCanvas = document.createElement('canvas');
   private readonly faceCanvas = document.createElement('canvas');
   private readonly faceContext: CanvasRenderingContext2D;
   private readonly copy: SandboxCopy;
@@ -636,12 +637,12 @@ export class SandboxApp {
     `).join('');
 
     const eyes = [null, ...EYE_STYLE_IDS].map((id) => `
-      <button class="sandbox-decor-choice" type="button" data-decor-eyes="${id ?? 'none'}" aria-pressed="${id === null}">
+      <button class="sandbox-decor-choice" type="button" data-decor-eyes="${id ?? 'none'}" aria-label="${id ? decorLabels.eyes[id] : this.copy.none}" title="${id ? decorLabels.eyes[id] : this.copy.none}" aria-pressed="${id === null}">
         <span>${id ? `<canvas class="toy-choice-art" data-face-icon="eyes" data-face-style="${id}" width="96" height="56" aria-hidden="true"></canvas>` : '—'}</span><small>${id ? decorLabels.eyes[id] : this.copy.none}</small>
       </button>
     `).join('');
     const mouths = [null, ...MOUTH_STYLE_IDS].map((id) => `
-      <button class="sandbox-decor-choice" type="button" data-decor-mouth="${id ?? 'none'}" aria-pressed="${id === null}">
+      <button class="sandbox-decor-choice" type="button" data-decor-mouth="${id ?? 'none'}" aria-label="${id ? decorLabels.mouths[id] : this.copy.none}" title="${id ? decorLabels.mouths[id] : this.copy.none}" aria-pressed="${id === null}">
         <span>${id ? `<canvas class="toy-choice-art" data-face-icon="mouth" data-face-style="${id}" width="96" height="56" aria-hidden="true"></canvas>` : '—'}</span><small>${id ? decorLabels.mouths[id] : this.copy.none}</small>
       </button>
     `).join('');
@@ -717,8 +718,8 @@ export class SandboxApp {
               <button type="button" role="tab" id="decor-tab-accessory" aria-controls="decor-panel-accessory" aria-selected="false" tabindex="-1" data-decor-section="accessory">♛ <span>${this.copy.head}</span></button>
             </div>
             <div class="sandbox-decor-section" role="tabpanel" id="decor-panel-face" aria-labelledby="decor-tab-face" data-decor-panel="face">
-              <label>${this.copy.eyes}</label><div class="sandbox-decor-grid sandbox-decor-grid--four">${eyes}</div>
-              <label>${this.copy.mouth}</label><div class="sandbox-decor-grid sandbox-decor-grid--four">${mouths}</div>
+              <div class="sandbox-face-group"><span>${this.copy.eyes}</span><div class="sandbox-decor-grid sandbox-decor-grid--four">${eyes}</div></div>
+              <div class="sandbox-face-group"><span>${this.copy.mouth}</span><div class="sandbox-decor-grid sandbox-decor-grid--four">${mouths}</div></div>
               <button class="sandbox-decor-toggle" type="button" data-action="decor-blush" aria-pressed="false">● ● <span>${this.copy.blush}</span></button>
             </div>
             <div class="sandbox-decor-section" role="tabpanel" id="decor-panel-stickers" aria-labelledby="decor-tab-stickers" data-decor-panel="stickers" hidden>
@@ -1171,9 +1172,7 @@ export class SandboxApp {
     // Preserve relief/stickers in the same front UV layer; repaint only on a
     // quantized expression change, not every frame or throughout an idle scene.
     this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
-    drawShapeRelief(this.faceContext, this.draft.shapeId);
-    renderSurfaceStickers(this.faceContext, this.draft.decor, getShape(this.draft.shapeId));
-    renderSurfaceFace(this.faceContext, this.draft.decor, getShape(this.draft.shapeId), next);
+    renderToyInk(this.faceContext, this.draft.decor, this.draft.shapeId, next);
     this.uploadFaceNow();
   }
 
@@ -1629,7 +1628,7 @@ export class SandboxApp {
   private updateContactFeedback(): void {
     const stage = this.canvas.parentElement;
     if (!stage || this.options.rendererBackend !== 'phaser') return;
-    const enabled = this.stage === 'squeeze' && !this.activityBlocked && !this.exitConfirmOpen && !this.toolsOpen && !this.reducedMotion.matches;
+    const enabled = (this.stage === 'squeeze' || this.stage === 'finish') && !this.activityBlocked && !this.exitConfirmOpen && !this.toolsOpen && !this.reducedMotion.matches;
     if (!enabled && (this.roomReaction || this.roomLight)) {
       this.roomReaction?.cancel(); this.roomLight?.cancel();
       this.roomReaction = this.roomLight = null; this.shell.dataset.workshopReaction = 'rest';
@@ -1649,6 +1648,7 @@ export class SandboxApp {
   }
 
   private refreshRigidMixins(): void {
+    if (this.options.rendererBackend === 'phaser') { this.rigidMixinCanvas.hidden = true; return; }
     const hasRigidMixins = this.draft.appearance.mixins.some((placement) => this.overlayMixinIds().includes(getMixInId(placement)));
     if (!hasRigidMixins) {
       this.rigidMixinCanvas.hidden = true;
@@ -1658,7 +1658,7 @@ export class SandboxApp {
       return;
     }
     this.rigidMixinCanvas.hidden = false;
-    if (this.rigidMixinFrame === 0 && this.options.rendererBackend !== 'phaser') this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);
+    if (this.rigidMixinFrame === 0) this.rigidMixinFrame = requestAnimationFrame(this.updateRigidMixinOverlay);
   }
 
   private readonly updateRigidMixinOverlay = (): void => {
@@ -1924,13 +1924,15 @@ export class SandboxApp {
   }
 
   private replayAndUpload(): void {
-    replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: this.overlayMixinIds(), materialId: this.draft.materialId, shapeId: this.draft.shapeId, excludeRelief: this.options.rendererBackend === 'phaser' });
     if (this.options.rendererBackend === 'phaser') {
-      this.faceContext.clearRect(0, 0, APPEARANCE_TEXTURE_SIZE, APPEARANCE_TEXTURE_SIZE);
-      drawShapeRelief(this.faceContext, this.draft.shapeId);
-      renderSurfaceStickers(this.faceContext, this.draft.decor, getShape(this.draft.shapeId));
-      renderSurfaceFace(this.faceContext, this.draft.decor, getShape(this.draft.shapeId), this.reaction);
+      renderToyPigment(this.appearanceContext, this.draft.appearance, this.draft.materialId, this.draft.shapeId);
+      this.inclusionCanvas.width = this.inclusionCanvas.height = APPEARANCE_TEXTURE_SIZE;
+      const inclusions = this.inclusionCanvas.getContext('2d');
+      if (inclusions) renderToyInclusions(inclusions, this.draft.appearance, this.draft.materialId);
+      (this.renderer as PhaserSquishSurface).setInclusionTexture(this.draft.appearance.mixins.length ? this.inclusionCanvas : null);
+      renderToyInk(this.faceContext, this.draft.decor, this.draft.shapeId, this.reaction);
     } else {
+      replayAppearanceDocument(this.appearanceContext, this.draft.appearance, { excludeMixIns: this.overlayMixinIds(), materialId: this.draft.materialId, shapeId: this.draft.shapeId });
       renderSurfaceDecor(this.appearanceContext, this.draft.decor, getShape(this.draft.shapeId));
     }
     this.uploadAppearanceNow();

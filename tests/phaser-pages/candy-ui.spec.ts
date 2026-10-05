@@ -19,7 +19,8 @@ for (const viewport of viewports) {
     const heart = page.locator('button.sandbox-shape[data-shape="heart"]');
     await heart.click();
     await expect(heart).toHaveAttribute('aria-pressed', 'true');
-    await expect(heart).toHaveCSS('border-top-width', '2px');
+    await expect(heart).toHaveCSS('border-top-width', '1px');
+    await expect(heart).toHaveCSS('background-color', 'rgb(242, 222, 237)');
     await page.screenshot({ path: testInfo.outputPath(`candy-shape-${viewport.name}.png`) });
 
     await page.locator('[data-action="shape-continue"]').click();

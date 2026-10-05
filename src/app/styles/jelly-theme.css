@@ -94,8 +94,7 @@
   -webkit-tap-highlight-color: transparent;
   transition: transform 115ms ease, filter 115ms ease, opacity 115ms ease;
 }
-#app[data-jelly-ui-ready] :is(.sandbox-tool-row button:not(.sandbox-primary):not(.sandbox-swatch):not([data-action$="-clear"]),
-  .sandbox-decor-choice, .sandbox-decor-toggle) {
+#app[data-jelly-ui-ready] :is(.sandbox-tool-row button:not(.sandbox-primary):not(.sandbox-swatch):not([data-action$="-clear"])) {
   border: 1px solid rgba(197,134,50,.32);
   background: linear-gradient(160deg, rgba(255,255,255,.95), rgba(255,232,182,.79));
   color: #603b23;

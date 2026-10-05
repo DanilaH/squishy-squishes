@@ -456,3 +456,37 @@ event delivery must neither turn a short hardware tap into a hold nor expire
 its face response before rendering it. The browser test injects the explicit
 65ms native touch sequence; rendering/trace overhead cannot change its input
 duration. Physics/release credit and their clocks are unchanged.
+
+## Unified toy and editor repair — 5 October 2026
+
+The owner reported face occlusion, extreme-pull artifacts, crowded Decor,
+different Finish physics and Hall appearance, stage scale jumps, decoration
+crossing the table, missing Hall furniture, and abrupt Hall idle motion. This
+explicitly authorizes the shared presentation and editor changes below.
+
+Production Hall and Studio now use the same front material shader, sidewall,
+logical texture resolution and layer baking: pigment, inclusions, then relief,
+stickers and face ink. Existing V3 inclusions are drawn under expressions;
+the production path no longer places a rigid inclusion canvas above the eyes.
+The shared mold transform also applies to projected accessories and inverse hits.
+Hall retains one reusable offscreen renderer, disposed on entering the maker.
+
+Finish enables the existing Squeeze material/two-pointer/presentation path.
+Creative stages and the raw diagnostic path retain their stage behavior.
+Extreme mesh inversions are prevented by bounding only an invalid residual;
+modern tactile stages stop downward displacement at the common mold floor.
+Canonical boundaries, normal spring parameters and saved coordinates are intact.
+
+All Studio stages share one canvas centre, resting radius and desk ratio.
+Header navigation uses a symmetric three-column grid; Decor has fixed tab,
+content and action rows, separate eyes/mouth rows and a compact blush toggle.
+Secondary choices use calm surfaces; primary actions keep gold artwork.
+No page/tray scroll or reduced Paint touch targets is introduced.
+
+Hall furniture/podium CSS consumes the decoded pixels from readiness, avoiding
+a second asset request. Transient preload failures have bounded retries and
+retain the usable fallback. Hall idle reuses the same bounded ToyPose as Squeeze,
+composed onto the existing thumbnail transform without moving its base seat.
+One sparse timer launches one short frame burst; interruptions restore the
+exact snapshot and transform. Visibility, activity and reduced-motion guards
+remain. Save V3, slot limits, rewards and progression are unchanged.

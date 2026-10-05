@@ -44,7 +44,8 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     const bounds = async (): Promise<{ x: number; y: number; radius: number }> => {
       const box = await canvas.boundingBox();
       if (!box || box.width < 100 || box.height < 100) throw new Error('Missing visible Phaser canvas');
-      return { x: box.x + box.width / 2, y: box.y + box.height / 2, radius: Math.min(box.width, box.height) * 0.34 };
+      const ratio = await canvas.evaluate(el => parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2, radius: Math.min(box.width, box.height) * ratio };
     };
 
     const paint = await bounds();
@@ -174,4 +175,3 @@ test('DPR 3 phone keeps the tactile Phaser framebuffer in CSS pixels', async ({ 
     await context.close();
   }
 });
-

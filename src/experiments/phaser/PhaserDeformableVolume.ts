@@ -16,6 +16,9 @@ const PAGES_CAP_LIGHTING = `
   vec3 capNormal = normalize(vec3(p * (capSlope * 0.72), 1.0 - capSlope * 0.20));
   float capLight = max(dot(capNormal, normalize(vec3(-0.42, 0.51, 0.75))), 0.0);
   base *= mix(1.0, 0.80 + 0.23 * capLight, 0.64);
+  // A faint cool optical wave distinguishes gel from powder without changing
+  // authored pigment or the other materials. Hall uses this same cap shader.
+  base = clamp(base + vec3(-0.10, 0.035, 0.070) * (gelWave - 0.5) * jellyIdentity * interior, 0.0, 1.0);
 `;
 
 export const getPagesVolumeFrontShader = (): string => createFragmentShaderSource({
@@ -23,13 +26,20 @@ export const getPagesVolumeFrontShader = (): string => createFragmentShaderSourc
   finalBodyLighting: PAGES_CAP_LIGHTING,
   extraUniforms: `
 uniform sampler2D uFaceTexture;
-uniform bool uFaceEnabled;`,
+uniform bool uFaceEnabled;
+uniform sampler2D uInclusionTexture;
+uniform bool uInclusionEnabled;`,
   finalComposite: `
   float surfaceInkAlpha = 0.0;
+  if (uInclusionEnabled) {
+    vec4 inclusion = texture(uInclusionTexture, vUv - uFillingDrift * 0.5);
+    surfaceInkAlpha = clamp(inclusion.a, 0.0, 1.0);
+    base = mix(base, inclusion.rgb, surfaceInkAlpha);
+  }
   if (uFaceEnabled) {
     vec4 face = texture(uFaceTexture, vUv);
-    surfaceInkAlpha = clamp(face.a, 0.0, 1.0);
-    base = mix(base, face.rgb, surfaceInkAlpha);
+    surfaceInkAlpha = max(surfaceInkAlpha, clamp(face.a, 0.0, 1.0));
+    base = mix(base, face.rgb, clamp(face.a, 0.0, 1.0));
   }`,
   // Painted-on eyes, blush, stickers and paw relief stay readable on gel;
   // alpha follows the existing front texture, including antialiased edges.
