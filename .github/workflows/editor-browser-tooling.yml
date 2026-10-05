@@ -1,0 +1,23 @@
+name: Editor browser tooling
+on:
+  push:
+    branches: [qa/unified-editor-browser-tools]
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium
+      - uses: actions/upload-artifact@v4
+        with:
+          name: editor-chromium
+          path: /home/runner/.cache/ms-playwright/chromium_headless_shell-*
+          retention-days: 1
