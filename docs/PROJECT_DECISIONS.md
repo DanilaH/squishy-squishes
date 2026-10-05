@@ -589,3 +589,25 @@ Tests compare actual local dents, held/released fields and observable material
 signatures, stress all six materials on all eight shapes, and open saved
 materials in both Finish and Squeeze. Automated distinction is evidence for
 physical behaviour; the owner's phone feel remains the final product judgment.
+
+## Stronger tactile contrast — 5 October 2026
+
+After testing #84 the owner found Jelly the clearest contrast and authorized
+another focused pass. Soft remains the baseline and Jelly keeps its accepted
+travel, tether and recovery. Marshmallow has a wider/deeper hold dent
+and an up-to-65% transient imprint with 1.4s exponential decay measured against the host clock,
+independently of the bounded spring step. Recovery is tuned to settle before
+the first idle blink even on slow frames; idle timing/gates are unchanged.
+Pearl has denser rest response, a visible compact rebound and stronger bounded
+two-finger compression/side growth. Holo reaches tension sooner with a shorter
+travel reserve and brisk recovery. Metallic has narrower but clearer local
+pressure while retaining its stiff pull and short pinch.
+
+The existing profile table and generic solver remain; no new gesture, mesh,
+renderer, appearance, save, audio or interface system. Raw/Mix constants, Soft
+and Jelly profiles, common pinch damping, displacement/floor/fold guards and
+release credit stay unchanged. Regression checks measure actual local dents,
+foam residual after release, Pearl overshoot and settling, Holo free/taut gain
+and transverse pinch growth, alongside the full eight-shape/material stress
+matrix and existing real-browser gesture tests. Phone acceptance remains with
+the owner; numerical distinctions do not establish subjective satisfaction.

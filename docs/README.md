@@ -31,8 +31,10 @@ Visible/returning surface grabs, local pressure, volume cues and release shipped
 in #81. Strawberry silhouette/relief, side-aware facial response and stronger
 material identity shipped in #82. Stiff Metallic, longer Jelly pulls and
 full-viewport tracking of owned mouse/touch gestures shipped in #83.
-The next authorized pass gives all six existing materials distinct press, hold,
-pull, pinch and return profiles; its contract is in PROJECT_DECISIONS.
+Distinct press, hold, pull, pinch and return profiles for all six materials shipped
+in #84. The owner authorized a follow-up to strengthen foam imprint, Pearl
+rebound/compression, Holo tension and local Metallic pressure; its contract is
+in PROJECT_DECISIONS.
 The full optional
 idea bank is not a release checklist.
 

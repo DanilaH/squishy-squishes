@@ -49,6 +49,59 @@ test('holding relaxes Soft and deepens foam; long foam hold has a longer tempora
   }
 });
 
+test('foam keeps an imprint, Pearl rebounds and Holo becomes taut after its free pull', () => {
+  const soft = pressure('soft', 100), foam = pressure('marshmallow', 100), pearl = pressure('pearl', 100);
+  expect(foam.projectUvToLocal(.7, .5).x - .4).toBeGreaterThan((soft.projectUvToLocal(.7, .5).x - .4) * 3);
+  soft.end(1); foam.end(1); pearl.end(1);
+  let pearlOvershoot = 0;
+  for (let f = 1; f <= 60; f++) {
+    for (const sim of [soft, foam, pearl]) sim.advance(16, (100 + f) * 16);
+    if (f > 15) pearlOvershoot = Math.max(pearlOvershoot, pearl.projectUvToLocal(.675, .5).x - .35);
+  }
+  expect(foam.projectUvToLocal(.675, .5).x - .35).toBeGreaterThan(.02);
+  expect(Math.abs(soft.projectUvToLocal(.675, .5).x - .35)).toBeLessThan(.001);
+  expect(pearlOvershoot).toBeGreaterThan(.002);
+  expect(pearl.snapshot().maxDisplacement).toBeLessThan(.004);
+
+  const pull = (distance: number) => {
+    const sim = pressure('holo', 1); sim.move(1, .45 + distance, 0);
+    for (let f = 2; f <= 100; f++) sim.advance(16, f * 16);
+    return sim.projectUvToLocal(.725, .5).x;
+  };
+  const freeGain = (pull(.35) - pull(.15)) / .2;
+  const tautGain = (pull(1.2) - pull(.6)) / .6;
+  expect(freeGain).toBeGreaterThan(.5);
+  expect(tautGain).toBeLessThan(freeGain * .1);
+
+  const squeeze = (material: MaterialId) => {
+    const sim = new SquishSimulation(getShape('mochi')); sim.setTactileFeatures(true, material);
+    sim.begin(1, -.25, 0); sim.begin(2, .25, 0); sim.move(1, -.05, 0); sim.move(2, .05, 0);
+    for (let f = 1; f <= 100; f++) sim.advance(16, f * 16);
+    return sim.projectUvToLocal(.5, .8).y - .6;
+  };
+  expect(squeeze('pearl')).toBeGreaterThan(squeeze('holo') * 1.5);
+  expect(squeeze('chrome')).toBeLessThan(squeeze('pearl') * .25);
+  const metal = pressure('chrome', 100);
+  expect(metal.projectUvToLocal(.7, .5).x - .4).toBeGreaterThan(.002);
+});
+
+test('foam memory fades in wall time and permits the first idle blink on slow frames', () => {
+  for (const delta of [16, 33, 50, 66, 100]) {
+    const sim = new SquishSimulation(getShape('dumpling'));
+    sim.setTactileFeatures(true, 'marshmallow'); sim.setViewportFollowEnabled(true);
+    sim.begin(1, 0, 0); let now = 0;
+    for (let f = 0; f < 30; f++) {
+      sim.move(1, .18 * f / 30, 0); now += 32; sim.advance(32, now);
+    }
+    sim.end(1);
+    for (let f = 0; f < Math.ceil(5000 / delta); f++) {
+      now += delta; sim.advance(delta, now);
+    }
+    expect(sim.snapshot().maxDisplacement).toBeLessThan(.025);
+    expect(sim.snapshot().squeezes).toBe(1);
+  }
+});
+
 for (const shape of SHAPES) test(`every material survives reversals, pinch handoff and interruption: ${shape.id}`, () => {
   for (const material of materials) {
     const sim = new SquishSimulation(shape); sim.setTactileFeatures(true, material); sim.setViewportFollowEnabled(true);
