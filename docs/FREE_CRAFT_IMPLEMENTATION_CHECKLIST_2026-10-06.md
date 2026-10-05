@@ -4,6 +4,7 @@
 Исходная точка: main `7e7cdf5` после PR #89. Это активный согласованный scope,
 а не исторический список идей. Фиксация документа не означает реализацию.
 Срок «до утра» не заменяет критерии качества или обязательные PR-проверки.
+**Статус: весь implementation scope реализован и опубликован; итоговые доказательства ниже.**
 
 ## Правила учёта
 
@@ -185,15 +186,17 @@ strawberry. Следующие **семь** заменяют первонача�
   activity, slot/reward-правила, свободный крафт без recipe/XP-гейтинга.
   Для пончика изменена только необходимая общая поддержка отверстия;
   нет отдельного физического движка/renderer под одну форму.
-- [ ] `npm run release:check`, полный browser QA, visual QA и необходимые
+- [x] `npm run release:check`, полный browser QA, visual QA и необходимые
   Hall/Pages/candidate/asset проверки прошли на итоговом head.
 - [x] Изменённые UI-эталоны проверены по actual/expected/diff индивидуально;
   проверки/пороги не ослаблены ради зелёного CI.
-- [ ] Независимое ревью diff, PR и merge только после обязательных проверок.
-- [ ] Проверены post-merge workflows, фактический GitHub Pages deployment,
+- [x] Независимое ревью diff, PR и merge только после обязательных проверок.
+- [x] Проверены post-merge workflows, фактический GitHub Pages deployment,
   совпадение опубликованной сборки и работа hosted touch/save/reload.
-- [ ] Владельцу даны ссылка и короткий список ручного тестирования.
+- [x] Владельцу даны ссылка и короткий список ручного тестирования.
   Headless QA не объявляется субъективной приёмкой на реальном телефоне.
+- [ ] Владелец проверил тактильное ощущение, удобство свободного крафта и графику
+  на своём телефоне; это оставшаяся пользовательская приёмка, а не CI-блокер.
 
 ## Не входят в этот этап
 
@@ -204,21 +207,21 @@ strawberry. Следующие **семь** заменяют первонача�
 
 ## Ход работы и доказательства
 
-Реализация находится в `feat/free-craft-lab`, PR #91. Полный Browser/Pages QA проверил игровой
-код `54ffa7a8`. Последняя дельта поднимает Finish-вкладки и Light-кнопки до 44px
-на коротких экранах; она проверена отдельно, финальные CI gates ещё обязательны. Main/Pages пока содержат предыдущую игру. Отметки общей приёмки
-выставляются только по завершившимся проверкам; телефонную оценку даёт владелец.
+Реализация опубликована через PR #91: main `81a0ffefc9f4427892fec5dae9802b6631f5ce9d`.
+Все обязательные gates итогового PR head `82fccec1` и post-merge проверки прошли.
+Настоящие Pages проверены по исходной сборке, HTTP/JS hash, touch/save/reload
+и новым функциям. Субъективная телефонная приёмка остаётся владельцу.
 
 | Блок | Реализация | Уже проверено | Остаётся |
 | --- | --- | --- | --- |
-| Данные и история | Optional V1 поля в V3, прежние ID/compact bytes, общая история 96 действий | Точный старый codec; rich round-trip; 1000 штрихов/128 наклеек; undo/redo непрерывного жеста; отказ записи сохраняет оригинал | Финальные CI gates |
-| Декор и лицо | Несколько деталей, drag/scale/rotate/lock/copy/mirror/reset, foreground лица | Реальные drag/undo/save/reload на 390/568; alpha не меняется при recolor; зеркальная сумочка отражает источник; подбор цвета тела и отмена | Финальные CI gates |
-| Наполнители/свет/примерка | Общая кисть размера/плотности, локальный ластик, optional shader light, примерка | Настройки/erase/undo/reload на 320/390/568; сцена сохраняет положение; два native touch сценария отделяют прокрутку от Paint/Squeeze | Финальные CI gates |
-| Контент и формы | 11 групп аксессуаров, 7 новых наполнителей, 7 форм; 15 всего | 240 сочетаний стартовой посадки; богатые композиции всех 15 форм Hall/Squeeze/Finish/reload; настоящий donut hole не принимает захват/краску в центре | Финальные CI gates |
-| Библиотека | Мягкий свет, edge props, сохранённый sparse single-clock idle, arrival settle/частицы | Просмотрены композиции/props; wide craft проверен по отображаемым границам после CSS увеличения; нет новых GPU/RAF для props | Финальные CI gates |
-| Сборка | Общие production/candidate/Yandex entrypoints | release:check, candidate/Pages/DRAFT roots и строгий upload-root audit прошли локально; Candidate и DRAFT gates прошли на `bcbc88df` | Все gates итогового PR head |
-| UI art | Контекстные панели, общие Undo/Redo, Arrange/Править, Material/Light/Try it | 16 изменённых эталонов индивидуально просмотрены actual/expected/diff; visual 6 passed; остальные 14 эталонов, threshold 0.002 и masks не менялись | Unmasked art-review итогового head |
-| Публикация | PR #91, merge ещё не выполнен | Проверки запущены; source checkpoint сохранён в GitHub | Зелёные gates → merge → actual Pages source/touch/save/reload |
+| Данные и история | Optional V1 поля в V3, прежние ID/compact bytes, общая история 96 действий | Точный старый codec; rich round-trip; 1000 штрихов/128 наклеек; undo/redo непрерывного жеста; отказ записи сохраняет оригинал | Телефонная приёмка владельцем |
+| Декор и лицо | Несколько деталей, drag/scale/rotate/lock/copy/mirror/reset, foreground лица | Реальные drag/undo/save/reload на 390/568; alpha не меняется при recolor; зеркальная сумочка отражает источник; подбор цвета тела и отмена | Телефонная приёмка владельцем |
+| Наполнители/свет/примерка | Общая кисть размера/плотности, локальный ластик, optional shader light, примерка | Настройки/erase/undo/reload на 320/390/568; сцена сохраняет положение; два native touch сценария отделяют прокрутку от Paint/Squeeze | Телефонная приёмка владельцем |
+| Контент и формы | 11 групп аксессуаров, 7 новых наполнителей, 7 форм; 15 всего | 240 сочетаний стартовой посадки; богатые композиции всех 15 форм Hall/Squeeze/Finish/reload; настоящий donut hole не принимает захват/краску в центре | Телефонная приёмка владельцем |
+| Библиотека | Мягкий свет, edge props, сохранённый sparse single-clock idle, arrival settle/частицы | Просмотрены композиции/props; wide craft проверен по отображаемым границам после CSS увеличения; нет новых GPU/RAF для props | Телефонная приёмка владельцем |
+| Сборка | Общие production/candidate/Yandex entrypoints | release:check, строгий upload-root audit и все обязательные gates прошли на итоговом `82fccec1`; post-merge подтверждён | Выполнено |
+| UI art | Контекстные панели, общие Undo/Redo, Arrange/Править, Material/Light/Try it | 16 изменённых эталонов индивидуально просмотрены actual/expected/diff; visual 6 passed; остальные 14 эталонов, threshold 0.002 и masks не менялись | Телефонная оценка графики |
+| Публикация | PR #91 merged, Pages source `81a0ffef` | Native deployment, exact bundle SHA-256, hosted touch/save/reload и новые функции прошли | Телефонная приёмка владельцем |
 
 Focused-проверки контрольной версии и последней интеграции:
 - 19 Browser сценариев: все 15 форм, богатый декор/новые наполнители,
@@ -241,11 +244,11 @@ assertions в старую игру ошибочно блокировал кад
 
 Контрольная точка восстановления `79483e2`: после потери файлов прежней среды
 основной код восстановлен из GitHub, последние изменения — из test source maps
-и trace CSS. Весь финальный QA повторяется после восстановления. Прежние
+и trace CSS. Весь финальный QA повторён после восстановления. Прежние
 отмены jobs до первого шага были подтверждены GitHub annotation о нехватке
-hosted runner; текущие проверки уже исполняются. Это не освобождает PR от gates.
+hosted runner; все итоговые gates теперь завершены. Отмены не освобождали PR от gates.
 
-Новая версия ещё не опубликована. Общая приёмка выше остаётся открытой до
+На этой промежуточной контрольной точке версия ещё не была опубликована. Общая приёмка оставалась открытой до
 полного QA и hosted проверки; focused-результаты не заменяют её.
 
 Итоговая локальная приёмка перед последним CI:
@@ -262,10 +265,10 @@ hosted runner; текущие проверки уже исполняются. Э
   четыре файла внутри ранее изменённых 16; дополнительные эталоны не менялись.
   Финальная visual проверка: **6 passed, 52.7s**, все 30 снимков.
 - Финальный release:check прошёл. Candidate **32**, DRAFT **2**, visual **6**
-  прошли в CI на предыдущем head `50799e9c`; последний head обязан пройти
-  собственные gates. Diff проверен отдельно, `git diff --check` чист.
+  прошли в CI на предыдущем head `50799e9c`; итоговый head позднее прошёл
+  собственные gates (см. итог ниже). Diff проверен отдельно, `git diff --check` чист.
 
-Merge и hosted Pages пока не объявляются выполненными.
+На этой контрольной точке merge и hosted Pages ещё не были выполнены; итог ниже.
 
 Последние Pages/Hall CI logs выявили таймауты (60s) двух длинных сценариев,
 без упавших сравнений: desktop full-flow и съёмка всех шести материалов.
@@ -276,6 +279,55 @@ Merge и hosted Pages пока не объявляются выполненны�
   сравнения, labels, screenshots, paging и Hall→Squeeze→Hall сохранены.
 - Timeout/retries/job budgets не менялись. Семь focused сценариев: **7 passed,
   1.5m**; desktop audit 22.9s, material cases 5.4/10.5/10.0s после общей подготовки.
-- Это только организация тестов; игровой runtime остаётся `e9b084dd`.
+- Это была только организация тестов; игровой runtime тогда оставался `e9b084dd`.
   Обычный Pages набор теперь содержит 84 выполняемых сценария и прежний opt-in
   skip; независимый Hall набор содержит 37 сценариев.
+
+## Итоговая публикация и приёмка — 6 октября 2026
+
+- [PR #91](https://github.com/DanilaH/squishy-squishes/pull/91) merged после
+  полного зелёного head `82fccec135ff452363bb1fc66e876ba93946e0df`;
+  merge/source `81a0ffefc9f4427892fec5dae9802b6631f5ce9d`.
+  Scope-only PR #90 закрыт: его договорённости включены в реализацию #91.
+- [Release PR](https://github.com/DanilaH/squishy-squishes/actions/runs/37384549831):
+  Browser **253 passed**, Pages **84 passed** плюс прежний opt-in skip;
+  [Hall](https://github.com/DanilaH/squishy-squishes/actions/runs/37384549660)
+  **37 passed**, включая независимый stress. Candidate **32**, DRAFT **2**.
+- [Art review](https://github.com/DanilaH/squishy-squishes/actions/runs/37384549870):
+  **18 before + 18 after + 6 visual/30 snapshots passed**. Базовые камеры,
+  все формы/материалы, edge/44px/viewport/hit assertions и tolerance сохранены.
+- Финальная runtime-поправка `7cba922f`: Light-панель получает настоящий
+  pointer/scroll input только без activity-блокировки, range-зоны 44px.
+  Мышь и native touch меняют свет, undo/redo/reload и положение сцены проверены.
+- Последние CI исправления меняют только тесты: пять матриц посадки перенесены
+  целиком в отдельный файл; строгий аудит кнопок объединён в browser evaluation
+  с реальной instant-прокруткой каждого разрешённого лотка; rich Paint использует
+  стандартную page-fixture, чтобы закрытие trace не попадало в тело теста.
+  Все 400 native mouse moves на язык, сравнения, tracing и бюджеты сохранены.
+  Focused: art **18/1.3m**, Light **3/19.4s**, зависимые Pages **14/1.3m**,
+  rich Paint **3/24.2s**. В финальном PR Browser/material evidence нет retries.
+- [Post-merge Release](https://github.com/DanilaH/squishy-squishes/actions/runs/37385882313)
+  reused проверенный архив PR после проверки дерева
+  `56b1321a0269a15761f12694338606acd288f09a`, source identity и checksum.
+  Candidate/Yandex post-merge также зелёные.
+- [Native Pages deployment](https://github.com/DanilaH/squishy-squishes/actions/runs/37385932607)
+  successful; gh-pages `8fc490fc25a3222bfcbb228b5932f0150cc71d27`,
+  commit message `Deploy 81a0ffefc9f4427892fec5dae9802b6631f5ce9d`.
+- Live entry `/squishy-squishes/assets/index-BDq6nirZ.js`, SHA-256
+  `982e26bcd98841dc3f0b6c4e4bf2cc7e6677d0770b1e37aa78a7f30ad0f8986e`.
+  HTTP 200 и совпадение JS проверены для обычного URL и version URL,
+  независимо от локальной сборки; CI `hosted-source.json` подтверждает те же bytes.
+- Первый hosted stress-job попал в 45s timeout при простых действиях браузера;
+  trace показывает быстрые HTTP запросы (максимум 411ms) и browser calls до 21s.
+  Тот же строгий stress на настоящих Pages прошёл локально **3/45.8s**.
+  Повторён только failed hosted-job, без изменений кода/проверок/лимитов:
+  job **112023120857**, **3 passed/59.7s**, основной Release attempt 2 successful.
+- Дополнительно на публичных Pages прошли **7/1.6m**: шесть browser сценариев
+  света/примерки/локальной кисти на 320/390/568, настоящего donut hole и native
+  вертикальной/горизонтальной прокрутки; плюс независимая geometry-проверка.
+  TLS validation включена; локальному Chromium добавлены уже системно доверенные
+  proxy CA, production/CI конфигурации ради этого не менялись.
+- [Играть в проверенную версию](https://danilah.github.io/squishy-squishes/?v=81a0ffefc9f4427892fec5dae9802b6631f5ce9d).
+  Ссылка и ручные проверки переданы владельцу: свободный декор/зеркальные пары,
+  свет/примерка, локальные наполнители/ластик, сохранение и повторное открытие.
+  Тактильное ощущение на физическом телефоне пока не объявляется принятым.
