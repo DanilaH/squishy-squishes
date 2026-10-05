@@ -101,7 +101,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -136,7 +136,7 @@ jobs:
         if: matrix.shard == 1
         run: npm run qa:visual
       - name: Run release browser QA
-        run: npm run qa:browser -- --shard=${{ matrix.shard }}/2
+        run: npm run qa:browser -- --shard=${{ matrix.shard }}/3
       - name: Upload passing migration baseline evidence
         if: success() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4

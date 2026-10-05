@@ -625,3 +625,14 @@ RU/EN checks traverse Shape, Paint, Mix-ins, Mix, every Decor tab and Finish on
 width. Only four desktop Decor/Finish UI baselines were changed after inspecting
 each actual/diff image: the panel moves 50px right with no other scene changes.
 The other 26 baselines remain. No material, physics, save or progression changes.
+
+## Browser CI capacity after panel centering — 5 October 2026
+
+The 212-case suite's first two-way shard contained 122 cases plus the visual
+comparison. It twice hit the unchanged 15-minute job budget without assertion
+failures (PR case 116/122 and main case 122/122). Release browser QA now uses
+three shards of the same complete suite. Pages keeps its two shards; all-shard
+aggregation, visual comparisons, shared build/checksums, retries, test/job
+timeouts and exact-tree/latest-attempt reuse stay unchanged. No tests are
+removed. This addresses the observed publication blocker without changing
+materials, interface behaviour or deployment acceptance.
