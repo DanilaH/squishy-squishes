@@ -380,7 +380,7 @@ export class SquishSimulation {
       const inverse = distance > 0.0001 ? 1 / distance : 0;
       const radialX = distance > 0.0001 ? lx * inverse : 0;
       const radialY = distance > 0.0001 ? ly * inverse : 1;
-      const kick = POKE_REBOUND_KICK * influence * (0.55 + this.pressDepth * 0.45);
+      const kick = POKE_REBOUND_KICK * (this.multiTouch && this.material === 'chrome' ? .35 : 1) * influence * (0.55 + this.pressDepth * 0.45);
       vertex.vx += radialX * kick;
       vertex.vy += radialY * kick;
     }
@@ -399,7 +399,7 @@ export class SquishSimulation {
     return GRAB_RADIUS * (1 - edge * .28);
   }
 
-  private pressRadius(): number { return this.multiTouch ? .46 : PRESS_RADIUS; }
+  private pressRadius(): number { return this.multiTouch ? this.material === 'chrome' ? .32 : .46 : PRESS_RADIUS; }
 
   private captureField(): void {
     this.capturedX = this.pointerX - this.bodyOffsetX - this.grabStartX;
@@ -411,13 +411,24 @@ export class SquishSimulation {
     }
   }
 
+  /** Linear near the hand, then continuously increasing resistance. */
+  private resistedTravel(distance: number): number {
+    if (!this.multiTouch) return Math.min(distance, MAX_POINTER_DISPLACEMENT);
+    const metallic = this.material === 'chrome', jelly = this.material === 'jelly';
+    const knee = metallic ? .06 : jelly ? 1.2 : .65;
+    const limit = metallic ? .32 : jelly ? 3.1 : 1;
+    if (distance <= knee) return distance;
+    const reserve = limit - knee, excess = distance - knee;
+    return knee + reserve * excess / (reserve + excess);
+  }
+
   private applyReleaseImpulse(): void {
     let dx = (this.pointerX - this.bodyOffsetX) - this.grabStartX;
     let dy = (this.pointerY - this.bodyOffsetY) - this.grabStartY;
     if (this.multiTouch) { dx -= this.capturedX; dy -= this.capturedY; }
     const magnitude = Math.hypot(dx, dy);
-    if (magnitude > MAX_POINTER_DISPLACEMENT) {
-      const scale = MAX_POINTER_DISPLACEMENT / magnitude;
+    if (magnitude > 0) {
+      const scale = this.resistedTravel(magnitude) / magnitude;
       dx *= scale;
       dy *= scale;
     }
@@ -427,8 +438,8 @@ export class SquishSimulation {
       const distance = Math.hypot(lx, ly);
       const dragInfluence = smoothstep01(1 - distance / this.grabRadius()) ** 2;
       const pressInfluence = smoothstep01(1 - distance / this.pressRadius()) ** 2;
-      vertex.vx -= dx * dragInfluence * RELEASE_DRAG_KICK;
-      vertex.vy -= dy * dragInfluence * RELEASE_DRAG_KICK;
+      vertex.vx -= dx * dragInfluence * RELEASE_DRAG_KICK * (this.multiTouch && this.material === 'chrome' ? .3 : 1);
+      vertex.vy -= dy * dragInfluence * RELEASE_DRAG_KICK * (this.multiTouch && this.material === 'chrome' ? .3 : 1);
       if (distance > 0.0001) {
         const kick = this.pressDepth * pressInfluence * RELEASE_PRESS_KICK;
         vertex.vx += (lx / distance) * kick;
@@ -454,8 +465,9 @@ export class SquishSimulation {
     // Same solver for every silhouette; soft/default retains the reviewed constants.
     const foam = this.multiTouch && this.material === 'marshmallow';
     const jelly = this.multiTouch && this.material === 'jelly';
-    const restResponse = foam ? .40 : jelly ? .95 : 1;
-    const dampingResponse = foam ? 1.35 : jelly ? .48 : 1;
+    const metallic = this.multiTouch && this.material === 'chrome';
+    const restResponse = foam ? .40 : jelly ? .95 : metallic ? 2.3 : 1;
+    const dampingResponse = foam ? 1.35 : jelly ? .48 : metallic ? 1.8 : 1;
     this.foamMemoryWeight *= Math.exp(-dt / .55);
     if (this.foamMemoryWeight < .0001) this.foamMemoryWeight = 0;
     const second = this.second;
@@ -474,8 +486,9 @@ export class SquishSimulation {
       ? this.grabBodyStartY + (this.pointerY - this.grabPointerStartY) * VIEWPORT_FOLLOW_RATIO
       : second ? this.bodyOffsetY : 0;
     const targetBodyMagnitude = Math.hypot(targetBodyX, targetBodyY);
-    if (targetBodyMagnitude > MAX_VIEWPORT_FOLLOW) {
-      const scale = MAX_VIEWPORT_FOLLOW / targetBodyMagnitude;
+    const bodyLimit = metallic ? .08 : MAX_VIEWPORT_FOLLOW;
+    if (targetBodyMagnitude > bodyLimit) {
+      const scale = bodyLimit / targetBodyMagnitude;
       targetBodyX *= scale;
       targetBodyY *= scale;
     }
@@ -500,8 +513,8 @@ export class SquishSimulation {
     let dy = active ? heldY - this.bodyOffsetY - this.grabStartY : 0;
     if (active && this.multiTouch) { dx -= this.capturedX; dy -= this.capturedY; }
     const magnitude = Math.hypot(dx, dy);
-    if (magnitude > MAX_POINTER_DISPLACEMENT) {
-      const scale = MAX_POINTER_DISPLACEMENT / magnitude;
+    if (magnitude > 0) {
+      const scale = this.resistedTravel(magnitude) / magnitude;
       dx *= scale;
       dy *= scale;
     }
@@ -561,7 +574,13 @@ export class SquishSimulation {
         const ly = vertex.restY - this.grabStartY;
         const grabDistance = Math.hypot(lx, ly);
         const influence = smoothstep01(1 - grabDistance / this.grabRadius());
-        const weighted = influence * influence;
+        const longPull = jelly && !second ? smoothstep01((dragMagnitude - .08) / .22) : 0;
+        const along = lx * gestureDirX + ly * gestureDirY;
+        const across = -lx * gestureDirY + ly * gestureDirX;
+        // Monotone along the pull: extending the tip must not fold the grid
+        // beyond it back toward the root. The transverse falloff stays local.
+        const tetherWeight = smoothstep01(1 + along / .9) ** 2 * Math.exp(-((across / .52) ** 2));
+        const weighted = influence * influence * (1 - longPull) + tetherWeight * longPull;
         if (this.multiTouch) {
           // Preserve the caught deformation locally. Away from the grab it
           // blends back to rest, without resetting a returning mesh on down.
@@ -572,15 +591,15 @@ export class SquishSimulation {
         }
         const pressRadius = this.pressRadius();
         const pressInfluence = smoothstep01(1 - grabDistance / pressRadius) ** 2;
-        const dent = this.multiTouch ? .20 : PRESS_DENT_STRENGTH;
+        const dent = metallic ? .065 : this.multiTouch ? .20 : PRESS_DENT_STRENGTH;
         responseInfluence = Math.max(weighted, pressInfluence * 0.9);
-        targetX += dx * weighted - lx * pressInfluence * this.pressDepth * dent;
-        targetY += dy * weighted - ly * pressInfluence * this.pressDepth * dent;
+        targetX += dx * weighted * (1 + longPull * .17) - lx * pressInfluence * this.pressDepth * dent;
+        targetY += dy * weighted * (1 + longPull * .17) - ly * pressInfluence * this.pressDepth * dent;
         if (grabDistance > 0.0001) {
           const rx = lx / grabDistance;
           const ry = ly / grabDistance;
           const ring = smoothstep01(1 - Math.abs(grabDistance - pressRadius * 0.72) / (pressRadius * 0.38));
-          const bulge = ring * this.pressDepth * (this.multiTouch ? .07 : PRESS_RING_BULGE) * (1 - pressInfluence * 0.65);
+          const bulge = ring * this.pressDepth * (metallic ? .02 : this.multiTouch ? .07 : PRESS_RING_BULGE) * (1 - pressInfluence * 0.65);
           targetX += rx * bulge;
           targetY += ry * bulge;
         }
@@ -639,8 +658,9 @@ export class SquishSimulation {
       const deformationX = vertex.x - bodyRestX;
       const deformationY = vertex.y - bodyRestY;
       const deformation = Math.hypot(deformationX, deformationY);
-      if (deformation > MAX_VERTEX_DISPLACEMENT) {
-        const scale = MAX_VERTEX_DISPLACEMENT / deformation;
+      const vertexLimit = this.multiTouch && jelly ? 3.1 : metallic ? .30 : MAX_VERTEX_DISPLACEMENT;
+      if (deformation > vertexLimit) {
+        const scale = vertexLimit / deformation;
         vertex.x = bodyRestX + deformationX * scale;
         vertex.y = bodyRestY + deformationY * scale;
         vertex.vx *= 0.55;
@@ -651,7 +671,7 @@ export class SquishSimulation {
       }
       // maxDisplacement is the deformation contract, not screen-space travel.
       // Whole-body viewport follow is published separately by the Pages adapter.
-      frameMax = Math.max(frameMax, deformation);
+      frameMax = Math.max(frameMax, Math.hypot(vertex.x - bodyRestX, vertex.y - bodyRestY));
     }
     // Extreme impulses can invert neighbouring triangles despite each vertex
     // staying inside its displacement bound. Limit only that invalid residual,
