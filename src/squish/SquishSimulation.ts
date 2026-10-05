@@ -62,6 +62,24 @@ const PINCH_MAX_COMPRESSION = .38;
 // Resist mesh folding when two fingers abruptly reverse direction.
 const PINCH_DAMPING = 30;
 
+/** One shared solver; profiles describe feel rather than silhouette-specific physics. */
+interface TactileProfile {
+  readonly knee: number; readonly travel: number;
+  readonly rest: number; readonly damping: number;
+  readonly pressRadius: number; readonly dent: number; readonly ring: number;
+  readonly holdDent: number; readonly bulge: number;
+  readonly kick: number; readonly poke: number;
+  readonly stretch: number; readonly compression: number;
+}
+const TACTILE_PROFILES: Record<MaterialId, TactileProfile> = {
+  soft: { knee: .65, travel: 1, rest: 1, damping: 1.4, pressRadius: .46, dent: .20, ring: .07, holdDent: .12, bulge: .085, kick: .65, poke: .7, stretch: .45, compression: .38 },
+  jelly: { knee: 1.2, travel: 3.1, rest: .95, damping: .48, pressRadius: .46, dent: .20, ring: .07, holdDent: 0, bulge: .085, kick: 1, poke: 1, stretch: .45, compression: .38 },
+  marshmallow: { knee: .35, travel: .65, rest: .40, damping: 1.35, pressRadius: .55, dent: .34, ring: .05, holdDent: .55, bulge: .065, kick: .25, poke: .45, stretch: .26, compression: .38 },
+  pearl: { knee: .30, travel: .78, rest: 1.65, damping: 1.3, pressRadius: .40, dent: .12, ring: .115, holdDent: 0, bulge: .14, kick: .9, poke: .9, stretch: .30, compression: .26 },
+  holo: { knee: .55, travel: .85, rest: 1.8, damping: 1.1, pressRadius: .40, dent: .16, ring: .045, holdDent: 0, bulge: .07, kick: .65, poke: .75, stretch: .40, compression: .30 },
+  chrome: { knee: .06, travel: .32, rest: 2.3, damping: 1.8, pressRadius: .32, dent: .065, ring: .02, holdDent: 0, bulge: .085, kick: .3, poke: .35, stretch: .12, compression: .12 },
+};
+
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 const clamp01 = (value: number): number => clamp(value, 0, 1);
 const smoothstep01 = (value: number): number => {
@@ -359,7 +377,7 @@ export class SquishSimulation {
     const rememberFoam = this.multiTouch && this.material === 'marshmallow' && this.gestureDurationMs > 350;
     this.cancel();
     if (rememberFoam) {
-      this.foamMemoryWeight = .28;
+      this.foamMemoryWeight = .22 + .28 * smoothstep01((this.gestureDurationMs - 350) / 1000);
       for (let i = 0; i < this.vertices.length; i++) {
         const vertex = this.vertices[i]!;
         this.foamMemory[i * 2] = vertex.x - vertex.restX - this.bodyOffsetX;
@@ -380,7 +398,7 @@ export class SquishSimulation {
       const inverse = distance > 0.0001 ? 1 / distance : 0;
       const radialX = distance > 0.0001 ? lx * inverse : 0;
       const radialY = distance > 0.0001 ? ly * inverse : 1;
-      const kick = POKE_REBOUND_KICK * (this.multiTouch && this.material === 'chrome' ? .35 : 1) * influence * (0.55 + this.pressDepth * 0.45);
+      const kick = POKE_REBOUND_KICK * (this.multiTouch ? TACTILE_PROFILES[this.material].poke : 1) * influence * (0.55 + this.pressDepth * 0.45);
       vertex.vx += radialX * kick;
       vertex.vy += radialY * kick;
     }
@@ -399,7 +417,7 @@ export class SquishSimulation {
     return GRAB_RADIUS * (1 - edge * .28);
   }
 
-  private pressRadius(): number { return this.multiTouch ? this.material === 'chrome' ? .32 : .46 : PRESS_RADIUS; }
+  private pressRadius(): number { return this.multiTouch ? TACTILE_PROFILES[this.material].pressRadius : PRESS_RADIUS; }
 
   private captureField(): void {
     this.capturedX = this.pointerX - this.bodyOffsetX - this.grabStartX;
@@ -414,9 +432,7 @@ export class SquishSimulation {
   /** Linear near the hand, then continuously increasing resistance. */
   private resistedTravel(distance: number): number {
     if (!this.multiTouch) return Math.min(distance, MAX_POINTER_DISPLACEMENT);
-    const metallic = this.material === 'chrome', jelly = this.material === 'jelly';
-    const knee = metallic ? .06 : jelly ? 1.2 : .65;
-    const limit = metallic ? .32 : jelly ? 3.1 : 1;
+    const { knee, travel: limit } = TACTILE_PROFILES[this.material];
     if (distance <= knee) return distance;
     const reserve = limit - knee, excess = distance - knee;
     return knee + reserve * excess / (reserve + excess);
@@ -438,8 +454,8 @@ export class SquishSimulation {
       const distance = Math.hypot(lx, ly);
       const dragInfluence = smoothstep01(1 - distance / this.grabRadius()) ** 2;
       const pressInfluence = smoothstep01(1 - distance / this.pressRadius()) ** 2;
-      vertex.vx -= dx * dragInfluence * RELEASE_DRAG_KICK * (this.multiTouch && this.material === 'chrome' ? .3 : 1);
-      vertex.vy -= dy * dragInfluence * RELEASE_DRAG_KICK * (this.multiTouch && this.material === 'chrome' ? .3 : 1);
+      vertex.vx -= dx * dragInfluence * RELEASE_DRAG_KICK * (this.multiTouch ? TACTILE_PROFILES[this.material].kick : 1);
+      vertex.vy -= dy * dragInfluence * RELEASE_DRAG_KICK * (this.multiTouch ? TACTILE_PROFILES[this.material].kick : 1);
       if (distance > 0.0001) {
         const kick = this.pressDepth * pressInfluence * RELEASE_PRESS_KICK;
         vertex.vx += (lx / distance) * kick;
@@ -462,13 +478,14 @@ export class SquishSimulation {
     this.strokeGraceMs = slowStroke ? 90 : Math.max(0, this.strokeGraceMs - Math.max(0, deltaMs));
     const keepStroke = slowStroke || (this.strokeGraceMs > 0 && active && !this.second && this.motionSpeed < .8);
     this.stroking += ((keepStroke ? 1 : 0) - this.stroking) * (1 - Math.exp(-8 * dt));
-    // Same solver for every silhouette; soft/default retains the reviewed constants.
+    // The owner-authorized material profiles apply only to tactile stages.
     const foam = this.multiTouch && this.material === 'marshmallow';
     const jelly = this.multiTouch && this.material === 'jelly';
     const metallic = this.multiTouch && this.material === 'chrome';
-    const restResponse = foam ? .40 : jelly ? .95 : metallic ? 2.3 : 1;
-    const dampingResponse = foam ? 1.35 : jelly ? .48 : metallic ? 1.8 : 1;
-    this.foamMemoryWeight *= Math.exp(-dt / .55);
+    const profile = TACTILE_PROFILES[this.material];
+    const restResponse = this.multiTouch ? profile.rest : 1;
+    const dampingResponse = this.multiTouch ? profile.damping : 1;
+    this.foamMemoryWeight *= Math.exp(-dt / .9);
     if (this.foamMemoryWeight < .0001) this.foamMemoryWeight = 0;
     const second = this.second;
     const axisX = second ? second.startX - this.pinchStartX : 1;
@@ -476,7 +493,7 @@ export class SquishSimulation {
     const axisLength = Math.max(.12, Math.hypot(axisX, axisY));
     const ux = axisX / axisLength, uy = axisY / axisLength;
     const separation = second ? ((second.x - this.pointerX) * ux + (second.y - this.pointerY) * uy) / axisLength - 1 : 0;
-    const pinch = clamp(separation, -PINCH_MAX_COMPRESSION, PINCH_MAX_STRETCH);
+    const pinch = clamp(separation, -(this.multiTouch ? profile.compression : PINCH_MAX_COMPRESSION), this.multiTouch ? profile.stretch : PINCH_MAX_STRETCH);
     this.stretch = second ? Math.max(0, pinch) / PINCH_MAX_STRETCH : 0;
 
     let targetBodyX = active && this.viewportFollowEnabled && !second
@@ -591,7 +608,8 @@ export class SquishSimulation {
         }
         const pressRadius = this.pressRadius();
         const pressInfluence = smoothstep01(1 - grabDistance / pressRadius) ** 2;
-        const dent = metallic ? .065 : this.multiTouch ? .20 : PRESS_DENT_STRENGTH;
+        const hold = smoothstep01((this.gestureDurationMs - 250) / 1000);
+        const dent = this.multiTouch ? profile.dent * (1 + profile.holdDent * hold) : PRESS_DENT_STRENGTH;
         responseInfluence = Math.max(weighted, pressInfluence * 0.9);
         targetX += dx * weighted * (1 + longPull * .17) - lx * pressInfluence * this.pressDepth * dent;
         targetY += dy * weighted * (1 + longPull * .17) - ly * pressInfluence * this.pressDepth * dent;
@@ -599,7 +617,7 @@ export class SquishSimulation {
           const rx = lx / grabDistance;
           const ry = ly / grabDistance;
           const ring = smoothstep01(1 - Math.abs(grabDistance - pressRadius * 0.72) / (pressRadius * 0.38));
-          const bulge = ring * this.pressDepth * (metallic ? .02 : this.multiTouch ? .07 : PRESS_RING_BULGE) * (1 - pressInfluence * 0.65);
+          const bulge = ring * this.pressDepth * (this.multiTouch ? profile.ring : PRESS_RING_BULGE) * (1 - pressInfluence * 0.65);
           targetX += rx * bulge;
           targetY += ry * bulge;
         }
@@ -607,7 +625,7 @@ export class SquishSimulation {
         const radialX = vertex.restX / radialLength;
         const radialY = vertex.restY / radialLength;
         const sideWeight = 1 - Math.abs(radialX * gestureDirX + radialY * gestureDirY);
-        const bulge = dragCompression * BULGE_STRENGTH * sideWeight * (1 - weighted * 0.75);
+        const bulge = dragCompression * (this.multiTouch ? profile.bulge : BULGE_STRENGTH) * sideWeight * (1 - weighted * 0.75);
         targetX += radialX * bulge;
         targetY += radialY * bulge;
         if (this.multiTouch && !second) {
