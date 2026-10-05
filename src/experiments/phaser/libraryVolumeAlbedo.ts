@@ -1,6 +1,6 @@
 import { REST_FACE, type FaceReaction } from '../../sandbox/toyReactions';
 import { getPalette } from '../../game/content';
-import { getShape } from '../../game/shapes';
+import { getShape, getShapeContours } from '../../game/shapes';
 import { replayAppearanceDocument } from '../../sandbox/appearance';
 import { renderSurfaceDecor } from '../../sandbox/decor';
 import type { SavedSquishy } from '../../sandbox/types';
@@ -24,13 +24,15 @@ export const renderNeutralVolumeAlbedo = (toy: SavedSquishy, reaction: FaceReact
   const halfY = size * 0.5 * 0.80 * 0.905;
   const cy = size * 0.5 + size * 0.5 * 0.80 * 0.018;
   const path = new Path2D();
-  shape.boundary.forEach((point, index) => {
+  for (const contour of getShapeContours(shape)) {
+  contour.forEach((point, index) => {
     const x = size * 0.5 + point.x * halfX;
     const y = cy - point.y * halfY;
     if (index === 0) path.moveTo(x, y);
     else path.lineTo(x, y);
   });
   path.closePath();
+  }
   const milk = getPalette('milk');
   const rgb = (color: readonly number[]): string =>
     `rgb(${color.map((channel) => Math.round(channel * 255)).join(',')})`;

@@ -1,3 +1,4 @@
+import { reachableControlIssues } from './helpers/reachableControls';
 import { expect, test, type Page } from '@playwright/test';
 
 const expectSettledLayout = async (page: Page, name: string): Promise<void> => {
@@ -18,13 +19,6 @@ const expectSettledLayout = async (page: Page, name: string): Promise<void> => {
     if (!shell || !stage || !canvas || !desk || !copy) throw new Error('Studio disappeared after resize');
     const rect = canvas.getBoundingClientRect();
     const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
-    const inaccessible = Array.from(shell.querySelectorAll<HTMLButtonElement>('.sandbox-topbar button, .sandbox-controls button'))
-      .filter((button) => button.getClientRects().length)
-      .filter((button) => {
-        const r = button.getBoundingClientRect();
-        const target = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-        return !target || !button.contains(target);
-      }).map((button) => button.dataset.action || button.textContent?.trim() || 'button');
     return {
       stageName: shell.dataset.stage,
       deskDisplay: getComputedStyle(desk).display,
@@ -32,11 +26,10 @@ const expectSettledLayout = async (page: Page, name: string): Promise<void> => {
       canvasHit: !!hit && canvas.contains(hit),
       pageWidth: document.documentElement.scrollWidth,
       viewport: { width: innerWidth, height: innerHeight },
-      inaccessible,
     };
   });
   expect(facts.canvasHit, `${name}: canvas accepts input`).toBe(true);
-  expect(facts.inaccessible, `${name}: controls remain clickable`).toEqual([]);
+  expect(await reachableControlIssues(page), `${name}: controls remain clickable`).toEqual([]);
   expect(facts.pageWidth, `${name}: no sideways scroll`).toBeLessThanOrEqual(facts.viewport.width + 2);
   if (facts.viewport.width > facts.viewport.height && facts.viewport.height <= 520) {
     expect(facts.deskDisplay, `${name}: hide desk on short landscape`).toBe('none');

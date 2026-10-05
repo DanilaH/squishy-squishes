@@ -1,11 +1,12 @@
+import { fitLibraryCraft } from './libraryCraftFit';
 import { REST_FACE, type FaceReaction } from './toyReactions';
 import { getMaterial, getPalette, type MaterialId } from '../game/content';
-import { getShape } from '../game/shapes';
+import { getShape, getShapeContours } from '../game/shapes';
 import {
   APPEARANCE_TEXTURE_SIZE,
   replayAppearanceDocument,
 } from './appearance';
-import { drawSeatedAccessories, renderSurfaceDecor } from './decor';
+import { drawPlacedAccessories, renderSurfaceDecor } from './decor';
 import type { SavedSquishy } from './types';
 
 const THUMBNAIL_SIZE = 256;
@@ -41,13 +42,15 @@ const buildShapePath = (
   const centerY = height * 0.5;
   const scale = Math.min(width, height) * 0.5 - SHAPE_PADDING;
   context.beginPath();
-  shape.boundary.forEach((point, index) => {
+  for (const contour of getShapeContours(shape)) {
+  contour.forEach((point, index) => {
     const x = centerX + point.x * scale;
     const y = centerY - point.y * scale;
     if (index === 0) context.moveTo(x, y);
     else context.lineTo(x, y);
   });
   context.closePath();
+  }
 };
 
 const materialBase = (
@@ -254,11 +257,17 @@ export const renderLibraryThumbnail = (
   context.clearRect(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 
   const shape = getShape(toy.shapeId);
+  context.save();
+  const craftScale = fitLibraryCraft(context, shape, toy.decor, pagesMaterialLighting
+    ? (u, v) => [128 + (u * 2 - 1) * 102.4 * 1.075, 128 - ((v * 2 - 1) * .905 - .018) * 102.4]
+    : (u, v) => [128 + (u * 2 - 1) * (128 - SHAPE_PADDING), 128 - (v * 2 - 1) * (128 - SHAPE_PADDING)]);
+  canvas.dataset.libraryCraftScale = craftScale.toFixed(4);
   // One shared WebGL2 renderer snapshots the *actual* Studio material once per
   // card. The Canvas2D approximation remains a functional lost-WebGL fallback.
   if (pagesMaterialLighting) delete canvas.dataset.libraryRenderer;
   if (pagesMaterialLighting && pagesRenderer?.(context, toy, THUMBNAIL_SIZE * rasterScale as 256 | 512, reaction)) {
     if (canvas.dataset.libraryRenderer !== 'volume-mesh') canvas.dataset.libraryRenderer = 'studio-shader';
+    context.restore();
     return;
   }
   if (pagesMaterialLighting) canvas.dataset.libraryRenderer = 'canvas2d-fallback';
@@ -315,9 +324,10 @@ export const renderLibraryThumbnail = (
     : toy.materialId === 'jelly' ? 'rgba(66,159,161,0.38)' : 'rgba(118,80,141,0.22)';
   context.stroke();
   context.restore();
-  if (toy.decor.accessory) {
+  if (toy.decor.accessory || toy.decor.accessories?.length) {
     const scale = THUMBNAIL_SIZE * .5 - SHAPE_PADDING;
-    drawSeatedAccessories(context, shape, toy.decor.accessory,
-      (u, v) => [THUMBNAIL_SIZE / 2 + (u * 2 - 1) * scale, THUMBNAIL_SIZE / 2 - (v * 2 - 1) * scale], 112, 75);
+    drawPlacedAccessories(context, shape, toy.decor,
+      (u, v) => [THUMBNAIL_SIZE / 2 + (u * 2 - 1) * scale, THUMBNAIL_SIZE / 2 - (v * 2 - 1) * scale], 112, 75, reaction);
   }
+  context.restore();
 };

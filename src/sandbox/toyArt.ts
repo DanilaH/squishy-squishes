@@ -1,3 +1,4 @@
+import { drawCraftAccessory } from './craftAccessoryArt';
 import { resolveAuthoredImagePath } from '../app/runtimeAssets';
 import type { AccessoryId } from './decor';
 import type { ShapeId } from '../game/shapes';
@@ -9,7 +10,7 @@ interface ToyAsset {
 }
 // Startup-required: any existing V3 toy can display its accessory in the Hall.
 // Every crop is measured from the prepared image, including a 2px alpha margin.
-const assets: Readonly<Record<AccessoryId, ToyAsset>> = {
+const assets: Readonly<Partial<Record<AccessoryId, ToyAsset>>> = {
   bow: { file: 'puffy-bow', hasAvif: true, crop: [12, 68, 232, 120] },
   'cat-ears': { file: 'cat-ears', hasAvif: true, crop: [14, 79, 228, 99] },
   'bunny-ears': { file: 'bunny-ears', hasAvif: true, crop: [14, 49, 228, 159] },
@@ -37,9 +38,10 @@ export const preloadToyArt = (): Promise<void> => {
 };
 
 export const drawToyAccessory = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, shapeId?: ShapeId, icon = false): boolean => {
+  if (drawCraftAccessory(ctx, id, width, height, icon)) return true;
   const image = images.get(id); if (!image) return false;
   ctx.save(); ctx.shadowColor = id === 'bow' ? 'rgba(108,45,76,.26)' : 'rgba(108,45,76,.22)'; ctx.shadowBlur = height * .025; ctx.shadowOffsetY = height * .018;
-  const [sx, sy, sw, sh] = assets[id].crop;
+  const [sx, sy, sw, sh] = assets[id]!.crop;
   if (id === 'bow') {
     // Preserve the owner-approved bow pixels and logical seat.
     ctx.drawImage(image, sx, sy, sw, sh, width * (icon ? .05 : .16), height * (icon ? .14 : .53), width * (icon ? .90 : .68), height * (icon ? .70 : .48));

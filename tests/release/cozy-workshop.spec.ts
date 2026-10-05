@@ -1,3 +1,4 @@
+import { reachableControlIssues } from '../phaser-pages/helpers/reachableControls';
 import { expect, test } from '@playwright/test';
 import { createDefaultSaveV3 } from '../../src/platform/saveV3';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
@@ -40,13 +41,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of views) {
           trays: [...document.querySelectorAll<HTMLElement>('.sandbox-controls, .sandbox-step-panel')]
             .filter(e => e.getClientRects().length && e.scrollHeight > e.clientHeight + 1).length,
         }))).toEqual({ x: false, y: false, trays: 0 });
-        for (const button of await page.locator('.sandbox-controls button:visible').all()) {
-          expect(await button.evaluate(e => {
-            const r = e.getBoundingClientRect();
-            const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-            return !!hit && e.contains(hit);
-          })).toBe(true);
-        }
+        expect(await reachableControlIssues(page)).toEqual([]);
         await page.screenshot({ path: info.outputPath(`cozy-${stage}.png`) });
       };
       await capture('shape');

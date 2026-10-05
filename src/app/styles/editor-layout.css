@@ -140,3 +140,104 @@
 #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-decor-toggle[aria-pressed='true'] {
   background: #f2deed; border-color: #84508f; outline: none;
 }
+
+/* Long catalogs scroll inside a fixed tray; navigation stays outside it. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] [data-panel='shape'] { grid-template-columns: 1fr; }
+#app .free-shape-catalog {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;
+  height: 160px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
+  padding: 3px; min-width: 0;
+}
+#app .free-history-bar { display: flex; justify-content: center; gap: 8px; }
+#app .free-history-bar button, #app .free-object-panel button {
+  min-height: 44px; padding: 4px 10px; border: 1px solid #ddc5d2; border-radius: 12px;
+  background: #fffdfa; color: #56375f; font: inherit; font-size: 12px; font-weight: 800;
+}
+#app .free-history-bar button:disabled { opacity: .4; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-decor-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-object-panel {
+  display: block; height: 128px; min-height: 0; overflow-y: auto;
+  overscroll-behavior: contain; touch-action: pan-y;
+}
+#app .free-object-list { display: flex; gap: 5px; overflow-x: auto; overscroll-behavior: contain; }
+#app .free-object-list button { flex-shrink: 0; }
+#app .free-object-list [aria-pressed='true'] { background: #f2deed; border-color: #84508f; }
+#app .free-object-hint { margin: 5px 0; font-size: 11px; }
+#app .free-object-panel label { display: flex; gap: 8px; align-items: center; min-height: 44px; font-size: 12px; }
+#app .free-object-panel input { flex: 1; min-width: 0; accent-color: #a16eaa; }
+#app .free-object-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+#app .sandbox-controls [hidden] { display: none !important; }
+@media (max-height: 500px) {
+  #app .free-shape-catalog { height: 112px; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-object-panel { height: 96px; }
+}
+#app .free-craft-footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#app .free-craft-footer > .sandbox-primary { min-width: 110px; width: auto; margin: 0; }
+#app .sandbox-finish-actions:has(.free-history-bar) { display: flex; gap: 6px; }
+#app .sandbox-finish-actions:has(.free-history-bar) > button { flex: 1; min-width: 0; }
+#app .free-history-bar button { font-size: 11px; padding-inline: 8px; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-object-panel > label { display: flex; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] [data-decor-panel='accessory'] { display: block; min-height: 0; overflow: hidden; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] [data-decor-panel='accessory'] > .sandbox-decor-grid {
+  height: 100%; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; align-content: start;
+}
+#app .free-color-choices { display: flex; gap: 5px; overflow-x: auto; overscroll-behavior: contain; }
+#app .free-color-choices button { color: var(--craft-color); font-size: 24px; min-width: 44px; flex-shrink: 0; padding: 0; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-object-panel > label {
+  position: static; width: auto; height: auto; clip-path: none; overflow: visible;
+}
+#app .free-mixin-catalog { grid-column: 1 / -1; height: 150px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+#app .free-mixin-catalog .sandbox-mixin-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+#app .free-mixin-settings label, #app .free-light-panel label { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 12px; }
+#app .free-mixin-settings input, #app .free-light-panel input { flex: 1; min-width: 0; accent-color: #a16eaa; }
+#app .free-finish-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; grid-column: 1 / -1; }
+#app .sandbox-shell[data-stage='finish'] .free-finish-tabs > button { min-height: 44px !important; }
+#app .free-light-panel { grid-column: 1 / -1; height: 144px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+#app .sandbox-shell[data-stage='finish']:not(.is-blocked) .free-light-panel { pointer-events: auto; }
+#app .free-light-panel input { height: 44px; margin-block: 0; }
+#app .free-light-presets { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; }
+#app .sandbox-shell[data-stage='finish'] .free-light-panel button { min-height: 44px !important; }
+#app .free-try-return { position: absolute; bottom: 22px; left: 50%; translate: -50% 0; z-index: 20; min-height: 48px; padding: 10px 20px; border: 1px solid #c7a9bc; border-radius: 18px; background: #fff7ed; color: #56375f; font: inherit; font-weight: 800; }
+#app [data-try-on='true'] .sandbox-controls { visibility: hidden; pointer-events: none; }
+@media (max-height: 500px) { #app .free-mixin-catalog { height: 128px; } #app .free-light-panel { height: 128px; } }
+#app .free-face-foreground { position: absolute; z-index: 9; pointer-events: none; }
+#app .free-face-foreground[hidden] { display: none; }
+
+/* Primary actions stay visible beside the global history. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-craft-footer > .sandbox-primary { min-height: 44px !important; }
+#app .free-history-bar { gap: 4px; flex-shrink: 0; }
+#app .free-history-bar button { width: 44px; min-width: 44px; padding: 0; font-size: 21px; }
+#app .sandbox-finish-actions:has(.free-history-bar) > .sandbox-primary { min-width: 112px; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-craft-footer > [data-action='shape-continue'] { width: 144px; min-height: 50px !important; flex-shrink: 0; }
+#app .free-craft-footer > [data-action='decor-continue'] { width: 144px; }
+@media (max-width: 520px) {
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-decor-tabs > button { padding-inline: 3px; font-size: 11px; gap: 0; }
+  #app .sandbox-decor-tabs .decor-tab-icon { display: none; }
+}
+/* Shared craft structure remains usable in diagnostics and decoded-art fallback. */
+#app .sandbox-controls { position: relative; z-index: 3; }
+#app .sandbox-panel[data-panel='shape'] { grid-template-columns: 1fr; }
+#app .free-shape-catalog { grid-column: 1 / -1; }
+#app .sandbox-decor-tabs { grid-template-columns: repeat(4,minmax(0,1fr)); }
+#app .free-object-panel { display: block; height: 128px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+#app [data-decor-panel='accessory'] > .sandbox-decor-grid { max-height: 128px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+#app .free-object-panel > label { display: flex; position: static; width: auto; height: auto; clip-path: none; overflow: visible; }
+@media (max-height: 500px) { #app .free-object-panel { height: 96px; } }
+
+/* Same molded objects in the tray and on the toy; retain existing hit geometry. */
+.sandbox-mixin > span:has(.toy-choice-art),
+.sandbox-decor-choice > span:has(.toy-choice-art) { width: 100%; min-width: 0; }
+.toy-choice-art {
+  display: block; width: 48px; max-width: 100%; height: auto; max-height: 28px;
+  margin-inline: auto; pointer-events: none;
+}
+/* Glyph history controls need one icon, including the decoded-art profile. */
+#app[data-jelly-ui-ready] .sandbox-shell [data-action$='-undo']::before { display: none !important; }
+/* Object lists and colours need horizontal swipes inside vertical settings. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-object-panel,
+#app .free-object-panel { touch-action: pan-x pan-y; }
+/* Keep complete Finish actions inside the shared 248px short-phone tray. */
+@media (max-height: 620px) and (orientation: portrait) {
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='finish'] .sandbox-material { min-height: 60px !important; }
+  #app .free-light-panel { height: 128px; }
+}

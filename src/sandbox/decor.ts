@@ -1,5 +1,8 @@
+import { drawCraftAccessory } from './craftAccessoryArt';
+import { drawFaceForeground } from './faceForeground';
+import { withFaceTransform, accessoryPlacements, composeAccessory, type AccessoryPlacement, type FaceTransform, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
 import { REST_FACE, type FaceReaction } from './toyReactions';
-import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats, type AccessorySeat } from './accessorySeats';
+import { getFaceCenterY, getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats, type AccessorySeat } from './accessorySeats';
 import { getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
 
@@ -8,7 +11,7 @@ export const MAX_DECOR_STICKERS = 128;
 export const EYE_STYLE_IDS = ['dot', 'happy', 'sleepy'] as const;
 export const MOUTH_STYLE_IDS = ['smile', 'o', 'cat'] as const;
 export const STICKER_IDS = ['heart', 'star', 'flower', 'sparkle'] as const;
-export const ACCESSORY_IDS = ['cat-ears', 'bunny-ears', 'horns', 'bow', 'crown'] as const;
+export const ACCESSORY_IDS = ['cat-ears', 'bunny-ears', 'horns', 'bow', 'crown', 'glasses', 'headphones', 'bucket-hat', 'petal-flower', 'leaves', 'butterfly', 'cream', 'cherry', 'heart-patch', 'handbag', 'wings'] as const;
 
 export type EyeStyleId = (typeof EYE_STYLE_IDS)[number];
 export type MouthStyleId = (typeof MOUTH_STYLE_IDS)[number];
@@ -16,6 +19,8 @@ export type StickerId = (typeof STICKER_IDS)[number];
 export type AccessoryId = (typeof ACCESSORY_IDS)[number];
 
 export interface StickerPlacementV1 {
+  readonly home?: readonly [number, number];
+  readonly locked?: true;
   readonly t: number;
   readonly x: number;
   readonly y: number;
@@ -30,9 +35,11 @@ export interface DecorDocumentV1 {
   readonly blush: boolean;
   readonly stickers: readonly StickerPlacementV1[];
   readonly accessory: AccessoryId | null;
+  readonly accessories?: readonly AccessoryPlacement[];
+  readonly face?: FaceTransform;
 }
 
-type EncodedStickerPlacementV1 = readonly [number, number, number, number, number];
+type EncodedStickerPlacementV1 = readonly [number, number, number, number, number] | readonly [number, number, number, number, number, 1] | readonly [number, number, number, number, number, 0 | 1, readonly [number, number]];
 
 interface EncodedDecorDocumentV1 {
   readonly v: 1;
@@ -41,6 +48,8 @@ interface EncodedDecorDocumentV1 {
   readonly b?: 1;
   readonly s?: readonly EncodedStickerPlacementV1[];
   readonly a?: AccessoryId;
+  readonly items?: readonly AccessoryPlacement[];
+  readonly f?: FaceTransform;
 }
 
 export interface DecorFrame {
@@ -113,15 +122,21 @@ const readByte = (value: unknown, field: string): number => {
 };
 
 const readSticker = (value: unknown): StickerPlacementV1 => {
+  let locked: unknown;
+  let home: unknown;
   let tRaw: unknown;
   let xRaw: unknown;
   let yRaw: unknown;
   let sRaw: unknown;
   let rRaw: unknown;
   if (Array.isArray(value)) {
-    if (value.length !== 5) throw new TypeError('Compact decor sticker tuple is invalid.');
-    [tRaw, xRaw, yRaw, sRaw, rRaw] = value;
+    if (value.length !== 5 && value.length !== 6 && value.length !== 7) throw new TypeError('Compact decor sticker tuple is invalid.');
+    [tRaw, xRaw, yRaw, sRaw, rRaw, locked, home] = value;
+    if (value.length === 7 && locked === 0) locked = undefined;
+    if (value.length === 7 && home === undefined) throw new TypeError('Sticker home is missing.');
   } else if (isRecord(value)) {
+    locked = value.locked === true ? 1 : value.locked;
+    home = value.home;
     tRaw = value.t;
     xRaw = value.x;
     yRaw = value.y;
@@ -130,11 +145,15 @@ const readSticker = (value: unknown): StickerPlacementV1 => {
   } else {
     throw new TypeError('Decor sticker must be an object or compact tuple.');
   }
+  if (home !== undefined && (!Array.isArray(home) || home.length !== 2)) throw new TypeError('Sticker home is invalid.');
+  if (locked !== undefined && locked !== 1) throw new TypeError('Decor sticker lock is invalid.');
   const t = readByte(tRaw, 'sticker type');
   if (t >= STICKER_IDS.length) throw new TypeError('Decor sticker type is unknown.');
   const s = readByte(sRaw, 'sticker size');
   if (s < 14 || s > 72) throw new TypeError('Decor sticker size is out of range.');
   return {
+    ...(home === undefined ? {} : { home: [readByte((home as unknown[])[0], 'sticker home x'), readByte((home as unknown[])[1], 'sticker home y')] as const }),
+    ...(locked === 1 ? { locked: true as const } : {}),
     t,
     x: readByte(xRaw, 'sticker x'),
     y: readByte(yRaw, 'sticker y'),
@@ -161,7 +180,11 @@ export const decodeDecorDocument = (value: unknown): DecorDocumentV1 => {
   const stickersRaw = value.stickers !== undefined ? value.stickers : (value.s ?? []);
   if (!Array.isArray(stickersRaw)) throw new TypeError('Decor stickers must be an array.');
   if (stickersRaw.length > MAX_DECOR_STICKERS) throw new TypeError('Decor has too many stickers.');
+  const items = value.accessories ?? value.items;
+  const face = value.face ?? value.f;
   return {
+    ...(items === undefined ? {} : { accessories: readAccessoryPlacements(items) }),
+    ...(face === undefined ? {} : { face: readFaceTransform(face) }),
     v: 1,
     eyes: readNullableKnownId<EyeStyleId>(eyesRaw, eyeIdSet, 'eyes'),
     mouth: readNullableKnownId<MouthStyleId>(mouthRaw, mouthIdSet, 'mouth'),
@@ -179,20 +202,22 @@ export const encodeDecorDocument = (decor: DecorDocumentV1): EncodedDecorDocumen
     b?: 1;
     s?: EncodedStickerPlacementV1[];
     a?: AccessoryId;
+    items?: readonly AccessoryPlacement[];
+    f?: FaceTransform;
   } = { v: 1 };
   if (decor.eyes !== null) encoded.e = decor.eyes;
   if (decor.mouth !== null) encoded.m = decor.mouth;
   if (decor.blush) encoded.b = 1;
   if (decor.stickers.length > 0) {
-    encoded.s = decor.stickers.map((placement) => [
-      placement.t,
-      placement.x,
-      placement.y,
-      placement.s,
-      placement.r,
-    ] as const);
+    encoded.s = decor.stickers.map(p => p.home
+      ? [p.t, p.x, p.y, p.s, p.r, p.locked ? 1 : 0, p.home] as const
+      : p.locked
+      ? [p.t, p.x, p.y, p.s, p.r, 1] as const
+      : [p.t, p.x, p.y, p.s, p.r] as const);
   }
   if (decor.accessory !== null) encoded.a = decor.accessory;
+  if (decor.accessories !== undefined) encoded.items = decor.accessories;
+  if (decor.face !== undefined) encoded.f = decor.face;
   return encoded;
 };
 
@@ -237,9 +262,9 @@ export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | n
   const height = Math.max(0.3, maxY - minY);
   const centerX = (minX + maxX) * 0.5;
   const centerY = (minY + maxY) * 0.5;
-  const faceY = centerY + (shape.id === 'dumpling' ? -height * .085 : shape.id === 'paw' ? -height * .045 : shape.id === 'strawberry' ? -height * .02 : 0);
+  const faceY = getFaceCenterY(shape, centerY, height);
   const eyeY = faceY + height * 0.085;
-  const eyeDx = width * 0.135;
+  const eyeDx = width * (shape.id === 'donut' ? .11 : .135);
   const mouthY = faceY - height * 0.075;
   const blushY = faceY - height * 0.015;
   const blushDx = width * 0.225;
@@ -458,6 +483,7 @@ export const renderSurfaceFace = (
   shape: ShapeDefinition,
   reaction: FaceReaction = REST_FACE,
 ): void => {
+  withFaceTransform(context, decor, shape, () => {
   const frame = getDecorFrame(shape);
   if (pagesDecorArt) { pagesDecorArt.renderFace(context, decor, shape, frame, reaction); return; }
   if (decor.eyes) {
@@ -469,6 +495,7 @@ export const renderSurfaceFace = (
     drawBlush(context, frame.blushLeft);
     drawBlush(context, frame.blushRight);
   }
+  });
 };
 
 export const renderSurfaceStickers = (
@@ -495,7 +522,7 @@ export const renderSurfaceDecor = (
   reaction: FaceReaction = REST_FACE,
 ): void => {
   const frame = getDecorFrame(shape);
-  if (pagesDecorArt && reaction === REST_FACE) { pagesDecorArt.render(context, decor, shape, frame); return; }
+  if (pagesDecorArt && reaction === REST_FACE && !decor.face) { pagesDecorArt.render(context, decor, shape, frame); return; }
   renderSurfaceStickers(context, decor, shape);
   renderSurfaceFace(context, decor, shape, reaction);
 };
@@ -507,6 +534,8 @@ export const drawAccessoryGraphic = (
   height: number,
   shapeId?: ShapeId,
 ): void => {
+  context.clearRect(0, 0, width, height);
+  if (drawCraftAccessory(context, accessory, width, height)) return;
   if (pagesDecorArt) { pagesDecorArt.accessory(context, accessory, width, height, shapeId); return; }
   context.clearRect(0, 0, width, height);
   const cx = width * 0.5;
@@ -618,7 +647,11 @@ export const drawAccessoryGraphic = (
 };
 
 /** One half of the approved art, mirrored from the same left ear/horn. */
-export const drawAccessoryPiece = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, side: AccessorySeat['side']): void => {
+export const drawAccessoryPiece = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, side: AccessorySeat['side'], mirrored = false): void => {
+  if (mirrored) {
+    ctx.save(); ctx.translate(width, 0); ctx.scale(-1, 1);
+    drawAccessoryPiece(ctx, id, width, height, side); ctx.restore(); return;
+  }
   if (side === 'whole') { drawAccessoryGraphic(ctx, id, width, height); return; }
   const source = document.createElement('canvas'); source.width = 180; source.height = 120;
   const sourceContext = source.getContext('2d'); if (!sourceContext) return;
@@ -643,4 +676,47 @@ export const drawSeatedAccessories = (ctx: CanvasRenderingContext2D, shape: Shap
     ctx.drawImage(source, -width / 2, -height * getAccessorySeatFactor(shape, id), width, height); ctx.restore();
   }
   ctx.restore();
+};
+
+const readNumber = (value: unknown, low: number, high: number, name: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < low || value > high) throw new TypeError(`Decor ${name} is invalid.`);
+  return value;
+};
+const readFaceTransform = (value: unknown): FaceTransform => {
+  if (!isRecord(value)) throw new TypeError('Decor face transform is invalid.');
+  return { x: readByte(value.x, 'face x'), y: readByte(value.y, 'face y'), s: readNumber(value.s, .45, 1.65, 'face scale') };
+};
+const readAccessoryPlacements = (value: unknown): readonly AccessoryPlacement[] => {
+  if (!Array.isArray(value) || value.length > MAX_ACCESSORY_PLACEMENTS) throw new TypeError('Decor accessory list is invalid.');
+  return value.map(item => {
+    if (!isRecord(item) || !['whole', 'left', 'right'].includes(String(item.side))
+      || (item.locked !== undefined && item.locked !== true)
+      || (item.mirrored !== undefined && item.mirrored !== true)) throw new TypeError('Decor accessory placement is invalid.');
+    const a = readNullableKnownId<AccessoryId>(item.a, accessoryIdSet, 'accessory');
+    if (!a) throw new TypeError('Placed accessory must have a type.');
+    const color = item.color === undefined ? undefined : readNumber(item.color, 0, 0xffffff, 'accessory color');
+    if (color !== undefined && !Number.isInteger(color)) throw new TypeError('Decor color must be an integer.');
+    return { a, x: readByte(item.x, 'accessory x'), y: readByte(item.y, 'accessory y'),
+      s: readNumber(item.s, .25, 2.5, 'accessory scale'), r: readNumber(item.r, -Math.PI * 2, Math.PI * 2, 'accessory rotation'),
+      side: item.side as AccessoryPlacement['side'], ...(item.locked ? { locked: true as const } : {}), ...(item.mirrored ? { mirrored: true as const } : {}), ...(color === undefined ? {} : { color }) };
+  });
+};
+
+export const drawPlacedAccessories = (ctx: CanvasRenderingContext2D, shape: ShapeDefinition, decor: DecorDocumentV1,
+  project: (u: number, v: number) => readonly [number, number], width: number, height: number, reaction: FaceReaction = REST_FACE): void => {
+  if (!decor.accessories) {
+    if (decor.accessory) drawSeatedAccessories(ctx, shape, decor.accessory, project, width, height);
+    return;
+  }
+  for (const placement of accessoryPlacements(decor, shape)) {
+    ctx.save();
+    if (getAccessoryDepth(placement.a) === 'rear') ctx.globalCompositeOperation = 'destination-over';
+    composeAccessory(ctx, shape, placement, project, width, height, drawAccessoryPiece);
+    ctx.restore();
+  }
+  if(decor.eyes||decor.mouth){
+    const face=document.createElement('canvas');face.width=face.height=256;
+    renderSurfaceFace(face.getContext('2d')!,{...decor,blush:false},shape,reaction);
+    drawFaceForeground(ctx,face,shape,(u,v)=>{const [x,y]=project(u,v);return{x,y};});
+  }
 };

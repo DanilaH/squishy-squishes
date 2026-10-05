@@ -11,9 +11,9 @@ test('viewport containment has a true inverse on the visible range', () => {
 
 for (const shape of SHAPES) test(`visible triangle UVs and returning edge can be grabbed: ${shape.id}`, () => {
   const sim = new SquishSimulation(shape); sim.setTactileFeatures(true); sim.setViewportFollowEnabled(true);
-  expect(sim.begin(1, 0, 0)).toBe(true);
+  expect(sim.begin(1, shape.holes ? .6 : 0, 0)).toBe(true);
   for (let f = 1; f <= 30; f++) { sim.move(1, .75, .25); sim.advance(16, f * 16); }
-  for (const [u, v] of [[.5, .5], [.625, .525], [.575, .625]]) {
+  for (const [u, v] of (shape.holes ? [[.8, .5], [.825, .525], [.775, .625]] : [[.5, .5], [.625, .525], [.575, .625]])) {
     const p = sim.projectUvToLocal(u!, v!), hit = sim.surfacePointToUv(p.x, p.y);
     expect(hit?.u).toBeCloseTo(u!, 6); expect(hit?.v).toBeCloseTo(v!, 6);
   }

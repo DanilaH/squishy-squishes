@@ -1,3 +1,4 @@
+import { reachableControlIssues } from './helpers/reachableControls';
 import { expect, test, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 
@@ -43,13 +44,6 @@ const measureAndPreview = async (page: Page) => page.evaluate(() => {
   });
   overlay.append(desk);
   stage.insertBefore(overlay, stage.firstChild);
-  const btns = [...shell.querySelectorAll<HTMLButtonElement>('.sandbox-controls button, .sandbox-topbar button')]
-    .filter(b => b.getClientRects().length > 0);
-  const hitIssues = btns.filter(b => {
-    const r = b.getBoundingClientRect();
-    const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    return !el || !b.contains(el);
-  }).map(b => b.dataset.action || b.textContent?.trim() || '(button)');
   return {
     stage: shell.dataset.stage, viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
     shell: rect(shell), topbar: rect(shell.querySelector('.sandbox-topbar')),
@@ -58,7 +52,7 @@ const measureAndPreview = async (page: Page) => page.evaluate(() => {
     primaryButton: rect(shell.querySelector('.sandbox-panel .sandbox-primary')),
     firstChoice: rect(shell.querySelector('.sandbox-shape, .sandbox-swatch')),
     deskProxy: { top: +tableTop.toFixed(2), visibleDepth: +freeDepth.toFixed(2), toyBottomProxy: +toyBottomProxy.toFixed(2), note: 'toyBottomProxy is an 80% CANVAS heuristic, NOT measured toy silhouette' },
-    hitIssues, documentScrollWidth: document.documentElement.scrollWidth,
+    documentScrollWidth: document.documentElement.scrollWidth,
   };
 });
 
@@ -73,20 +67,21 @@ for (const d of devices) {
       await page.locator('[data-library-new]').first().click();
       const shell = page.locator('[data-sandbox-app]');
       await expect(shell).toHaveAttribute('data-stage', 'shape');
-      const shape = await measureAndPreview(page);
+      const shape = { ...await measureAndPreview(page), hitIssues: await reachableControlIssues(page) };
+      expect(shape.hitIssues).toEqual([]);
       await page.screenshot({ path: info.outputPath(`studio-gate1-${d.name}-shape.png`), animations: 'disabled' });
       await page.locator('button[data-shape="heart"]').click();
       await page.locator('[data-action="shape-continue"]').click();
       await expect(shell).toHaveAttribute('data-stage', 'paint');
-      const paint = await measureAndPreview(page);
+      const paint = { ...await measureAndPreview(page), hitIssues: await reachableControlIssues(page) };
+      expect(paint.hitIssues).toEqual([]);
       await page.screenshot({ path: info.outputPath(`studio-gate1-${d.name}-paint.png`), animations: 'disabled' });
       await writeFile(info.outputPath(`studio-gate1-${d.name}-layout.json`), JSON.stringify({ source: 'actual Phaser Pages DOM in Chromium', device: d, shape, paint }, null, 2));
       expect(shape.canvas?.width, 'shape canvas must exist').toBeGreaterThan(0);
       expect(paint.canvas?.width, 'paint canvas must exist').toBeGreaterThan(0);
       expect(shape.documentScrollWidth).toBeLessThanOrEqual(d.width + 2);
       expect(paint.documentScrollWidth).toBeLessThanOrEqual(d.width + 2);
-      expect(shape.hitIssues).toEqual([]);
-      expect(paint.hitIssues).toEqual([]);
+
     } finally {
       await context.close();
     }

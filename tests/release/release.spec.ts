@@ -1,3 +1,4 @@
+import { SHAPES } from '../../src/game/shapes';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
   createAppearanceStroke,
@@ -316,9 +317,9 @@ test('Pages production build boots into an empty personal Library and all eight 
 
   const shell = page.locator('[data-sandbox-app]');
   await expect(shell).toHaveAttribute('data-stage', 'shape');
-  await expect(page.locator('.sandbox-shape')).toHaveCount(8);
+  await expect(page.locator('.sandbox-shape')).toHaveCount(15);
   await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);
-  for (const shapeId of FIXTURE_SHAPES) {
+  for (const shapeId of SHAPES.map(shape => shape.id)) {
     await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();
     await expect(shell).toHaveAttribute('data-shape', shapeId);
   }
@@ -600,7 +601,7 @@ test('S3 Decor authors identity through real UI, preserves paint/mix-ins, saves,
   await page.locator('[data-decor-sticker="flower"]').click();
   await page.mouse.click(decorCx + 34, decorCy + 28);
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '2');
-  await page.locator('[data-action="decor-undo"]').click();
+  await page.locator('[data-panel="decor"] [data-action="draft-undo"]').click();
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
   await page.locator('[data-action="decor-clear"]').click();
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');

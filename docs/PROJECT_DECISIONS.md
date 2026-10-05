@@ -690,3 +690,64 @@ This run also incurred a 265s system/Chromium installation on one runner and
 about five minutes of queueing for the final Pages aggregate. These network and
 runner delays must be reported separately from test execution; the measurements
 are not a guaranteed end-to-end budget. No tests or baselines were removed.
+
+
+## Free craft scope and selective scrolling — 6 October 2026
+
+The owner approved the complete scope in
+[FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md](FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md).
+It includes object transforms/combinations/locks/mirroring, face transforms,
+local mix-in editing, movable/preset lighting, try-on, contextual UI, eleven
+accessory groups (wings are a left/right pair), the agreed mix-ins/color variants,
+seven forms including a real donut hole, and four Library atmosphere directions.
+Implementation and evidence are tracked separately; recording this scope ships
+no game feature. Preserve old V3 saves, material feel and the pastel volume style.
+Existing hearts/confetti must be audited and improved where needed rather than
+assigned duplicate content IDs. The later traditional-shape list supersedes
+the initial cloud/flower/drop proposal. Selectable stands and toy names remain
+deferred; they are not part of the approved Library subset.
+
+The former global no-scroll instruction is superseded: the page and game scene
+stay fixed, while long catalogs/settings may scroll internally when appropriate.
+Primary actions, undo and stage navigation stay visible with touch gesture
+ownership and 44px Paint targets. The donut authorizes minimal shared geometry
+changes for an actual hole in rendering, hits and paint; it does not authorize
+per-shape physics or another renderer. No liquids/heating/experimental simulator
+is included. Publication still requires the final head's PR checks and actual
+hosted acceptance, not a deadline or a successful local build.
+
+### Free-craft implementation boundaries — 6 October 2026
+
+Optional V1 decor placement/face fields and appearance light/brush fields retain
+V3 and exact old compact encoding. Existing filler ordinals stay fixed. Paired
+pieces share authored art and independent transforms; the complete face remains
+above front gear through the same projected mesh. History stores immutable drafts
+and coalesces pointer/slider gestures into one action; cancelled placement restores
+the original document. It replaces the former separate per-tool history arrays.
+
+The canonical shape definition now supplies inner contours. SDF, hit tests,
+authoring masks, SVG previews and front/back rim strips all use that definition;
+the donut retains the generic 289-vertex simulation. An observed interpolated
+watermelon contour crossed the generic floor by 0.00528 after mesh ordering. A
+residual rigid mesh translation corrects contact without changing triangle areas
+or any reviewed material spring/response constants. The 90 form/material extreme
+reversal matrix passed locally after that correction.
+
+Historical candidate entrypoints import the shared editor layout so catalog growth
+also remains usable in their fallback UI. Long catalogs/settings alone may scroll;
+button reachability tests visit every item through those trays while preserving
+page overflow and 44px checks. Static Hall snapshots frame enlarged free gear as
+one composition, retaining the ordinary toy camera when its art already fits.
+No per-card GPU context or persistent frame loop is added for this framing/props.
+
+
+### Long capture cases after catalog expansion
+
+Observed PR CI exceeded the unchanged 60s test budget in the English desktop
+full-flow audit and the six-material Hall/Studio capture. Caption/viewport/hit
+checks now run in one browser evaluation, still scrolling and inspecting each
+catalog element. Material evidence is split into the numerical/phone comparison
+and two desktop pairs, all derived from one genuinely created/saved Studio toy
+in beforeAll. All six material comparisons, images, labels, paging and
+Hall/Studio transitions remain; test/job timeouts and retries are unchanged.
+This changes test organization only, not runtime, materials or visual thresholds.

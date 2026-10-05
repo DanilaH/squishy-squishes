@@ -34,10 +34,10 @@ test('M2: Phaser owns one transparent WebGL2 canvas and actually draws the origi
   await testInfo.attach('phaser-candidate-desktop', { body: shot, contentType: 'image/png' });
 });
 
-test('M2: all eight canonical shapes and six materials and a real drag/release work with shared physics', async ({ page }) => {
+test('M2: all fifteen canonical shapes and six materials and a real drag/release work with shared physics', async ({ page }) => {
   await page.setViewportSize({ width: 1100, height: 760 });
   await openCandidate(page);
-  for (const shape of ['heart', 'mochi', 'peach', 'mushroom', 'paw', 'soft-square', 'dumpling', 'strawberry']) {
+  for (const shape of ['heart', 'mochi', 'peach', 'mushroom', 'paw', 'soft-square', 'dumpling', 'strawberry', 'bun', 'ice-cream', 'cupcake', 'watermelon', 'mochi-cat', 'mochi-bunny', 'donut']) {
     await page.locator(`[data-candidate-shape="${shape}"]`).click();
     await expect(page.locator('[data-candidate-stage]')).toHaveAttribute('data-shape', shape);
   }
@@ -45,6 +45,7 @@ test('M2: all eight canonical shapes and six materials and a real drag/release w
     await page.locator(`[data-candidate-material="${material}"]`).click();
     await expect(page.locator('[data-candidate-stage]')).toHaveAttribute('data-material', material);
   }
+  await page.locator('[data-candidate-shape="soft-square"]').click();
   const bounds = await page.locator('#phaser-candidate-stage canvas').boundingBox();
   if (!bounds) throw new Error('Candidate canvas missing');
   const x = bounds.x + bounds.width / 2;

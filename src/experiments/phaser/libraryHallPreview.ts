@@ -1,3 +1,4 @@
+import { libraryCraftProps } from './libraryCraftProps';
 import './libraryHallPreview.css';
 
 // The six room pieces and ground shadow are derived from owner's 223c843 PNGs.
@@ -99,7 +100,7 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
     const scene = document.createElement('div');
     scene.className = 'library-hall-scene';
     scene.setAttribute('aria-hidden', 'true');
-    scene.innerHTML = `<div class="library-hall-scene__wall"></div><div class="library-hall-scene__floor"></div><div class="library-hall-scene__cabinet"></div><div class="library-hall-scene__shelf"></div><div class="library-hall-scene__plant"></div>`;
+    scene.innerHTML = `<div class="library-hall-scene__wall"></div><div class="library-hall-scene__floor"></div><div class="library-hall-scene__cabinet"></div><div class="library-hall-scene__shelf"></div><div class="library-hall-scene__plant"></div>${libraryCraftProps()}`;
     scene.style.setProperty('--hall-wall', `url("${art.wall}")`);
     scene.style.setProperty('--hall-floor', `url("${art.floor}")`);
     scene.style.setProperty('--hall-cabinet', `url("${decodedArt.get(art.cabinet) ?? art.cabinet}")`);

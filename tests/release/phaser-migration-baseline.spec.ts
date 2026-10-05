@@ -65,6 +65,7 @@ test('M0: current save key, shape/material IDs and textured V3 document remain r
   expect(SAVE_V3_STORAGE_KEY).toBe('squishy.save.v3');
   expect(SHAPES.map((shape) => shape.id)).toEqual([
     'soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw', 'dumpling', 'strawberry',
+    'bun', 'ice-cream', 'cupcake', 'watermelon', 'mochi-cat', 'mochi-bunny', 'donut',
   ]);
   expect(MATERIALS.map((material) => material.id)).toEqual([
     'soft', 'jelly', 'holo', 'marshmallow', 'pearl', 'chrome',
@@ -113,7 +114,7 @@ for (const viewport of [
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
     const canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toBeVisible();
-    await expect(page.locator('.sandbox-shape[data-shape]')).toHaveCount(8);
+    await expect(page.locator('.sandbox-shape[data-shape]')).toHaveCount(15);
     expect(await canvas.evaluate((node) => (node as HTMLCanvasElement)
       .getContext('webgl2')?.getContextAttributes()?.alpha)).toBe(true);
     const box = await canvas.boundingBox();

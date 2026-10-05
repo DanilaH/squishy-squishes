@@ -180,13 +180,6 @@
   #app .is-library-hall .library-hall-stage .sandbox-library-grid { padding-bottom: 32px; }
 }
 
-/* Same molded objects in the tray and on the toy; retain existing hit geometry. */
-.sandbox-mixin > span:has(.toy-choice-art),
-.sandbox-decor-choice > span:has(.toy-choice-art) { width: 100%; min-width: 0; }
-.toy-choice-art {
-  display: block; width: 48px; max-width: 100%; height: auto; max-height: 28px;
-  margin-inline: auto; pointer-events: none;
-}
 .toy-star-sprinkle {
   position: absolute; z-index: 8; width: 48px; height: 28px;
   background-size: contain; background-repeat: no-repeat;

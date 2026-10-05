@@ -22,7 +22,8 @@ test('extreme single and two-finger reversals keep every mold mesh ordered and a
     simulation.setTactileFeatures(true, material.id); simulation.setViewportFollowEnabled(true);
     const floor = Math.min(...shape.boundary.map(p => p.y)) - .10;
     for (const [dx, dy] of [[3, 0], [-3, 0], [0, -3], [3, -3]]) {
-      simulation.begin(1, 0, 0);
+      const grab = simulation.projectUvToLocal(shape.holes ? .8 : .5, .5);
+      expect(simulation.begin(1, grab.x, grab.y), `${shape.id}/${material.id} regrab`).toBe(true);
       let smallestArea = Infinity, lowestFloorMargin = Infinity;
       for (let f = 0; f < 48; f++) {
         simulation.move(1, f % 8 < 4 ? dx! : -dx!, dy!);
@@ -39,7 +40,7 @@ test('extreme single and two-finger reversals keep every mold mesh ordered and a
     }
     const pinch = new SquishSimulation(shape);
     pinch.setTactileFeatures(true, material.id); pinch.setViewportFollowEnabled(true);
-    expect(pinch.begin(1, -.15, 0)).toBe(true); expect(pinch.begin(2, .15, 0)).toBe(true);
+    expect(pinch.begin(1, shape.holes ? -.5 : -.15, 0)).toBe(true); expect(pinch.begin(2, shape.holes ? .5 : .15, 0)).toBe(true);
     let smallestArea = Infinity;
     for (let f = 0; f < 48; f++) {
       const gap = f % 8 < 4 ? 3 : .01;
@@ -85,10 +86,17 @@ for (const [locale, width, height] of [['ru-RU', 320, 568], ['en-US', 390, 844],
       await mkdir('migration-baseline-evidence', { recursive: true });
       for (const section of ['face', 'stickers', 'accessory']) {
         await page.locator(`button[data-decor-section="${section}"]`).click();
+        for (const choice of await page.locator(`[data-decor-panel="${section}"] button`).all()) {
+          await choice.scrollIntoViewIfNeeded();
+          await expect(choice).toBeInViewport();
+        }
         const measurements = await page.evaluate(() => {
           const shell = document.querySelector('[data-sandbox-app]')!, exit = shell.querySelector('[data-action="exit-craft"]')!.getBoundingClientRect();
           const bad = [...shell.querySelectorAll('.sandbox-controls button')].filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden').filter(el => {
-            const r = el.getBoundingClientRect(), hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+            const r = el.getBoundingClientRect();
+            const tray = el.closest('[data-decor-panel="accessory"] > .sandbox-decor-grid')?.getBoundingClientRect();
+            if (tray && (r.bottom > tray.bottom + 1 || r.top < tray.top - 1)) return false;
+            const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
             return r.left < 0 || r.right > innerWidth || r.bottom > innerHeight || r.height < 43.9 || !hit || !el.contains(hit);
           }).map(el => el.textContent);
           return { bad, exitCenter: exit.x + exit.width / 2, scroll: document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight };

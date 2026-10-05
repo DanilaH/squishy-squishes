@@ -33,7 +33,8 @@ jobs:
         run: |
           git worktree add /tmp/squishy-before "$BASE_SHA"
           ln -s "$PWD/node_modules" /tmp/squishy-before/node_modules
-          cp tests/release/cozy-workshop.spec.ts /tmp/squishy-before/tests/release/
+          # The base keeps its own control contract; all 18 cameras are unchanged.
+          # Proposed art below must pass the new full-edge and 44px assertions.
           cp playwright.art-review.config.ts /tmp/squishy-before/
           cd /tmp/squishy-before
           npm run build:app

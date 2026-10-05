@@ -139,7 +139,7 @@
   filter: drop-shadow(0 4px 4px rgba(75,53,92,.14));
 }
 
-.sandbox-idea-card__preview polygon {
+.sandbox-idea-card__preview :is(polygon, path) {
   fill: var(--idea-color);
   stroke: rgba(255,255,255,.92);
   stroke-width: 3;

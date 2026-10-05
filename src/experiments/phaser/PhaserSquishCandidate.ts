@@ -1,3 +1,4 @@
+import { lightUniform } from '../../sandbox/craftLighting';
 import { moldFactors, containClipAxis, uncontainClipAxis, uncontainGestureAxis } from '../../squish/projection';
 import { REST_TOY, posePoint, unposePoint, type ToyPose } from '../../sandbox/livingToy';
 import Phaser from 'phaser';
@@ -42,7 +43,7 @@ const UNIFORMS = [
   'uFillingDrift', 'uPointerUv', 'uStrainDirection', 'uColorLow', 'uColorHigh', 'uSheenColor', 'uRimColor',
   'uCompression', 'uPressDepth', 'uFillingAmount', 'uFillingStyle', 'uFillProgress',
   'uMaterialSeed', 'uTranslucency', 'uIridescence', 'uRoughness', 'uMetallic',
-  'uPearlescence', 'uCloudiness', 'uWireframePass',
+  'uPearlescence', 'uCloudiness', 'uWireframePass', 'uCraftLight',
 ] as const;
 
 const compile = (gl: WebGL2RenderingContext, kind: number, source: string): WebGLShader => {
@@ -576,6 +577,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     gl.uniform1f(u('uRoughness'), material.roughness);
     gl.uniform1f(u('uMetallic'), material.metallic);
     gl.uniform1f(u('uPearlescence'), material.pearlescence);
+    gl.uniform4f(u('uCraftLight'), ...lightUniform(this.materialStyle?.light));
     gl.uniform1f(u('uCloudiness'), material.cloudiness);
     gl.uniform1i(u('uWireframePass'), 0);
     gl.bindVertexArray(gpu.vao);

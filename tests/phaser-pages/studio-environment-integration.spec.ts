@@ -1,3 +1,4 @@
+import { reachableControlIssues } from './helpers/reachableControls';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 const views = [
@@ -36,12 +37,6 @@ const check = async (page: Page, label: string): Promise<void> => {
     const images = Array.from(art.querySelectorAll('img'));
     const center = rect(canvas);
     const canvasHit = document.elementFromPoint(center.x + center.width / 2, center.y + center.height / 2);
-    const buttons = Array.from(shell.querySelectorAll<HTMLButtonElement>('.sandbox-controls button, .sandbox-topbar button')).filter((b) => b.getClientRects().length);
-    const hitIssues = buttons.flatMap((b) => {
-      const r = b.getBoundingClientRect();
-      const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-      return hit && b.contains(hit) ? [] : [b.dataset.action || b.textContent?.trim() || '(button)'];
-    });
     return {
       viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
       stageName: shell.dataset.stage, stage: rect(stage), canvas: rect(canvas), floor: rect(floor),
@@ -58,7 +53,7 @@ const check = async (page: Page, label: string): Promise<void> => {
       backgrounds: [getComputedStyle(shell).backgroundImage, getComputedStyle(floor).backgroundImage],
       imagesLoaded: images.map((i) => ({ src: i.currentSrc, loaded: i.complete && i.naturalWidth > 0 })),
       canvasAcceptsPointer: !!canvasHit && canvas.contains(canvasHit),
-      hitIssues, pageWidth: document.documentElement.scrollWidth,
+      pageWidth: document.documentElement.scrollWidth,
       passiveArt: getComputedStyle(art).pointerEvents === 'none' && getComputedStyle(floor).pointerEvents === 'none',
     };
   });
@@ -76,7 +71,7 @@ const check = async (page: Page, label: string): Promise<void> => {
   expect(floorImage, `${label}: exact Library parquet tile`).toContain('floor-tile');
   expect(facts.passiveArt).toBe(true);
   expect(facts.canvasAcceptsPointer, `${label}: the real Phaser canvas stays interactive`).toBe(true);
-  expect(facts.hitIssues, `${label}: all controls must remain clickable`).toEqual([]);
+  expect(await reachableControlIssues(page), `${label}: all controls must remain clickable`).toEqual([]);
   expect(facts.pageWidth, `${label}: no horizontal overflow`).toBeLessThanOrEqual(facts.viewport.width + 2);
   expect(Math.abs(facts.floor.y - (facts.stage.bottom - 22)), `${label}: floor follows actual stage`).toBeLessThan(2);
   const landscapeShort = facts.viewport.width > facts.viewport.height && facts.viewport.height <= 520;

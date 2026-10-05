@@ -11,7 +11,7 @@ import type { StudioDecorSection, StudioGestureStage } from './StageGestureRoute
 
 /** The existing SandboxApp remains the only owner of draft, UI, baked texture, save and overlays. */
 export interface PhaserSandboxCallbacks extends Pick<PhaserStudioGestureHost,
-  'paintStamp' | 'paintSegment' | 'paintEnd' | 'addMixin' | 'addSticker' | 'previewSticker' | 'mixProgress'> {
+  'paintStamp' | 'paintSegment' | 'paintEnd' | 'addMixin' | 'addSticker' | 'previewSticker' | 'mixProgress' | 'beginDecorEdit' | 'moveDecorEdit' | 'endDecorEdit' | 'authoringBegin' | 'authoringEnd' | 'mixinSpacing'> {
   /** Draw existing DOM decor layers on Phaser's own update tick, not a second RAF. */
   readonly onFrame: () => void;
   readonly onSquishBegin?: () => void;
@@ -153,9 +153,15 @@ export class PhaserSquishSurface {
             owner.callbacks.onSquishRelease?.(energy);
           },
           cancelSquish: () => { owner.personality.cancel(); owner.resetPresentation(); squish.cancel(); owner.audio.releaseTactile(); owner.callbacks.onSquishCancel?.(); },
+          beginDecorEdit: pointer => owner.callbacks.beginDecorEdit?.(pointer) ?? false,
+          moveDecorEdit: pointer => owner.callbacks.moveDecorEdit?.(pointer),
+          endDecorEdit: cancelled => owner.callbacks.endDecorEdit?.(cancelled),
+          authoringBegin: () => owner.callbacks.authoringBegin?.(),
+          authoringEnd: () => owner.callbacks.authoringEnd?.(),
           paintStamp: (point) => owner.callbacks.paintStamp(point),
           paintSegment: (from, to) => owner.callbacks.paintSegment(from, to),
           paintEnd: () => owner.callbacks.paintEnd(),
+          mixinSpacing: () => owner.callbacks.mixinSpacing?.() ?? 24,
           addMixin: (point) => owner.callbacks.addMixin(point),
           addSticker: (point) => owner.callbacks.addSticker(point),
           ...(owner.callbacks.previewSticker ? { previewSticker: (point: AppearancePoint | null) => owner.callbacks.previewSticker?.(point) } : {}),

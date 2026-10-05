@@ -4,6 +4,7 @@ import { SHAPES, type ShapeId } from '../../game/shapes';
 import { createAppearanceStroke, createMixInPlacement } from '../../sandbox/appearance';
 import { createStickerPlacement, type DecorDocumentV1 } from '../../sandbox/decor';
 import '../../sandbox-core.css';
+import '../../app/styles/editor-layout.css';
 import './candidate.css';
 import { PhaserSquishCandidate } from './PhaserSquishCandidate';
 
@@ -32,7 +33,7 @@ root.innerHTML = `
       <div class="phaser-candidate-playfield" id="phaser-candidate-stage" aria-label="Interactive squishy"></div>
     </section>
     <section class="sandbox-controls">
-      <div class="sandbox-panel" aria-label="Shape choices">
+      <div class="sandbox-panel free-shape-catalog" aria-label="Shape choices">
         ${SHAPES.map((shape) => `<button class="sandbox-shape" type="button" data-candidate-shape="${shape.id}" aria-pressed="${shape.id === 'soft-square'}">${shape.label}</button>`).join('')}
       </div>
       <div class="sandbox-panel" aria-label="Material choices">

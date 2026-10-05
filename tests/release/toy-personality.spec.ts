@@ -164,7 +164,7 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
     await page.screenshot({ path: `migration-baseline-evidence/personality-${width}-eraser.png` });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');
-    await page.locator('[data-action="decor-undo"]').click(); await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
+    await page.locator('[data-panel="decor"] [data-action="draft-undo"]').click(); await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
     expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(before);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect(canvas).toHaveAttribute('data-toy-idle', 'rest');

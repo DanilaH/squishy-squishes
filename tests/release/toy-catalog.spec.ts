@@ -13,17 +13,17 @@ for (const locale of ['ru-RU', 'en-US']) {
       const mixins: MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti'];
       const shapes = ['mochi', 'heart', 'soft-square', 'paw', 'mushroom'] as const;
       const toys = ACCESSORY_IDS.map((accessory, n) => ({
-        id: `catalog-${accessory}`, createdAt: 1700000000000 + n, shapeId: shapes[n], materialId: 'jelly',
+        id: `catalog-${accessory}`, createdAt: 1700000000000 + n, shapeId: shapes[n % shapes.length], materialId: 'jelly',
         appearance: { v: 1, strokes: [createBodyFillStroke(n % 2 ? 0xb88de9 : 0xff79a8)],
           mixins: mixins.map((id, k) => createMixInPlacement(id, { u: .30 + k % 3 * .2, v: .40 + Math.floor(k / 3) * .2 }, 24, k / 6)) },
         decor: { ...createEmptyDecorDocument(), eyes: EYE_STYLE_IDS[n % 3], mouth: MOUTH_STYLE_IDS[n % 3], blush: true, accessory },
       }));
       // Validate fixtures through the production codec before browser injection.
-      decodeSaveStateV3({ ...createDefaultSaveV3(), library: toys, totalCrafts: 5 });
+      decodeSaveStateV3({ ...createDefaultSaveV3(), libraryCapacity:24, library: toys, totalCrafts: 5 });
       await page.goto('/squishy-squishes/');
-      await page.evaluate((library) => localStorage.setItem('squishy.save.v3', JSON.stringify({ ...library.save, library: library.toys, totalCrafts: 5 })), { save: createDefaultSaveV3(), toys });
+      await page.evaluate((library) => localStorage.setItem('squishy.save.v3', JSON.stringify({ ...library.save, libraryCapacity:24, library: library.toys, totalCrafts: 5 })), { save: createDefaultSaveV3(), toys });
       await page.reload();
-      await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '5');
+      await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', String(ACCESSORY_IDS.length));
       const savedBefore = await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library));
       await mkdir('migration-baseline-evidence', { recursive: true });
       await page.screenshot({ path: `migration-baseline-evidence/catalog-${locale}-hall.png` });
@@ -32,7 +32,7 @@ for (const locale of ['ru-RU', 'en-US']) {
         // before choosing a room, otherwise the first click can skip the toy.
         await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
         const play = page.locator(`[data-library-play-id="catalog-${accessory}"]`);
-        for (let room = 0; room < 3 && !await play.isVisible(); room++) await page.locator('[data-library-hall-next]').click();
+        for (let room = 0; room < Math.ceil(ACCESSORY_IDS.length / 2) && !await play.isVisible(); room++) await page.locator('[data-library-hall-next]').click();
         await expect(play).toBeVisible();
         await play.click();
         await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
@@ -88,6 +88,7 @@ test('actual face and catalog choices stay visible on short phone screens', asyn
       await page.locator(`[data-decor-section="${section}"]`).click();
       const panel = page.locator(`[data-decor-panel="${section}"]`);
       for (const button of await panel.getByRole('button').all()) {
+        await button.scrollIntoViewIfNeeded();
         const rect = await button.boundingBox();
         expect(rect).not.toBeNull();
         expect(rect!.x).toBeGreaterThanOrEqual(0);

@@ -90,10 +90,15 @@ test('Decor uses keyboard-operable ARIA tabs', async ({ page }) => {
   await expect(stickers).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('[data-decor-panel="stickers"]')).toBeVisible();
 
-  await page.keyboard.press('End');
+  await page.keyboard.press('ArrowRight');
   await expect(accessory).toBeFocused();
   await expect(accessory).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('[data-decor-panel="accessory"]')).toBeVisible();
+  await page.keyboard.press('End');
+  const objects = page.locator('button[role="tab"][data-decor-section="objects"]');
+  await expect(objects).toBeFocused();
+  await expect(objects).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('[data-decor-panel="objects"]')).toBeVisible();
 
   await page.keyboard.press('Home');
   await expect(face).toBeFocused();
@@ -196,4 +201,3 @@ test.describe('reduced motion', () => {
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   });
 });
-

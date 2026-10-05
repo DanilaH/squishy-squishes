@@ -1,3 +1,4 @@
+import { lightUniform, type CraftLight } from '../sandbox/craftLighting';
 import { getBackingStoreSize, getRenderPixelRatio } from '@danilah/mini-games-kit/core';
 import type { SquishyAudio } from '../game/SquishyAudio';
 import { createShapeField, getShape, type ShapeDefinition, type ShapeId } from '../game/shapes';
@@ -8,6 +9,7 @@ export type SquishRgb = readonly [number, number, number];
 export type SquishFillingStyle = 'none' | 'foam' | 'pearl';
 
 export interface SquishMaterialStyle {
+  readonly light?: CraftLight;
   materialId?: import('../game/content').MaterialId;
   low: SquishRgb;
   high: SquishRgb;
@@ -92,7 +94,7 @@ const UNIFORM_NAMES = [
   'uCompression', 'uPressDepth', 'uStrainDirection', 'uColorLow', 'uColorHigh',
   'uSheenColor', 'uRimColor', 'uFillingAmount', 'uFillingStyle', 'uFillProgress',
   'uMoldProgress', 'uMaterialSeed', 'uTranslucency', 'uIridescence', 'uRoughness',
-  'uMetallic', 'uPearlescence', 'uCloudiness', 'uWireframePass',
+  'uMetallic', 'uPearlescence', 'uCloudiness', 'uWireframePass', 'uCraftLight',
 ] as const;
 type UniformName = typeof UNIFORM_NAMES[number];
 
@@ -434,6 +436,7 @@ export class SquishSurface {
     gl.uniform1f(u('uRoughness'), clamp01(this.material.roughness));
     gl.uniform1f(u('uMetallic'), clamp01(this.material.metallic));
     gl.uniform1f(u('uPearlescence'), clamp01(this.material.pearlescence));
+    gl.uniform4f(u('uCraftLight'), ...lightUniform(this.material.light));
     gl.uniform1f(u('uCloudiness'), clamp01(this.material.cloudiness));
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.triangleIndexBuffer);

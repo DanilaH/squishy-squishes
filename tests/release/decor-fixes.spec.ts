@@ -2,8 +2,6 @@ import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { SHAPES, isPointInsideShape } from '../../src/game/shapes';
 import { getAccessorySeats } from '../../src/sandbox/accessorySeats';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
-import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
 test('every mold has separate mirrored shoulder roots and a tilted side bow', () => {
   for (const shape of SHAPES) {
@@ -53,7 +51,9 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
         expect({ tabs: await tabs.boundingBox(), next: await next.boundingBox(), body: await body.boundingBox() }).toEqual(before);
         const panel = page.locator(`[data-decor-panel="${section}"]`);
         expect(await panel.evaluate(el => ({ vertical: el.scrollHeight > el.clientHeight + 1, horizontal: el.scrollWidth > el.clientWidth + 1 }))).toEqual({ vertical: false, horizontal: false });
+        if(section === 'accessory') expect(await panel.locator('.sandbox-decor-grid').evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
         for (const button of await panel.getByRole('button').all()) {
+          await button.scrollIntoViewIfNeeded();
           const rect = (await button.boundingBox())!;
           expect(rect.height).toBeGreaterThanOrEqual(44);
           expect(rect.y + rect.height).toBeLessThanOrEqual(viewport.height + 1);
@@ -117,40 +117,4 @@ test('paw pads remain intact throughout a live stroke and adding sprinkles', asy
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-mixin-count', '1');
   await checkPad();
-});
-
-test('all molds seat bows and crowns in front, mirrored ears and horns behind', async ({ page }) => {
-  test.setTimeout(150_000);
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/squishy-squishes/');
-  for (const accessory of ['bow', 'crown', 'cat-ears', 'bunny-ears', 'horns'] as const) {
-    await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), {
-      ...createDefaultSaveV3(), totalCrafts: 8,
-      library: SHAPES.map((shape, n) => ({ id: shape.id, createdAt: 1700000000000 + n, shapeId: shape.id, materialId: 'soft',
-        appearance: { v: 1, strokes: [], mixins: [] }, decor: { ...createEmptyDecorDocument(), accessory } })),
-    });
-    for (const shape of SHAPES) {
-      await page.reload();
-      const play = page.locator(`[data-library-play-id="${shape.id}"]`);
-      await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
-      for (let n = 0; n < 3 && !await play.isVisible(); n++) await page.locator('[data-library-hall-next]').click();
-      await mkdir('migration-baseline-evidence', { recursive: true });
-      await page.screenshot({ path: `migration-baseline-evidence/decor-hall-${shape.id}-${accessory}.png` });
-      await play.click();
-      const gear = page.locator('[data-sandbox-accessory]');
-      await expect.poll(() => gear.getAttribute('data-accessory-matrix')).not.toBeNull();
-      const bodyDepth = await page.locator('[data-sandbox-canvas]').evaluate(el => Number(getComputedStyle(el).zIndex));
-      const gearDepth = await gear.evaluate(el => Number(getComputedStyle(el).zIndex));
-      if (accessory === 'bow' || accessory === 'crown') expect(gearDepth).toBeGreaterThan(bodyDepth);
-      else expect(gearDepth).toBeLessThan(bodyDepth);
-      await expect(gear).toHaveAttribute('data-accessory-depth', accessory === 'bow' || accessory === 'crown' ? 'front' : 'rear');
-      if (accessory !== 'bow' && accessory !== 'crown') {
-        const right = page.locator('[data-accessory-part="right"]'); await expect(right).toBeVisible();
-        expect(Number(await gear.getAttribute('data-accessory-anchor-x'))).toBeLessThan(Number(await right.getAttribute('data-accessory-anchor-x')));
-      }
-      await mkdir('migration-baseline-evidence', { recursive: true });
-      await page.screenshot({ path: `migration-baseline-evidence/decor-seats-${shape.id}-${accessory}.png` });
-    }
-  }
 });
