@@ -27,12 +27,11 @@ test('V3 retains 1000 strokes, a long gesture and 128 compact stickers without t
   expect(() => decodeSaveStateV3({ ...state, library: [{ ...toy, decor: { ...toy.decor, stickers: [...toy.decor.stickers, toy.decor.stickers[0]] } }] })).toThrow('too many stickers');
 });
 
-for (const locale of ['ru-RU', 'en-US']) test(`rich saved toy remains editable and durable ${locale}`, async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ baseURL, locale, viewport: { width: 320, height: 568 }, hasTouch: true, reducedMotion: 'reduce' });
-  const page = await context.newPage();
-  const errors: string[] = [];
-  page.on('pageerror', error => errors.push(error.message));
-  try {
+for (const locale of ['ru-RU', 'en-US']) test.describe(locale, () => {
+  test.use({ locale, viewport: { width: 320, height: 568 }, hasTouch: true, reducedMotion: 'reduce' });
+  test(`rich saved toy remains editable and durable ${locale}`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
     await page.goto('/squishy-squishes/');
     await page.evaluate(state => localStorage.setItem('squishy.save.v3', JSON.stringify(state)), encodeSaveStateV3({ ...createDefaultSaveV3(), library: [richToy] }));
     await page.reload();
@@ -84,5 +83,5 @@ for (const locale of ['ru-RU', 'en-US']) test(`rich saved toy remains editable a
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '128');
     expect(errors).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  } finally { await context.close(); }
+  });
 });

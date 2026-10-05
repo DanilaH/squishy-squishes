@@ -3,10 +3,10 @@ const SCROLL_TRAYS = '.free-shape-catalog, .free-mixin-catalog, [data-decor-pane
 /** Every control must be reachable; only agreed catalogs/settings may scroll. */
 export const reachableControlIssues = async (page: Page): Promise<string[]> => {
   const scroll = await page.locator(SCROLL_TRAYS).evaluateAll(nodes => nodes.map(node => ({ top: node.scrollTop, left: node.scrollLeft })));
-  const issues: string[] = [];
-  for (const button of await page.locator('.sandbox-controls button:visible, .sandbox-topbar button:visible').all()) {
-    if (await button.evaluate((node, selector) => !!node.closest(selector), SCROLL_TRAYS)) await button.scrollIntoViewIfNeeded();
-    issues.push(...await button.evaluate(node => {
+  const issues = await page.locator('.sandbox-controls button:visible, .sandbox-topbar button:visible').evaluateAll((nodes, selector) => {
+    const issues: string[] = [];
+    for (const node of nodes) {
+      if (node.closest(selector)) node.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' });
       const r = node.getBoundingClientRect(), hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
       const id = (node as HTMLElement).dataset.action || node.textContent?.trim() || 'button';
       const errors: string[] = [];
@@ -17,9 +17,10 @@ export const reachableControlIssues = async (page: Page): Promise<string[]> => {
         const edge = document.elementFromPoint(r.x + r.width / 2, y);
         if (!edge || !node.contains(edge)) errors.push(`${id}: top/bottom clipped`);
       }
-      return errors;
-    }));
-  }
+      issues.push(...errors);
+    }
+    return issues;
+  }, SCROLL_TRAYS);
   await page.locator(SCROLL_TRAYS).evaluateAll((nodes, values) => nodes.forEach((node, i) => {
     node.scrollTop = values[i]!.top; node.scrollLeft = values[i]!.left;
   }), scroll);
