@@ -45,7 +45,11 @@ concurrency:
 permissions:
   contents: read
 jobs:
-  library-hall:
+  library-hall-shard:
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -63,12 +67,12 @@ jobs:
       - name: Strict TS and staged Pages build
         run: npm run pages:build
       - name: Independent browser art, layout, lifecycle, shader, stress, material, video, volume and cross-stage V3/scene geometry
-        run: MATERIAL_STRESS=1 npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts tests/phaser-pages/library-hall-ground-shadow.spec.ts tests/phaser-pages/library-hall-material.spec.ts tests/phaser-pages/material-stress.spec.ts tests/phaser-pages/library-hall-shapes.spec.ts tests/phaser-pages/library-hall-adversarial.spec.ts tests/phaser-pages/library-hall-studio-shader.spec.ts tests/phaser-pages/library-hall-feel.spec.ts tests/phaser-pages/library-hall-real-video.spec.ts tests/phaser-pages/library-hall-idle-stress.spec.ts tests/phaser-pages/library-hall-decor-art.spec.ts tests/phaser-pages/library-hall-art-catalog.spec.ts tests/phaser-pages/library-hall-volume-probe.spec.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts tests/phaser-pages/studio-workshop-consistency.spec.ts
+        run: MATERIAL_STRESS=1 npx playwright test --config=playwright.phaser-pages.config.ts tests/phaser-pages/library-hall-integration.spec.ts tests/phaser-pages/library-hall-responsive.spec.ts tests/phaser-pages/library-hall-ground-shadow.spec.ts tests/phaser-pages/library-hall-material.spec.ts tests/phaser-pages/material-stress.spec.ts tests/phaser-pages/library-hall-shapes.spec.ts tests/phaser-pages/library-hall-adversarial.spec.ts tests/phaser-pages/library-hall-studio-shader.spec.ts tests/phaser-pages/library-hall-feel.spec.ts tests/phaser-pages/library-hall-real-video.spec.ts tests/phaser-pages/library-hall-idle-stress.spec.ts tests/phaser-pages/library-hall-decor-art.spec.ts tests/phaser-pages/library-hall-art-catalog.spec.ts tests/phaser-pages/library-hall-volume-probe.spec.ts tests/phaser-pages/library-hall-cross-scene-parity.spec.ts tests/phaser-pages/studio-workshop-consistency.spec.ts --shard=${{ matrix.shard }}/4
       - name: Upload real-browser screenshots, geometry, idle metrics and uncut video
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: library-hall-real-browser-review
+          name: library-hall-real-browser-review-${{ matrix.shard }}
           path: |
             test-results/**/library-hall-*.png
             test-results/**/library-hall-*.json
@@ -81,7 +85,18 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: library-hall-failure
+          name: library-hall-failure-${{ matrix.shard }}
           path: test-results
           if-no-files-found: ignore
           retention-days: 14
+
+  library-hall:
+    needs: library-hall-shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require all independent Hall and stress shards
+        env:
+          SHARDS_RESULT: ${{ needs.library-hall-shard.result }}
+        run: test "$SHARDS_RESULT" = success

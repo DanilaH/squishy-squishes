@@ -636,3 +636,42 @@ aggregation, visual comparisons, shared build/checksums, retries, test/job
 timeouts and exact-tree/latest-attempt reuse stay unchanged. No tests are
 removed. This addresses the observed publication blocker without changing
 materials, interface behaviour or deployment acceptance.
+
+
+## Release CI latency — 5 October 2026
+
+The owner requested the fastest reliable CI after the panel release. Run
+37353469564 measured Pages shards at 621s and 317s, browser test shards at
+352–372s plus 79s of sequential visual comparisons on the first browser runner.
+Dependency installation and Chromium setup cost about 40–50s per runner, so
+adding a browser cache is not the principal latency fix.
+
+Release browser and Pages suites now each use four isolated runners. Visual QA
+runs independently against the same immutable, source-identified shared build;
+the browser aggregate requires both every browser shard and visual QA. The
+separate candidate suite uses three runners; the independent Hall/stress gate
+uses four. All existing required aggregate names, tests, stress environment,
+screenshot evidence, assertions, baseline files, retries and timeout budgets
+remain. Each runner still has one Playwright worker to avoid the previously
+observed WebGL contention. More shards are not added indiscriminately: a source
+PR can also trigger art review and independent gates, consuming runner capacity.
+
+A conservative shared classifier allows only nonempty changes to README.md,
+AGENTS.md or Markdown under docs/ to omit builds, browser suites and deployment.
+Documentation-only PRs still emit successful required aggregate checks after
+scope validation; they never produce reusable release artifacts. Any runtime,
+asset, test, package, workflow, script, non-Markdown document, unknown path,
+missing/shallow history, empty comparison or manual run requires full QA.
+Git comparison disables rename detection so moving a runtime input into docs
+cannot hide its deletion. Scope rules and a real Git rename regression are
+included in release:check. Exact whole-tree/provenance/checksum/latest-attempt
+release reuse and live Pages source/touch/save/reload acceptance are unchanged.
+
+This infrastructure pass changes no game source, physics, materials, controls,
+saves or progression. No slow gesture/idle test is shortened simply to lower
+its runtime; its behavioral coverage remains in the complete shard partition.
+
+Candidate screenshot artifacts are collected after all shards pass. A shard
+containing only input/geometry tests need not invent screenshots; the aggregate
+requires the original desktop, portrait, landscape, compositing and real-studio
+captures across the complete partition instead of a per-runner any-PNG check.

@@ -33,7 +33,7 @@
     "candidate:qa": "npm run candidate:build && playwright test --config=playwright.phaser-candidate.config.ts",
     "qa:visual": "playwright test --config=playwright.visual.config.ts",
     "qa:visual:update": "playwright test --config=playwright.visual.config.ts --update-snapshots",
-    "ci:check": "node --test tests/tooling/ci-release-reuse.test.mjs"
+    "ci:check": "node --test tests/tooling/ci-release-reuse.test.mjs tests/tooling/ci-change-scope.test.mjs"
   },
   "dependencies": {
     "@danilah/mini-games-kit": "git+https://github.com/DanilaH/mini-games-kit.git#797b5689767e9dc1059514e0446479e054bf1352",
