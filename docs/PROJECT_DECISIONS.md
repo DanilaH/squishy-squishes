@@ -512,3 +512,29 @@ bounded volume cue in the existing 2D solver, not a physical 3D volume simulatio
 A tap uses one local rebound rather than adding two release kicks. Original raw
 and Mix constants, limits, floor/fold guards and material profiles remain.
 No changes to art, UI layout, save V3, progression, rewards or storage namespaces.
+
+## Strawberry and tactile character — 5 October 2026
+
+The owner accepted the current grabbing and authorized the next scoped pass:
+repair the heart-like strawberry, add smooth location-aware face reactions and
+make existing materials feel more distinct. Extra gesture/audio proposals are
+still optional; this is not authorization to expand the whole idea bank.
+
+The canonical strawberry boundary has a shallow shoulder and rounded tip. Five
+separate padded leaves, fold highlights and smaller tilted recessed seeds share
+one procedural relief definition across Studio, Hall and selector SVG. No bitmap
+pipeline, per-shape physics or new renderer. Selecting a new, empty strawberry
+starts with a normal pink body-fill stroke that can be undone, cleared and painted
+over. Existing pigment and saved toys are never recoloured automatically.
+
+The existing ToyPersonality reads the material grab position and pressure: the
+caught side gently squints, and the chosen mouth tilts slightly. The response
+attacks/decays smoothly, updates the ink only at bounded quantized changes, and
+never replaces saved eyes/mouth IDs. Finish/Squeeze share it; two-pointer gestures
+stay symmetric. Cancel, activity/modal/stage guards and reduced motion clear it.
+
+Soft retains its solver constants. Jelly has a less damped, springier return;
+Marshmallow briefly retains 28% of the caught field after a hold over 350ms, with
+a 550ms exponential decay. This transient field clears on cancellation, stage or
+material changes and never persists in save V3. Floor/fold/displacement bounds,
+289 vertices, pinch damping, grab anchors, squeeze credit and progression remain.

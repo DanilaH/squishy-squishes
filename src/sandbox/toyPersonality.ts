@@ -14,6 +14,8 @@ export class ToyPersonality {
   private stretched = 0;
   private releasedAt = -Infinity;
   private releaseStrength = 0;
+  private cheek = 0;
+  private sampledAt = -Infinity;
 
   public begin(now: number, inputTime = now): void { this.beganInputAt = inputTime; this.releasedAt = -Infinity; this.stretched = 0; }
   public release(now: number, energy: number, inputTime = now): void {
@@ -30,14 +32,19 @@ export class ToyPersonality {
   public cancel(): void {
     this.taps = 0; this.lastTapAt = -Infinity; this.surprisedAt = this.strokingAt = this.releasedAt = -Infinity;
     this.stretched = this.releaseStrength = 0;
+    this.cheek = 0; this.sampledAt = -Infinity;
   }
-  public sample(now: number, active: boolean, stroke: number, stretch: number): { surprise: number; blink: number } {
+  public sample(now: number, active: boolean, stroke: number, stretch: number, grabX = 0, pressure = 0): { surprise: number; blink: number; cheek?: number } {
+    const dt = Math.max(0, Math.min(50, now - this.sampledAt)); this.sampledAt = now;
+    const target = active ? Math.max(-1, Math.min(1, grabX * 1.8)) * unit(pressure) * (1 - unit(stroke) * .7) : 0;
+    this.cheek += (target - this.cheek) * (1 - Math.exp(-dt / (active ? 95 : 140)));
+    const cheek = Math.round(this.cheek * 8) / 8;
     if (active) this.stretched = Math.max(this.stretched, stretch);
     if (active && stroke > .2) { if (!Number.isFinite(this.strokingAt)) this.strokingAt = now; }
     else this.strokingAt = -Infinity;
     const surprise = quantize(1 - (now - this.surprisedAt) / 650);
     const blink = active && Number.isFinite(this.strokingAt) && now - this.strokingAt > 650 ? quantize(stroke * .65) : 0;
-    return { surprise, blink };
+    return { surprise, blink, ...(cheek ? { cheek } : {}) };
   }
   public releasePose(now: number): ToyPose {
     const ms = now - this.releasedAt;

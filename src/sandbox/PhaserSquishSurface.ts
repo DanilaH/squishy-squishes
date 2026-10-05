@@ -53,8 +53,8 @@ export class PhaserSquishSurface {
   private disposed = false;
   private lastMetricsAt = 0;
   private readonly personality = new ToyPersonality();
-  private extras = { surprise: 0, blink: 0 };
-  public reactionExtras(): { surprise: number; blink: number } { return this.extras; }
+  private extras: { surprise: number; blink: number; cheek?: number } = { surprise: 0, blink: 0 };
+  public reactionExtras(): { surprise: number; blink: number; cheek?: number } { return this.extras; }
   private quietMs = 0;
   private lastPresentationAt = performance.now();
   private pose: ToyPose = REST_TOY;
@@ -87,7 +87,7 @@ export class PhaserSquishSurface {
     if (enabled && !sample.active && elapsed < 1000) this.quietMs += elapsed;
     else this.quietMs = 0;
     if (!enabled) this.personality.cancel();
-    this.extras = enabled ? this.personality.sample(now, sample.active, sample.stroking, sample.stretch) : { surprise: 0, blink: 0 };
+    this.extras = enabled ? this.personality.sample(now, sample.active, sample.stroking, sample.stretch, sample.pointers === 1 ? sample.sheenX : 0, Math.max(sample.pressDepth * .75, sample.compression)) : { surprise: 0, blink: 0 };
     const release = this.personality.releasePose(now);
     this.pose = enabled && !sample.active ? release !== REST_TOY ? release : sample.maxDisplacement < .025 ? idleToyPose(this.quietMs) : REST_TOY : REST_TOY;
     this.lag = enabled ? { x: inclusionLag(this.lag.x, body.x - this.lastBody.x + (this.pose.rotation - this.lastPose.rotation) * .25, delta), y: inclusionLag(this.lag.y, body.y - this.lastBody.y + this.pose.y - this.lastPose.y, delta) } : { x: 0, y: 0 };

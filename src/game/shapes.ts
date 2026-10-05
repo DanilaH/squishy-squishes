@@ -173,10 +173,11 @@ const createDumplingBoundary = (): readonly ShapePoint[] => sampleCubicBoundary(
 ]);
 
 const createStrawberryBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
-  [{ x: 0, y: .58 }, { x: .35, y: .83 }, { x: .83, y: .69 }, { x: .86, y: .31 }],
-  [{ x: .86, y: .31 }, { x: .89, y: -.12 }, { x: .34, y: -.86 }, { x: 0, y: -.94 }],
-  [{ x: 0, y: -.94 }, { x: -.34, y: -.86 }, { x: -.89, y: -.12 }, { x: -.86, y: .31 }],
-  [{ x: -.86, y: .31 }, { x: -.83, y: .69 }, { x: -.35, y: .83 }, { x: 0, y: .58 }],
+  [{ x: 0, y: .72 }, { x: .34, y: .77 }, { x: .80, y: .78 }, { x: .85, y: .36 }],
+  [{ x: .85, y: .36 }, { x: .91, y: -.06 }, { x: .40, y: -.80 }, { x: .12, y: -.87 }],
+  [{ x: .12, y: -.87 }, { x: .04, y: -.90 }, { x: -.04, y: -.90 }, { x: -.12, y: -.87 }],
+  [{ x: -.12, y: -.87 }, { x: -.40, y: -.80 }, { x: -.91, y: -.06 }, { x: -.85, y: .36 }],
+  [{ x: -.85, y: .36 }, { x: -.80, y: .78 }, { x: -.34, y: .77 }, { x: 0, y: .72 }],
 ]);
 
 export const SHAPES: readonly ShapeDefinition[] = [
