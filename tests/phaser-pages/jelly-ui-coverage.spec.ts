@@ -14,10 +14,10 @@ const checkControls = async (page: Page, label: string): Promise<void> => {
     + '.sandbox-library-heading__actions button:visible, .sandbox-library-empty button:visible, '
     + '.sandbox-ideas-heading button:visible, .sandbox-library-modal button:visible',
   );
-  const issues: string[] = [];
-  for (const button of await controls.all()) {
-    if (await button.evaluate(element => !!element.closest('.free-shape-catalog, .free-mixin-catalog, [data-decor-panel="accessory"] .sandbox-decor-grid, .free-object-panel, .free-light-panel'))) await button.scrollIntoViewIfNeeded();
-    issues.push(...await button.evaluate((element) => {
+  const issues = await controls.evaluateAll(elements => elements.flatMap(element => {
+    if (element.closest('.free-shape-catalog, .free-mixin-catalog, [data-decor-panel="accessory"] .sandbox-decor-grid, .free-object-panel, .free-light-panel')) {
+      element.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' });
+    }
     if (!(element instanceof HTMLButtonElement)) return [];
     // Background buttons must be inert under an open confirmation dialog.
     // Audit only the controls in the active modal until it is dismissed.
@@ -37,7 +37,6 @@ const checkControls = async (page: Page, label: string): Promise<void> => {
     if (!hit || !element.contains(hit)) errors.push(`${id}: hit target intercepted by ${hit?.tagName ?? 'nothing'}`);
     return errors;
   }));
-  }
   expect(issues, `${label}: button text and click targets`).toEqual([]);
   const pageWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(pageWidth, `${label}: horizontal document overflow`).toBeLessThanOrEqual(page.viewportSize()!.width + 2);

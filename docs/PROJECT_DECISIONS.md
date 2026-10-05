@@ -739,3 +739,15 @@ button reachability tests visit every item through those trays while preserving
 page overflow and 44px checks. Static Hall snapshots frame enlarged free gear as
 one composition, retaining the ordinary toy camera when its art already fits.
 No per-card GPU context or persistent frame loop is added for this framing/props.
+
+
+### Long capture cases after catalog expansion
+
+Observed PR CI exceeded the unchanged 60s test budget in the English desktop
+full-flow audit and the six-material Hall/Studio capture. Caption/viewport/hit
+checks now run in one browser evaluation, still scrolling and inspecting each
+catalog element. Material evidence is split into the numerical/phone comparison
+and two desktop pairs, all derived from one genuinely created/saved Studio toy
+in beforeAll. All six material comparisons, images, labels, paging and
+Hall/Studio transitions remain; test/job timeouts and retries are unchanged.
+This changes test organization only, not runtime, materials or visual thresholds.

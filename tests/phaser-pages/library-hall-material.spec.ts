@@ -1,48 +1,62 @@
 import { writeFile } from 'node:fs/promises';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
-test('real saved materials have comparable Studio and Library captures', async ({ page }, info) => {
+// Each capture has the same 60s budget. Build all six identities once from a
+// genuinely created/saved toy; isolate the comparison and each room's captures.
+let fixtureSave: string;
+test.beforeAll(async ({ browser, baseURL }, info) => {
+  const context = await browser.newContext({ baseURL });
+  const page = await context.newPage();
+  try {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/phaser/');
+    await page.locator('[data-library-new]').first().click();
+    await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+    await page.locator('[data-shape="heart"]').click();
+    await page.locator('[data-action="shape-continue"]').click();
+    await page.locator('[data-action="paint-continue"]').click();
+    await page.locator('[data-action="mixin-continue"]').click();
+    const surface = await page.locator('[data-sandbox-canvas]').boundingBox();
+    if (!surface) throw new Error('No real maker surface');
+    const x = surface.x + surface.width / 2;
+    const y = surface.y + surface.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    for (let i = 0; i < 22; i += 1) await page.mouse.move(x + (i % 2 ? -65 : 65), y, { steps: 3 });
+    await page.mouse.up();
+    await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
+    await page.locator('[data-action="mix-continue"]').click();
+    await page.locator('[data-action="decor-continue"]').click();
+    await page.locator('[data-action="save"]').click();
+    await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+    // The real saved Studio toy supplies every material fixture: no fake skins.
+    await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath('library-hall-studio-soft-canvas-390.png'), animations: 'disabled' });
+    await page.evaluate(() => {
+      const key = 'squishy.phaser-pages-preview.squishy.save.v3';
+      const save = JSON.parse(localStorage.getItem(key) ?? 'null');
+      if (!save || save.library.length !== 1) throw new Error('Expected a real saved toy');
+      const toy = save.library[0];
+      save.library = (['soft', 'jelly', 'marshmallow', 'chrome', 'holo', 'pearl'] as const).map((materialId) => ({
+        ...toy,
+        id: `material-fixture-${materialId}`,
+        materialId,
+      }));
+      localStorage.setItem(key, JSON.stringify(save));
+    });
+    fixtureSave = await page.evaluate(() => localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3')!);
+  } finally { await context.close(); }
+});
+
+test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/phaser/');
-  await page.locator('[data-library-new]').first().click();
-  await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-  await page.locator('[data-shape="heart"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
-  const surface = await page.locator('[data-sandbox-canvas]').boundingBox();
-  if (!surface) throw new Error('No real maker surface');
-  const x = surface.x + surface.width / 2;
-  const y = surface.y + surface.height / 2;
-  await page.mouse.move(x, y);
-  await page.mouse.down();
-  for (let i = 0; i < 22; i += 1) await page.mouse.move(x + (i % 2 ? -65 : 65), y, { steps: 3 });
-  await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
-  await page.locator('[data-action="save"]').click();
-  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  // The real saved Studio toy supplies every material fixture: no fake skins.
-  await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath('library-hall-studio-soft-canvas-390.png'), animations: 'disabled' });
-  await page.evaluate(() => {
-    const key = 'squishy.phaser-pages-preview.squishy.save.v3';
-    const save = JSON.parse(localStorage.getItem(key) ?? 'null');
-    if (!save || save.library.length !== 1) throw new Error('Expected a real saved toy');
-    const toy = save.library[0];
-    save.library = (['soft', 'jelly', 'marshmallow', 'chrome', 'holo', 'pearl'] as const).map((materialId) => ({
-      ...toy,
-      id: `material-fixture-${materialId}`,
-      materialId,
-    }));
-    localStorage.setItem(key, JSON.stringify(save));
-  });
+  await page.evaluate(save => localStorage.setItem('squishy.phaser-pages-preview.squishy.save.v3', save), fixtureSave);
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
-  // Hall thumbnails are eager again: audit all six native canvases directly.
-  // Room navigation below remains presentation/paging coverage only.
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', '1');
+});
 
+const captures = (page: Page, info: TestInfo) => {
   const visibleProfiles = async (): Promise<(string | null)[]> => page.locator('.sandbox-library-card:visible [data-library-material-profile]')
     .evaluateAll((canvases) => canvases.map((canvas) => canvas.getAttribute('data-library-material-profile')));
   const captureThumbnail = async (material: string): Promise<void> => {
@@ -62,6 +76,11 @@ test('real saved materials have comparable Studio and Library captures', async (
     });
     await page.locator('[data-action="home"]').click();
   };
+  return { visibleProfiles, captureThumbnail, captureStudio };
+};
+
+test('real saved materials retain their optical comparisons and phone captures', async ({ page }, info) => {
+  const { visibleProfiles, captureThumbnail, captureStudio } = captures(page, info);
   const materialStats = await page.locator('.sandbox-library-card [data-library-material-profile]').evaluateAll((canvases) =>
     canvases.map((node) => {
       const canvas = node as HTMLCanvasElement;
@@ -119,26 +138,22 @@ test('real saved materials have comparable Studio and Library captures', async (
   await captureThumbnail('jelly');
   await captureStudio('jelly');
 
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.screenshot({ path: info.outputPath('library-hall-material-desktop-1440.png'), animations: 'disabled' });
-  await page.locator('[data-library-hall-next]').click();
-  expect(await visibleProfiles()).toEqual(['marshmallow', 'chrome']);
-  const metallicLabel = page.locator('.sandbox-library-card:visible .sandbox-library-card__footer strong').nth(1);
-  await expect(metallicLabel).toContainText('Metallic');
-  await expect(metallicLabel).not.toContainText('Chrome');
-  await page.screenshot({ path: info.outputPath('library-hall-material-marshmallow-chrome-1440.png'), animations: 'disabled' });
-  await captureThumbnail('marshmallow');
-  await captureStudio('marshmallow');
-  await captureThumbnail('chrome');
-  await captureStudio('chrome');
-
-  await page.locator('[data-library-hall-next]').click();
-  expect(await visibleProfiles()).toEqual(['holo', 'pearl']);
-  await page.screenshot({ path: info.outputPath('library-hall-material-holo-pearl-1440.png'), animations: 'disabled' });
-  await captureThumbnail('holo');
-  await captureStudio('holo');
-  await captureThumbnail('pearl');
-  await captureStudio('pearl');
 });
 
-
+for (const room of [
+  { number: 2, materials: ['marshmallow', 'chrome'], image: 'marshmallow-chrome' },
+  { number: 3, materials: ['holo', 'pearl'], image: 'holo-pearl' },
+]) test(`real saved ${room.image} retain desktop Hall and Studio captures`, async ({ page }, info) => {
+  const { visibleProfiles, captureThumbnail, captureStudio } = captures(page, info);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  if (room.number === 2) await page.screenshot({ path: info.outputPath('library-hall-material-desktop-1440.png'), animations: 'disabled' });
+  for (let n = 1; n < room.number; n++) await page.locator('[data-library-hall-next]').click();
+  expect(await visibleProfiles()).toEqual(room.materials);
+  if (room.number === 2) {
+    const metallicLabel = page.locator('.sandbox-library-card:visible .sandbox-library-card__footer strong').nth(1);
+    await expect(metallicLabel).toContainText('Metallic');
+    await expect(metallicLabel).not.toContainText('Chrome');
+  }
+  await page.screenshot({ path: info.outputPath(`library-hall-material-${room.image}-1440.png`), animations: 'disabled' });
+  for (const material of room.materials) { await captureThumbnail(material); await captureStudio(material); }
+});
