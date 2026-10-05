@@ -18,7 +18,7 @@ for (const device of devices) {
     const page = await context.newPage();
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    const history: Array<{ stage: string; canvas: { x: number; y: number; width: number; height: number }; deskTop: number; deskBottom: number; floorTop: number; stageTop: number; stageHeight: number }> = [];
+    const history: Array<{ stage: string; canvas: { x: number; y: number; width: number; height: number }; deskTop: number; deskBottom: number; floorTop: number; stageTop: number; stageHeight: number; radius: number }> = [];
     try {
       await page.goto('/phaser/');
       await expect(page.locator('#app')).not.toHaveAttribute('data-studio-env-ready', '');
@@ -100,13 +100,19 @@ for (const device of devices) {
           for (const axis of ['x', 'y', 'width', 'height'] as const) {
             expect(Math.abs(result.canvas[axis] - first.canvas[axis]), `${device.name}/${name}: ${axis} never jumps`).toBeLessThan(2);
           }
+          expect(Math.abs(result.canvas.width * result.radiusRatio - first.radius), `${device.name}/${name}: resting radius never jumps`).toBeLessThan(.01);
           expect(Math.abs(result.stageTop - first.stageTop), `${device.name}/${name}: workbench top`).toBeLessThan(2);
           expect(Math.abs(result.stageHeight - first.stageHeight), `${device.name}/${name}: workbench height`).toBeLessThan(2);
           expect(Math.abs(result.deskTop - first.deskTop), `${device.name}/${name}: desk never jumps`).toBeLessThan(2);
           expect(Math.abs(result.floorTop - first.floorTop), `${device.name}/${name}: floor never jumps`).toBeLessThan(2);
         }
-        expect(result.radiusRatio, `${device.name}: every stage shares its resting projection`).toBeCloseTo(device.name === 'landscape-ru' ? .34 : .14, 3);
-        history.push({ stage: name, canvas: result.canvas, stageTop: result.stageTop,
+        if (device.name === 'landscape-ru') {
+          // The larger draw buffer must preserve the original seat in pixels.
+          const originalRadius = .34 * Math.min(device.height * .64, 280, result.stageHeight - 45);
+          expect(result.canvas.width * result.radiusRatio, `${device.name}: original resting size`).toBeCloseTo(originalRadius, 1);
+          expect(result.canvas.width, `${device.name}: long pulls have drawing room`).toBeGreaterThanOrEqual(device.width);
+        } else expect(result.radiusRatio, `${device.name}: every stage shares its resting projection`).toBeCloseTo(.14, 3);
+        history.push({ stage: name, canvas: result.canvas, radius: result.canvas.width * result.radiusRatio, stageTop: result.stageTop,
           stageHeight: result.stageHeight, deskTop: result.deskTop, deskBottom: result.deskBottom, floorTop: result.floorTop });
         await page.screenshot({ path: info.outputPath(`workshop-${device.name}-${name}.png`), animations: 'disabled' });
         return result;
