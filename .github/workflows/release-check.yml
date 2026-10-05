@@ -156,7 +156,7 @@ jobs:
           name: phaser-m0-old-engine-evidence-${{ matrix.shard }}
           overwrite: true
           path: migration-baseline-evidence/*.png
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 14
       - name: Upload failure diagnostics
         if: failure()
@@ -234,6 +234,20 @@ jobs:
           if [ "$DOCS_ONLY" != true ]; then
             test "$SHARDS_RESULT" = success && test "$VISUAL_RESULT" = success
           fi
+
+      - name: Collect production screenshots from the complete partition
+        if: needs.release-check.outputs.docs-only != 'true' && github.event_name == 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: phaser-m0-old-engine-evidence-*
+          merge-multiple: true
+          path: migration-baseline-evidence
+      - name: Require the original production responsive evidence
+        if: needs.release-check.outputs.docs-only != 'true' && github.event_name == 'pull_request'
+        run: |
+          for viewport in portrait-phone desktop existing-landscape; do
+            test -s "migration-baseline-evidence/production-engine-$viewport.png"
+          done
 
   pages-preview-shard:
     needs: release-check

@@ -671,7 +671,8 @@ This infrastructure pass changes no game source, physics, materials, controls,
 saves or progression. No slow gesture/idle test is shortened simply to lower
 its runtime; its behavioral coverage remains in the complete shard partition.
 
-Candidate screenshot artifacts are collected after all shards pass. A shard
+Production and candidate screenshot artifacts are collected after all shards
+pass. A shard
 containing only input/geometry tests need not invent screenshots; the aggregate
-requires the original desktop, portrait, landscape, compositing and real-studio
-captures across the complete partition instead of a per-runner any-PNG check.
+requires the original production portrait/desktop/landscape frames and candidate
+desktop, portrait, landscape, compositing and real-studio captures across the complete partition instead of a per-runner any-PNG check.
