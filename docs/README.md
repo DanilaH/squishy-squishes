@@ -27,8 +27,10 @@ idle blinks. Living-toy/contact/idle shipped in #78. The owner authorized the
 next personality, audio, Hall life, decor-preview and workshop-response pass,
 shipped in #79. On 5 October the owner authorized fixing scene consistency,
 extreme pulls, loading, idle and the crowded editor; this shipped in #80.
-The next authorized tactile iteration covers visible/returning surface grabs,
-local pressure, volume cues and release; its contract is in PROJECT_DECISIONS.
+Visible/returning surface grabs, local pressure, volume cues and release shipped
+in #81. The next authorized iteration repairs the strawberry silhouette and
+relief, adds side-aware facial response, and strengthens tactile material identity;
+its contract is in PROJECT_DECISIONS.
 The full optional
 idea bank is not a release checklist.
 

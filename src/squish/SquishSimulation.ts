@@ -114,10 +114,13 @@ export class SquishSimulation {
   private material: MaterialId = 'soft';
   private readonly previousField = new Float32Array((SQUISH_GRID_CELLS + 1) ** 2 * 2);
   private readonly capturedField = new Float32Array((SQUISH_GRID_CELLS + 1) ** 2 * 2);
+  private readonly foamMemory = new Float32Array((SQUISH_GRID_CELLS + 1) ** 2 * 2);
+  private foamMemoryWeight = 0;
   private capturedX = 0;
   private capturedY = 0;
 
   public setTactileFeatures(enabled: boolean, material: MaterialId = 'soft'): void {
+    if (material !== this.material) this.foamMemoryWeight = 0;
     if (this.multiTouch && !enabled) this.cancel();
     this.multiTouch = enabled;
     this.material = material;
@@ -353,7 +356,16 @@ export class SquishSimulation {
       if (!poke || !this.multiTouch) this.applyReleaseImpulse();
     }
     if (poke) this.applyPokeImpulse();
+    const rememberFoam = this.multiTouch && this.material === 'marshmallow' && this.gestureDurationMs > 350;
     this.cancel();
+    if (rememberFoam) {
+      this.foamMemoryWeight = .28;
+      for (let i = 0; i < this.vertices.length; i++) {
+        const vertex = this.vertices[i]!;
+        this.foamMemory[i * 2] = vertex.x - vertex.restX - this.bodyOffsetX;
+        this.foamMemory[i * 2 + 1] = vertex.y - vertex.restY - this.bodyOffsetY;
+      }
+    }
     return poke ? Math.max(energy, 0.16) : energy;
   }
 
@@ -376,6 +388,7 @@ export class SquishSimulation {
 
   /** Cancel without adding a squeeze or a release impulse. */
   public cancel(): void {
+    this.foamMemoryWeight = 0;
     this.pointerId = null;
     this.second = null;
     this.stroking = 0; this.stretch = 0; this.motionSpeed = 0; this.strokeGraceMs = 0;
@@ -441,8 +454,10 @@ export class SquishSimulation {
     // Same solver for every silhouette; soft/default retains the reviewed constants.
     const foam = this.multiTouch && this.material === 'marshmallow';
     const jelly = this.multiTouch && this.material === 'jelly';
-    const restResponse = foam ? .40 : jelly ? .82 : 1;
-    const dampingResponse = foam ? 1.35 : jelly ? .62 : 1;
+    const restResponse = foam ? .40 : jelly ? .95 : 1;
+    const dampingResponse = foam ? 1.35 : jelly ? .48 : 1;
+    this.foamMemoryWeight *= Math.exp(-dt / .55);
+    if (this.foamMemoryWeight < .0001) this.foamMemoryWeight = 0;
     const second = this.second;
     const axisX = second ? second.startX - this.pinchStartX : 1;
     const axisY = second ? second.startY - this.pinchStartY : 0;
@@ -536,6 +551,10 @@ export class SquishSimulation {
       let targetX = bodyRestX;
       let targetY = bodyRestY;
       let heldRestX = bodyRestX, heldRestY = bodyRestY;
+      if (!active && foam && this.foamMemoryWeight) {
+        heldRestX += this.foamMemory[index * 2]! * this.foamMemoryWeight;
+        heldRestY += this.foamMemory[index * 2 + 1]! * this.foamMemoryWeight;
+      }
       let responseInfluence = 0;
       if (active) {
         const lx = vertex.restX - this.grabStartX;

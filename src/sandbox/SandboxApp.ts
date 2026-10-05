@@ -796,6 +796,11 @@ export class SandboxApp {
     const shapeId = target.dataset.shape as ShapeId | undefined;
     if (shapeId && SHAPES.some((shape) => shape.id === shapeId)) {
       this.draft = { ...this.draft, shapeId };
+      if (shapeId === 'strawberry' && this.stage === 'shape' && !this.editingId && this.draft.appearance.strokes.length === 0) {
+        // A normal editable pigment fill; never recolour an existing toy.
+        this.draft = { ...this.draft, appearance: { ...this.draft.appearance, strokes: [createBodyFillStroke(0xff92b2)] } };
+        this.paintHistory.push([]);
+      }
       this.applyDraftToRenderer();
       this.replayAndUpload();
       this.updatePressed('[data-shape]', 'shape', shapeId);
@@ -1164,8 +1169,8 @@ export class SandboxApp {
     const idle = (this.renderer as PhaserSquishSurface).presentation();
     const extras = (this.renderer as PhaserSquishSurface).reactionExtras();
     const blink = enabled ? Math.max(this.gestureActive ? 0 : idle.blink, extras.blink) : 0;
-    const next: FaceReaction = enabled ? { ...faceReaction(Math.max(this.gestureStrength, this.gestureActive ? 0 : idle.squeeze), this.gestureActive ? -1 : performance.now() - this.releasedAt, this.releaseStrength, this.gestureActive ? this.strokeDelight : idle.delight, this.gestureActive ? this.stretchReaction : 0), ...(blink ? { blink } : {}), ...(extras.surprise ? { surprise: extras.surprise } : {}) } : REST_FACE;
-    const key = `${next.squeeze}:${next.delight}${next.stretch ? `:${next.stretch}` : ''}${blink ? `:b${blink}` : ''}${next.surprise ? `:s${next.surprise}` : ''}`;
+    const next: FaceReaction = enabled ? { ...faceReaction(Math.max(this.gestureStrength, this.gestureActive ? 0 : idle.squeeze), this.gestureActive ? -1 : performance.now() - this.releasedAt, this.releaseStrength, this.gestureActive ? this.strokeDelight : idle.delight, this.gestureActive ? this.stretchReaction : 0), ...(blink ? { blink } : {}), ...(extras.surprise ? { surprise: extras.surprise } : {}), ...(extras.cheek ? { cheek: extras.cheek } : {}) } : REST_FACE;
+    const key = `${next.squeeze}:${next.delight}${next.stretch ? `:${next.stretch}` : ''}${blink ? `:b${blink}` : ''}${next.surprise ? `:s${next.surprise}` : ''}${next.cheek ? `:c${next.cheek}` : ''}`;
     if (key === this.reactionKey) return;
     this.reaction = next; this.reactionKey = key;
     this.shell.dataset.faceReaction = key;

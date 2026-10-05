@@ -1,4 +1,4 @@
-export interface FaceReaction { readonly squeeze: number; readonly delight: number; readonly stretch?: number; readonly blink?: number; readonly surprise?: number }
+export interface FaceReaction { readonly squeeze: number; readonly delight: number; readonly stretch?: number; readonly blink?: number; readonly surprise?: number; readonly cheek?: number }
 export const REST_FACE: FaceReaction = { squeeze: 0, delight: 0 };
 
 /** Presentation only: reads existing deformation, never feeds the simulation. */
