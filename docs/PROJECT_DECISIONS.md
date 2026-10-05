@@ -611,3 +611,17 @@ foam residual after release, Pearl overshoot and settling, Holo free/taut gain
 and transverse pinch growth, alongside the full eight-shape/material stress
 matrix and existing real-browser gesture tests. Phone acceptance remains with
 the owner; numerical distinctions do not establish subjective satisfaction.
+
+## Editor panel centering — 5 October 2026
+
+The owner's desktop screenshot exposed a 50px left offset: controls are centered
+at 720px while their 620px panel remained start-aligned. Shared editor panels
+now use auto inline margins, keeping their existing width, vertical placement,
+contents and touch zones. Short landscape centers within its existing right
+controls column; it does not move that column or the toy/table.
+
+RU/EN checks traverse Shape, Paint, Mix-ins, Mix, every Decor tab and Finish on
+320px portrait, 844px short landscape, 1440px desktop and the screenshot's 1892px
+width. Only four desktop Decor/Finish UI baselines were changed after inspecting
+each actual/diff image: the panel moves 50px right with no other scene changes.
+The other 26 baselines remain. No material, physics, save or progression changes.
