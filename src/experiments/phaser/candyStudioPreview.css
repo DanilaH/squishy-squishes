@@ -87,7 +87,7 @@
   height: clamp(34px, 10vw, 48px);
   filter: drop-shadow(0 2px 1px rgba(83, 42, 96, .17));
 }
-.sandbox-shell[data-stage="shape"] .sandbox-shape__icon polygon {
+.sandbox-shell[data-stage="shape"] .sandbox-shape__icon svg > :is(polygon, path) {
   fill: var(--tile-fill);
   stroke: var(--tile-stroke);
   stroke-width: 2.5;

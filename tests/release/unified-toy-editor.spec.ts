@@ -22,7 +22,7 @@ test('extreme single and two-finger reversals keep every mold mesh ordered and a
     simulation.setTactileFeatures(true, material.id); simulation.setViewportFollowEnabled(true);
     const floor = Math.min(...shape.boundary.map(p => p.y)) - .10;
     for (const [dx, dy] of [[3, 0], [-3, 0], [0, -3], [3, -3]]) {
-      simulation.begin(1, 0, 0);
+      expect(simulation.begin(1, shape.holes ? .6 : 0, 0)).toBe(true);
       let smallestArea = Infinity, lowestFloorMargin = Infinity;
       for (let f = 0; f < 48; f++) {
         simulation.move(1, f % 8 < 4 ? dx! : -dx!, dy!);
@@ -39,7 +39,7 @@ test('extreme single and two-finger reversals keep every mold mesh ordered and a
     }
     const pinch = new SquishSimulation(shape);
     pinch.setTactileFeatures(true, material.id); pinch.setViewportFollowEnabled(true);
-    expect(pinch.begin(1, -.15, 0)).toBe(true); expect(pinch.begin(2, .15, 0)).toBe(true);
+    expect(pinch.begin(1, shape.holes ? -.5 : -.15, 0)).toBe(true); expect(pinch.begin(2, shape.holes ? .5 : .15, 0)).toBe(true);
     let smallestArea = Infinity;
     for (let f = 0; f < 48; f++) {
       const gap = f % 8 < 4 ? 3 : .01;

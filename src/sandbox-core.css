@@ -148,7 +148,7 @@
 .sandbox-shape { min-height: 74px !important; display: grid; place-items: center; gap: 2px; padding: 4px 2px; }
 .sandbox-shape__icon { width: 34px; height: 34px; display: block; }
 .sandbox-shape__icon svg { width: 100%; height: 100%; overflow: visible; }
-.sandbox-shape__icon polygon { fill: #e4c9f6; stroke: #9e65cf; stroke-width: 3; stroke-linejoin: round; }
+.sandbox-shape__icon svg > :is(polygon, path) { fill: #e4c9f6; stroke: #9e65cf; stroke-width: 3; stroke-linejoin: round; }
 .sandbox-shape span:last-child { font-size: 10px; line-height: 1; }
 
 .sandbox-tool-row { grid-column: 1 / -1; display: flex; gap: 7px; justify-content: center; align-items: center; flex-wrap: nowrap; }

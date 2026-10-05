@@ -105,7 +105,7 @@ test('foam memory fades in wall time and permits the first idle blink on slow fr
 for (const shape of SHAPES) test(`every material survives reversals, pinch handoff and interruption: ${shape.id}`, () => {
   for (const material of materials) {
     const sim = new SquishSimulation(shape); sim.setTactileFeatures(true, material); sim.setViewportFollowEnabled(true);
-    expect(sim.begin(1, -.2, 0)).toBe(true); expect(sim.begin(2, .2, 0)).toBe(true);
+    expect(sim.begin(1, shape.holes ? -.5 : -.2, 0)).toBe(true); expect(sim.begin(2, shape.holes ? .5 : .2, 0)).toBe(true);
     for (let f = 1; f <= 65; f++) {
       const gap = f % 16 < 8 ? .7 : .06;
       sim.move(1, -gap, .1); sim.move(2, gap, -.1); sim.advance(16, f*16);

@@ -84,6 +84,8 @@ const RU_SHAPES: Readonly<Record<ShapeId, string>> = {
   paw: 'Лапка',
   dumpling: 'Дамплинг',
   strawberry: 'Клубничка',
+  donut: 'Пончик',
+  bun: 'Булочка', 'ice-cream': 'Мороженое', cupcake: 'Кексик', watermelon: 'Арбузик', 'mochi-cat': 'Котик-моти', 'mochi-bunny': 'Зайчик-моти',
 };
 
 const RU_PALETTES: Readonly<Record<PaletteId, string>> = {
@@ -120,7 +122,7 @@ const EN_MIXINS: Readonly<Record<MixInId, string>> = {
   foam: 'Foam',
   pearls: 'Pearls',
   hearts: 'Hearts',
-  confetti: 'Confetti',
+  confetti: 'Confetti', crescents:'Crescents', bubbles:'Bubbles', 'strawberry-slices':'Berry slices', 'lemon-slices':'Lemon slices', 'kiwi-slices':'Kiwi slices', flowers:'Flowers', flakes:'Pearl flakes',
 };
 
 const RU_MIXINS: Readonly<Record<MixInId, string>> = {
@@ -129,7 +131,7 @@ const RU_MIXINS: Readonly<Record<MixInId, string>> = {
   foam: 'Пенки',
   pearls: 'Жемчуг',
   hearts: 'Сердечки',
-  confetti: 'Конфетти',
+  confetti: 'Конфетти', crescents:'Полумесяцы', bubbles:'Пузырьки', 'strawberry-slices':'Клубника', 'lemon-slices':'Лимон', 'kiwi-slices':'Киви', flowers:'Цветочки', flakes:'Хлопья',
 };
 
 export const getIdeaLabel = (idea: SquishyIdea, language: IdeaLanguage): string => {

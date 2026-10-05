@@ -1,3 +1,4 @@
+import { readCraftLight, type CraftLight } from './craftLighting';
 import { drawToyMixIn } from './toyMixins';
 import type { MaterialId } from '../game/content';
 import type { ShapeId } from '../game/shapes';
@@ -8,7 +9,7 @@ export const MAX_MIXIN_PLACEMENTS = 160;
 export const BODY_FILL_BRUSH_SIZE = 112;
 
 export type AppearanceStrokeMode = 0 | 1;
-export type MixInId = 'glitter' | 'stars' | 'foam' | 'pearls' | 'hearts' | 'confetti';
+export type MixInId = 'glitter' | 'stars' | 'foam' | 'pearls' | 'hearts' | 'confetti' | 'crescents' | 'bubbles' | 'strawberry-slices' | 'lemon-slices' | 'kiwi-slices' | 'flowers' | 'flakes';
 
 export interface AppearancePoint {
   readonly u: number;
@@ -31,12 +32,14 @@ export interface MixInPlacementV1 {
 }
 
 export interface AppearanceDocumentV1 {
+  readonly light?: CraftLight;
+  readonly mixinBrush?: { readonly size: number; readonly density: number };
   readonly v: 1;
   readonly strokes: readonly AppearanceStrokeV1[];
   readonly mixins: readonly MixInPlacementV1[];
 }
 
-export const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti'];
+export const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti', 'crescents', 'bubbles', 'strawberry-slices', 'lemon-slices', 'kiwi-slices', 'flowers', 'flakes'];
 const mixinCodeById = new Map<MixInId, number>(MIXIN_IDS.map((id, index) => [id, index]));
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
@@ -178,6 +181,8 @@ export const decodeAppearanceDocument = (value: unknown): AppearanceDocumentV1 =
     v: 1,
     strokes: value.strokes.map(readStroke),
     mixins: mixinsRaw.map(readMixIn),
+    ...(value.light === undefined ? {} : { light: readCraftLight(value.light) }),
+    ...(value.mixinBrush === undefined ? {} : { mixinBrush: readMixinBrush(value.mixinBrush) }),
   };
 };
 
@@ -289,4 +294,9 @@ export const replayAppearanceDocument = (
   for (const mixin of document.mixins) {
     if (!excludedMixIns.has(getMixInId(mixin))) drawMixIn(context, mixin, options.materialId);
   }
+};
+
+const readMixinBrush = (value: unknown): {size:number;density:number} => {
+  if(!isRecord(value)||typeof value.size!=='number'||typeof value.density!=='number'||!Number.isFinite(value.size)||!Number.isFinite(value.density)||value.size<6||value.size>60||value.density<.25||value.density>2)throw new TypeError('Mix-in brush settings are invalid.');
+  return {size:value.size,density:value.density};
 };

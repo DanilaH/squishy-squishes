@@ -17,8 +17,8 @@
   animation: none !important;
 }
 @keyframes library-toy-arrival {
-  from { opacity: .35; }
-  to { opacity: 1; }
+  from { opacity: .35; translate: 0 -4px; }
+  to { opacity: 1; translate: 0 0; }
 }
 @keyframes library-toy-page-enter {
   from { opacity: .78; }
@@ -71,3 +71,13 @@
 
 /* Hall personality uses the same bounded Squeeze pose and restores exact pixels.
    Keep the existing card scale; no animation may replace its transform. */
+
+/* Edge props and light stay behind input and the toy/podium composition. */
+#app .library-craft-props { position: absolute; width: clamp(200px,27vw,350px); height: auto; left: max(12px,calc(50% - 610px)); bottom: 5%; pointer-events: none; opacity: .88; }
+#app .library-hall-scene::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 28% 30%,#fff8e540,transparent 60%); }
+#app .is-library-arrival::after { content: '✦ · ✧'; position: absolute; top: 12%; left: 15%; color: #d9accd; font-size: 20px; pointer-events: none; animation: library-arrival-dust 750ms ease-out both; }
+@keyframes library-arrival-dust { from { opacity: 0; translate: 0 6px; } 25% { opacity: .65; } to { opacity: 0; translate: 0 -12px; } }
+#app [data-room-motion-paused] .is-library-arrival::after, #app .is-library-hall.is-blocked .is-library-arrival::after { animation-play-state: paused; }
+@media (max-width:430px) { #app .library-craft-props { width: 180px; left: 6px; bottom: 6%; } }
+@media (max-height:520px) and (orientation:landscape) { #app .library-craft-props { width: 145px; bottom: 3%; left: 3px; } }
+@media (prefers-reduced-motion:reduce) { #app .is-library-arrival::after { display:none; } }

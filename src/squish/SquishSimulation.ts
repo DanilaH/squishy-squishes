@@ -1,6 +1,6 @@
 import { sampleContinuousInteraction } from '@danilah/mini-games-kit/core';
 import type { MaterialId } from '../game/content';
-import { getShape, isPointInsideShape, type ShapeDefinition } from '../game/shapes';
+import { getShape, getShapeContours, isPointInsideShape, type ShapeDefinition } from '../game/shapes';
 
 /** Engine-neutral mesh state. No DOM, WebGL, Phaser or WebAudio dependencies. */
 export interface SquishVertexState {
@@ -273,7 +273,7 @@ export class SquishSimulation {
     }
     if (!(edgeTolerance > 0)) return null;
     let closest = edgeTolerance ** 2, result: { u: number; v: number } | null = null;
-    const boundary = this.shape.boundary;
+    for (const boundary of getShapeContours(this.shape)) {
     for (let i = 0; i < boundary.length; i++) {
       const a = boundary[i]!, b = boundary[(i + 1) % boundary.length]!;
       const pa = this.projectUvToLocal(a.x * .5 + .5, a.y * .5 + .5), pb = this.projectUvToLocal(b.x * .5 + .5, b.y * .5 + .5);
@@ -281,6 +281,7 @@ export class SquishSimulation {
       const t = clamp01(((x - pa.x) * dx + (y - pa.y) * dy) / Math.max(1e-9, dx * dx + dy * dy));
       const distance = (x - pa.x - dx * t) ** 2 + (y - pa.y - dy * t) ** 2;
       if (distance <= closest) { closest = distance; result = { u: (a.x + (b.x - a.x) * t) * .5 + .5, v: (a.y + (b.y - a.y) * t) * .5 + .5 }; }
+    }
     }
     return result;
   }

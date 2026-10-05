@@ -53,7 +53,9 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
         expect({ tabs: await tabs.boundingBox(), next: await next.boundingBox(), body: await body.boundingBox() }).toEqual(before);
         const panel = page.locator(`[data-decor-panel="${section}"]`);
         expect(await panel.evaluate(el => ({ vertical: el.scrollHeight > el.clientHeight + 1, horizontal: el.scrollWidth > el.clientWidth + 1 }))).toEqual({ vertical: false, horizontal: false });
+        if(section === 'accessory') expect(await panel.locator('.sandbox-decor-grid').evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
         for (const button of await panel.getByRole('button').all()) {
+          await button.scrollIntoViewIfNeeded();
           const rect = (await button.boundingBox())!;
           expect(rect.height).toBeGreaterThanOrEqual(44);
           expect(rect.y + rect.height).toBeLessThanOrEqual(viewport.height + 1);
@@ -127,7 +129,7 @@ test('all molds seat bows and crowns in front, mirrored ears and horns behind', 
   for (const accessory of ['bow', 'crown', 'cat-ears', 'bunny-ears', 'horns'] as const) {
     await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), {
       ...createDefaultSaveV3(), totalCrafts: 8,
-      library: SHAPES.map((shape, n) => ({ id: shape.id, createdAt: 1700000000000 + n, shapeId: shape.id, materialId: 'soft',
+      libraryCapacity: 24, library: SHAPES.map((shape, n) => ({ id: shape.id, createdAt: 1700000000000 + n, shapeId: shape.id, materialId: 'soft',
         appearance: { v: 1, strokes: [], mixins: [] }, decor: { ...createEmptyDecorDocument(), accessory } })),
     });
     for (const shape of SHAPES) {

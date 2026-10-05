@@ -1,7 +1,7 @@
 import type { AppearancePoint } from './appearance';
 
 export type StudioGestureStage = 'home' | 'shape' | 'paint' | 'mixins' | 'mix' | 'decor' | 'finish' | 'squeeze';
-export type StudioDecorSection = 'face' | 'stickers' | 'accessory';
+export type StudioDecorSection = 'face' | 'stickers' | 'accessory' | 'objects';
 
 /** x/y are the Phaser canvas CSS-pixel coordinates; clientX/Y are viewport CSS pixels. */
 export interface StagePointer {
@@ -27,7 +27,13 @@ export interface StageGestureHost {
   paintSegment(from: AppearancePoint, to: AppearancePoint): void;
   paintEnd(): void;
   addMixin(point: AppearancePoint): void;
+  mixinSpacing?(): number;
   addSticker(point: AppearancePoint): void;
+  beginDecorEdit?(pointer: StagePointer): boolean;
+  moveDecorEdit?(pointer: StagePointer): void;
+  endDecorEdit?(cancelled: boolean): void;
+  authoringBegin?(): void;
+  authoringEnd?(): void;
   previewSticker?(point: AppearancePoint | null): void;
   mixProgress(distancePx: number, progress: number): void;
 }
@@ -85,7 +91,12 @@ export class StageGestureRouter {
       return true;
     }
     const point = this.host.pointToUv(pointer.x, pointer.y);
+    if (this.stage === 'decor' && this.decorSection === 'objects') {
+      if (!this.host.beginDecorEdit?.(pointer)) return false;
+      this.owner = pointer.id; return true;
+    }
     if (this.stage === 'paint') {
+      this.host.authoringBegin?.();
       const paintPoint = this.host.paintPointToUv(pointer.x, pointer.y);
       this.owner = pointer.id; // IMPORTANT: outside down still belongs to Paint.
       this.lastUv = paintPoint;
@@ -97,6 +108,7 @@ export class StageGestureRouter {
       this.owner = pointer.id;
       this.lastClientX = pointer.clientX;
       this.lastClientY = pointer.clientY;
+      this.host.authoringBegin?.();
       this.host.addMixin(point);
       return true;
     }
@@ -128,6 +140,7 @@ export class StageGestureRouter {
     if (this.blocked) return;
     if (pointer.id === this.secondOwner) { this.host.moveSquish(pointer); return; }
     if (pointer.id !== this.owner) return;
+    if (this.stage === 'decor' && this.decorSection === 'objects') { this.host.moveDecorEdit?.(pointer); return; }
     if (this.stage === 'decor' && this.decorSection === 'stickers' && this.host.previewSticker) {
       this.lastUv = this.host.pointToUv(pointer.x, pointer.y);
       this.host.previewSticker(this.lastUv);
@@ -148,7 +161,7 @@ export class StageGestureRouter {
       return;
     }
     if (this.stage === 'mixins') {
-      if (Math.hypot(pointer.clientX - this.lastClientX, pointer.clientY - this.lastClientY) < MIXIN_SPACING_PX) return;
+      if (Math.hypot(pointer.clientX - this.lastClientX, pointer.clientY - this.lastClientY) < (this.host.mixinSpacing?.() ?? MIXIN_SPACING_PX)) return;
       const point = this.host.pointToUv(pointer.x, pointer.y);
       if (!point) return;
       this.lastClientX = pointer.clientX;
@@ -182,6 +195,8 @@ export class StageGestureRouter {
       return;
     }
     if (this.stage === 'paint' && this.lastUv) this.host.paintEnd();
+    if (this.stage === 'paint' || this.stage === 'mixins') this.host.authoringEnd?.();
+    if (this.stage === 'decor' && this.decorSection === 'objects') this.host.endDecorEdit?.(cancelled);
     if (this.stage === 'decor' && this.decorSection === 'stickers' && this.host.previewSticker) {
       if (!cancelled && this.lastUv) this.host.addSticker(this.lastUv);
       this.host.previewSticker(null);

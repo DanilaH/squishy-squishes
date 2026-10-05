@@ -1,4 +1,4 @@
-export type ShapeId = 'soft-square' | 'heart' | 'mochi' | 'peach' | 'mushroom' | 'paw' | 'dumpling' | 'strawberry';
+export type ShapeId = 'soft-square' | 'heart' | 'mochi' | 'peach' | 'mushroom' | 'paw' | 'dumpling' | 'strawberry' | 'donut' | 'bun' | 'ice-cream' | 'cupcake' | 'watermelon' | 'mochi-cat' | 'mochi-bunny';
 
 export interface ShapePoint {
   readonly x: number;
@@ -9,6 +9,8 @@ export interface ShapeDefinition {
   readonly id: ShapeId;
   readonly label: string;
   readonly boundary: readonly ShapePoint[];
+  /** Inner contours use the opposite winding to the outer skin. */
+  readonly holes?: readonly (readonly ShapePoint[])[];
 }
 
 const TAU = Math.PI * 2;
@@ -180,6 +182,54 @@ const createStrawberryBoundary = (): readonly ShapePoint[] => sampleCubicBoundar
   [{ x: -.85, y: .36 }, { x: -.80, y: .78 }, { x: -.34, y: .77 }, { x: 0, y: .72 }],
 ]);
 
+const ellipseBoundary = (rx: number, ry: number, clockwise = false): readonly ShapePoint[] =>
+  Array.from({ length: 128 }, (_, i) => {
+    const angle = i / 128 * TAU * (clockwise ? -1 : 1);
+    return { x: Math.cos(angle) * rx, y: Math.sin(angle) * ry };
+  });
+
+/** All skin contours, shared by masks, field and deforming sidewalls. */
+export const getShapeContours = (shape: ShapeDefinition): readonly (readonly ShapePoint[])[] =>
+  [shape.boundary, ...(shape.holes ?? [])];
+
+
+const createBunBoundary = (): readonly ShapePoint[] => normalizeBoundary(
+  ellipseBoundary(1, .79).map(p => ({ x: p.x, y: p.y + (p.y > 0 ? .09 * Math.cos(p.x * Math.PI * 2) ** 2 : .04) })));
+
+const createIceCreamBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
+  [{x:0,y:.93},{x:.55,y:1.02},{x:.93,y:.72},{x:.87,y:.26}],
+  [{x:.87,y:.26},{x:1,y:.06},{x:.72,y:-.03},{x:.58,y:.08}],
+  [{x:.58,y:.08},{x:.44,y:-.24},{x:.23,y:-.74},{x:.08,y:-.89}],
+  [{x:.08,y:-.89},{x:.04,y:-.95},{x:-.04,y:-.95},{x:-.08,y:-.89}],
+  [{x:-.08,y:-.89},{x:-.23,y:-.74},{x:-.44,y:-.24},{x:-.58,y:.08}],
+  [{x:-.58,y:.08},{x:-.72,y:-.03},{x:-1,y:.06},{x:-.87,y:.26}],
+  [{x:-.87,y:.26},{x:-.93,y:.72},{x:-.55,y:1.02},{x:0,y:.93}],
+]);
+const createCupcakeBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
+  [{x:0,y:.92},{x:.30,y:.99},{x:.58,y:.81},{x:.59,y:.61}],
+  [{x:.59,y:.61},{x:.89,y:.65},{x:1,y:.22},{x:.83,y:.09}],
+  [{x:.83,y:.09},{x:.79,y:-.14},{x:.66,y:-.64},{x:.55,y:-.75}],
+  [{x:.55,y:-.75},{x:.39,y:-.84},{x:-.39,y:-.84},{x:-.55,y:-.75}],
+  [{x:-.55,y:-.75},{x:-.66,y:-.64},{x:-.79,y:-.14},{x:-.83,y:.09}],
+  [{x:-.83,y:.09},{x:-1,y:.22},{x:-.89,y:.65},{x:-.59,y:.61}],
+  [{x:-.59,y:.61},{x:-.58,y:.81},{x:-.30,y:.99},{x:0,y:.92}],
+]);
+const createWatermelonBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
+  [{x:-.88,y:.54},{x:-.99,y:.54},{x:-.99,y:.39},{x:-.90,y:.10}],
+  [{x:-.90,y:.10},{x:-.65,y:-.80},{x:.65,y:-.80},{x:.90,y:.10}],
+  [{x:.90,y:.10},{x:.99,y:.39},{x:.99,y:.54},{x:.88,y:.54}],
+  [{x:.88,y:.54},{x:.45,y:.58},{x:-.45,y:.58},{x:-.88,y:.54}],
+]);
+const createMochiAnimalBoundary = (bunny: boolean): readonly ShapePoint[] => sampleCubicBoundary([
+  [{x:-.77,y:.18},{x:-.83,y:.49},{x:-.69,y:bunny ? 1.18 : .79},{x:-.49,y:bunny ? 1.18 : .72}],
+  [{x:-.49,y:bunny ? 1.18 : .72},{x:-.31,y:bunny ? 1.18 : .75},{x:-.25,y:.66},{x:-.23,y:.50}],
+  [{x:-.23,y:.50},{x:-.12,y:.54},{x:.12,y:.54},{x:.23,y:.50}],
+  [{x:.23,y:.50},{x:.25,y:.66},{x:.31,y:bunny ? 1.18 : .75},{x:.49,y:bunny ? 1.18 : .72}],
+  [{x:.49,y:bunny ? 1.18 : .72},{x:.69,y:bunny ? 1.18 : .79},{x:.83,y:.49},{x:.77,y:.18}],
+  [{x:.77,y:.18},{x:1,y:-.13},{x:.78,y:-.71},{x:0,y:-.72}],
+  [{x:0,y:-.72},{x:-.78,y:-.71},{x:-1,y:-.13},{x:-.77,y:.18}],
+]);
+
 export const SHAPES: readonly ShapeDefinition[] = [
   { id: 'soft-square', label: 'Soft Cube', boundary: createSoftSquareBoundary() },
   { id: 'heart', label: 'Soft Heart', boundary: createHeartBoundary() },
@@ -189,6 +239,13 @@ export const SHAPES: readonly ShapeDefinition[] = [
   { id: 'paw', label: 'Paw', boundary: createPawBoundary() },
   { id: 'dumpling', label: 'Dumpling', boundary: createDumplingBoundary() },
   { id: 'strawberry', label: 'Strawberry', boundary: createStrawberryBoundary() },
+  { id: 'bun', label: 'Puffy Bun', boundary: createBunBoundary() },
+  { id: 'ice-cream', label: 'Ice Cream', boundary: createIceCreamBoundary() },
+  { id: 'cupcake', label: 'Cupcake', boundary: createCupcakeBoundary() },
+  { id: 'watermelon', label: 'Watermelon', boundary: createWatermelonBoundary() },
+  { id: 'mochi-cat', label: 'Mochi Cat', boundary: createMochiAnimalBoundary(false) },
+  { id: 'mochi-bunny', label: 'Mochi Bunny', boundary: createMochiAnimalBoundary(true) },
+  { id: 'donut', label: 'Donut', boundary: ellipseBoundary(.94, .87), holes: [ellipseBoundary(.30, .28, true)] },
 ] as const;
 
 const SELECTOR_SHAPE_IDS = new Set<ShapeId>(['soft-square', 'heart']);
@@ -214,12 +271,7 @@ export const getShapeTopAtX = (shape: ShapeDefinition, x: number): number => {
   return top;
 };
 
-export const isPointInsideShape = (
-  shape: ShapeDefinition,
-  x: number,
-  y: number,
-): boolean => {
-  const points = shape.boundary;
+const isPointInsideContour = (points: readonly ShapePoint[], x: number, y: number): boolean => {
   let inside = false;
 
   for (let index = 0, previous = points.length - 1; index < points.length; previous = index, index += 1) {
@@ -232,6 +284,10 @@ export const isPointInsideShape = (
 
   return inside;
 };
+
+export const isPointInsideShape = (shape: ShapeDefinition, x: number, y: number): boolean =>
+  isPointInsideContour(shape.boundary, x, y)
+  && !(shape.holes ?? []).some(hole => isPointInsideContour(hole, x, y));
 
 const pointToSegmentDistance = (
   px: number,
@@ -256,7 +312,7 @@ export const createShapeField = (
   distanceRange = 0.22,
 ): Uint8Array => {
   const data = new Uint8Array(size * size);
-  const points = shape.boundary;
+  const contours = getShapeContours(shape);
 
   for (let y = 0; y < size; y += 1) {
     const localY = ((y + 0.5) / size) * 2 - 1;
@@ -264,7 +320,7 @@ export const createShapeField = (
       const localX = ((x + 0.5) / size) * 2 - 1;
       let minDistance = Number.POSITIVE_INFINITY;
 
-      for (let index = 0; index < points.length; index += 1) {
+      for (const points of contours) for (let index = 0; index < points.length; index += 1) {
         const a = points[index]!;
         const b = points[(index + 1) % points.length]!;
         minDistance = Math.min(
@@ -288,8 +344,9 @@ export const createShapePath = (shape: ShapeDefinition, size: number): Path2D =>
   const center = size * 0.5;
   const radius = size * 0.5;
 
-  for (let index = 0; index < shape.boundary.length; index += 1) {
-    const point = shape.boundary[index]!;
+  for (const contour of getShapeContours(shape)) {
+  for (let index = 0; index < contour.length; index += 1) {
+    const point = contour[index]!;
     const x = center + point.x * radius;
     const y = center - point.y * radius;
     if (index === 0) path.moveTo(x, y);
@@ -297,5 +354,11 @@ export const createShapePath = (shape: ShapeDefinition, size: number): Path2D =>
   }
 
   path.closePath();
+  }
   return path;
 };
+
+/** Same compound silhouette for catalog previews; holes remain transparent. */
+export const shapeSvgPath = (shape: ShapeDefinition, radius = 42): string =>
+  getShapeContours(shape).map(contour => contour.map((p, i) =>
+    `${i === 0 ? 'M' : 'L'}${50 + p.x * radius},${50 - p.y * radius}`).join(' ') + ' Z').join(' ');

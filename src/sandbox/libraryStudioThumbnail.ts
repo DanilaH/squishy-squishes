@@ -1,5 +1,6 @@
+import { lightUniform } from './craftLighting';
 import { REST_FACE, type FaceReaction } from './toyReactions';
-import { drawSeatedAccessories } from './decor';
+import { drawPlacedAccessories } from './decor';
 import { getMaterial, getPalette } from '../game/content';
 import { createShapeField, getShape, type ShapeId } from '../game/shapes';
 import { SquishSimulation } from '../squish/SquishSimulation';
@@ -22,7 +23,7 @@ const UNIFORMS = [
   'uFillingDrift', 'uFaceTexture', 'uFaceEnabled', 'uInclusionTexture', 'uInclusionEnabled', 'uPointerUv', 'uStrainDirection', 'uColorLow', 'uColorHigh', 'uSheenColor', 'uRimColor',
   'uCompression', 'uPressDepth', 'uFillingAmount', 'uFillingStyle', 'uFillProgress',
   'uMaterialSeed', 'uTranslucency', 'uIridescence', 'uRoughness', 'uMetallic',
-  'uPearlescence', 'uCloudiness', 'uWireframePass',
+  'uPearlescence', 'uCloudiness', 'uWireframePass', 'uCraftLight',
 ] as const;
 type Uniform = typeof UNIFORMS[number];
 
@@ -269,6 +270,7 @@ class StudioThumbnailRenderer {
     gl.uniform1f(u('uRoughness'), material.roughness);
     gl.uniform1f(u('uMetallic'), material.metallic);
     gl.uniform1f(u('uPearlescence'), material.pearlescence);
+    gl.uniform4f(u('uCraftLight'), ...lightUniform(toy.appearance.light));
     gl.uniform1f(u('uCloudiness'), material.cloudiness);
     gl.uniform1i(u('uWireframePass'), 0);
     gl.bindVertexArray(this.vao);
@@ -278,8 +280,8 @@ class StudioThumbnailRenderer {
     // Nothing animated or WebGL-backed remains attached to an exhibit.
     // The destination has a 1x or 2x transform; draw in 256 logical units.
     destination.drawImage(this.canvas, 0, 0, LOGICAL_SIZE, LOGICAL_SIZE);
-    if (toy.decor.accessory) drawSeatedAccessories(destination, getShape(toy.shapeId), toy.decor.accessory,
-      (u, v) => [128 + (u * 2 - 1) * 102.4 * 1.075, 128 - ((v * 2 - 1) * .905 - .018) * 102.4], 112, 75);
+    drawPlacedAccessories(destination, getShape(toy.shapeId), toy.decor,
+      (u, v) => [128 + (u * 2 - 1) * 102.4 * 1.075, 128 - ((v * 2 - 1) * .905 - .018) * 102.4], 112, 75, reaction);
   }
 
   public dispose(): void {

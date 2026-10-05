@@ -80,6 +80,7 @@ uniform float uMetallic;
 uniform float uPearlescence;
 uniform float uCloudiness;
 uniform bool uWireframePass;
+uniform vec4 uCraftLight;
 ${extraUniforms}
 
 out vec4 outColor;
@@ -318,6 +319,19 @@ void main() {
   base += uSheenColor * meniscusBand * 0.12;
 
   ${finalBodyLighting}
+  // Opt-in owner lighting. A missing field preserves every legacy material pixel.
+  if (uCraftLight.w > 0.5) {
+    vec2 grad = vec2(texture(uShapeField, vUv + vec2(0.008,0.0)).r - texture(uShapeField, vUv - vec2(0.008,0.0)).r,
+      texture(uShapeField, vUv + vec2(0.0,0.008)).r - texture(uShapeField, vUv - vec2(0.0,0.008)).r);
+    vec3 normal = normalize(vec3((vUv - 0.5) * 1.3 + grad * 5.0, 0.72));
+    vec3 lamp = normalize(vec3(uCraftLight.xy * 1.5, 1.0));
+    float diffuse = max(0.0, dot(normal,lamp));
+    float highlight = pow(max(0.0,dot(reflect(-lamp,normal),vec3(0.0,0.0,1.0))),mix(30.0,7.0,roughness));
+    vec3 lampColor = uCraftLight.z > 2.5 ? vec3(0.84,0.91,1.0) : uCraftLight.z > 1.5 ? vec3(1.0,0.79,0.68) : uCraftLight.z > 0.5 ? vec3(1.0,0.86,0.94) : vec3(1.0,0.98,0.89);
+    base *= 0.76 + diffuse * 0.26;
+    base += lampColor * highlight * (0.10 + metallic * 0.18 + translucency * 0.10);
+    base = mix(base, base * lampColor, 0.16);
+  }
   ${finalComposite}
   // Dense gummy gel keeps a little room transmission without losing its
   // pastel pigment against the bright stage reflection.

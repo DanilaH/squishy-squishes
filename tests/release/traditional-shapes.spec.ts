@@ -5,7 +5,7 @@ import { createDefaultSaveV3, decodeSaveStateV3 } from '../../src/platform/saveV
 import { ACCESSORY_IDS, createEmptyDecorDocument } from '../../src/sandbox/decor';
 
 test('traditional molds retain legacy V3 shapes and a continuous touchable body', () => {
-  const save = { ...createDefaultSaveV3(), library: SHAPES.map((shape, n) => ({
+  const save = { ...createDefaultSaveV3(), libraryCapacity: 24, library: SHAPES.map((shape, n) => ({
     id: `mold-${shape.id}`, createdAt: 1700000000000 + n, shapeId: shape.id, materialId: 'soft',
     appearance: { v: 1, strokes: [], mixins: [] }, decor: createEmptyDecorDocument(),
   })), totalCrafts: SHAPES.length };
@@ -32,7 +32,7 @@ for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) {
     page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const save = { ...createDefaultSaveV3(), library: ACCESSORY_IDS.map((accessory, n) => ({
+    const save = { ...createDefaultSaveV3(), libraryCapacity:24, library: ACCESSORY_IDS.map((accessory, n) => ({
       id: `${shapeId}-${accessory}`, createdAt: 1700000000000 + n, shapeId, materialId: 'soft',
       appearance: { v: 1, strokes: [], mixins: [] },
       decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory },
@@ -45,10 +45,10 @@ for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) {
     await mkdir('migration-baseline-evidence', { recursive: true });
     for (const accessory of ACCESSORY_IDS) {
       const hall = page.locator('[data-sandbox-library]');
-      await expect(hall).toHaveAttribute('data-library-count', '5');
+      await expect(hall).toHaveAttribute('data-library-count', String(ACCESSORY_IDS.length));
       await expect(hall).toHaveAttribute('data-library-hall-mounted', 'true');
       const play = page.locator(`[data-library-play-id="${shapeId}-${accessory}"]`);
-      for (let room = 0; room < 3 && !await play.isVisible(); room++) await page.locator('[data-library-hall-next]').click();
+      for (let room = 0; room < Math.ceil(ACCESSORY_IDS.length / 2) && !await play.isVisible(); room++) await page.locator('[data-library-hall-next]').click();
       await expect(play).toBeVisible();
       await play.click();
       const body = page.locator('[data-sandbox-canvas]');

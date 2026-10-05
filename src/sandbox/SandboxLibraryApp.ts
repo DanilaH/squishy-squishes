@@ -1,6 +1,6 @@
 import { mountLibraryPersonality } from './libraryPersonality';
 import { cardPagerMarkup, showCardPage } from './cardPages';
-import { getShape } from '../game/shapes';
+import { getShape, shapeSvgPath } from '../game/shapes';
 import { SandboxApp, type SandboxAppOptions, type SandboxLanguage } from './SandboxApp';
 import {
   SQUISHY_IDEAS,
@@ -158,8 +158,7 @@ const escapeAttribute = (value: string): string => value
 
 const ideaShapeSvg = (idea: SquishyIdea): string => {
   const shape = getShape(idea.shapeId);
-  const points = shape.boundary.map((point) => `${50 + point.x * 40},${50 - point.y * 40}`).join(' ');
-  return `<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${points}" /></svg>`;
+  return `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill-rule="evenodd" d="${shapeSvgPath(shape, 40)}" /></svg>`;
 };
 
 const RU_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
@@ -171,6 +170,8 @@ const RU_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
   paw: 'Лапка',
   dumpling: 'Дамплинг',
   strawberry: 'Клубничка',
+  donut: 'Пончик',
+  bun: 'Булочка', 'ice-cream': 'Мороженое', cupcake: 'Кексик', watermelon: 'Арбузик', 'mochi-cat': 'Котик-моти', 'mochi-bunny': 'Зайчик-моти',
 };
 
 const EN_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
@@ -182,6 +183,8 @@ const EN_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
   paw: 'Paw',
   dumpling: 'Dumpling',
   strawberry: 'Strawberry',
+  donut: 'Donut',
+  bun: 'Puffy Bun', 'ice-cream': 'Ice Cream', cupcake: 'Cupcake', watermelon: 'Watermelon', 'mochi-cat': 'Mochi Cat', 'mochi-bunny': 'Mochi Bunny',
 };
 
 const RU_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {

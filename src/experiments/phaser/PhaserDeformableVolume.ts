@@ -1,5 +1,5 @@
 import { REST_TOY, posePoint, type ToyPose } from '../../sandbox/livingToy';
-import type { ShapeDefinition } from '../../game/shapes';
+import { getShapeContours, type ShapeDefinition } from '../../game/shapes';
 import type { SquishMaterialStyle } from '../../squish/SquishSurface';
 import type { SquishSimulation } from '../../squish/SquishSimulation';
 import { createFragmentShaderSource, vertexShaderSource } from '../../squish/shaders';
@@ -111,6 +111,7 @@ export class PhaserDeformableVolume {
   private gpu: SideGpu | null = null;
   private shape: ShapeDefinition | null = null;
   private packed = new Float32Array(0);
+  private skin: readonly { point: ShapeDefinition['boundary'][number]; inner: boolean }[] = [];
   private indexCount = 0;
 
   constructor(private readonly gl: WebGL2RenderingContext) {}
@@ -167,12 +168,17 @@ export class PhaserDeformableVolume {
   private setShape(shape: ShapeDefinition): void {
     if (this.shape === shape) return;
     const gl = this.gl;
-    const n = shape.boundary.length;
+    const contours = getShapeContours(shape);
+    const n = contours.reduce((sum, contour) => sum + contour.length, 0);
     this.packed = new Float32Array(n * 2 * 4);
     const indices = new Uint16Array(n * 6);
-    for (let i = 0; i < n; i += 1) {
-      const next = (i + 1) % n;
-      indices.set([i, n + i, next, next, n + i, n + next], i * 6);
+    let offset = 0;
+    for (const contour of contours) {
+      for (let j = 0; j < contour.length; j += 1) {
+        const i = offset + j, next = offset + (j + 1) % contour.length;
+        indices.set([i, n + i, next, next, n + i, n + next], i * 6);
+      }
+      offset += contour.length;
     }
     const gpu = this.gpu!;
     gl.bindVertexArray(gpu.vao);
@@ -180,6 +186,7 @@ export class PhaserDeformableVolume {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
     gl.bindVertexArray(null);
     this.indexCount = indices.length;
+    this.skin = contours.flatMap((contour, index) => contour.map(point => ({ point, inner: index > 0 })));
     this.shape = shape;
   }
 
@@ -200,17 +207,20 @@ export class PhaserDeformableVolume {
     if (gl.isContextLost()) return;
     this.gpu ??= this.createGpu();
     this.setShape(shape);
-    const n = shape.boundary.length;
+    const n = this.skin.length;
     // A shallow back roll that grows as the soft body finishes molding.
     const thickness = 0.014 + 0.038 * Math.min(1, Math.max(0, moldProgress));
     for (let i = 0; i < n; i += 1) {
-      const point = shape.boundary[i]!;
+      const { point, inner } = this.skin[i]!;
       const u = point.x * 0.5 + 0.5;
       const v = point.y * 0.5 + 0.5;
       const deformed = simulation.projectUvToLocal(u, v);
       // Overlap the antialiased 2D edge by a few pixels. Without this the
       // alpha falloff exposes a dotted background seam between the two meshes.
-      const inset = simulation.projectUvToLocal(0.5 + (u - 0.5) * 0.962, 0.5 + (v - 0.5) * 0.962);
+      // At an inner rim opaque skin is OUTSIDE the contour, so overlap in
+      // the opposite direction. Never bridge one contour to another.
+      const rimScale = inner ? 1.08 : .962;
+      const inset = simulation.projectUvToLocal(0.5 + (u - 0.5) * rimScale, 0.5 + (v - 0.5) * rimScale);
       const a = i * 4;
       const b = (n + i) * 4;
       const front = posePoint(inset.x, inset.y + .025, pose);
