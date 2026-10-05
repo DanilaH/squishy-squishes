@@ -87,7 +87,7 @@ test(`captured Jelly follows outside the canvas and releases cleanly ${stage} ${
     await expect.poll(async()=>Number(await shell.getAttribute('data-squish-max-displacement'))).toBeGreaterThan(Math.min(.85, (far.x-start.x)/radius*.4));
     await page.screenshot({path:info.outputPath('long-jelly.png')});
     // Outside movement changes direction too, rather than freezing at the edge.
-    await move({x:width-8,y:12});
+    await move({x:start.x+radius*.5,y:12});
     await expect.poll(async()=>Number(await shell.getAttribute('data-gesture-y'))).toBeGreaterThan(.25);
     await expect.poll(async()=>Number(await shell.getAttribute('data-squish-max-displacement'))).toBeGreaterThan(.85);
     await page.screenshot({path:info.outputPath('outside-upward.png')});
