@@ -5,6 +5,7 @@ layout(location = 0) in vec2 aPosition;
 layout(location = 1) in vec2 aUv;
 
 uniform vec2 uScale;
+uniform vec2 uWorldOffset;
 uniform float uMoldProgress;
 
 out vec2 vUv;
@@ -31,7 +32,7 @@ void main() {
   // untouched; only the last 12% of clip-space gains progressively stronger resistance.
   vec2 clipPosition = stagePosition * uScale;
   clipPosition = vec2(containAxis(clipPosition.x), containAxis(clipPosition.y));
-  gl_Position = vec4(clipPosition, 0.0, 1.0);
+  gl_Position = vec4(clipPosition + uWorldOffset, 0.0, 1.0);
 }
 `;
 

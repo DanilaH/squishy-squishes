@@ -1,4 +1,6 @@
 import { ToyPersonality } from './toyPersonality';
+import { FreeSqueezeScene } from './freeSqueezeScene';
+import type { StagePointer } from './StageGestureRouter';
 import { REST_TOY, idleToyPose, inclusionLag, type ToyPose } from './livingToy';
 import Phaser from 'phaser';
 import type { SquishyAudio } from '../game/SquishyAudio';
@@ -53,6 +55,8 @@ export class PhaserSquishSurface {
   private disposed = false;
   private lastMetricsAt = 0;
   private readonly personality = new ToyPersonality();
+  private readonly freeScene: FreeSqueezeScene;
+  private readonly freePointers = new Map<number, StagePointer>();
   private extras: { surprise: number; blink: number; cheek?: number } = { surprise: 0, blink: 0 };
   public reactionExtras(): { surprise: number; blink: number; cheek?: number } { return this.extras; }
   private quietMs = 0;
@@ -89,7 +93,7 @@ export class PhaserSquishSurface {
     if (!enabled) this.personality.cancel();
     this.extras = enabled ? this.personality.sample(now, sample.active, sample.stroking, sample.stretch, sample.pointers === 1 ? sample.sheenX : 0, Math.max(sample.pressDepth * .75, sample.compression)) : { surprise: 0, blink: 0 };
     const release = this.personality.releasePose(now);
-    this.pose = enabled && !sample.active ? release !== REST_TOY ? release : sample.maxDisplacement < .025 ? idleToyPose(this.quietMs) : REST_TOY : REST_TOY;
+    this.pose = enabled && !this.freeScene.enabled && !sample.active ? release !== REST_TOY ? release : sample.maxDisplacement < .025 ? idleToyPose(this.quietMs) : REST_TOY : REST_TOY;
     this.lag = enabled ? { x: inclusionLag(this.lag.x, body.x - this.lastBody.x + (this.pose.rotation - this.lastPose.rotation) * .25, delta), y: inclusionLag(this.lag.y, body.y - this.lastBody.y + this.pose.y - this.lastPose.y, delta) } : { x: 0, y: 0 };
     this.lastBody = body; this.lastPose = this.pose;
     const drift = this.inclusionOffset();
@@ -124,6 +128,16 @@ export class PhaserSquishSurface {
     });
     if (!gl) throw new Error('Phaser studio requires WebGL2.');
     this.gl = gl;
+    this.freeScene = new FreeSqueezeScene(canvas, {
+      radius: () => this.squish?.pixelRadius() ?? 1,
+      points: () => this.squish?.skinPoints() ?? [],
+      uv: (x, y) => this.squish?.pointToUv(x, y) ?? null,
+      offset: (x, y) => this.squish?.setWorldOffset(x, y),
+      impact: (nx, ny, speed) => { this.squish?.impact(nx, ny, speed); this.audio.releaseTactile(Math.min(.7, speed / 1600)); },
+      resize: () => this.syncCanvasSize(),
+      locked: () => this.squish?.setViewportFollowEnabled(true),
+      reset: () => { this.bridge?.cancel(); this.squish?.recenterViewportFollow(); this.resetPresentation(); },
+    });
     const owner = this;
     class StudioScene extends Phaser.Scene {
       constructor() { super({ key: 'SquishyRealStudioScene' }); }
@@ -136,14 +150,24 @@ export class PhaserSquishSurface {
         owner.bridge = new PhaserStudioGestureBridge(this, canvas, {
           pointToUv: (x, y) => squish.pointToUv(x, y),
           paintPointToUv: (x, y) => squish.pointToAppearanceUv(x, y),
-          beginSecondSquish: (pointer) => squish.beginAt(pointer.id, pointer.x, pointer.y),
+          beginSecondSquish: (pointer) => owner.beginSquish(pointer, false),
           beginSquish: (pointer) => {
-            const claimed = squish.beginAt(pointer.id, pointer.x, pointer.y);
+            const claimed = owner.beginSquish(pointer, true);
             if (claimed) { owner.resetPresentation(); owner.personality.begin(performance.now(), pointer.inputTime); void owner.audio.prime(); owner.callbacks.onSquishBegin?.(); }
             return claimed;
           },
-          moveSquish: (pointer) => squish.moveAt(pointer.id, pointer.x, pointer.y),
+          moveSquish: (pointer) => {
+            if (owner.freeScene.enabled) {
+              if (owner.freeScene.move(pointer)) return;
+              owner.freePointers.set(pointer.id, pointer);
+            }
+            squish.moveAt(pointer.id, pointer.x, pointer.y);
+          },
           endSquish: (pointerId, inputTime) => {
+            owner.freePointers.delete(pointerId);
+            if (owner.freeScene.enabled && owner.freeScene.end(pointerId, inputTime ?? performance.now())) {
+              owner.callbacks.onSquishRelease?.(0); return;
+            }
             squish.endById(pointerId);
             owner.resetPresentation();
             if (squish.metricsSample().active) return;
@@ -152,7 +176,7 @@ export class PhaserSquishSurface {
             owner.audio.releaseTactile(energy);
             owner.callbacks.onSquishRelease?.(energy);
           },
-          cancelSquish: () => { owner.personality.cancel(); owner.resetPresentation(); squish.cancel(); owner.audio.releaseTactile(); owner.callbacks.onSquishCancel?.(); },
+          cancelSquish: () => { owner.freePointers.clear(); owner.freeScene.cancel(); owner.personality.cancel(); owner.resetPresentation(); squish.cancel(); owner.audio.releaseTactile(); owner.callbacks.onSquishCancel?.(); },
           beginDecorEdit: pointer => owner.callbacks.beginDecorEdit?.(pointer) ?? false,
           moveDecorEdit: pointer => owner.callbacks.moveDecorEdit?.(pointer),
           endDecorEdit: cancelled => owner.callbacks.endDecorEdit?.(cancelled),
@@ -178,6 +202,12 @@ export class PhaserSquishSurface {
         if (owner.disposed || !owner.squish) return;
         owner.squish.advance(delta, performance.now());
         owner.advancePresentation(delta);
+        if (!owner.blocked) {
+          owner.freeScene.advance(delta, owner.material?.materialId ?? 'soft', owner.squish.metricsSample().active);
+          // A stationary second finger must stay in screen space as the first
+          // carries the body. It shares the same canonical local input transform.
+          if (owner.freeScene.enabled) for (const pointer of owner.freePointers.values()) owner.squish.moveAt(pointer.id, pointer.clientX, pointer.clientY);
+        }
         owner.publishMetrics(delta);
         owner.callbacks.onFrame();
       }
@@ -206,6 +236,20 @@ export class PhaserSquishSurface {
       gl.getExtension('WEBGL_lose_context')?.loseContext();
       throw error;
     }
+  }
+
+  private beginSquish(pointer: StagePointer, carry: boolean): boolean {
+    if (!this.squish || this.freeScene.body.returning) return false;
+    if (this.freeScene.enabled && carry && this.freeScene.begin(pointer)) return true;
+    const claimed = this.squish.beginAt(pointer.id, pointer.x, pointer.y);
+    if (claimed && this.freeScene.enabled) { this.freeScene.body.vx = this.freeScene.body.vy = 0; this.freePointers.set(pointer.id, pointer); }
+    return claimed;
+  }
+  public toggleFreeSqueeze(): void {
+    if (!this.squish || this.stage !== 'squeeze' || this.blocked) return;
+    if (this.freeScene.enabled) this.freeScene.returnHome();
+    else this.freeScene.setEnabled(true);
+    this.squish.setViewportFollowEnabled(!this.freeScene.enabled);
   }
 
   /** Keep the WebGL backbuffer and simulation projection in the CSS playfield's aspect ratio. */
@@ -250,6 +294,7 @@ export class PhaserSquishSurface {
   }
 
   public setShape(shape: ShapeDefinition): void {
+    this.freeScene.setEnabled(false);
     this.bridge?.cancel();
     this.shape = shape;
     this.squish?.setShape(shape.id);
@@ -264,6 +309,7 @@ export class PhaserSquishSurface {
   /** StageGestureRouter owns all Phaser input, including Paint when squish interaction is disabled. */
   public setInteractive(_enabled: boolean): void { /* The old raw-renderer interaction gate is not a Phaser stage. */ }
   public setStudioStage(stage: StudioGestureStage, section: StudioDecorSection): void {
+    if (stage !== 'squeeze') this.freeScene.setEnabled(false);
     const enteredSqueeze = stage !== this.stage && stage === 'squeeze';
     if (stage !== this.stage) {
       this.personality.cancel();
@@ -275,7 +321,7 @@ export class PhaserSquishSurface {
     }
     this.stage = stage;
     this.decorSection = section;
-    this.squish?.setViewportFollowEnabled(stage === 'finish' || stage === 'squeeze');
+    this.squish?.setViewportFollowEnabled(!this.freeScene.enabled && (stage === 'finish' || stage === 'squeeze'));
     this.squish?.setPokeEnabled(stage === 'squeeze' || stage === 'finish');
     this.bridge?.setStage(stage, section);
     if (enteredSqueeze) this.personality.greet(performance.now());
@@ -379,8 +425,8 @@ export class PhaserSquishSurface {
       maxDisplacement: sample.maxDisplacement,
       gestureX: sample.gestureX,
       gestureY: sample.gestureY,
-      active: sample.active,
-      squeezes: sample.squeezes, stretch: sample.stretch, stroking: sample.stroking, pointers: sample.pointers,
+      active: sample.active || this.freeScene.body.held !== null,
+      squeezes: sample.squeezes, stretch: sample.stretch, stroking: sample.stroking, pointers: sample.pointers + (this.freeScene.body.held !== null ? 1 : 0),
     });
   }
 
@@ -394,6 +440,7 @@ export class PhaserSquishSurface {
 
   public dispose(): void {
     if (this.disposed) return;
+    this.freeScene.dispose();
     this.disposed = true;
     this.resizeObserver.disconnect();
     this.cleanupScene();

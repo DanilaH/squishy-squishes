@@ -787,6 +787,7 @@ export class SandboxApp {
           </div>
 
           <div class="sandbox-panel sandbox-panel--center" data-panel="squeeze">
+            ${this.options.rendererBackend === 'phaser' ? `<button class="sandbox-secondary" type="button" data-action="free-squeeze" data-language="${this.options.language}" aria-pressed="false">${this.options.language === 'ru' ? 'Отцепить' : 'Unpin'}</button>` : ''}
             <button class="sandbox-secondary" type="button" data-action="edit-saved">${this.options.language === 'ru' ? 'Украсить ещё' : 'Decorate again'}</button>
             <button class="sandbox-secondary" type="button" data-action="home">${this.copy.done}</button>
             <button class="sandbox-primary" type="button" data-action="new">${this.copy.newSquishy}</button>
@@ -1049,6 +1050,7 @@ export class SandboxApp {
       this.setDecorSection('face');
       this.setStage('decor');
     }
+    else if (action === 'free-squeeze' && this.options.rendererBackend === 'phaser') (this.renderer as PhaserSquishSurface).toggleFreeSqueeze();
     else if (action === 'play-saved') this.openSavedForSqueeze();
     else if (action === 'new') this.startNew();
     else if (action === 'home') {

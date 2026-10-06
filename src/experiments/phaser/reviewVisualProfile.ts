@@ -26,6 +26,7 @@ import '../../app/styles/controls.css';
 import '../../app/styles/editor-layout.css';
 import '../../app/styles/library-showcase.css';
 import '../../app/styles/room-library.css';
+import '../../app/styles/free-squeeze.css';
 
 /** Decode the Hall's small first-screen art before the playable Library mounts. */
 export const preloadReviewVisualProfile = async (): Promise<void> => {

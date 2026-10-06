@@ -39,7 +39,7 @@ interface GpuResources {
 const FIELD_SIZE = 128;
 const clamp01 = (n: number): number => Math.min(1, Math.max(0, n));
 const UNIFORMS = [
-  'uScale', 'uMoldProgress', 'uShapeField', 'uAppearanceTexture', 'uAppearanceEnabled',
+  'uScale', 'uWorldOffset', 'uMoldProgress', 'uShapeField', 'uAppearanceTexture', 'uAppearanceEnabled',
   'uFillingDrift', 'uPointerUv', 'uStrainDirection', 'uColorLow', 'uColorHigh', 'uSheenColor', 'uRimColor',
   'uCompression', 'uPressDepth', 'uFillingAmount', 'uFillingStyle', 'uFillProgress',
   'uMaterialSeed', 'uTranslucency', 'uIridescence', 'uRoughness', 'uMetallic',
@@ -120,6 +120,15 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private renderRadiusRatio = 0.34;
   /** Local simulation-space render offset; positive Y points upward. */
   private renderCenterOffsetY = 0;
+  private worldOffset = { x: 0, y: 0 };
+  public setWorldOffset(x: number, y: number): void { this.worldOffset = { x, y }; }
+  public pixelRadius(): number { return this.radius(); }
+  public skinPoints(): readonly { x: number; y: number }[] {
+    return getShape(this.shapeId).boundary.map(p => this.projectUvToCanvas(p.x * .5 + .5, p.y * .5 + .5));
+  }
+  public impact(nx: number, ny: number, speed: number): void {
+    this.simulation.applyCollisionImpulse(nx, -ny, Math.min(1, speed / this.radius() / 12));
+  }
   private readonly gestureOffsets = new Map<number, { x: number; y: number }>();
 
   public constructor(scene: Phaser.Scene, private readonly gl: WebGL2RenderingContext, private readonly pagesVolume = false) {
@@ -192,8 +201,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const mold = moldFactors(this.moldProgress);
     const inverse = captured ? uncontainGestureAxis : uncontainClipAxis;
     return {
-      x: inverse((x - width / 2) * 2 / width) * width / 2 / radius / mold.x,
-      y: (inverse((height / 2 - y) * 2 / height) * height / 2 / radius + mold.offsetY) / mold.y - this.renderCenterOffsetY,
+      x: inverse((x - this.worldOffset.x - width / 2) * 2 / width) * width / 2 / radius / mold.x,
+      y: (inverse((height / 2 - y + this.worldOffset.y) * 2 / height) * height / 2 / radius + mold.offsetY) / mold.y - this.renderCenterOffsetY,
     };
   }
 
@@ -218,8 +227,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const point = posePoint(local.x, local.y, this.pose);
     const mold = moldFactors(this.moldProgress);
     return {
-      x: width / 2 + containClipAxis(point.x * mold.x * radius * 2 / width) * width / 2,
-      y: height / 2 - containClipAxis(((point.y + this.renderCenterOffsetY) * mold.y - mold.offsetY) * radius * 2 / height) * height / 2,
+      x: this.worldOffset.x + width / 2 + containClipAxis(point.x * mold.x * radius * 2 / width) * width / 2,
+      y: this.worldOffset.y + height / 2 - containClipAxis(((point.y + this.renderCenterOffsetY) * mold.y - mold.offsetY) * radius * 2 / height) * height / 2,
     };
   }
 
@@ -535,7 +544,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       this.volume ??= new PhaserDeformableVolume(gl);
       this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
         this.appearanceEnabled, radius * 2 / width, radius * 2 / height,
-        this.moldProgress, sample.compression, this.renderCenterOffsetY, this.pose);
+        this.moldProgress, sample.compression, this.renderCenterOffsetY, this.pose, this.worldOffset.x * 2 / width, -this.worldOffset.y * 2 / height);
     }
     gl.useProgram(gpu.program);
     const u = (name: typeof UNIFORMS[number]): WebGLUniformLocation => gpu.uniforms.get(name)!;
@@ -558,6 +567,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       gl.uniform1i(gpu.inclusionEnabledUniform, this.inclusionEnabled ? 1 : 0);
     }
     gl.uniform2f(u('uScale'), radius * 2 / width, radius * 2 / height);
+    gl.uniform2f(u('uWorldOffset'), this.worldOffset.x * 2 / width, -this.worldOffset.y * 2 / height);
     gl.uniform1f(u('uMoldProgress'), this.moldProgress);
     gl.uniform2f(u('uPointerUv'), clamp01(sample.sheenX * 0.5 + 0.5), clamp01(sample.sheenY * 0.5 + 0.5));
     gl.uniform2f(u('uStrainDirection'), sample.gestureX, sample.gestureY);

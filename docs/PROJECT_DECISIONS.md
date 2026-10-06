@@ -773,3 +773,26 @@ with portrait and desktop compositions. No forced landscape or plush photoreal
 style. [ROOM_FOUNDATION_2026-10-06.md](ROOM_FOUNDATION_2026-10-06.md) records the
 initial opt-in review stage and deferred room customization; the published
 showcase remains the default until owner visual acceptance.
+
+## Free Squeeze room — 7 October 2026
+
+The owner authorized explicit Unpin / On pedestal controls in Squeeze. Normal
+pinned tactile behavior remains unchanged. Free mode translates the existing
+Phaser toy in viewport pixels: central grab carries, release transfers hand
+velocity, edge grab deforms, and a second finger can stretch during carry.
+There is no extra deformable renderer or replacement material simulation.
+
+The live canonical outer contour collides with the playfield edges, protected
+control bands and the illustrated pedestal/Studio desk. Swept held travel and
+substeps prevent quick gestures from crossing the obstacle. Collision impulses
+feed the existing elastic mesh; rebound differs across all six materials.
+Whole-body idle rotation pauses during free travel. Face, accessories, fillings
+and sidewall share the same translated UV projection. Return rises, moves home
+and lands before restoring pinned input; resize resets the transient mode.
+Activity blocking pauses travel and interrupted gestures lose throw momentum.
+
+This is presentation state only: Save V3, room storage, rewards, slots and
+reviewed tactile profiles are unchanged. `tests/release/free-squeeze.spec.ts`
+covers swept collision, mouse carry/return at three viewports, touch carry plus
+second-finger deformation, attachment sizes, cancellation, unchanged saves and
+stationary Studio furniture. Publication requires the normal PR and Pages gates.
