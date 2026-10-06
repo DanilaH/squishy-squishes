@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const key = 'squishy.phaser-pages-preview.squishy.save.v3';
 
-test('review: owner parquet repeats in projected plane, props fit, toys stay still, paging fades', async ({ page }, info) => {
+test('review: parquet repeats, shelf fits, toys stay still and catalog scrolling keeps the table fixed', async ({ page }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/phaser/');
   await page.locator('[data-library-new]').first().click();
@@ -36,8 +36,8 @@ test('review: owner parquet repeats in projected plane, props fit, toys stay sti
     const shadow = document.querySelector<HTMLElement>('.sandbox-library-card:not([hidden]) .sandbox-library-card__play')!;
     const floor = document.querySelector<HTMLElement>('.library-hall-scene__floor')!;
     const plane = getComputedStyle(floor, '::before');
-    const cabinet = document.querySelector<HTMLElement>('.library-hall-scene__cabinet')!;
-    const shelf = document.querySelector<HTMLElement>('.library-hall-scene__shelf')!;
+    const cabinet = document.querySelector<HTMLElement>('.library-showcase-collection')!;
+    const shelf = document.querySelector<HTMLElement>('.library-showcase-workbench')!;
     return {
       toyAnimation: getComputedStyle(canvas).animationName,
       toyFilter: getComputedStyle(canvas).filter,
@@ -62,31 +62,17 @@ test('review: owner parquet repeats in projected plane, props fit, toys stay sti
   expect(state.cabinetWidth).toBeGreaterThanOrEqual(87);
   expect(state.shelfWidth).toBeGreaterThanOrEqual(119);
   await page.screenshot({ path: info.outputPath('library-hall-perspective-phone-390.png'), animations: 'disabled' });
-  await page.evaluate(() => {
-    (window as unknown as { __hallPageStarts: { name: string; translate: string; filter: string }[] }).__hallPageStarts = [];
-    window.addEventListener('animationstart', (event) => {
-      if (event.animationName === 'library-toy-page-enter' && event.target instanceof Element) {
-        const style = getComputedStyle(event.target);
-        (window as unknown as { __hallPageStarts: { name: string; translate: string; filter: string }[] }).__hallPageStarts.push({
-          name: event.animationName, translate: style.translate, filter: style.filter,
-        });
-      }
-    });
-  });
-  await page.locator('[data-library-hall-next]').click();
-  await expect(page.locator('[data-library-hall-page]')).toHaveText('2 / 2');
-  await expect.poll(() => page.evaluate(() => (window as unknown as { __hallPageStarts: unknown[] }).__hallPageStarts.length)).toBeGreaterThan(0);
-  expect(await page.evaluate(() => (window as unknown as { __hallPageStarts: { name: string; translate: string; filter: string }[] }).__hallPageStarts[0])).toMatchObject({
-    name: 'library-toy-page-enter', translate: 'none', filter: 'none',
-  });
-  await page.locator('[data-library-hall-prev]').click();
-  await expect(page.locator('[data-library-hall-page]')).toHaveText('1 / 2');
-  await expect.poll(() => card.evaluate((element) => getComputedStyle(element.querySelector('canvas')!).animationName)).toBe('none');
+  const table=await page.locator('.library-showcase-table').boundingBox();
+  await page.locator('.sandbox-library-card').last().scrollIntoViewIfNeeded();
+  await expect(page.locator('[data-library-play-id="feel-third"]')).toBeVisible();
+  expect(await page.locator('.library-showcase-table').boundingBox()).toEqual(table);
+  await page.locator('.sandbox-library-card').first().scrollIntoViewIfNeeded();
+  await expect.poll(() => card.evaluate(element=>getComputedStyle(element.querySelector('canvas')!).animationName)).toBe('none');
   await page.setViewportSize({ width: 1440, height: 900 });
   const desktop = await page.evaluate(() => ({
-    cabinet: document.querySelector('.library-hall-scene__cabinet')!.getBoundingClientRect().width,
-    shelf: document.querySelector('.library-hall-scene__shelf')!.getBoundingClientRect().width,
-    plant: document.querySelector('.library-hall-scene__plant')!.getBoundingClientRect().width,
+    cabinet: document.querySelector('.library-showcase-collection')!.getBoundingClientRect().width,
+    shelf: document.querySelector('.library-showcase-workbench')!.getBoundingClientRect().width,
+    plant: document.querySelector('.library-showcase-table')!.getBoundingClientRect().width,
     planeRepeat: getComputedStyle(document.querySelector('.library-hall-scene__floor')!, '::before').backgroundRepeat,
   }));
   expect(desktop.cabinet).toBeGreaterThanOrEqual(180);

@@ -96,7 +96,7 @@ test('all six contours and all five existing accessory IDs render distinct authe
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
     // Hall thumbnails are eager again: audit all six native canvases directly.
     // Room navigation below remains presentation/paging coverage only.
-    await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', '1');
+    await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
     const saved = await page.evaluate((key) => localStorage.getItem(key), KEY);
     const seen = new Set<string>();
     for (const shape of SHAPES) {
@@ -127,9 +127,8 @@ test('all six contours and all five existing accessory IDs render distinct authe
     }
     expect(seen.size, `some shape images identical for ${accessory}`).toBe(SHAPES.length);
     for (let room = 1; room <= 3; room++) {
-      await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(room));
+      await page.locator('.sandbox-library-card').nth((room - 1) * 2).scrollIntoViewIfNeeded();
       await page.screenshot({ path: info.outputPath(`library-hall-art-${accessory}-room-${room}-320.png`), animations: 'disabled' });
-      if (room < 3) await page.locator('[data-library-hall-next]').click();
     }
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe(saved);
   }

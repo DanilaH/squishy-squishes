@@ -46,29 +46,23 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
   const before = await page.evaluate((storageKey) => localStorage.getItem(storageKey), key);
   const firstRoomPixels = await page.locator('.sandbox-library-card:visible canvas').first()
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
-  for (let index = 0; index < 4; index++) {
-    const visible = page.locator('.sandbox-library-card:visible canvas');
-    await expect(visible).toHaveCount(2);
-    await expect(visible.first()).toHaveAttribute('data-library-renderer', 'volume-mesh');
-    expect(await visible.evaluateAll(canvases => canvases.every(item => (item as HTMLCanvasElement).width === 512 && (item as HTMLCanvasElement).height === 512)),
-      'Pages only: 512px backing for each genuine Studio shader thumbnail').toBe(true);
-    expect(await visible.evaluateAll((canvases) => canvases.every((item) => item.getAttribute('data-library-renderer') === 'volume-mesh'))).toBe(true);
-    if (index < 3) {
-      await expect(page.locator('[data-library-hall-next]')).toBeEnabled();
-      await page.locator('[data-library-hall-next]').click();
-    }
+  const visible = page.locator('.sandbox-library-card canvas');
+  await expect(visible).toHaveCount(8);
+  for (let index = 0; index < 8; index++) {
+    await page.locator('.sandbox-library-card').nth(index).scrollIntoViewIfNeeded();
+    await expect(visible.nth(index)).toHaveAttribute('data-library-renderer', 'volume-mesh');
+    expect(await visible.nth(index).evaluate(canvas=>[(canvas as HTMLCanvasElement).width,(canvas as HTMLCanvasElement).height])).toEqual([512,512]);
   }
-  await expect(page.locator('[data-library-hall-next]')).toBeDisabled();
   const stats = await page.evaluate(() => ({
     contexts: (window as unknown as { __libraryCreatedWebGL: number }).__libraryCreatedWebGL,
     canvases: document.querySelectorAll('canvas[data-library-renderer="volume-mesh"]').length,
   }));
   expect(stats.contexts, 'one shared WebGL2 context across all saved exhibits').toBe(1);
   expect(stats.canvases).toBeGreaterThan(0);
-  for (let index = 0; index < 3; index++) await page.locator('[data-library-hall-prev]').click();
+  await page.locator('.sandbox-library-card').first().scrollIntoViewIfNeeded();
   const firstRoomPixelsAgain = await page.locator('.sandbox-library-card:visible canvas').first()
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
-  expect(firstRoomPixelsAgain, 'page turn must not mutate previously rendered Studio pixels').toBe(firstRoomPixels);
+  expect(firstRoomPixelsAgain, 'shelf scroll must not mutate previously rendered Studio pixels').toBe(firstRoomPixels);
   expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(before);
 });
 

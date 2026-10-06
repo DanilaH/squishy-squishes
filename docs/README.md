@@ -13,9 +13,15 @@
 | Phaser preview / migration | [`PHASER_LANDSCAPE_MIGRATION_PLAN.md`](PHASER_LANDSCAPE_MIGRATION_PLAN.md), [`PHASER_BOOTSTRAP_ADOPTION.md`](PHASER_BOOTSTRAP_ADOPTION.md) | Migration plans are historical; production now uses Phaser. A landscape redesign remains a separate product decision. |
 | QA / release | [`../README.md`](../README.md), [build, browser QA and deployment](../.github/workflows/release-check.yml) | Browser CI is not real-phone or hosted Yandex DRAFT approval. |
 
-## Current approved implementation scope
+## Current Library follow-up
 
-[`FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md`](FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md) is the owner-approved active checklist for free crafting, new content, seven shapes including a real donut hole, and Library atmosphere. It records implementation and verification separately; no implementation is claimed by recording it. The owner now permits targeted internal scrolling in long catalogs/settings, with a fixed page/scene.
+[`LIBRARY_SHOWCASE_2026-10-06.md`](LIBRARY_SHOWCASE_2026-10-06.md) records the
+owner-approved collection/table redesign and its pending acceptance. The earlier
+free-craft atmosphere release does not establish completion of this new pass.
+
+## Published free-craft scope
+
+[`FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md`](FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md) records the published free crafting, new content, seven shapes including a real donut hole, and earlier Library atmosphere. It records implementation and verification separately; deferred ideas are not current tasks. The owner permits targeted internal scrolling in long catalogs/settings, with a fixed page/scene.
 
 ## Current improvement direction
 

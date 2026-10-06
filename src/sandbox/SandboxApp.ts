@@ -2077,11 +2077,16 @@ export class SandboxApp {
     this.updateDecorUi();
   }
 
-  private toggleMuted(): void {
-    this.muted = !this.muted;
+  public setMuted(muted: boolean): void {
+    if (this.disposed) return;
+    this.muted = muted;
     this.renderer.setMuted(this.muted);
     this.muteButton.setAttribute('aria-pressed', String(this.muted));
     this.muteButton.textContent = this.muted ? this.copy.muted : this.copy.sound;
+  }
+
+  private toggleMuted(): void {
+    this.setMuted(!this.muted);
     void this.options.onMutedChange(this.muted);
   }
 

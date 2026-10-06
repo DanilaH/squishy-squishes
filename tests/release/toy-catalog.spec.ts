@@ -32,7 +32,7 @@ for (const locale of ['ru-RU', 'en-US']) {
         // before choosing a room, otherwise the first click can skip the toy.
         await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
         const play = page.locator(`[data-library-play-id="catalog-${accessory}"]`);
-        for (let room = 0; room < Math.ceil(ACCESSORY_IDS.length / 2) && !await play.isVisible(); room++) await page.locator('[data-library-hall-next]').click();
+        await play.scrollIntoViewIfNeeded();
         await expect(play).toBeVisible();
         await play.click();
         await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');

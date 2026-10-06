@@ -22,9 +22,8 @@ const artBounds = (piece: AccessoryPlacement): readonly [number, number, number,
   bounds.set(key, result); return result;
 };
 
-/** Fit the complete craft into a static card. Ordinary toys retain their camera. */
-export const fitLibraryCraft = (ctx: CanvasRenderingContext2D, shape: ShapeDefinition, decor: DecorDocumentV1,
-  project: (u: number, v: number) => readonly [number, number]): number => {
+const craftBounds = (shape: ShapeDefinition, decor: DecorDocumentV1,
+  project: (u: number, v: number) => readonly [number, number]): readonly [number, number, number, number] => {
   let left = 0, top = 0, right = 256, bottom = 256;
   for (const piece of decor.accessories ?? []) {
     const [x, y] = project(piece.x / 255, piece.y / 255), [l, t, r, b] = artBounds(piece);
@@ -36,6 +35,20 @@ export const fitLibraryCraft = (ctx: CanvasRenderingContext2D, shape: ShapeDefin
       top = Math.min(top, py - 2); bottom = Math.max(bottom, py + 2);
     }
   }
+  return [left, top, right, bottom];
+};
+
+/** The live table keeps the body centered and fits freely extended gear around it. */
+export const libraryCraftCameraScale = (shape: ShapeDefinition, decor: DecorDocumentV1): number => {
+  const [l, t, r, b] = craftBounds(shape, decor, (u, v) => [128 + (u * 2 - 1) * 102.4 * 1.075, 128 - ((v * 2 - 1) * .905 - .018) * 102.4]);
+  const extent = Math.max(128 - l, 128 - t, r - 128, b - 128);
+  return extent > 128 ? 118 / extent : 1;
+};
+
+/** Fit the complete craft into a static card. Ordinary toys retain their camera. */
+export const fitLibraryCraft = (ctx: CanvasRenderingContext2D, shape: ShapeDefinition, decor: DecorDocumentV1,
+  project: (u: number, v: number) => readonly [number, number]): number => {
+  const [left, top, right, bottom] = craftBounds(shape, decor, project);
   // Hall CSS enlarges thumbnails by up to 1.7. A freely extended composition
   // needs that transparent margin too, otherwise its canvas fits while the
   // displayed wing or strap still runs outside the card.

@@ -88,9 +88,9 @@ test('production web uses the accepted 512px Hall profile and lazy Phaser maker'
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
   await expect(canvas).toHaveAttribute('data-phaser-volume', 'deformable');
-  await expect(page.locator('#app')).toHaveAttribute('data-studio-env-ready', '');
-  await expect(page.locator('.studio-env-decor--left')).toBeVisible();
-  await expect(page.locator('.studio-env-decor--right')).toBeVisible();
+  await expect(page.locator('.library-showcase-collection')).toBeVisible();
+  await expect(page.locator('.library-showcase-table')).toBeVisible();
+  await expect(page.locator('[data-library-live]')).toBeVisible();
   await expect.poll(() => page.evaluate(() => performance.getEntriesByType('resource')
     .filter((entry) => entry.name.includes('PhaserSquishSurface')).length)).toBeGreaterThan(0);
 

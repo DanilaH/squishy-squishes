@@ -72,9 +72,8 @@ test('all face and sticker styles remain visible and distinct on each saved cont
       await writeFile(info.outputPath(`library-hall-expression-${shape}-${profile.name}-512.png`), bytes);
     }
     for (let room = 1; room <= 3; room++) {
-      await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(room));
+      await page.locator('.sandbox-library-card').nth((room - 1) * 2).scrollIntoViewIfNeeded();
       await page.screenshot({ path: info.outputPath(`library-hall-expression-${profile.name}-room-${room}-320.png`), animations: 'disabled' });
-      if (room < 3) await page.locator('[data-library-hall-next]').click();
     }
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe(saved);
   }

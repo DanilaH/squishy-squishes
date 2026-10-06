@@ -94,7 +94,7 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
   const sync = (): void => {
     if (disposed || !decoded || !deskTexture) return;
     const shell = root.querySelector<HTMLElement>('.sandbox-shell');
-    if (!shell) return;
+    if (!shell || shell.closest('[data-library-live]')) return;
     const supported = ['shape', 'paint', 'mixins', 'mix', 'decor', 'finish', 'squeeze', 'home'].includes(shell.dataset.stage ?? '');
     if (!supported) {
       geometryObserver.disconnect();
@@ -202,7 +202,8 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
   };
 
   const prepareEnvironment = (): void => {
-    if (disposed || prepareStarted || !root.querySelector('.sandbox-shell')) return;
+    const shell = root.querySelector<HTMLElement>('.sandbox-shell');
+    if (disposed || prepareStarted || !shell || shell.closest('[data-library-live]')) return;
     prepareStarted = true;
     void preloadStudioEnvironmentAssets().then((texture) => {
       if (disposed) return;

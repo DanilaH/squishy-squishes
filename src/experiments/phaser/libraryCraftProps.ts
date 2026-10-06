@@ -1,5 +1,5 @@
 /** Quiet code-native workshop props. Decorative SVG never owns an input target. */
-export const libraryCraftProps = (): string => `<svg class="library-craft-props" viewBox="0 0 360 150" aria-hidden="true">
+export const libraryCraftProps = (part: 'all' | 'supplies' | 'lamp' = 'all'): string => `<svg class="library-craft-props library-craft-props--${part}" viewBox="${part === 'lamp' ? '265 25 85 110' : part === 'supplies' ? '5 55 175 85' : '0 0 360 150'}" aria-hidden="true">
 <defs><linearGradient id="craft-pink" x2=".8" y2="1"><stop stop-color="#fff1f4"/><stop offset=".5" stop-color="#edc2d9"/><stop offset="1" stop-color="#b48aac"/></linearGradient><linearGradient id="craft-mint" x2=".7" y2="1"><stop stop-color="#edfae8"/><stop offset=".5" stop-color="#b7d5ba"/><stop offset="1" stop-color="#79a99f"/></linearGradient><radialGradient id="craft-lamp-glow"><stop stop-color="#fff2c7" stop-opacity=".48"/><stop offset="1" stop-color="#fff2c7" stop-opacity="0"/></radialGradient></defs>
 <g stroke="#a781a4" stroke-width="1.5" stroke-linejoin="round">
 <ellipse cx="61" cy="127" rx="53" ry="9" fill="#946d92" opacity=".13" stroke="none"/>

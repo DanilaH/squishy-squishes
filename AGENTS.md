@@ -14,9 +14,18 @@ Production retains `squishy.save.v3`. `/phaser/` review and Yandex DRAFT use sep
 
 On 6 October 2026 the owner replaced the blanket no-scroll rule: **the page and game scene remain fixed**, while long content catalogs and contextual settings may scroll internally where needed. Keep primary actions, undo and stage navigation visible; separate panel scrolling from Paint/Squeeze gestures. Existing no-overflow tests must continue to protect the page, with intentional panel scrolling tested explicitly. Use the shared production styles in `src/app/styles`; historical jelly CSS entrypoints forward there for preview compatibility. Keep secondary controls calm and readable, reserve golden artwork for primary actions, and preserve 44px Paint hit areas even when visible color dots are smaller.
 
-## Active approved implementation scope
+## Published free-craft scope
 
-Follow [`docs/FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md`](docs/FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md): free decor/face editing, mix-in controls, lighting, try-on, new accessories/mix-ins, seven new shapes and the agreed Library atmosphere pass. This checklist separates implementation from verification and records deferred ideas. Preserve V3 compatibility and current material feel. A real donut hole is explicitly authorized; extend the common geometry/rendering/hit/paint pipeline only as needed, keeping one renderer and generic physics. Verify hole feasibility early. A recorded plan does not establish implementation or release.
+[`docs/FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md`](docs/FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md) records the published free decor/face editing, mix-in controls, lighting, try-on, new content and seven shapes including the real donut hole. Preserve these features, V3 compatibility and current material feel. Its atmosphere pass is the baseline for the separately approved Library follow-up below; deferred ideas are not current implementation tasks. A recorded plan alone does not establish a release.
+
+## Library showcase follow-up — 6 October 2026
+
+The owner approved a full collection presentation pass after rejecting the
+previous atmosphere-only treatment. Follow
+[`docs/LIBRARY_SHOWCASE_2026-10-06.md`](docs/LIBRARY_SHOWCASE_2026-10-06.md):
+common compact shelves, one selected toy on the table using the existing maker,
+coherent furniture, responsive internal catalog scrolling and clear actions.
+Do not treat the published free-craft checklist as proof of this follow-up.
 
 ## Current polish invariants
 

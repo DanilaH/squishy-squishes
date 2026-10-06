@@ -47,7 +47,7 @@ test('material release tones differ, stay quiet and respect mute', async ({ page
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
     const play = page.locator(`[data-library-play-id="${material}"]`);
-    if (!await play.isVisible()) await page.locator('[data-library-hall-next]').click();
+    await play.scrollIntoViewIfNeeded();
     await play.click();
     const box = (await page.locator('[data-sandbox-canvas]').boundingBox())!;
     const x = box.x + box.width / 2, y = box.y + box.height / 2;
@@ -71,12 +71,12 @@ test('material release tones differ, stay quiet and respect mute', async ({ page
     expect(stats.peak).toBeGreaterThan(0); expect(stats.peak).toBeLessThan(.25);
     const release = stats.pitches.filter(p => p < 250).at(-1);
     expect(release).toBeDefined(); releases.push(release!);
-    await page.locator('[data-action="mute"]').click();
+    await page.locator('[data-library-mute]').click();
     await expect.poll(() => page.evaluate(() => (window as unknown as { toyAudio: { master: GainNode }[] }).toyAudio.at(-1)!.master.gain.value)).toBeLessThan(.001);
     const before = await page.evaluate(() => (window as unknown as { toyAudio: { pitches: number[] }[] }).toyAudio.at(-1)!.pitches.length);
     await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x - 40, y, { steps: 10 }); await page.mouse.up();
     expect(await page.evaluate(() => (window as unknown as { toyAudio: { pitches: number[] }[] }).toyAudio.at(-1)!.pitches.length)).toBe(before);
-    await page.locator('[data-action="mute"]').click();
+    await page.locator('[data-library-mute]').click();
   }
   expect(releases[0]!).toBeLessThan(releases[1]!);
   expect(releases[1]!).toBeLessThan(releases[2]!);

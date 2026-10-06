@@ -53,7 +53,7 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(save => localStorage.setItem('squishy.phaser-pages-preview.squishy.save.v3', save), fixtureSave);
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
-  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', '1');
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
 });
 
 const captures = (page: Page, info: TestInfo) => {
@@ -131,7 +131,7 @@ test('real saved materials retain their optical comparisons and phone captures',
   expect(stats.pearl!.hueStd, 'Pearl keeps spatial nacre hue movement beyond Marshmallow').toBeGreaterThan(stats.marshmallow!.hueStd + 2);
   expect(stats.holo!.hueStd, 'Holo remains substantially more spectral than Pearl').toBeGreaterThan(stats.pearl!.hueStd + 8);
   expect(stats.chrome!.lumaStd, 'Metallic has a materially stronger reflection range than Marshmallow').toBeGreaterThan(stats.marshmallow!.lumaStd + 4);
-  expect(await visibleProfiles()).toEqual(['soft', 'jelly']);
+  expect(await visibleProfiles()).toEqual(['soft', 'jelly', 'marshmallow', 'chrome', 'holo', 'pearl']);
   await page.screenshot({ path: info.outputPath('library-hall-material-phone-390.png'), animations: 'disabled' });
   await captureThumbnail('soft');
   await captureStudio('soft');
@@ -147,10 +147,10 @@ for (const room of [
   const { visibleProfiles, captureThumbnail, captureStudio } = captures(page, info);
   await page.setViewportSize({ width: 1440, height: 900 });
   if (room.number === 2) await page.screenshot({ path: info.outputPath('library-hall-material-desktop-1440.png'), animations: 'disabled' });
-  for (let n = 1; n < room.number; n++) await page.locator('[data-library-hall-next]').click();
-  expect(await visibleProfiles()).toEqual(room.materials);
+  await page.locator(`[data-library-play-id="material-fixture-${room.materials[0]}"]`).scrollIntoViewIfNeeded();
+  expect(await visibleProfiles()).toEqual(['soft', 'jelly', 'marshmallow', 'chrome', 'holo', 'pearl']);
   if (room.number === 2) {
-    const metallicLabel = page.locator('.sandbox-library-card:visible .sandbox-library-card__footer strong').nth(1);
+    const metallicLabel = page.locator('[data-library-toy="material-fixture-chrome"] .sandbox-library-card__footer strong');
     await expect(metallicLabel).toContainText('Metallic');
     await expect(metallicLabel).not.toContainText('Chrome');
   }

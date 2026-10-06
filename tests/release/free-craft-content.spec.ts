@@ -44,7 +44,7 @@ test('rich new-content toys keep identity, face priority and complete gear acros
   for (const toy of library) {
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
     const play = page.locator(`[data-library-play-id="${toy.id}"]`);
-    for (let n = 0; n < Math.ceil(library.length / 2) && !await play.isVisible(); n++) await page.locator('[data-library-hall-next]').click();
+    await play.scrollIntoViewIfNeeded();
     await play.screenshot({ path: `migration-baseline-evidence/free-craft/${toy.shapeId}-hall.png` });
     await play.click(); await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await expect(page.locator('[data-accessory-index]')).toHaveCount(toy.decor.accessories.length);
@@ -95,6 +95,19 @@ test('Hall frames the whole craft when freely enlarged decorations extend beyond
   expect(edge.displayedLeft).toBeGreaterThanOrEqual(edge.cardLeft + 1);
   expect(edge.displayedRight).toBeLessThanOrEqual(edge.cardRight - 1);
   await page.locator('[data-library-play-id="wide-craft"]').screenshot({ path: 'migration-baseline-evidence/free-craft/wide-hall.png' });
+  await page.locator('[data-library-play-id="wide-craft"]').click();
+  await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+  const live = page.locator('[data-library-live]');
+  expect(await live.evaluate(node => Number(node.style.getPropertyValue('--library-craft-scale')))).toBeLessThan(1);
+  const positions = await page.locator('[data-accessory-index]').evaluateAll(nodes => nodes.map(node => {
+    const rect = node.getBoundingClientRect(), host = node.closest('[data-library-display-host]')!.getBoundingClientRect();
+    return { left: rect.left - host.left, right: host.right - rect.right, top: rect.top - host.top, bottom: host.bottom - rect.bottom };
+  }));
+  for (const position of positions) {
+    expect(position.left).toBeGreaterThanOrEqual(0); expect(position.right).toBeGreaterThanOrEqual(0);
+    expect(position.top).toBeGreaterThanOrEqual(0); expect(position.bottom).toBeGreaterThanOrEqual(0);
+  }
+  await page.screenshot({ path: 'migration-baseline-evidence/free-craft/wide-table.png' });
 });
 
 test('new front and rear gear stays attached through full-screen downward pulls', async ({ page }) => {

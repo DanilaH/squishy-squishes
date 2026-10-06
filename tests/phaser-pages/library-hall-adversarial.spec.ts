@@ -45,14 +45,14 @@ const makeDecoratedPearl = async (page: Page): Promise<void> => {
 };
 
 test('Russian and English Hall expose the actual document and navigation language', async ({ browser }) => {
-  for (const [locale, expected] of [['ru-RU', 'Переключение залов'], ['en-US', 'Collection rooms']] as const) {
+  for (const [locale, expected] of [['ru-RU', 'Полка сквишей'], ['en-US', 'Squishy shelf']] as const) {
     const context = await browser.newContext({ locale, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     try {
       await page.goto('/phaser/');
       await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
       await expect(page.locator('html')).toHaveAttribute('lang', locale.slice(0, 2));
-      await expect(page.locator('.library-hall-nav')).toHaveAttribute('aria-label', expected);
+      await expect(page.locator('.sandbox-library-grid')).toHaveAttribute('aria-label', expected);
     } finally {
       await context.close();
     }
@@ -93,7 +93,7 @@ test('mobile Hall controls provide 44px touch targets and readable labels', asyn
     for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 700 }, { width: 667, height: 375 }]) {
       await page.setViewportSize(viewport);
       const controls = await page.locator('[data-sandbox-library]').evaluate((shell) => {
-        const selectors = '[data-library-mute], [data-library-new], [data-library-ideas], .sandbox-library-card:not([hidden]) [data-library-delete-id], .library-hall-nav button:not(:disabled)';
+        const selectors = '[data-library-mute], [data-library-new], [data-library-ideas], .sandbox-library-card [data-library-delete-id]';
         return [...shell.querySelectorAll<HTMLButtonElement>(selectors)].filter((node) => getComputedStyle(node).display !== 'none').map((node) => {
           const rect = node.getBoundingClientRect();
           return { control: node.getAttribute('data-library-delete-id') ? 'delete' : node.outerHTML.slice(0, 80), width: rect.width, height: rect.height };

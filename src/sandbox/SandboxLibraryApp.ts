@@ -1,3 +1,5 @@
+import { libraryCraftProps } from '../experiments/phaser/libraryCraftProps';
+import { libraryCraftCameraScale } from './libraryCraftFit';
 import { mountLibraryPersonality } from './libraryPersonality';
 import { cardPagerMarkup, showCardPage } from './cardPages';
 import { getShape, shapeSvgPath } from '../game/shapes';
@@ -222,6 +224,8 @@ export class SandboxLibraryApp {
   private rewardMessage: string | null = null;
   private activeIdea: SquishyIdea | null = null;
   private currentMaker: SandboxApp | null = null;
+  private selectedToyId: string | null = null;
+  private presentationObserver: MutationObserver | null = null;
   private pendingReplacement: PendingReplacement | null = null;
   private pendingDeleteId: string | null = null;
   private modalReturnFocus: HTMLElement | null = null;
@@ -250,8 +254,8 @@ export class SandboxLibraryApp {
   public setActivityBlocked(blocked: boolean): void {
     if (this.disposed) return;
     this.activityBlocked = blocked;
-    this.personality.schedule();
-    this.currentMaker?.setActivityBlocked(blocked);
+    if (!this.currentMaker) this.personality.schedule();
+    this.currentMaker?.setActivityBlocked(blocked || Boolean(this.root.querySelector('[data-library-delete-overlay], [data-library-replace-overlay]')));
     this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]')?.classList.toggle('is-blocked', blocked);
   }
 
@@ -262,6 +266,8 @@ export class SandboxLibraryApp {
     this.cancelPendingMakerStart();
     this.pendingReplacement?.resolve(null);
     this.pendingReplacement = null;
+    this.presentationObserver?.disconnect();
+    this.presentationObserver = null;
     this.currentMaker?.dispose();
     this.currentMaker = null;
     releasePagesLibraryMaterialLighting();
@@ -272,6 +278,8 @@ export class SandboxLibraryApp {
   private renderLibrary(): void {
     this.personality.stop();
     this.cancelPendingMakerStart();
+    this.presentationObserver?.disconnect();
+    this.presentationObserver = null;
     this.currentMaker?.dispose();
     this.currentMaker = null;
     this.activeIdea = null;
@@ -280,7 +288,11 @@ export class SandboxLibraryApp {
     const capacity = this.libraryCapacity;
     const full = count >= capacity;
     const canExpandShelf = capacity < this.options.shelfExpansionTargetCapacity;
+    const selected = this.library.find(toy => toy.id === this.selectedToyId) ?? this.library.at(-1);
+    this.selectedToyId = selected?.id ?? null;
     const cards = this.library.map((toy) => this.renderToyCard(toy)).join('');
+    const ru = this.options.language === 'ru';
+    const slots = Array.from({ length: Math.max(0, capacity - count) }, (_, index) => `<button class="library-showcase-slot" type="button" data-library-new aria-label="${this.copy.newSquishy} · ${count + index + 1}"><span aria-hidden="true">+</span><small>${ru ? 'Свободное место' : 'Room for a new one'}</small></button>`).join('');
 
     this.root.innerHTML = `
       <main class="sandbox-library-shell${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-library data-stage="library" data-library-count="${count}" data-library-capacity="${capacity}">
@@ -298,18 +310,22 @@ export class SandboxLibraryApp {
             <button class="sandbox-library-new" type="button" data-library-new>${this.copy.newSquishy}</button>
           </div>
         </section>
-        ${count === 0 ? `
-          <section class="sandbox-library-empty">
-            <div class="sandbox-library-empty__toy" aria-hidden="true">✦</div>
-            <h2>${this.copy.emptyTitle}</h2>
-            <p>${this.copy.emptyHint}</p>
-            <button class="sandbox-library-new sandbox-library-new--hero" type="button" data-library-new>${this.copy.newSquishy}</button>
+        <section class="library-showcase" data-library-hall-stage>
+          <section class="library-showcase-collection" aria-label="${this.copy.title}">
+            <div class="library-showcase-collection__heading"><strong>${ru ? 'Твоя коллекция' : 'Your collection'}</strong><span>${count} / ${capacity}</span></div>
+            <div class="sandbox-library-grid" tabindex="0" aria-label="${ru ? 'Полка сквишей' : 'Squishy shelf'}">${cards}${slots}</div><div class="library-showcase-materials" aria-hidden="true">${libraryCraftProps('supplies')}</div>
           </section>
-        ` : `
-          <section class="sandbox-library-grid" aria-label="${this.copy.title}">
-            ${cards}
-            ${!full ? `<button class="sandbox-library-add-card" type="button" data-library-new><span>＋</span><strong>${this.copy.newSquishy}</strong></button>` : ''}
+          <section class="library-showcase-workbench" aria-label="${ru ? 'Стол для мятия' : 'Squeeze table'}">
+            <div class="library-showcase-toy" data-library-display-host>
+              ${selected ? `<button type="button" class="library-showcase-preview" data-library-select-id="${escapeAttribute(selected.id)}" aria-label="${this.copy.squeeze}: ${this.toyLabel(selected)}"><canvas data-library-display aria-hidden="true"></canvas></button>` : `<div class="library-showcase-welcome"><span aria-hidden="true">✦</span><h2>${this.copy.emptyTitle}</h2><p>${this.copy.emptyHint}</p></div>`}
+            </div>
+            <div class="library-showcase-table" aria-hidden="true"><span></span></div>
+            <div class="library-showcase-selected" data-library-selection aria-live="polite">
+              ${selected ? `<strong>${this.toyLabel(selected)}</strong><span>${ru ? 'Нажми на сквиш, чтобы помять' : 'Tap your squishy to squeeze'}</span>` : `<button class="sandbox-library-new" type="button" data-library-new>${this.copy.newSquishy}</button>`}
+            </div>
+            <div class="library-showcase-supplies" aria-hidden="true">${libraryCraftProps('lamp')}</div>
           </section>
+        </section>
           ${full ? `
             <section class="sandbox-library-full-zone">
               <p class="sandbox-library-full-note">${this.copy.full}</p>
@@ -326,17 +342,20 @@ export class SandboxLibraryApp {
             </section>
           ` : ''}
           ${this.rewardMessage ? `<p class="sandbox-library-reward-message" data-library-reward-message aria-live="polite">${this.rewardMessage}</p>` : ''}
-        `}
         <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>
       </main>
     `;
     this.renderVisibleThumbnails();
+    const display = this.root.querySelector<HTMLCanvasElement>('[data-library-display]');
+    if (display && selected) renderLibraryThumbnail(display, selected, 512);
     this.personality.schedule();
   }
 
   private renderIdeas(): void {
     this.personality.stop();
     this.cancelPendingMakerStart();
+    this.presentationObserver?.disconnect();
+    this.presentationObserver = null;
     this.currentMaker?.dispose();
     this.currentMaker = null;
     releasePagesLibraryMaterialLighting();
@@ -413,8 +432,8 @@ export class SandboxLibraryApp {
   private renderToyCard(toy: SavedSquishy): string {
     const label = this.toyLabel(toy);
     return `
-      <article class="sandbox-library-card" data-library-toy="${escapeAttribute(toy.id)}">
-        <button class="sandbox-library-card__play" type="button" data-library-play-id="${escapeAttribute(toy.id)}" aria-label="${this.copy.squeeze}: ${label}">
+      <article class="sandbox-library-card${toy.id === this.selectedToyId ? ' is-selected' : ''}" data-library-toy="${escapeAttribute(toy.id)}">
+        <button class="sandbox-library-card__play" type="button" data-library-play-id="${escapeAttribute(toy.id)}" aria-label="${this.copy.squeeze}: ${label}" aria-pressed="${toy.id === this.selectedToyId}">
           <canvas class="sandbox-library-card__canvas" data-library-thumbnail="${escapeAttribute(toy.id)}" aria-hidden="true"></canvas>
           <span class="sandbox-library-card__cta">${this.copy.squeeze}</span>
         </button>
@@ -458,9 +477,79 @@ export class SandboxLibraryApp {
     return this.loadedMakerRendererOptions ?? undefined;
   }
 
+  /** One existing Phaser maker on demand, seated inside the Library table. */
+  private async selectLibraryToy(toy: SavedSquishy): Promise<void> {
+    const shell = this.root.querySelector<HTMLElement>('[data-sandbox-library]');
+    const display = shell?.querySelector<HTMLDivElement>('[data-library-display-host]');
+    if (!shell || !display || this.disposed) return;
+    if (this.selectedToyId === toy.id && display.querySelector('[data-sandbox-app]')) return;
+    this.personality.stop();
+    const token = ++this.makerStartToken;
+    shell.setAttribute('aria-busy', 'true');
+    const message = shell.querySelector<HTMLElement>('[data-library-maker-error]');
+    if (message) { message.hidden = false; message.textContent = this.copy.studioLoading; }
+    try {
+      const renderer = await this.resolveMakerRendererOptions();
+      if (this.disposed || token !== this.makerStartToken || !shell.isConnected) return;
+      this.presentationObserver?.disconnect();
+      this.currentMaker?.dispose();
+      this.currentMaker = null;
+      releasePagesLibraryMaterialLighting();
+      this.selectedToyId = toy.id;
+      const host = document.createElement('div');
+      host.dataset.libraryLive = '';
+      host.style.setProperty('--library-craft-scale', String(libraryCraftCameraScale(getShape(toy.shapeId), toy.decor)));
+      display.replaceChildren(host);
+      this.currentMaker = new SandboxApp(host, {
+        ...renderer,
+        language: this.options.language, muted: this.muted,
+        savedSquishy: toy, startSavedInSqueeze: true,
+        onExitToLibrary: () => this.renderLibrary(),
+        onSaveSquishy: (draft, editingId) => this.handleSaveRequest(draft, editingId),
+        onMutedChange: muted => this.setMuted(muted),
+      });
+      this.currentMaker.setActivityBlocked(this.activityBlocked);
+      for (const card of shell.querySelectorAll<HTMLElement>('[data-library-toy]')) {
+        const selected = card.dataset.libraryToy === toy.id;
+        card.classList.toggle('is-selected', selected);
+        card.querySelector('button')?.setAttribute('aria-pressed', String(selected));
+      }
+      const selection = shell.querySelector<HTMLElement>('[data-library-selection]');
+      if (selection) selection.innerHTML = `<strong>${this.toyLabel(toy)}</strong><span>${this.options.language === 'ru' ? 'Тяни, нажимай и мни — сквиш уже на столе' : 'Pull, press and squeeze — your squishy is on the table'}</span>`;
+      // Editing/new craft keep the same instance and durable callbacks, but use
+      // the existing full Studio. Only Squeeze belongs inside the Library table.
+      this.presentationObserver = new MutationObserver(() => {
+        const stage = host.querySelector<HTMLElement>('[data-sandbox-app]')?.dataset.stage;
+        if (!host.isConnected || stage === 'squeeze') return;
+        this.presentationObserver?.disconnect();
+        this.presentationObserver = null;
+        this.cancelPendingMakerStart();
+        host.removeAttribute('data-library-live');
+        host.className = 'sandbox-maker-host';
+        host.dataset.sandboxMakerHost = '';
+        this.root.replaceChildren(host);
+        host.querySelector<HTMLElement>('[data-sandbox-app]')?.setAttribute('data-stage', stage ?? 'shape');
+      });
+      this.presentationObserver.observe(host, { subtree: true, attributes: true, attributeFilter: ['data-stage'] });
+    } catch (error: unknown) {
+      if (this.disposed || token !== this.makerStartToken) return;
+      console.error('[squishy:library-selection]', error);
+      this.renderLibrary();
+      const recovery = this.root.querySelector<HTMLElement>('[data-library-maker-error]');
+      if (recovery) { recovery.hidden = false; recovery.textContent = this.copy.studioUnavailable; recovery.classList.add('is-error'); }
+    } finally {
+      if (shell.isConnected && token === this.makerStartToken) {
+        shell.removeAttribute('aria-busy');
+        if (message && message.textContent === this.copy.studioLoading) message.hidden = true;
+      }
+    }
+  }
+
   private async startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): Promise<void> {
     if (this.disposed) return;
     this.personality.stop();
+    this.presentationObserver?.disconnect();
+    this.presentationObserver = null;
     const startToken = ++this.makerStartToken;
     const currentShell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
     const origin: 'library' | 'ideas' = currentShell?.hasAttribute('data-sandbox-ideas') ? 'ideas' : 'library';
@@ -687,10 +776,10 @@ export class SandboxLibraryApp {
       return;
     }
 
-    const playId = target.dataset.libraryPlayId;
+    const playId = target.dataset.libraryPlayId ?? target.dataset.librarySelectId;
     if (playId) {
       const toy = this.library.find((candidate) => candidate.id === playId);
-      if (toy) void this.startMaker(toy);
+      if (toy) void this.selectLibraryToy(toy);
       return;
     }
 
@@ -767,6 +856,8 @@ export class SandboxLibraryApp {
   private openModal(overlay: HTMLElement): void {
     this.closeModal(false);
     this.modalReturnFocus = captureModalReturnFocus();
+    this.personality.stop();
+    this.currentMaker?.setActivityBlocked(true);
     this.root.append(overlay);
     const dialog = overlay.querySelector<HTMLElement>('[role="dialog"]');
     if (dialog) focusModal(dialog);
@@ -776,6 +867,8 @@ export class SandboxLibraryApp {
     this.root.querySelector('[data-library-replace-overlay], [data-library-delete-overlay]')?.remove();
     const returnFocus = this.modalReturnFocus;
     this.modalReturnFocus = null;
+    this.currentMaker?.setActivityBlocked(this.activityBlocked);
+    if (!this.currentMaker) this.personality.schedule();
     if (restore) restoreModalFocus(returnFocus);
   }
 
@@ -824,6 +917,9 @@ export class SandboxLibraryApp {
 
   private setMuted(muted: boolean): void {
     this.muted = muted;
+    this.currentMaker?.setMuted(muted);
+    const button = this.root.querySelector<HTMLButtonElement>('[data-library-mute]');
+    if (button) { button.setAttribute('aria-pressed', String(muted)); button.textContent = muted ? this.copy.muted : this.copy.sound; }
     void this.options.onMutedChange(muted);
   }
 

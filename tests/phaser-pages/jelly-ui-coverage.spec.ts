@@ -11,11 +11,11 @@ const layouts = [
 const checkControls = async (page: Page, label: string): Promise<void> => {
   const controls = page.locator(
     '.sandbox-controls button:visible, .sandbox-topbar button:visible, '
-    + '.sandbox-library-heading__actions button:visible, .sandbox-library-empty button:visible, '
+    + '.sandbox-library-heading__actions button:visible, .library-showcase button:visible, '
     + '.sandbox-ideas-heading button:visible, .sandbox-library-modal button:visible',
   );
   const issues = await controls.evaluateAll(elements => elements.flatMap(element => {
-    if (element.closest('.free-shape-catalog, .free-mixin-catalog, [data-decor-panel="accessory"] .sandbox-decor-grid, .free-object-panel, .free-light-panel')) {
+    if (element.closest('.sandbox-library-grid, .free-shape-catalog, .free-mixin-catalog, [data-decor-panel="accessory"] .sandbox-decor-grid, .free-object-panel, .free-light-panel')) {
       element.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' });
     }
     if (!(element instanceof HTMLButtonElement)) return [];

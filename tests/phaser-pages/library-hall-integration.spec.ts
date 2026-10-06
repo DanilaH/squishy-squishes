@@ -1,3 +1,4 @@
+import { auditShowcase } from './helpers/showcaseAudit';
 import { expect, test, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 
@@ -9,45 +10,7 @@ const views = [
   { name: 'landscape-844', width: 844, height: 390 },
 ] as const;
 
-const verifyHall = async (page: Page, label: string): Promise<void> => {
-  await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
-  await expect(page.locator('[data-library-hall-stage]')).toBeVisible();
-  await expect(page.locator('.library-hall-vacant, .sandbox-library-card:visible')).toHaveCount(2);
-  const measured = await page.evaluate(() => {
-    const shell = document.querySelector<HTMLElement>('[data-sandbox-library]');
-    if (!shell) throw new Error('Library shell missing');
-    const scene = shell.querySelector<HTMLElement>('.library-hall-scene');
-    const nav = shell.querySelector<HTMLElement>('.library-hall-nav');
-    const stands = [...shell.querySelectorAll<HTMLElement>('.sandbox-library-card:not([hidden]), .library-hall-vacant')];
-    if (!scene || !nav || stands.length !== 2) throw new Error('Hall art/navigation missing');
-    const interactive = [...shell.querySelectorAll<HTMLButtonElement>('.sandbox-library-topbar button, .sandbox-library-heading button, .library-hall-nav button, .sandbox-library-card:not([hidden]) button')]
-      .filter((button) => !button.disabled && getComputedStyle(button).visibility !== 'hidden' && getComputedStyle(button).display !== 'none');
-    const rect = (el: Element) => el.getBoundingClientRect().toJSON();
-    return {
-      viewport: { width: innerWidth, height: innerHeight },
-      shell: rect(shell), stage: rect(shell.querySelector('.library-hall-stage')!),
-      stands: stands.map(rect), nav: rect(nav),
-      scrollHeight: document.documentElement.scrollHeight,
-      scrollWidth: document.documentElement.scrollWidth,
-      scenePassive: getComputedStyle(scene).pointerEvents === 'none',
-      image: getComputedStyle(scene.querySelector('.library-hall-scene__wall')!).backgroundImage,
-      unclickable: interactive.filter((button) => {
-        const b = button.getBoundingClientRect();
-        if (!b.width || !b.height) return true;
-        const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
-        return !hit || !button.contains(hit);
-      }).map((button) => button.outerHTML.slice(0, 100)),
-    };
-  });
-  expect(measured.scenePassive, `${label}: room cannot intercept input`).toBe(true);
-  expect(measured.image, `${label}: emitted WebP art URL is live`).toContain('wall');
-  expect(measured.unclickable, `${label}: real DOM controls must accept taps`).toEqual([]);
-  expect(measured.scrollWidth, `${label}: no horizontal scroll`).toBeLessThanOrEqual(measured.viewport.width + 2);
-  expect(measured.scrollHeight, `${label}: no vertical scroll`).toBeLessThanOrEqual(measured.viewport.height + 2);
-  expect(measured.stands.every((s) => s.width >= 70 && s.height >= 100), `${label}: two usable full stands`).toBe(true);
-  expect(measured.stands.every((s) => s.top >= 0 && s.bottom <= measured.viewport.height + 2), `${label}: no cropped stands`).toBe(true);
-  expect(measured.nav.bottom, `${label}: page navigation stays inside viewport`).toBeLessThanOrEqual(measured.viewport.height + 2);
-};
+const verifyHall = async (page: Page, label: string): Promise<void> => { await auditShowcase(page,label); };
 
 for (const view of views) {
   test(`Library Hall real empty screen ${view.name}`, async ({ browser }, info) => {
@@ -58,9 +21,6 @@ for (const view of views) {
     try {
       await page.goto('/phaser/');
       await verifyHall(page, view.name);
-      await expect(page.locator('[data-library-hall-page]')).toHaveText('1 / 1');
-      await expect(page.locator('[data-library-hall-prev]')).toBeDisabled();
-      await expect(page.locator('[data-library-hall-next]')).toBeDisabled();
       await page.screenshot({ path: info.outputPath(`library-hall-empty-${view.name}.png`), animations: 'disabled' });
       await writeFile(info.outputPath(`library-hall-empty-${view.name}.json`), JSON.stringify({ viewport: view, stage: await page.locator('[data-library-hall-stage]').boundingBox() }, null, 2));
       await page.locator('[data-library-new]').first().click();
@@ -72,7 +32,7 @@ for (const view of views) {
   });
 }
 
-test('real saved toys paginate two at a time; play and delete stay interactive', async ({ browser }, info) => {
+test('real saved toys share the shelf; selection and confirmed deletion stay interactive', async ({ browser }, info) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   try {
@@ -108,24 +68,18 @@ test('real saved toys paginate two at a time; play and delete stay interactive',
     await page.reload();
     await verifyHall(page, 'saved-390');
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '3');
-    await expect(page.locator('[data-library-hall-page]')).toHaveText('1 / 2');
-    await expect(page.locator('.sandbox-library-card:visible')).toHaveCount(2);
+    await expect(page.locator('.sandbox-library-card:visible')).toHaveCount(3);
     await page.screenshot({ path: info.outputPath('library-hall-saved-page-1-390.png'), animations: 'disabled' });
-    await page.locator('[data-library-hall-next]').click();
-    await expect(page.locator('[data-library-hall-page]')).toHaveText('2 / 2');
-    await expect(page.locator('.sandbox-library-card:visible')).toHaveCount(1);
-    await expect(page.locator('.library-hall-vacant')).toHaveCount(1);
+    await expect(page.locator('.sandbox-library-card:visible')).toHaveCount(3);
     await page.screenshot({ path: info.outputPath('library-hall-saved-page-2-390.png'), animations: 'disabled' });
-    await page.locator('.sandbox-library-card:visible [data-library-play-id]').click();
+    await page.locator('[data-library-play-id="hall-fixture-third"]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
-    await page.locator('[data-library-hall-next]').click();
-    await page.locator('.sandbox-library-card:visible [data-library-delete-id]').click();
+    await page.locator('[data-library-delete-id="hall-fixture-third"]').click();
     await expect(page.locator('[data-library-delete-overlay]')).toBeVisible();
     await page.locator('[data-library-delete-confirm]').click();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '2');
-    await expect(page.locator('[data-library-hall-page]')).toHaveText('1 / 1');
   } finally {
     await context.close();
   }
