@@ -757,7 +757,7 @@ This changes test organization only, not runtime, materials or visual thresholds
 
 The owner rejected the atmosphere props/two-podium layout and approved the
 common collection shelf, one selected table toy, contextual actions and
-coherent pastel furniture. The full scope and pending verification are in
+coherent pastel furniture. The completed scope and publication evidence are in
 [LIBRARY_SHOWCASE_2026-10-06.md](LIBRARY_SHOWCASE_2026-10-06.md).
 Selection reuses the existing lazy maker in a contained workbench; editing
 promotes that same instance to Studio. Keep Save V3, material constants,
