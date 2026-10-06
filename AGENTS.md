@@ -20,6 +20,13 @@ On 6 October 2026 the owner replaced the blanket no-scroll rule: **the page and 
 
 ## Library showcase follow-up — 6 October 2026
 
+The subsequent owner-approved room direction is in
+[`docs/ROOM_FOUNDATION_2026-10-06.md`](docs/ROOM_FOUNDATION_2026-10-06.md).
+Start with an empty room and original pedestal, separate exhibit/catalog views,
+and responsive fixed furniture slots later. The generated plush-room sketch is
+not an approved art style. Keep the initial `roomReview=1` presentation opt-in
+until its real-game composition has been reviewed by the owner.
+
 The collection presentation pass shipped in PR #93 after the owner rejected the
 previous atmosphere-only treatment. Follow
 [`docs/LIBRARY_SHOWCASE_2026-10-06.md`](docs/LIBRARY_SHOWCASE_2026-10-06.md):

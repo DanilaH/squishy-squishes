@@ -1,0 +1,275 @@
+/* Owner-review room. All rules are scoped to the opt-in presentation. */
+#app .sandbox-library-shell.room-library {
+  --room-wall-color: #e8dfd3;
+  --room-floor-color: #e9e5dc;
+  --room-baseboard-color: #cbbdae;
+  --room-surface-grain: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22160%22%20height%3D%22160%22%20viewBox%3D%220%200%20160%20160%22%3E%3Cfilter%20id%3D%22grain%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.78%22%20numOctaves%3D%223%22%20seed%3D%2211%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3CfeComponentTransfer%3E%3CfeFuncA%20type%3D%22linear%22%20slope%3D%22.1%22%2F%3E%3C%2FfeComponentTransfer%3E%3C%2Ffilter%3E%3Crect%20width%3D%22160%22%20height%3D%22160%22%20filter%3D%22url%28%23grain%29%22%2F%3E%3C%2Fsvg%3E");
+  --room-pedestal-color: #aaa0ac;
+  --room-pedestal-top-color: #baa58b;
+  --room-pedestal-rim-color: #e5d6ae;
+  --room-ink: #644c70;
+  --room-surface: #fff6ed;
+  --room-accent: #e6c9df;
+  padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  gap: 8px;
+}
+#app .room-library .library-hall-scene { background: var(--room-wall-color); }
+#app .room-library .library-hall-scene__wall {
+  inset: 0 0 auto; height: var(--room-floor-top, 77%); background-color: var(--room-wall-color);
+  background-image: radial-gradient(ellipse at 45% 30%, #fff8ec70, transparent 65%), var(--hall-wall);
+  background-blend-mode: normal, luminosity;
+}
+#app .room-library .library-hall-scene__wall::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: linear-gradient(90deg, #76546c18, transparent 12%, transparent 88%, #76546c18), var(--room-surface-grain);
+  background-size: 100% 100%, 160px 160px; background-repeat: no-repeat, repeat;
+}
+#app .room-library .library-hall-scene__wall::after {
+  content: ''; position: absolute; bottom: 0; height: 14px; width: 100%;
+  background-color: var(--room-baseboard-color);
+  background-image: linear-gradient(#ffffff65 0 12%, #00000016 18% 25%, transparent 36% 72%, #00000024 82%, #ffffff26 91%), var(--room-surface-grain);
+  background-size: 100% 100%, 240px 48px; background-repeat: no-repeat, repeat;
+  border-top: 1px solid #ffffff70; border-bottom: 1px solid #604e6550;
+  box-shadow: inset 0 -1px #ffffff26, 0 3px 5px #46354424, 0 6px 14px #70505c16;
+}
+#app .room-library .library-hall-scene__floor {
+  inset: var(--room-floor-top, 77%) 0 0; border: 0; background-color: var(--room-floor-color);
+  background-image: linear-gradient(#71506626, transparent 35%);
+}
+#app .room-library .library-hall-scene__floor::before {
+  background-color: transparent; background-blend-mode: normal;
+  filter: grayscale(1) brightness(.93) contrast(1.8);
+  mix-blend-mode: multiply; opacity: .8;
+}
+#app .room-library .sandbox-library-topbar { width: min(100%, 1120px); margin-inline: auto; }
+#app .room-library .sandbox-library-heading { width: min(100%, 1120px); margin: 0 auto; flex-direction: row; align-items: center; gap: 16px; }
+#app .room-library .sandbox-library-heading h1 { font-size: clamp(22px, 3vw, 32px); line-height: 1.15; }
+#app .room-library .sandbox-library-status { font-size: 12px; letter-spacing: 0; }
+#app .room-library .sandbox-library-heading__actions { width: auto; flex: 0 0 auto; }
+#app .room-library .sandbox-library-heading__actions > button,
+#app .room-library .room-library-button {
+  min-width: 44px; min-height: 44px; border-radius: 17px; padding: 8px 16px;
+  background: var(--room-surface); border: 1px solid #c5a5bf; color: var(--room-ink);
+  box-shadow: inset 0 2px 0 #fffaf4, 0 3px 0 #b994b54d; text-shadow: none;
+  font-size: 13px; font-weight: 800; cursor: pointer;
+}
+#app .room-library .sandbox-library-heading__actions > button,
+#app .room-library .room-library-button--primary { background: linear-gradient(#f4e1ef, var(--room-accent)); }
+#app .room-library .room-library-button:disabled { opacity: .4; cursor: default; }
+#app .room-library .room-library-button:focus-visible { outline: 3px solid #85529b; outline-offset: 3px; }
+#app .room-library-stage {
+  width: min(100%, 1000px); display: block; flex: 1; min-height: 0;
+  padding: 0; margin: 0 auto; position: relative;
+}
+#app .room-library .library-showcase-workbench {
+  width: min(100%, 760px); height: 100%; margin-inline: auto;
+  grid-template-rows: minmax(0, 1fr) 64px; container-type: size;
+}
+#app .room-library .library-showcase-toy { overflow: hidden; }
+#app .room-library .library-showcase-table {
+  width: min(85cqw, 60cqh, 440px); height: auto; max-height: none; aspect-ratio: 460 / 262;
+  left: 50%; translate: -50% -18%; border: 0; border-radius: 0;
+  background: none; box-shadow: none; isolation: isolate;
+}
+#app .room-library .library-showcase-table::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--hall-pedestal) center / contain no-repeat; filter: grayscale(1) brightness(1.15);
+}
+#app .room-library .library-showcase-table > span {
+  display: block; position: absolute; inset: 0; height: auto; border: 0; border-radius: 0; box-shadow: none;
+  background: var(--room-pedestal-rim-color); mix-blend-mode: multiply;
+  mask: var(--hall-pedestal) center / contain no-repeat;
+}
+#app .room-library .library-showcase-table > .room-pedestal-rims { clip-path: url(#room-pedestal-rims); }
+#app .room-library .library-showcase-table > .room-pedestal-wall { background: var(--room-pedestal-color); clip-path: url(#room-pedestal-wall); }
+#app .room-library .library-showcase-table > .room-pedestal-top { background: var(--room-pedestal-top-color); clip-path: url(#room-pedestal-top); }
+#app .room-library .room-pedestal-clips { position: absolute; pointer-events: none; }
+#app .room-library .library-showcase-table::after {
+  content: ''; position: absolute; inset: auto -8% -9%; height: 25%; z-index: -1;
+  background: var(--hall-ground-shadow) center / contain no-repeat;
+}
+#app .room-library .library-showcase-selected {
+  position: absolute; left: 50%; top: var(--room-podium-label-y, 70%); translate: -50% -50%;
+  width: calc(var(--room-podium-width, 300px) * .82); height: calc(var(--room-podium-width, 300px) * .23);
+  min-height: 0; padding: 0; gap: 3px; justify-content: center; color: var(--room-ink);
+  container: room-label / inline-size; pointer-events: none;
+}
+#app .room-library .library-showcase-selected strong { font-size: clamp(10px, 6cqw, 15px); line-height: 1.15; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#app .room-library .library-showcase-selected > span { display: block; font-size: clamp(9px, 4.5cqw, 12px); line-height: 1.2; white-space: nowrap; }
+#app .room-library .library-showcase-selected > strong,
+#app .room-library .library-showcase-selected > span { background: #fff6ede8; border-radius: 8px; padding: 2px 6px; }
+#app .room-library .room-library-arrows {
+  position: absolute; z-index: 4; width: min(100%, 620px); left: 50%; translate: -50% 0;
+  bottom: 8px; display: flex; justify-content: space-between; align-items: center; pointer-events: none;
+}
+#app .room-library .room-library-arrows button { width: 48px; height: 48px; padding: 0; font-size: 30px; pointer-events: auto; }
+#app .room-library .room-library-arrows output { font-size: 12px; color: var(--room-ink); background: #fff6edcf; padding: 5px 12px; border-radius: 12px; }
+#app .room-library[data-library-count='0'] .room-library-arrows { visibility: hidden; }
+#app .room-library-footer {
+  flex: none; width: min(100%, 760px); margin-inline: auto; display: grid;
+  grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
+}
+#app .room-library-footer > :first-child { justify-self: start; }
+#app .room-library-footer > :last-child { justify-self: end; }
+#app .room-library-footer.room-library-footer--collection { width: min(100%, 940px); grid-template-columns: 1fr auto; }
+#app .room-library-capacity { font-size: 13px; color: var(--room-ink); }
+#app .room-library .library-showcase-collection { height: 100%; width: min(100%, 940px); margin-inline: auto; padding: 10px 16px; }
+#app .room-library .library-showcase-collection__heading { align-items: center; padding: 0 0 10px; }
+#app .room-library .sandbox-library-grid { height: 100%; align-content: start; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 0; }
+#app .room-library .sandbox-library-card, #app .room-library .library-showcase-slot { height: 190px; }
+#app .room-library[data-room-managing=false] .sandbox-library-delete { display: none; }
+#app .room-library .sandbox-library-card__footer { justify-content: center; text-align: center; padding-inline: 10px; }
+#app .room-library .sandbox-library-card__footer strong { font-size: 13px; }
+#app .room-library[data-room-view=collection] .library-showcase-workbench,
+#app .room-library:not([data-room-view=collection]) .library-showcase-collection { display: none; }
+#app .room-library[data-room-view=squeeze] .room-library-arrows,
+#app .room-library[data-room-view=squeeze] .room-library-footer { visibility: hidden; pointer-events: none; }
+#app .room-library[data-room-view=squeeze] .room-library-footer { height: 44px; }
+@media (max-width: 760px) {
+  #app .room-library .sandbox-library-heading { gap: 8px; }
+  #app .room-library .sandbox-library-heading h1 { font-size: 22px; }
+  #app .room-library .sandbox-library-heading__actions > button { font-size: 11px; padding-inline: 10px; }
+  #app .room-library .sandbox-library-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #app .room-library .sandbox-library-card, #app .room-library .library-showcase-slot { height: 180px; }
+  #app .room-library .library-showcase-collection { padding: 8px; border-radius: 24px; }
+  #app .room-library-footer { grid-template-columns: auto 1fr; gap: 8px; }
+  #app .room-library:not([data-room-view=collection]) .room-library-footer { height: 96px; }
+  #app .room-library-footer > :last-child { grid-column: 1 / -1; justify-self: center; background: transparent; box-shadow: none; font-size: 11px; }
+  #app .room-library-footer--collection > :last-child { grid-column: auto; justify-self: end; }
+  #app .room-library .library-showcase-welcome { padding: 8px 20px 84px; }
+}
+@media (max-height: 520px) {
+  #app .room-library { padding-block: 6px; gap: 4px; }
+  #app .room-library .sandbox-library-topbar > strong { display: none; }
+  #app .room-library .sandbox-library-topbar { position: absolute; right: 16px; top: 8px; width: auto; z-index: 3; }
+  #app .room-library .sandbox-library-heading { padding-right: 115px; }
+  #app .room-library .sandbox-library-heading h1 { font-size: 20px; }
+  #app .room-library .sandbox-library-status { display: none; }
+  #app .room-library .library-showcase-workbench { grid-template-rows: minmax(0, 1fr) 32px; }
+  #app .room-library .room-library-arrows { bottom: 0; }
+  #app .room-library-footer { grid-template-columns: 1fr auto 1fr; }
+  #app .room-library:not([data-room-view=collection]) .room-library-footer { height: 44px; }
+  #app .room-library-footer > :last-child { grid-column: auto; justify-self: end; }
+  #app .room-library .library-showcase-welcome { padding: 0 12px 35px; }
+}
+
+/* Owner-review room editor: scene remains fixed, only panel contents scroll. */
+#app .room-library .sandbox-library-heading__actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+#app .room-library .sandbox-library-heading__actions .room-edit-open { background: var(--room-surface); min-height: 44px; font-size: 13px; }
+#app .room-library[data-room-view=collection] .room-edit-open,
+#app .room-library[data-room-view=squeeze] .room-edit-open { display: none; }
+@media (min-height: 521px) {
+  /* Keep the second action's row when entering Squeeze, so the stand does not jump. */
+  #app .room-library:not([data-room-view=collection]) .sandbox-library-heading { min-height: 96px; }
+  #app .room-library[data-room-editing=true] .sandbox-library-heading { min-height: 44px; }
+}
+#app .room-library .room-editor[hidden], #app .room-library .room-editor-slots[hidden] { display: none; }
+#app .room-library .room-editor {
+  position: absolute; z-index: 6; top: 156px; bottom: 24px; right: max(24px, calc((100% - 1120px) / 2));
+  width: 320px; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 20px;
+  border: 1px solid #cbb9c8; border-radius: 24px; background: #fff8f1f5; color: var(--room-ink);
+  box-shadow: 0 8px 24px #5c3e6920, inset 0 2px #fff;
+}
+#app .room-library .room-editor header { display: grid; gap: 6px; }
+#app .room-library .room-editor header strong { font-size: 22px; }
+#app .room-library .room-editor header span { font-size: 12px; line-height: 1.4; }
+#app .room-library .room-editor button {
+  min-width: 44px; min-height: 44px; border: 1px solid #d4bdcc; border-radius: 13px;
+  background: #fffbf7; color: var(--room-ink); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer;
+}
+#app .room-library .room-editor button[aria-pressed=true] { background: #efdbeb; border-color: #9a749e; box-shadow: inset 0 0 0 1px #9a749e; }
+#app .room-library .room-editor button:focus-visible, #app .room-library .room-editor-slot:focus-visible { outline: 3px solid #85529b; outline-offset: 2px; }
+#app .room-library .room-editor-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: none; }
+#app .room-library .room-editor-content { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 2px; }
+#app .room-library .room-editor-surfaces { display: flex; gap: 6px; }
+#app .room-library .room-editor-surfaces button { flex: 1; padding: 4px; }
+#app .room-library .room-editor-label { font-size: 12px; font-weight: 800; margin: 20px 0 10px; }
+#app .room-library .room-editor-categories { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding-bottom: 4px; }
+#app .room-library .room-editor-categories button { flex: none; padding: 4px 10px; }
+#app .room-library .room-editor-decor-nav { flex: none; display: grid; gap: 6px; }
+#app .room-library .room-editor-decor-nav .room-editor-label { margin: 6px 0; }
+#app .room-library .room-editor-empty { margin-top: 16px; padding: 22px 12px; border: 1px dashed #cbb9c8; border-radius: 16px; text-align: center; }
+#app .room-library .room-editor-empty p { font-size: 12px; line-height: 1.5; margin-bottom: 0; }
+#app .room-library .room-editor footer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: none; }
+#app .room-library .room-editor footer .room-library-button--primary { background: linear-gradient(#f4e1ef, var(--room-accent)); }
+#app .room-library[data-room-editing=true] .room-library-stage { width: calc(100% - 360px); margin-right: 360px; }
+#app .room-library[data-room-editing=true] .room-library-footer,
+#app .room-library[data-room-editing=true] .room-library-arrows,
+#app .room-library[data-room-editing=true] .library-showcase-selected { visibility: hidden; pointer-events: none; }
+#app .room-library[data-room-editing=true] .sandbox-library-heading__actions { display: none; }
+#app .room-library[data-room-editing=true] .library-showcase-preview { pointer-events: none; }
+#app .room-library .room-editor-slots { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+#app .room-library .room-editor-slot { position: absolute; pointer-events: auto; display: grid; gap: 3px; justify-items: center; min-width: 64px; min-height: 64px; padding: 6px; border: 1px dashed #a582a8; border-radius: 15px; background: #fff8f1e8; font: inherit; font-size: 11px; color: var(--room-ink); }
+#app .room-library .room-editor-slot span { font-size: 22px; }
+#app .room-library .room-editor-slot[aria-pressed=true] { outline: 2px solid #a582a8; }
+#app .room-library .room-editor-slot--left { left: 3%; top: 40%; }
+#app .room-library .room-editor-slot--right { right: 3%; top: 40%; }
+#app .room-library .room-editor-slot--wall { left: 50%; translate: -50% 0; top: 8%; }
+#app .room-library .room-editor-slot--rug { left: 50%; translate: -50% 0; bottom: 6%; }
+@media (max-width: 760px) and (min-height: 521px) {
+  #app .room-library .room-editor { top: auto; bottom: max(12px, env(safe-area-inset-bottom)); left: 16px; right: 16px; width: auto; height: min(420px, 54dvh); padding: 14px; gap: 6px; }
+  #app .room-library .room-editor header strong { font-size: 18px; }
+  #app .room-library .room-editor header span { display: none; }
+  #app .room-library[data-room-editing=true] .room-library-stage { width: 100%; margin: 0 0 calc(min(420px, 54dvh) + 8px); }
+  #app .room-library[data-room-editing=true] .room-library-footer { display: none; }
+  #app .room-library[data-room-editing=true] .library-showcase-workbench { grid-template-rows: minmax(0, 1fr) 12px; }
+  #app .room-library .room-editor-label { margin-top: 14px; }
+}
+@media (max-height: 520px) {
+  #app .room-library .room-editor { top: 66px; bottom: 10px; right: 12px; width: 300px; padding: 12px; gap: 8px; }
+  #app .room-library .room-editor header span { display: none; }
+  #app .room-library .room-editor header strong { font-size: 18px; }
+  #app .room-library[data-room-editing=true] .room-library-stage { width: calc(100% - 320px); margin-right: 320px; }
+  #app .room-library .sandbox-library-heading__actions { flex-direction: row; }
+}
+
+@media (max-width: 760px) and (min-height: 521px) and (max-height: 650px) {
+  #app .room-library .room-editor { height: 54dvh; gap: 6px; padding: 10px; }
+  #app .room-library .room-editor header { display: none; }
+  #app .room-library[data-room-editing=true] .room-library-stage { margin-bottom: calc(54dvh + 8px); }
+}
+
+#app .room-library .room-editor-palette-hint { margin: 0 0 12px; font-size: 12px; }
+#app .room-library .room-editor-palettes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+#app .room-library .room-editor-palettes button { padding: 6px; min-width: 44px; min-height: 44px; text-align: center; }
+#app .room-library .room-editor-palettes strong { display: block; font-size: 10px; margin-top: 6px; line-height: 1.3; }
+#app .room-library .room-editor-palette-preview { display: grid; place-items: center; height: 27px; border-radius: 8px; background: var(--palette-gradient); border: 1px solid #80698126; color: #644c70; font-size: 15px; text-shadow: 0 1px #fff; }
+
+/* Furniture shares the pedestal camera scale across widths. The viewport may
+   crop the outer room; side props sit beyond the pedestal silhouette. */
+#app .room-library .room-furniture { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+#app .room-library .room-prop { position: absolute; pointer-events: none; overflow: hidden; }
+#app .room-library .room-prop img { display: block; position: absolute; max-width: none; object-fit: fill; }
+#app .room-library .room-prop--left, #app .room-library .room-prop--right {
+  width: calc(var(--room-podium-width, 400px) * .55); bottom: calc(100% - var(--room-podium-foot, 75%) + var(--room-podium-width, 400px) * .025);
+}
+#app .room-library .room-prop--left { right: calc(50% + var(--room-podium-width, 300px) * .53); }
+#app .room-library .room-prop--right { left: calc(50% + var(--room-podium-width, 300px) * .53); }
+#app .room-library .room-prop--dresser { width: calc(var(--room-podium-width, 400px) * .6); }
+#app .room-library .room-prop--plant { width: calc(var(--room-podium-width, 400px) * .475); }
+#app .room-library .room-prop--pouf { width: calc(var(--room-podium-width, 400px) * .475); }
+#app .room-library .room-prop--paw-pouf { width: calc(var(--room-podium-width, 400px) * .525); }
+#app .room-library .room-prop--basket { width: calc(var(--room-podium-width, 400px) * .45); }
+#app .room-library .room-prop--side-table { width: calc(var(--room-podium-width, 400px) * .45); }
+#app .room-library .room-prop--cart { width: calc(var(--room-podium-width, 400px) * .5); }
+#app .room-library .room-prop--lamp { width: calc(var(--room-podium-width, 400px) * .3); }
+#app .room-library .room-prop--shelf { width: calc(var(--room-podium-width, 400px) * .5625); top: 10%; right: calc(50% + var(--room-podium-width, 300px) * .55); }
+#app .room-library .room-prop--wall { width: calc(var(--room-podium-width, 400px) * .3375); top: 10%; left: calc(50% + var(--room-podium-width, 300px) * .575); }
+#app .room-library .room-prop--garland { width: calc(var(--room-podium-width, 400px) * 1.225); top: 1%; left: 50%; translate: -50% 0; }
+#app .room-library .room-prop--detail { width: calc(var(--room-podium-width, 400px) * .2125); right: calc(50% + var(--room-podium-width, 300px) * .56); bottom: calc(100% - var(--room-podium-foot, 75%) - var(--room-podium-width, 400px) * .06); }
+#app .room-library .room-prop--rug { width: calc(var(--room-podium-width, 300px) * 1.25); left: 50%; translate: -50% -50%; top: var(--room-podium-floor-center, 75%); z-index: -1; }
+#app .room-library .room-editor-items { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+#app .room-library .room-editor-item { padding: 6px; min-width: 44px; display: grid; grid-template-rows: 62px auto; align-items: center; }
+#app .room-library .room-editor-item img { width: 100%; height: 62px; object-fit: contain; }
+#app .room-library .room-editor-item strong { font-size: 10px; line-height: 1.3; }
+#app .room-library .room-editor-item--none span { font-size: 28px; font-weight: 400; }
+#app .room-library .room-editor-error { margin: 0; font-size: 12px; color: #914361; }
+#app .room-library .room-editor-slot--shelf { left: 2%; top: 10%; }
+#app .room-library .room-editor-slot--wall { left: auto; right: 3%; translate: none; top: 10%; }
+#app .room-library .room-editor-slot--garland { left: 50%; translate: -50% 0; top: 1%; }
+#app .room-library .room-editor-slot--detail { left: 15%; bottom: calc(100% - var(--room-podium-foot, 75%) - 30px); }
+@media (max-width: 760px) and (min-height: 521px) {
+  #app .room-library .room-prop--shelf { top: 8%; }
+  #app .room-library .room-prop--wall { top: 8%; }
+  #app .room-library .room-prop--garland { top: 0; }
+}

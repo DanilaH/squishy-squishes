@@ -1,6 +1,7 @@
 import { libraryCraftProps } from '../experiments/phaser/libraryCraftProps';
 import { libraryCraftCameraScale } from './libraryCraftFit';
 import { mountLibraryPersonality } from './libraryPersonality';
+import type { RoomEditorReview } from './roomEditorReview';
 import { cardPagerMarkup, showCardPage } from './cardPages';
 import { getShape, shapeSvgPath } from '../game/shapes';
 import { SandboxApp, type SandboxAppOptions, type SandboxLanguage } from './SandboxApp';
@@ -24,6 +25,9 @@ export interface SandboxLibraryCommitResult {
 }
 
 export interface SandboxLibraryAppOptions {
+  /** Owner review of the room foundation; published Library stays unchanged. */
+  readonly roomReview?: boolean;
+  readonly createRoomEditor?: (blocked: () => boolean) => RoomEditorReview;
   readonly language: SandboxLanguage;
   readonly muted: boolean;
   readonly initialLibrary: readonly SavedSquishy[];
@@ -225,6 +229,10 @@ export class SandboxLibraryApp {
   private activeIdea: SquishyIdea | null = null;
   private currentMaker: SandboxApp | null = null;
   private selectedToyId: string | null = null;
+  private roomView: 'room' | 'collection' | 'squeeze' = 'room';
+  private roomReturnView: 'room' | 'collection' = 'room';
+  private collectionScrollTop = 0;
+  private collectionManaging = false;
   private presentationObserver: MutationObserver | null = null;
   private pendingReplacement: PendingReplacement | null = null;
   private pendingDeleteId: string | null = null;
@@ -235,6 +243,7 @@ export class SandboxLibraryApp {
   private activityBlocked = false;
   private disposed = false;
   private readonly personality: ReturnType<typeof mountLibraryPersonality>;
+  private readonly roomEditor: RoomEditorReview | null;
 
   public constructor(
     private readonly root: HTMLDivElement,
@@ -245,6 +254,7 @@ export class SandboxLibraryApp {
     this.completedRecipeIds = [...options.initialCompletedRecipeIds];
     this.libraryCapacity = options.libraryCapacity;
     this.muted = options.muted;
+    this.roomEditor = options.roomReview ? options.createRoomEditor?.(() => this.activityBlocked) ?? null : null;
     this.root.addEventListener('click', this.handleClick, { signal: this.abortController.signal });
     this.root.addEventListener('keydown', this.handleKeyDown, { signal: this.abortController.signal });
     this.personality = mountLibraryPersonality(root, id => this.library.find(toy => toy.id === id), () => this.activityBlocked);
@@ -263,6 +273,7 @@ export class SandboxLibraryApp {
     if (this.disposed) return;
     this.disposed = true;
     this.personality.dispose();
+    this.roomEditor?.unmount();
     this.cancelPendingMakerStart();
     this.pendingReplacement?.resolve(null);
     this.pendingReplacement = null;
@@ -276,6 +287,7 @@ export class SandboxLibraryApp {
   }
 
   private renderLibrary(): void {
+    this.roomEditor?.unmount();
     this.personality.stop();
     this.cancelPendingMakerStart();
     this.presentationObserver?.disconnect();
@@ -290,6 +302,10 @@ export class SandboxLibraryApp {
     const canExpandShelf = capacity < this.options.shelfExpansionTargetCapacity;
     const selected = this.library.find(toy => toy.id === this.selectedToyId) ?? this.library.at(-1);
     this.selectedToyId = selected?.id ?? null;
+    if (this.options.roomReview) {
+      this.renderRoomLibrary(selected);
+      return;
+    }
     const cards = this.library.map((toy) => this.renderToyCard(toy)).join('');
     const ru = this.options.language === 'ru';
     const slots = Array.from({ length: Math.max(0, capacity - count) }, (_, index) => `<button class="library-showcase-slot" type="button" data-library-new aria-label="${this.copy.newSquishy} · ${count + index + 1}"><span aria-hidden="true">+</span><small>${ru ? 'Свободное место' : 'Room for a new one'}</small></button>`).join('');
@@ -351,7 +367,68 @@ export class SandboxLibraryApp {
     this.personality.schedule();
   }
 
+  /** Same saved toys and same maker, with separate exhibit/catalog views. */
+  private renderRoomLibrary(selected: SavedSquishy | undefined): void {
+    const ru = this.options.language === 'ru';
+    const count = this.library.length;
+    const position = this.library.findIndex(toy => toy.id === selected?.id);
+    const collection = this.roomView === 'collection';
+    const reward = count >= this.libraryCapacity && this.libraryCapacity < this.options.shelfExpansionTargetCapacity ? `<button class="room-library-button" type="button" data-library-expand-reward ${this.rewardInFlight ? 'disabled' : ''}>${ru ? 'Реклама · +2 места' : 'Ad · +2 slots'}</button>` : '<span aria-hidden="true"></span>';
+    const footer = collection
+      ? `<span class="room-library-capacity">${count} / ${this.libraryCapacity}</span>${reward}`
+      : `<button class="room-library-button" type="button" data-library-ideas>${this.copy.ideas}</button><button class="room-library-button room-library-button--primary" type="button" data-room-collection>${ru ? 'Вся коллекция' : 'All squishies'}</button>${reward}`;
+    const slots = Array.from({ length: Math.max(0, this.libraryCapacity - count) }, (_, index) => `<button class="library-showcase-slot" type="button" data-library-new aria-label="${this.copy.newSquishy} · ${count + index + 1}"><span aria-hidden="true">+</span><small>${ru ? 'Свободное место' : 'New squishy'}</small></button>`).join('');
+    this.root.innerHTML = `
+      <main class="sandbox-library-shell is-library-hall room-library${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-library data-stage="library" data-room-view="${this.roomView}" data-room-managing="${this.collectionManaging}" data-library-count="${count}" data-library-capacity="${this.libraryCapacity}">
+        <header class="sandbox-library-topbar"><strong>${this.copy.studio}</strong><button class="sandbox-sound" type="button" data-library-mute aria-pressed="${this.muted}">${this.muted ? this.copy.muted : this.copy.sound}</button></header>
+        <section class="sandbox-library-heading"><div><span class="sandbox-library-status">${count} / ${this.libraryCapacity}</span><h1>${collection ? (ru ? 'КОЛЛЕКЦИЯ' : 'COLLECTION') : this.copy.title}</h1></div><div class="sandbox-library-heading__actions"><button class="sandbox-library-new" type="button" data-library-new>${this.copy.newSquishy}</button></div></section>
+        <section class="library-showcase room-library-stage" data-library-hall-stage>
+          <section class="library-showcase-collection" aria-label="${this.copy.title}">
+            <div class="library-showcase-collection__heading"><button class="room-library-button" type="button" data-room-back>${ru ? '← Комната' : '← Room'}</button><button class="room-library-button" type="button" data-room-manage aria-pressed="${this.collectionManaging}">${this.collectionManaging ? (ru ? 'Готово' : 'Done') : (ru ? 'Управлять' : 'Manage')}</button></div>
+            <div class="sandbox-library-grid" tabindex="0" aria-label="${ru ? 'Коллекция сквишей' : 'Squishy collection'}">${this.library.map(toy => this.renderToyCard(toy)).join('')}${slots}</div>
+          </section>
+          <section class="library-showcase-workbench" aria-label="${ru ? 'Постамент сквиша' : 'Squishy pedestal'}">
+            <div class="library-showcase-toy" data-library-display-host>${selected ? `<button type="button" class="library-showcase-preview" data-library-select-id="${escapeAttribute(selected.id)}" aria-label="${this.copy.squeeze}: ${this.toyLabel(selected)}"><canvas data-library-display aria-hidden="true"></canvas></button>` : `<div class="library-showcase-welcome"><h2>${this.copy.emptyTitle}</h2><p>${this.copy.emptyHint}</p></div>`}</div>
+            <div class="library-showcase-table" aria-hidden="true">
+              <svg class="room-pedestal-clips" width="0" height="0"><defs>
+                <!-- Trace source seams in the 460×262 art frame; all layers scale together. -->
+                <clipPath id="room-pedestal-rims" clipPathUnits="objectBoundingBox"><path transform="scale(0.002173913043478261 0.003816793893129771)" clip-rule="evenodd" d="M0 0H460V262H0Z M15 0H445V58L443 64L438 74L420 83L390 90L360 94L320 98L280 101L230 102L180 101L140 99L100 95L70 91L40 84L22 76L18 72L15 58Z M17 109L22 109L40 114L70 120L100 124L140 128L180 130L230 131L280 130L320 127L360 124L390 119L420 113L438 108L441 109V180L440 185L439 190L436 195L429 200L420 204L390 212L360 217L320 221L280 223L230 224L180 223L140 221L100 217L70 212L40 204L29 200L23 195L19 190L18 185L17 179Z" /></clipPath>
+                <clipPath id="room-pedestal-top" clipPathUnits="objectBoundingBox"><path transform="scale(0.002173913043478261 0.003816793893129771)" d="M15 0H445V58L443 64L438 74L420 83L390 90L360 94L320 98L280 101L230 102L180 101L140 99L100 95L70 91L40 84L22 76L18 72L15 58Z" /></clipPath>
+                <clipPath id="room-pedestal-wall" clipPathUnits="objectBoundingBox"><path transform="scale(0.002173913043478261 0.003816793893129771)" d="M17 109L22 109L40 114L70 120L100 124L140 128L180 130L230 131L280 130L320 127L360 124L390 119L420 113L438 108L441 109V180L440 185L439 190L436 195L429 200L420 204L390 212L360 217L320 221L280 223L230 224L180 223L140 221L100 217L70 212L40 204L29 200L23 195L19 190L18 185L17 179Z" /></clipPath>
+              </defs></svg>
+              <span class="room-pedestal-rims"></span><span class="room-pedestal-wall"></span><span class="room-pedestal-top"></span>
+            </div>
+            <div class="library-showcase-selected" data-library-selection aria-live="polite">${selected ? `<strong>${this.toyLabel(selected)}</strong><span>${ru ? 'Нажми, чтобы помять' : 'Tap to squeeze'}</span>` : ''}</div>
+            <nav class="room-library-arrows" aria-label="${ru ? 'Выбрать сквиша' : 'Choose squishy'}"><button class="room-library-button" type="button" data-room-step="-1" aria-label="${ru ? 'Предыдущий сквиш' : 'Previous squishy'}" ${count < 2 ? 'disabled' : ''}>‹</button><output>${count ? position + 1 : 0} / ${count}</output><button class="room-library-button" type="button" data-room-step="1" aria-label="${ru ? 'Следующий сквиш' : 'Next squishy'}" ${count < 2 ? 'disabled' : ''}>›</button></nav>
+          </section>
+        </section>
+        <footer class="room-library-footer${collection ? ' room-library-footer--collection' : ''}">${footer}</footer>
+        <p class="sandbox-library-reward-message" data-library-maker-error aria-live="polite" hidden></p>${this.rewardMessage ? `<p class="sandbox-library-reward-message" data-library-reward-message aria-live="polite">${this.rewardMessage}</p>` : ''}
+      </main>`;
+    this.renderVisibleThumbnails();
+    const grid = this.root.querySelector<HTMLElement>('.sandbox-library-grid');
+    if (grid) grid.scrollTop = this.collectionScrollTop;
+    const display = this.root.querySelector<HTMLCanvasElement>('[data-library-display]');
+    if (display && selected) renderLibraryThumbnail(display, selected, 512);
+    this.personality.schedule();
+    const shell = this.root.querySelector<HTMLElement>('.room-library');
+    if (shell) this.roomEditor?.mount(shell);
+  }
+
+  private rememberCollectionScroll(): void {
+    if (this.roomView === 'collection') this.collectionScrollTop = this.root.querySelector<HTMLElement>('.sandbox-library-grid')?.scrollTop ?? this.collectionScrollTop;
+  }
+
+  private returnFromRoomSqueeze(): void {
+    if (!this.options.roomReview) { this.renderLibrary(); return; }
+    this.roomView = this.roomReturnView;
+    this.renderLibrary();
+    const selector = this.roomView === 'collection' ? `[data-library-play-id="${CSS.escape(this.selectedToyId ?? '')}"]` : '[data-library-select-id]';
+    this.root.querySelector<HTMLButtonElement>(selector)?.focus({ preventScroll: true });
+  }
+
   private renderIdeas(): void {
+    this.roomEditor?.unmount();
     this.personality.stop();
     this.cancelPendingMakerStart();
     this.presentationObserver?.disconnect();
@@ -483,6 +560,14 @@ export class SandboxLibraryApp {
     const display = shell?.querySelector<HTMLDivElement>('[data-library-display-host]');
     if (!shell || !display || this.disposed) return;
     if (this.selectedToyId === toy.id && display.querySelector('[data-sandbox-app]')) return;
+    if (this.options.roomReview) {
+      this.rememberCollectionScroll();
+      this.roomReturnView = this.roomView === 'collection' ? 'collection' : 'room';
+      this.roomView = 'squeeze';
+      shell.dataset.roomView = 'squeeze';
+      const heading = shell.querySelector('h1');
+      if (heading) heading.textContent = this.copy.squeeze;
+    }
     this.personality.stop();
     const token = ++this.makerStartToken;
     shell.setAttribute('aria-busy', 'true');
@@ -504,7 +589,7 @@ export class SandboxLibraryApp {
         ...renderer,
         language: this.options.language, muted: this.muted,
         savedSquishy: toy, startSavedInSqueeze: true,
-        onExitToLibrary: () => this.renderLibrary(),
+        onExitToLibrary: () => this.returnFromRoomSqueeze(),
         onSaveSquishy: (draft, editingId) => this.handleSaveRequest(draft, editingId),
         onMutedChange: muted => this.setMuted(muted),
       });
@@ -534,7 +619,7 @@ export class SandboxLibraryApp {
     } catch (error: unknown) {
       if (this.disposed || token !== this.makerStartToken) return;
       console.error('[squishy:library-selection]', error);
-      this.renderLibrary();
+      this.returnFromRoomSqueeze();
       const recovery = this.root.querySelector<HTMLElement>('[data-library-maker-error]');
       if (recovery) { recovery.hidden = false; recovery.textContent = this.copy.studioUnavailable; recovery.classList.add('is-error'); }
     } finally {
@@ -547,6 +632,10 @@ export class SandboxLibraryApp {
 
   private async startMaker(toy: SavedSquishy | null, idea: SquishyIdea | null = null): Promise<void> {
     if (this.disposed) return;
+    if (this.options.roomReview && this.roomView !== 'squeeze') {
+      this.rememberCollectionScroll();
+      this.roomReturnView = this.roomView;
+    }
     this.personality.stop();
     this.presentationObserver?.disconnect();
     this.presentationObserver = null;
@@ -578,7 +667,7 @@ export class SandboxLibraryApp {
         savedSquishy: toy,
         ...(toy === null && idea ? { initialShapeId: idea.shapeId } : {}),
         startSavedInSqueeze: toy !== null,
-        onExitToLibrary: () => this.renderLibrary(),
+        onExitToLibrary: () => this.returnFromRoomSqueeze(),
         onSaveSquishy: (draft, editingId) => this.handleSaveRequest(draft, editingId),
         onMutedChange: (muted) => this.setMuted(muted),
       });
@@ -722,6 +811,30 @@ export class SandboxLibraryApp {
     if (this.disposed || this.activityBlocked) return;
     const target = event.target instanceof Element ? event.target.closest<HTMLElement>('button') : null;
     if (!target) return;
+    if (this.options.roomReview) {
+      if (target.hasAttribute('data-room-step')) {
+        if (!this.library.length || target.hasAttribute('disabled')) return;
+        const index = this.library.findIndex(toy => toy.id === this.selectedToyId);
+        this.selectedToyId = this.library[(index + Number(target.dataset.roomStep) + this.library.length) % this.library.length]!.id;
+        this.renderLibrary();
+        this.root.querySelector<HTMLButtonElement>(`[data-room-step="${target.dataset.roomStep}"]`)?.focus();
+        return;
+      }
+      if (target.hasAttribute('data-room-collection') || target.hasAttribute('data-room-back')) {
+        this.rememberCollectionScroll();
+        this.roomView = target.hasAttribute('data-room-collection') ? 'collection' : 'room';
+        this.renderLibrary();
+        this.root.querySelector<HTMLButtonElement>(this.roomView === 'collection' ? '[data-room-back]' : '[data-room-collection]')?.focus();
+        return;
+      }
+      if (target.hasAttribute('data-room-manage')) {
+        this.rememberCollectionScroll();
+        this.collectionManaging = !this.collectionManaging;
+        this.renderLibrary();
+        this.root.querySelector<HTMLButtonElement>('[data-room-manage]')?.focus();
+        return;
+      }
+    }
 
     const replacementId = target.dataset.libraryReplaceId;
     if (replacementId) {

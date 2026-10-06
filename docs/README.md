@@ -15,6 +15,11 @@
 
 ## Current Library follow-up
 
+[`ROOM_FOUNDATION_2026-10-06.md`](ROOM_FOUNDATION_2026-10-06.md) records the new
+owner-approved empty customizable room foundation and exhibit/catalog flow.
+The initial version is opt-in for visual review; furniture and persisted room
+customization are subsequent work, not already implemented features.
+
 [`LIBRARY_SHOWCASE_2026-10-06.md`](LIBRARY_SHOWCASE_2026-10-06.md) records the
 published collection/table redesign and its verification evidence. The earlier
 free-craft atmosphere release does not establish completion of this new pass.

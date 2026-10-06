@@ -1,0 +1,354 @@
+[
+  {
+    "id": "dresser",
+    "source": "assets-src/room/dresser.png",
+    "output": "public/assets/room/dresser.webp",
+    "sha256": "5283cdecdb2a34a139700df8e08b961a9f660c6127bf537b5f812d340523fa2e",
+    "runtimeSha256": "82261461b48210115dad3784074739e5e50c650e6557749753e70dcbbf7649ef",
+    "bytes": 13262,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 51,
+      "width": 284,
+      "height": 199,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "cart",
+    "source": "assets-src/room/cart.png",
+    "output": "public/assets/room/cart.webp",
+    "sha256": "b5a152211ff939a559375a95e94b1329f119da57342476583d3b2af153e9313d",
+    "runtimeSha256": "d6085222693d8e7ac1c8cc8c75ecd178e01e3d89585c6d0db308f67f38e57970",
+    "bytes": 21978,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 19,
+      "width": 284,
+      "height": 263,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "pouf",
+    "source": "assets-src/room/pouf.png",
+    "output": "public/assets/room/pouf.webp",
+    "sha256": "c60adb6c8c96f639fb1147c176182e8885f1b5727e6f93afafbdc85b0876055f",
+    "runtimeSha256": "b2018bf55a953306b579e076eeab221fad21d93c6ce1b21c1af0a8f140770e02",
+    "bytes": 7680,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 74,
+      "width": 284,
+      "height": 153,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "plant",
+    "source": "assets-src/room/plant.png",
+    "output": "public/assets/room/plant.webp",
+    "sha256": "9591a2d1a4f0b749fdc772991eb15454ae40deb40f21b606619131ab37f5ba7e",
+    "runtimeSha256": "d16807de4a5b296b63275e96f4375ee408c9644722f845140b921ba9f307b9d4",
+    "bytes": 16430,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 20,
+      "width": 284,
+      "height": 261,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "basket",
+    "source": "assets-src/room/basket.png",
+    "output": "public/assets/room/basket.webp",
+    "sha256": "a87824c511de2dad1167145752d62556faa9ecec0e0d79f3e376e9365d8f3151",
+    "runtimeSha256": "91122396cc4a443027c306c824ebd68372574ccef54e3f250eb017621c8bd18a",
+    "bytes": 11302,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 58,
+      "width": 284,
+      "height": 184,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "side-table",
+    "source": "assets-src/room/side-table.png",
+    "output": "public/assets/room/side-table.webp",
+    "sha256": "c656b6b584bda0792251937175dca06c4f366f991b06c4957ec34e08192ed869",
+    "runtimeSha256": "2aa412c6e6103e5367d55acc9f834a2b0a0983abcd5f27e9b9d8425ea2c784f8",
+    "bytes": 12134,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 17,
+      "top": 8,
+      "width": 266,
+      "height": 284,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "lamp",
+    "source": "assets-src/room/lamp.png",
+    "output": "public/assets/room/lamp.webp",
+    "sha256": "16297fb2cab43cd1770127609cb798d97043b0f8a5eb75f2575a507d84715c16",
+    "runtimeSha256": "0e032f3352a6bffed3189f20b57c1be6fab7cc6234b3bfe1bc543de899f973cf",
+    "bytes": 9660,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 93,
+      "top": 8,
+      "width": 115,
+      "height": 284,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "paw-pouf",
+    "source": "assets-src/room/paw-pouf.png",
+    "output": "public/assets/room/paw-pouf.webp",
+    "sha256": "bd88325720016567ceafce87991f4c9a568a688451a8bf18a18438220d33f3b2",
+    "runtimeSha256": "3324aac944215633d773057255a19eaed108bf5c9ba912b7c93b272f3777ec6c",
+    "bytes": 8822,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 72,
+      "width": 284,
+      "height": 156,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "shelf-fillers",
+    "source": "assets-src/room/shelf-fillers.png",
+    "output": "public/assets/room/shelf-fillers.webp",
+    "sha256": "d3d08bed9329c9cc33d37c326a8e8f7b2ed6684907fdd405f92ea112fbba785d",
+    "runtimeSha256": "17fda5304621244a70eb554b7f958962c592debf6198d7ca488114a7c46d7600",
+    "bytes": 10210,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 80,
+      "width": 284,
+      "height": 140,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "shelf-ribbons",
+    "source": "assets-src/room/shelf-ribbons.png",
+    "output": "public/assets/room/shelf-ribbons.webp",
+    "sha256": "25e1e17979841083d177b340cc285273441b44f56bd8593f707784c9a20b0ac5",
+    "runtimeSha256": "b2efb5038c47137dd5cd0d46752216d8c780805909bbf4b64c1e999de1acd3d3",
+    "bytes": 11458,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 71,
+      "width": 284,
+      "height": 159,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "shelf-stickers",
+    "source": "assets-src/room/shelf-stickers.png",
+    "output": "public/assets/room/shelf-stickers.webp",
+    "sha256": "457b19e092a531bc4b9db8073a7e59615f1345234e94e69e94f5dfc13dbbb9c7",
+    "runtimeSha256": "e327f634d308bbf98bd3a36ed8df3f1b6d8105c26eda589dbdf6086017aaf793",
+    "bytes": 8406,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 78,
+      "width": 284,
+      "height": 145,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "figurine-shelf",
+    "source": "assets-src/room/figurine-shelf.png",
+    "output": "public/assets/room/figurine-shelf.webp",
+    "sha256": "4594cd345b68809574c56854f1a1f19373daaa3021c9fdf433b6852bcb9e64d5",
+    "runtimeSha256": "9bb20ba3f0042137b923acb5a18554d5c3aba0d29581ea71da99bbf55c08d54a",
+    "bytes": 11372,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 71,
+      "width": 284,
+      "height": 159,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "picture",
+    "source": "assets-src/room/picture.png",
+    "output": "public/assets/room/picture.webp",
+    "sha256": "367542a930d55b600ccba6198f44a72127fb38aeb8ca0540000e93865b04b181",
+    "runtimeSha256": "844938055cfd8e1f9123a5cfe5ee8b6639f56a9b17ad4f8806b859c3d4405637",
+    "bytes": 10354,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 26,
+      "width": 284,
+      "height": 248,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "board",
+    "source": "assets-src/room/board.png",
+    "output": "public/assets/room/board.webp",
+    "sha256": "db1ce9c2673b85f176aaac37467548daeaa83b7fc363ee9cbfbcde187a996a62",
+    "runtimeSha256": "31e45f216cdd6091538c6ab163650e9143fb806bae6760bd83742ee652648687",
+    "bytes": 10328,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 53,
+      "width": 284,
+      "height": 195,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "mirror",
+    "source": "assets-src/room/mirror.png",
+    "output": "public/assets/room/mirror.webp",
+    "sha256": "06c1c8e67c635b1044edc34ceb6ce8329f5463f49d630d80d129ced4818965ba",
+    "runtimeSha256": "3ea23dad1468c28e42dcca13d41b8d25156f36630fc4290a265fece380ede765",
+    "bytes": 12296,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 15,
+      "top": 8,
+      "width": 271,
+      "height": 284,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "organizer",
+    "source": "assets-src/room/organizer.png",
+    "output": "public/assets/room/organizer.webp",
+    "sha256": "66f24dca4cedacb12ff6c3fa434ac05d6c2ab54cdf7faa451bc5743ad758aaa7",
+    "runtimeSha256": "ba3b58915d2bb2479ae017c8b2640616e1bdef905ee562e899ccc49a1ccc82c5",
+    "bytes": 18048,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 33,
+      "width": 284,
+      "height": 234,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "rug-oval",
+    "source": "assets-src/room/rug-oval.png",
+    "output": "public/assets/room/rug-oval.webp",
+    "sha256": "9fe3647838a9d19dfac4782f4d8e7776fcd594dc7fc518905efeefa2ada8ecd9",
+    "runtimeSha256": "bd1d3ab4858be8a992f35c15c3ee2340a3e9e9251929d2116eee2d9cd0fbd85d",
+    "bytes": 6998,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 100,
+      "width": 284,
+      "height": 100,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "rug-flower",
+    "source": "assets-src/room/rug-flower.png",
+    "output": "public/assets/room/rug-flower.webp",
+    "sha256": "f4d91c5688a9ab60655a36d858eb9d9168acfe5c137afd6964fe1a9c77da73e8",
+    "runtimeSha256": "8b6262b995fcc406788bd51971ba6a1e9ccb9e324ef9b8c0d21d79bf293cbf8a",
+    "bytes": 9004,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 92,
+      "width": 284,
+      "height": 117,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "rug-cloud",
+    "source": "assets-src/room/rug-cloud.png",
+    "output": "public/assets/room/rug-cloud.webp",
+    "sha256": "cf999b1efeaebbfc4671e1a903425b67c66a33ed11739258dd89516fd29a7fb6",
+    "runtimeSha256": "4dea9f28c9d9a5db70abfcdcd5a27121dec50f8be2a9ad5b966e271da994ee8a",
+    "bytes": 10256,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 78,
+      "width": 284,
+      "height": 144,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "rug-donut",
+    "source": "assets-src/room/rug-donut.png",
+    "output": "public/assets/room/rug-donut.webp",
+    "sha256": "1c4bb650bae422946438bdf3d4b6194cd6e1f00e04ff08b486d02c0f6bc4bc82",
+    "runtimeSha256": "7bff1cbcc70b265643d03fdcd024bafd6b7b8d9b5cc0a99e63f9435aff024208",
+    "bytes": 11820,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 81,
+      "width": 284,
+      "height": 139,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "garland",
+    "source": "assets-src/room/garland.png",
+    "output": "public/assets/room/garland.webp",
+    "sha256": "7cc07d11f1eba8fb66c5498fe94483d1d0496449f710fa165cfe41e29d3e3443",
+    "runtimeSha256": "87e73f49f9802d7b990e4e9e2d669521804c89b4a090cd22c910839de783e806",
+    "bytes": 17850,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 176,
+      "width": 464,
+      "height": 129,
+      "canvas": 480
+    }
+  },
+  {
+    "id": "gift-box",
+    "source": "assets-src/room/gift-box.png",
+    "output": "public/assets/room/gift-box.webp",
+    "sha256": "55d9def97dcf76ac485971b2443f668367e6202c98673f8f37fa24e43737c31e",
+    "runtimeSha256": "777790a110b702abd52efa821d4d4002a53dac5827c609cf785ba0ddb6ccf62f",
+    "bytes": 11106,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 54,
+      "width": 284,
+      "height": 192,
+      "canvas": 300
+    }
+  }
+]

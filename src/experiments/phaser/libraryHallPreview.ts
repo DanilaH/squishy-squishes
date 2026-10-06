@@ -56,10 +56,23 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
     if (!bench || !display) return;
     if (observed !== display) { geometry.disconnect(); geometry.observe(display); geometry.observe(bench); observed = display; }
     const hr = display.getBoundingClientRect(), br = bench.getBoundingClientRect();
+    if (!hr.width || !hr.height) return;
     const stageHeight = Math.max(0, hr.height - 52);
     const radius = Math.min(hr.width * .8, stageHeight * 1.2, 440) * .34;
     const top = hr.top - br.top + stageHeight * .5 + radius * .76;
     bench.style.setProperty('--library-table-top', `${top}px`);
+    const room = bench.closest<HTMLElement>('.room-library');
+    const podium = bench.querySelector<HTMLElement>('.library-showcase-table');
+    if (room && podium) {
+      // The back wall meets the floor behind the whole stand, not at its foot.
+      const pr = podium.getBoundingClientRect();
+      bench.style.setProperty('--room-podium-foot', `${pr.bottom - br.top}px`);
+      bench.style.setProperty('--room-podium-width', `${pr.width}px`);
+      bench.style.setProperty('--room-podium-label-y', `${pr.top - br.top + pr.height * .635}px`);
+      bench.style.setProperty('--room-podium-floor-center', `${pr.top - br.top + pr.height * .85}px`);
+      const floorTop = pr.top - room.getBoundingClientRect().top - 28;
+      room.style.setProperty('--room-floor-top', `${floorTop}px`);
+    }
     bench.dataset.libraryTableReady = 'true';
   };
   const schedule = (): void => { if (!disposed && !frame) frame = requestAnimationFrame(sync); };

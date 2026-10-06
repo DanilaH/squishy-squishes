@@ -1,0 +1,9 @@
+{
+  "id": "side-table",
+  "source": "OpenAI imagegen",
+  "generatedAt": "2026-10-06",
+  "prompt": "Use case: stylized-concept. Production sprite for Squishy Squishes room. Reference image is ONLY a style reference unless specifically an edit target. Match the accepted illustrated 2D pedestal: medium muted brown/purple contours, softly hand-painted dimensional shading, rounded casual-game furniture, elevated straight frontal camera, gentle top-left illumination. Isolated object, entire silhouette centered, generous transparent padding. TRUE TRANSPARENT ALPHA OUTSIDE OBJECT, no background, no glow, no dark vignette, no haze, no outside cast shadow. No photorealism, no plush/felt material except an upholstered object, no shiny 3D render, no diagonal isometric perspective, no text/logos. Cream pale wood, dusty lavender/rose/mint accents with coherent muted contrast. Readable as a small mobile-game prop. Create: a narrow small rounded cream wooden nightstand with one dusty rose drawer, round lavender knob, open lower cubby holding two craft notebooks, and short rounded feet.",
+  "styleReference": "original owner pedestal",
+  "stage": "owner approved direction; review in actual room",
+  "hasAvifCompanion": false
+}
