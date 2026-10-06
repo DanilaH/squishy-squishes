@@ -16,7 +16,7 @@
 ## Current Library follow-up
 
 [`LIBRARY_SHOWCASE_2026-10-06.md`](LIBRARY_SHOWCASE_2026-10-06.md) records the
-owner-approved collection/table redesign and its pending acceptance. The earlier
+published collection/table redesign and its verification evidence. The earlier
 free-craft atmosphere release does not establish completion of this new pass.
 
 ## Published free-craft scope

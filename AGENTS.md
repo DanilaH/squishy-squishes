@@ -20,7 +20,7 @@ On 6 October 2026 the owner replaced the blanket no-scroll rule: **the page and 
 
 ## Library showcase follow-up — 6 October 2026
 
-The owner approved a full collection presentation pass after rejecting the
+The collection presentation pass shipped in PR #93 after the owner rejected the
 previous atmosphere-only treatment. Follow
 [`docs/LIBRARY_SHOWCASE_2026-10-06.md`](docs/LIBRARY_SHOWCASE_2026-10-06.md):
 common compact shelves, one selected toy on the table using the existing maker,

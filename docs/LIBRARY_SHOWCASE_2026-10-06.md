@@ -29,9 +29,9 @@ explicitly approved presentation iteration.
 - [x] Focused selection, gestures, editor promotion, modal and saved-data regressions pass.
 - [x] Existing browser/Pages gates adapted to the changed collection navigation,
   retaining specimen, save and input coverage.
-- [ ] Strict release check, full browser QA and reviewed visual comparisons pass.
-- [ ] Independent final diff review and required exact-head PR checks pass.
-- [ ] Merge, actual Pages deployment and public-address acceptance verified.
+- [x] Strict release check, full browser QA and reviewed visual comparisons pass.
+- [x] Independent final diff review and required exact-head PR checks pass.
+- [x] Merge, actual Pages deployment and public-address acceptance verified.
 
 No new progression, materials, shapes, reward policy, toy naming or selectable
 stands are included. This checklist records work and approval, not deployment.
@@ -69,3 +69,30 @@ stands are included. This checklist records work and approval, not deployment.
   records both original thresholds together during the active gesture and uses
   untraced Node waits between CDP touch events. Three CI-mode repeats passed
   locally; final-head acceptance still requires all PR gates.
+
+## Publication — 6 October 2026
+
+[PR #93](https://github.com/DanilaH/squishy-squishes/pull/93) merged after all five
+exact-head workflows passed at `44a33311ccefd5240b47b1c2c7e5c2e4eed70d45`.
+The final browser shard accepted all 65 cases without retries.
+
+Published game source: `bbbd05c90ab4757098f993e61a2ef26f2f1e17ec`;
+Pages branch: `40591d77ed071d557d61f2571394b50cb371e3aa`.
+[Postmerge release](https://github.com/DanilaH/squishy-squishes/actions/runs/37439950147)
+verified the identical PR tree/build, deployed it, compared the public entry
+bytes and passed hosted touch editing, save and reload. Postmerge Candidate
+and DRAFT workflows also passed.
+
+Independent public response check: HTML and entry returned HTTP 200;
+`/squishy-squishes/assets/index-DC_oLFg-.js` SHA-256:
+`5e751b5eb8d3d8148e0e2db678edee50c6f8939b0512dfe156e656fafa8bb5ac`.
+A browser using the environment's trusted proxy transport opened the actual
+public Library, selected two saved toys, squeezed them and checked the modal,
+fixed table and unchanged save. Its extended scenario exceeded the local
+proxy time budget, so it is not claimed as an eight-case hosted pass. The
+required GitHub hosted browser gate passed; real-phone tactile acceptance
+remains the player's check.
+
+[Open the published game](https://danilah.github.io/squishy-squishes/?v=bbbd05c90ab4757098f993e61a2ef26f2f1e17ec).
+This follow-up is complete; earlier pending gate bullets above are historical
+verification evidence, not additional implementation tasks.
