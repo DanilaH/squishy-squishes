@@ -45,3 +45,11 @@ stands are included. This checklist records work and approval, not deployment.
   editing promotes the same maker, oversized wings/handbag fit the table camera.
 - Full release/Pages suites and six reviewed Library UI baseline replacements
   remain release gates. Other stage snapshots, tolerances and retries are unchanged.
+
+- Reviewed visual comparison: all six cases / 30 stage snapshots passed locally;
+  CI also accepted the six Library replacements without tolerance changes.
+- Unmasked workshop camera: 18 cases passed locally. Independent shelf geometry
+  passed all 11 viewports with both empty and genuinely saved collections.
+- Isolated ad cadence and desktop stroking/blink scenarios passed with unchanged
+  time budgets. Concurrent local browser runs hit timing limits; full final-head
+  browser/Pages acceptance remains in [PR #93](https://github.com/DanilaH/squishy-squishes/pull/93).
