@@ -63,3 +63,9 @@ stands are included. This checklist records work and approval, not deployment.
   on editor promotion. Feedback now uses the existing Hall light layer; Studio
   prepares its already loaded art while inline and applies its layout before
   the next paint. No material response constants or save fields changed.
+- Complete Pages, Library Hall, visual, Cozy, Candidate and DRAFT gates passed
+  for the final runtime. Browser QA isolated one tracing-sensitive stroking test:
+  its metrics decayed after motion before sequential assertions. The test now
+  records both original thresholds together during the active gesture and uses
+  untraced Node waits between CDP touch events. Three CI-mode repeats passed
+  locally; final-head acceptance still requires all PR gates.
