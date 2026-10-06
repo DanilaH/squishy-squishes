@@ -17,7 +17,8 @@
 }
 #app .sandbox-shell[data-free-squeeze=true] [data-action=free-squeeze] { background: #f0dfec; }
 @media (orientation: landscape) and (max-height: 500px) {
-  #app .room-library[data-room-view=squeeze] .library-showcase-toy { overflow: visible; }
+  #app .room-library[data-room-view=squeeze] .library-showcase-toy,
+  #app .room-library[data-room-view=squeeze] [data-library-live] .sandbox-shell { overflow: visible; }
   #app .room-library[data-room-view=squeeze] [data-library-live] .sandbox-controls {
     transform: translateY(64px);
   }
