@@ -1,6 +1,8 @@
 import { libraryCraftProps } from '../experiments/phaser/libraryCraftProps';
 import { libraryCraftCameraScale } from './libraryCraftFit';
 import { mountLibraryPersonality } from './libraryPersonality';
+import { RoomEditorReview } from './roomEditorReview';
+import type { RoomSettings } from '../platform/roomSettings';
 import { cardPagerMarkup, showCardPage } from './cardPages';
 import { getShape, shapeSvgPath } from '../game/shapes';
 import { SandboxApp, type SandboxAppOptions, type SandboxLanguage } from './SandboxApp';
@@ -26,6 +28,8 @@ export interface SandboxLibraryCommitResult {
 export interface SandboxLibraryAppOptions {
   /** Owner review of the room foundation; published Library stays unchanged. */
   readonly roomReview?: boolean;
+  readonly initialRoomSettings?: RoomSettings;
+  readonly onRoomSettingsCommit?: (state: RoomSettings) => Promise<void>;
   readonly language: SandboxLanguage;
   readonly muted: boolean;
   readonly initialLibrary: readonly SavedSquishy[];
@@ -241,6 +245,7 @@ export class SandboxLibraryApp {
   private activityBlocked = false;
   private disposed = false;
   private readonly personality: ReturnType<typeof mountLibraryPersonality>;
+  private readonly roomEditor: RoomEditorReview | null;
 
   public constructor(
     private readonly root: HTMLDivElement,
@@ -251,6 +256,7 @@ export class SandboxLibraryApp {
     this.completedRecipeIds = [...options.initialCompletedRecipeIds];
     this.libraryCapacity = options.libraryCapacity;
     this.muted = options.muted;
+    this.roomEditor = options.roomReview ? new RoomEditorReview(options.language, () => this.activityBlocked, options.initialRoomSettings, options.onRoomSettingsCommit) : null;
     this.root.addEventListener('click', this.handleClick, { signal: this.abortController.signal });
     this.root.addEventListener('keydown', this.handleKeyDown, { signal: this.abortController.signal });
     this.personality = mountLibraryPersonality(root, id => this.library.find(toy => toy.id === id), () => this.activityBlocked);
@@ -269,6 +275,7 @@ export class SandboxLibraryApp {
     if (this.disposed) return;
     this.disposed = true;
     this.personality.dispose();
+    this.roomEditor?.unmount();
     this.cancelPendingMakerStart();
     this.pendingReplacement?.resolve(null);
     this.pendingReplacement = null;
@@ -282,6 +289,7 @@ export class SandboxLibraryApp {
   }
 
   private renderLibrary(): void {
+    this.roomEditor?.unmount();
     this.personality.stop();
     this.cancelPendingMakerStart();
     this.presentationObserver?.disconnect();
@@ -383,8 +391,16 @@ export class SandboxLibraryApp {
           </section>
           <section class="library-showcase-workbench" aria-label="${ru ? 'Постамент сквиша' : 'Squishy pedestal'}">
             <div class="library-showcase-toy" data-library-display-host>${selected ? `<button type="button" class="library-showcase-preview" data-library-select-id="${escapeAttribute(selected.id)}" aria-label="${this.copy.squeeze}: ${this.toyLabel(selected)}"><canvas data-library-display aria-hidden="true"></canvas></button>` : `<div class="library-showcase-welcome"><h2>${this.copy.emptyTitle}</h2><p>${this.copy.emptyHint}</p></div>`}</div>
-            <div class="library-showcase-table" aria-hidden="true"><span></span></div>
-            <div class="library-showcase-selected" data-library-selection aria-live="polite">${selected ? `<strong>${this.toyLabel(selected)}</strong><span>${ru ? 'Нажми на сквиш, чтобы помять' : 'Tap your squishy to squeeze'}</span>` : ''}</div>
+            <div class="library-showcase-table" aria-hidden="true">
+              <svg class="room-pedestal-clips" width="0" height="0"><defs>
+                <!-- Trace source seams in the 460×262 art frame; all layers scale together. -->
+                <clipPath id="room-pedestal-rims" clipPathUnits="objectBoundingBox"><path transform="scale(0.002173913043478261 0.003816793893129771)" clip-rule="evenodd" d="M0 0H460V262H0Z M15 0H445V58L443 64L438 74L420 83L390 90L360 94L320 98L280 101L230 102L180 101L140 99L100 95L70 91L40 84L22 76L18 72L15 58Z M17 109L22 109L40 114L70 120L100 124L140 128L180 130L230 131L280 130L320 127L360 124L390 119L420 113L438 108L441 109V180L440 185L439 190L436 195L429 200L420 204L390 212L360 217L320 221L280 223L230 224L180 223L140 221L100 217L70 212L40 204L29 200L23 195L19 190L18 185L17 179Z" /></clipPath>
+                <clipPath id="room-pedestal-top" clipPathUnits="objectBoundingBox"><path transform="scale(0.002173913043478261 0.003816793893129771)" d="M15 0H445V58L443 64L438 74L420 83L390 90L360 94L320 98L280 101L230 102L180 101L140 99L100 95L70 91L40 84L22 76L18 72L15 58Z" /></clipPath>
+                <clipPath id="room-pedestal-wall" clipPathUnits="objectBoundingBox"><path transform="scale(0.002173913043478261 0.003816793893129771)" d="M17 109L22 109L40 114L70 120L100 124L140 128L180 130L230 131L280 130L320 127L360 124L390 119L420 113L438 108L441 109V180L440 185L439 190L436 195L429 200L420 204L390 212L360 217L320 221L280 223L230 224L180 223L140 221L100 217L70 212L40 204L29 200L23 195L19 190L18 185L17 179Z" /></clipPath>
+              </defs></svg>
+              <span class="room-pedestal-rims"></span><span class="room-pedestal-wall"></span><span class="room-pedestal-top"></span>
+            </div>
+            <div class="library-showcase-selected" data-library-selection aria-live="polite">${selected ? `<strong>${this.toyLabel(selected)}</strong><span>${ru ? 'Нажми, чтобы помять' : 'Tap to squeeze'}</span>` : ''}</div>
             <nav class="room-library-arrows" aria-label="${ru ? 'Выбрать сквиша' : 'Choose squishy'}"><button class="room-library-button" type="button" data-room-step="-1" aria-label="${ru ? 'Предыдущий сквиш' : 'Previous squishy'}" ${count < 2 ? 'disabled' : ''}>‹</button><output>${count ? position + 1 : 0} / ${count}</output><button class="room-library-button" type="button" data-room-step="1" aria-label="${ru ? 'Следующий сквиш' : 'Next squishy'}" ${count < 2 ? 'disabled' : ''}>›</button></nav>
           </section>
         </section>
@@ -397,6 +413,8 @@ export class SandboxLibraryApp {
     const display = this.root.querySelector<HTMLCanvasElement>('[data-library-display]');
     if (display && selected) renderLibraryThumbnail(display, selected, 512);
     this.personality.schedule();
+    const shell = this.root.querySelector<HTMLElement>('.room-library');
+    if (shell) this.roomEditor?.mount(shell);
   }
 
   private rememberCollectionScroll(): void {
@@ -412,6 +430,7 @@ export class SandboxLibraryApp {
   }
 
   private renderIdeas(): void {
+    this.roomEditor?.unmount();
     this.personality.stop();
     this.cancelPendingMakerStart();
     this.presentationObserver?.disconnect();

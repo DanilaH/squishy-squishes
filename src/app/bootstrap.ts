@@ -1,3 +1,5 @@
+import { createRoomSettingsRepository } from '../platform/roomSettings';
+import { preloadRoomItems } from '../sandbox/roomCatalog';
 import { installReleaseSession } from '../platform/releaseSession';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../platform/runtime';
 import {
@@ -103,9 +105,18 @@ export const bootstrapSquishyApp = async (
     return completeRecipeIdea(state, ideaId);
   };
 
+  const roomReview = new URLSearchParams(location.search).get('roomReview') === '1';
+  const roomRepository = roomReview ? createRoomSettingsRepository(runtime.storage) : null;
+  const roomSettings = roomRepository ? await roomRepository.loadOrDefault(error => reportError('room-settings-load', error)) : undefined;
+  if (roomReview) {
+    try { await preloadRoomItems(); } catch (error) { reportError('room-assets-load', error); }
+  }
+
   const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
   const app = new SandboxLibraryApp(root, {
-    roomReview: new URLSearchParams(location.search).get('roomReview') === '1',
+    roomReview,
+    ...roomSettings ? { initialRoomSettings: roomSettings } : {},
+    ...roomRepository ? { onRoomSettingsCommit: async (state: import('../platform/roomSettings').RoomSettings) => { await roomRepository.write(state); await roomRepository.flush(); } } : {},
     ...options.makerRendererOptions ? { makerRendererOptions: options.makerRendererOptions } : {},
     ...options.loadMakerRendererOptions ? { loadMakerRendererOptions: options.loadMakerRendererOptions } : {},
     language,

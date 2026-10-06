@@ -1,0 +1,11 @@
+{
+  "source": "OpenAI imagegen",
+  "created": "2026-10-06",
+  "prompt": "Remove ALL the outer brown glow/background so only the dresser and its small top accessories remain against true transparent alpha. Keep the dresser design, perspective and illustration style. No glow or cast shadow outside the silhouette.",
+  "reference": "Owner-approved generated room preview, retained final master in this directory",
+  "hasAvifCompanion": false,
+  "modifications": [
+    "Imagegen cutout refinement: preserve the illustrated object and remove diffuse background outside the physical silhouette."
+  ],
+  "styleReference": "src/experiments/phaser/library-assets/pedestal.webp"
+}

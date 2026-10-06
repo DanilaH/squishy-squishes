@@ -64,7 +64,13 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
     const room = bench.closest<HTMLElement>('.room-library');
     const podium = bench.querySelector<HTMLElement>('.library-showcase-table');
     if (room && podium) {
-      const floorTop = podium.getBoundingClientRect().bottom - room.getBoundingClientRect().top - 30;
+      // The back wall meets the floor behind the whole stand, not at its foot.
+      const pr = podium.getBoundingClientRect();
+      bench.style.setProperty('--room-podium-foot', `${pr.bottom - br.top}px`);
+      bench.style.setProperty('--room-podium-width', `${pr.width}px`);
+      bench.style.setProperty('--room-podium-label-y', `${pr.top - br.top + pr.height * .635}px`);
+      bench.style.setProperty('--room-podium-floor-center', `${pr.top - br.top + pr.height * .85}px`);
+      const floorTop = pr.top - room.getBoundingClientRect().top - 28;
       room.style.setProperty('--room-floor-top', `${floorTop}px`);
     }
     bench.dataset.libraryTableReady = 'true';

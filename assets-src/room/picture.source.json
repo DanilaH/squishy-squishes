@@ -1,0 +1,11 @@
+{
+  "source": "OpenAI imagegen",
+  "created": "2026-10-06",
+  "prompt": "Remove ALL outer lavender glow so only the framed picture remains on true transparent alpha. Keep frame, artwork and front view; flat sharp alpha cutout boundary, no halo.",
+  "reference": "Owner-approved generated room preview, retained final master in this directory",
+  "hasAvifCompanion": false,
+  "modifications": [
+    "Imagegen cutout refinement: preserve the illustrated object and remove diffuse background outside the physical silhouette."
+  ],
+  "styleReference": "src/experiments/phaser/library-assets/pedestal.webp"
+}
