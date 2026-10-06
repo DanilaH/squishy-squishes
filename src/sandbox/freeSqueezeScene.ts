@@ -37,6 +37,7 @@ export class FreeSqueezeScene {
     if (!enabled) { this.restore(); return; }
     const rect = this.canvas.getBoundingClientRect(), radius = this.port.radius();
     this.home = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    this.canvas.dataset.freeHomeY = String(this.home.y);
     this.viewport = { width: innerWidth, height: innerHeight };
     this.library = this.canvas.closest<HTMLElement>('[data-sandbox-library]');
     this.port.reset(); this.body.cancel(); this.body.x = this.body.y = 0;

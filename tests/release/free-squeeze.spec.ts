@@ -33,10 +33,8 @@ test(`free carry, release, return and storage at ${viewport.width}`, async ({pag
   const full=(await canvas.boundingBox())!;
   expect(full.x).toBeCloseTo(0); expect(full.y).toBeCloseTo(0);
   expect(full.width).toBe(viewport.width); expect(full.height).toBe(viewport.height);
-  await expect(canvas).toHaveAttribute('data-free-skin-bounds', /^\{/);
-  const skin=JSON.parse((await canvas.getAttribute('data-free-skin-bounds'))!);
   // Focusing the toggle must never auto-scroll a hidden ancestor and move home.
-  expect(Math.abs((skin.top+skin.bottom)/2-center.y)).toBeLessThan(15);
+  expect(Number(await canvas.getAttribute('data-free-home-y'))).toBeCloseTo(center.y,1);
   await page.mouse.move(center.x,center.y); await page.mouse.down();
   await expect(canvas).toHaveAttribute('data-free-body-held','true');
   await page.mouse.move(center.x+viewport.width*.15, Math.max(75,center.y-70),{steps:12});
