@@ -3,11 +3,12 @@ import { createDefaultSaveV3 } from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
 import { FreeSquishBody } from '../../src/sandbox/freeSquishBody';
 
-test('free body cannot tunnel through the pedestal and returns without momentum', () => {
+for (const earlyRelease of [false,true]) test(`free body cannot tunnel through the pedestal, release before frame=${earlyRelease}`, () => {
   const body = new FreeSquishBody();
   const points = [{x:90,y:90},{x:110,y:90},{x:110,y:110},{x:90,y:110}];
   const room = {left:0,right:400,top:0,bottom:400,pedestal:[{x:50,y:150},{x:150,y:150},{x:150,y:300},{x:50,y:300}]};
   body.begin(1,100,100,0); body.move(1,100,350,16);
+  if(earlyRelease)body.end(1,16);
   body.advance(16,points,room,'jelly',10,()=>{});
   expect(body.y).toBeLessThanOrEqual(40);
   body.end(1,16); body.returnHome();

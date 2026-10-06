@@ -19,6 +19,7 @@ export class FreeSquishBody {
   private returnFrom = { x: 0, y: 0 };
   private returnMs = 0;
   private resolved = { x: 0, y: 0 };
+  private pendingTravel = false;
   public begin(id: number, x: number, y: number, time: number): void {
     this.held = id; this.vx = this.vy = 0;
     this.resolved = { x: this.x, y: this.y };
@@ -32,14 +33,17 @@ export class FreeSquishBody {
     const blend = 1 - Math.exp(-dt * 24);
     this.vx += (Math.max(-1800, Math.min(1800, (nx - this.x) / dt)) - this.vx) * blend;
     this.vy += (Math.max(-1800, Math.min(1800, (ny - this.y) / dt)) - this.vy) * blend;
-    this.x = nx; this.y = ny; this.grab.time = time;
+    this.x = nx; this.y = ny; this.pendingTravel = true; this.grab.time = time;
   }
   public end(id: number, time: number): void {
     if (this.held !== id) return;
     const fade = Math.exp(-Math.max(0, time - this.grab.time - 45) / 65);
     this.vx *= fade; this.vy *= fade; this.held = null;
   }
-  public cancel(): void { this.held = null; this.vx = this.vy = 0; }
+  public cancel(): void {
+    if (this.pendingTravel) { this.x = this.resolved.x; this.y = this.resolved.y; }
+    this.pendingTravel = false; this.held = null; this.vx = this.vy = 0;
+  }
   public returnHome(): void {
     this.cancel(); this.returning = true; this.returnMs = 0;
     this.returnFrom = { x: this.x, y: this.y };
@@ -60,12 +64,14 @@ export class FreeSquishBody {
     if (!points.length) return false;
     const dt = Math.max(0, Math.min(ms, 40)) / 1000;
     const target = { x: this.x, y: this.y };
-    const held = this.held !== null;
-    const travel = held ? Math.hypot(target.x - this.resolved.x, target.y - this.resolved.y) : 0;
+    // Pointer-up can arrive before Phaser paints the last move. Sweep that
+    // pending travel even after release instead of teleporting into an obstacle.
+    const swept = this.held !== null || this.pendingTravel;
+    const travel = swept ? Math.hypot(target.x - this.resolved.x, target.y - this.resolved.y) : 0;
     const steps = Math.max(1, Math.ceil(dt * 240), Math.ceil(travel / Math.max(2, radius * .12))), step = dt / steps;
-    if (held) { this.x = this.resolved.x; this.y = this.resolved.y; }
+    if (swept) { this.x = this.resolved.x; this.y = this.resolved.y; }
     for (let n = 0; n < steps; n++) {
-      if (held) {
+      if (swept) {
         this.x += (target.x - this.resolved.x) / steps;
         this.y += (target.y - this.resolved.y) / steps;
       } else {
@@ -75,7 +81,7 @@ export class FreeSquishBody {
       }
       this.resolve(points, room, restitution[material], impact);
     }
-    this.resolved = { x: this.x, y: this.y };
+    this.resolved = { x: this.x, y: this.y }; this.pendingTravel = false;
     return false;
   }
   private bounce(nx: number, ny: number, amount: number, bounce: number,
