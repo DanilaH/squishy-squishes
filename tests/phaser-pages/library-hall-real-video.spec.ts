@@ -78,13 +78,13 @@ test('record genuine browser Hall idle → new save → settle → page and retu
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     await page.locator('[data-action="home"]').click();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '3');
-    await expect(page.locator('[data-library-hall-page]')).toHaveText('2 / 2');
+    await expect(page.locator('[data-library-toy]')).toHaveCount(3);
     await page.waitForTimeout(2200);
-    await page.locator('[data-library-hall-prev]').click();
-    await expect(page.locator('[data-library-hall-page]')).toHaveText('1 / 2');
+    await page.locator('.sandbox-library-card').first().scrollIntoViewIfNeeded();
+    await expect(page.locator('.sandbox-library-card').first()).toBeVisible();
     await page.waitForTimeout(2200);
-    await page.locator('[data-library-hall-next]').click();
-    await expect(page.locator('[data-library-hall-page]')).toHaveText('2 / 2');
+    await page.locator('.sandbox-library-card').last().scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-library-toy]')).toHaveCount(3);
     await page.waitForTimeout(1400);
     expect(errors).toEqual([]);
     const endState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null'), KEY);

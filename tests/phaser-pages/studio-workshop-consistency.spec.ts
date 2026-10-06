@@ -230,8 +230,32 @@ for (const device of devices) {
         return save?.library?.[0]?.materialId ?? null;
       });
       expect(savedMaterial, `${device.name}: Finish material survives V3 save`).toBe('holo');
+      const savedBeforeReopen = await page.evaluate(() => localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3'));
+      const table = await page.locator('.library-showcase-table').boundingBox();
       await page.locator('.sandbox-library-card:visible [data-library-play-id]').first().click();
+      // Reopening now seats the same Phaser maker in Library, with its own
+      // fixed table. Studio geometry still has to return unchanged on editing.
+      await expect(page.locator('[data-library-live]')).toHaveCount(1);
+      await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+      await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+      await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-material', 'holo');
+      await expect(page.locator('[data-studio-desk]')).toHaveCount(0);
+      expect(await page.locator('.library-showcase-table').boundingBox()).toEqual(table);
+      const inline = (await page.locator('[data-sandbox-canvas]').boundingBox())!;
+      await page.mouse.move(inline.x + inline.width / 2, inline.y + inline.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(inline.x + inline.width / 2 + 12, inline.y + inline.height / 2 - 8, { steps: 5 });
+      await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'true');
+      await page.mouse.up();
+      expect(await page.evaluate(() => localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3'))).toBe(savedBeforeReopen);
+      await page.screenshot({ path: info.outputPath(`workshop-${device.name}-library-squeeze.png`) });
+      await page.locator('[data-action="edit-saved"]').click();
+      await sample('decor-reopened', 'decor');
+      await page.locator('[data-action="decor-continue"]').click();
+      await sample('finish-reopened', 'finish');
+      await page.locator('[data-action="save"]').click();
       await sample('squeeze-reopened', 'squeeze');
+      expect(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3')!).library.length)).toBe(1);
       expect(errors).toEqual([]);
       await writeFile(info.outputPath(`workshop-${device.name}-geometry.json`), JSON.stringify(history, null, 2));
     } finally {

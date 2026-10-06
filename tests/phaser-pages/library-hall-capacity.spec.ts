@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const SAVE_KEY = 'squishy.phaser-pages-preview.squishy.save.v3';
 
-test('eight persisted toys page repeatedly without duplicate rooms, leaks or inaccessible controls', async ({ browser }, info) => {
+test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or inaccessible controls', async ({ browser }, info) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   const errors: string[] = [];
@@ -40,35 +40,34 @@ test('eight persisted toys page repeatedly without duplicate rooms, leaks or ina
     }, SAVE_KEY);
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
-    for (let cycle = 0; cycle < 5; cycle += 1) {
-      for (let room = 1; room <= 4; room += 1) {
-        await expect(page.locator('[data-library-hall-page]')).toHaveText(`${room} / 4`);
-        await expect(page.locator('.sandbox-library-card:visible')).toHaveCount(2);
-        await expect(page.locator('.library-hall-vacant')).toHaveCount(0);
+    const original = await page.evaluate(key=>localStorage.getItem(key), SAVE_KEY);
+    for (let cycle = 0; cycle < 5; cycle++) {
+      for (const index of [0,2,4,6,7,4,2,0]) {
+        const control=page.locator(`[data-library-play-id="stress-toy-${index}"]`);
+        await control.scrollIntoViewIfNeeded();
+        await expect(control).toBeVisible();
+        await expect(page.locator('[data-library-toy]')).toHaveCount(8);
         await expect(page.locator('.library-hall-scene')).toHaveCount(1);
-        await expect(page.locator('.library-hall-nav')).toHaveCount(1);
-        if (room < 4) await page.locator('[data-library-hall-next]').click();
+        await expect(page.locator('.library-showcase-collection')).toHaveCount(1);
       }
-      for (let room = 4; room > 1; room -= 1) await page.locator('[data-library-hall-prev]').click();
     }
+    expect(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)).toBe(original);
     await page.setViewportSize({ width: 667, height: 375 });
     await page.screenshot({ path: info.outputPath('library-hall-capacity-eight-landscape-667.png'), animations: 'disabled' });
-    const accessible = await page.locator('.library-hall-nav button').evaluateAll((buttons) => buttons.map((button) => {
+    const accessible = await page.locator('.sandbox-library-heading button').evaluateAll((buttons) => buttons.map((button) => {
       const rect = button.getBoundingClientRect();
       return { width: rect.width, height: rect.height };
     }));
     expect(accessible.every((button) => button.width >= 44 && button.height >= 44)).toBe(true);
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.locator('[data-library-hall-next]').click();
-    await page.locator('.sandbox-library-card:visible [data-library-play-id]').first().click();
+    await page.locator('[data-library-play-id="stress-toy-7"]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     await page.locator('[data-action="home"]').click();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
     await expect(page.locator('.library-hall-scene')).toHaveCount(1);
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
-    await page.locator('[data-library-hall-next]').click();
-    await page.locator('.sandbox-library-card:visible [data-library-delete-id]').first().click();
+    await page.locator('[data-library-delete-id="stress-toy-7"]').click();
     await page.locator('[data-library-delete-confirm]').click();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '7');
     expect(errors).toEqual([]);

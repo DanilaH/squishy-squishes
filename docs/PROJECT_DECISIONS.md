@@ -751,3 +751,14 @@ and two desktop pairs, all derived from one genuinely created/saved Studio toy
 in beforeAll. All six material comparisons, images, labels, paging and
 Hall/Studio transitions remain; test/job timeouts and retries are unchanged.
 This changes test organization only, not runtime, materials or visual thresholds.
+
+
+## Collection showcase follow-up — 6 October 2026
+
+The owner rejected the atmosphere props/two-podium layout and approved the
+common collection shelf, one selected table toy, contextual actions and
+coherent pastel furniture. The full scope and pending verification are in
+[LIBRARY_SHOWCASE_2026-10-06.md](LIBRARY_SHOWCASE_2026-10-06.md).
+Selection reuses the existing lazy maker in a contained workbench; editing
+promotes that same instance to Studio. Keep Save V3, material constants,
+activity blockers, eight/optional-ten slots and reward cadence unchanged.

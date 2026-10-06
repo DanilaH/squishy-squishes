@@ -1,31 +1,16 @@
 import { expect, test } from '@playwright/test';
 
-test('owner shadow is decoded and layered beneath both podiums without blocking controls', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+test('shelf contact shading and table remain passive behind eight creation places', async ({ page }) => {
+  await page.setViewportSize({width:390,height:844});
   await page.goto('/phaser/');
-  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-art', 'owner-library-223c843');
-  const layer = await page.evaluate(() => {
-    const stands = [...document.querySelectorAll<HTMLElement>('.library-hall-vacant')];
-    if (stands.length !== 2) throw new Error('Expected two vacant pedestals');
-    return stands.map((stand) => {
-      const shadow = getComputedStyle(stand, '::after');
-      const podium = getComputedStyle(stand, '::before');
-      return {
-        url: shadow.backgroundImage,
-        shadowZ: shadow.zIndex,
-        podiumZ: podium.zIndex,
-        pointerEvents: shadow.pointerEvents,
-      };
-    });
-  });
-  for (const item of layer) {
-    expect(item.url).toContain('ground-shadow');
-    expect(item.shadowZ).toBe('0');
-    expect(item.podiumZ).toBe('1');
-    expect(item.pointerEvents).toBe('none');
-  }
-  await page.locator('[data-library-new]').first().click();
-  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
+  await expect(page.locator('.library-showcase-slot')).toHaveCount(8);
+  const layers=await page.locator('.library-showcase-slot').evaluateAll(slots=>slots.map(slot=>({
+    image:getComputedStyle(slot,'::before').backgroundImage,events:getComputedStyle(slot,'::before').pointerEvents,
+  })));
+  for(const layer of layers){expect(layer.image).toContain('gradient');expect(layer.events).toBe('none');}
+  expect(await page.locator('.library-showcase-table').evaluate(table=>getComputedStyle(table).pointerEvents)).toBe('none');
+  await page.locator('.library-showcase-slot').last().click();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','shape');
 });
 
 test('broken owner shadow keeps original usable library grid', async ({ page }) => {

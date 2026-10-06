@@ -104,7 +104,7 @@ test(`captured Jelly follows outside the canvas and releases cleanly ${stage} ${
     await expect(shell).toHaveAttribute('data-squish-active','false');
     if(touch)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});else await page.mouse.up();
     await expect(shell).toHaveAttribute('data-sandbox-squeezes','1');
-    const mute=page.locator('[data-action="mute"]'), previous=await mute.getAttribute('aria-pressed');
+    const mute=page.locator(stage==='squeeze'?'[data-library-mute]':'[data-action="mute"]'), previous=await mute.getAttribute('aria-pressed');
     await mute.click(); await expect(mute).toHaveAttribute('aria-pressed',previous==='true'?'false':'true');
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.documentElement.scrollHeight<=innerHeight)).toBe(true);
   } finally {await context.close();}

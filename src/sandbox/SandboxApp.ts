@@ -1470,7 +1470,8 @@ export class SandboxApp {
 
   private reactWorkshop(energy: number): void {
     if (energy < .22 || this.activityBlocked || this.reducedMotion.matches) return;
-    const dust = this.root.querySelector<HTMLElement>('.studio-env-stage-art');
+    const dust = this.root.querySelector<HTMLElement>('.studio-env-stage-art')
+      ?? this.shell.closest('[data-sandbox-library]')?.querySelector<HTMLElement>('.library-hall-scene');
     if (!dust) return;
     this.roomReaction?.cancel(); this.roomLight?.cancel();
     this.roomReaction = dust.animate([
@@ -1478,7 +1479,9 @@ export class SandboxApp {
       { translate: `${Math.min(8, energy * 10)}px -6px`, opacity: .72, offset: .32 },
       { translate: '0px 0px', opacity: 1 },
     ], { duration: 850, easing: 'ease-out', pseudoElement: '::after' });
-    this.roomLight = dust.animate([{ opacity: 1 }, { opacity: .72, offset: .4 }, { opacity: 1 }], { duration: 850, easing: 'ease-out', pseudoElement: '::before' });
+    if (dust.classList.contains('studio-env-stage-art')) {
+      this.roomLight = dust.animate([{ opacity: 1 }, { opacity: .72, offset: .4 }, { opacity: 1 }], { duration: 850, easing: 'ease-out', pseudoElement: '::before' });
+    }
     this.shell.dataset.workshopReaction = 'release';
     this.roomReaction.onfinish = () => { this.shell.dataset.workshopReaction = 'rest'; };
   }
@@ -2077,11 +2080,16 @@ export class SandboxApp {
     this.updateDecorUi();
   }
 
-  private toggleMuted(): void {
-    this.muted = !this.muted;
+  public setMuted(muted: boolean): void {
+    if (this.disposed) return;
+    this.muted = muted;
     this.renderer.setMuted(this.muted);
     this.muteButton.setAttribute('aria-pressed', String(this.muted));
     this.muteButton.textContent = this.muted ? this.copy.muted : this.copy.sound;
+  }
+
+  private toggleMuted(): void {
+    this.setMuted(!this.muted);
     void this.options.onMutedChange(this.muted);
   }
 

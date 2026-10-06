@@ -48,7 +48,7 @@ for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) {
       await expect(hall).toHaveAttribute('data-library-count', String(ACCESSORY_IDS.length));
       await expect(hall).toHaveAttribute('data-library-hall-mounted', 'true');
       const play = page.locator(`[data-library-play-id="${shapeId}-${accessory}"]`);
-      for (let room = 0; room < Math.ceil(ACCESSORY_IDS.length / 2) && !await play.isVisible(); room++) await page.locator('[data-library-hall-next]').click();
+      await play.scrollIntoViewIfNeeded();
       await expect(play).toBeVisible();
       await play.click();
       const body = page.locator('[data-sandbox-canvas]');

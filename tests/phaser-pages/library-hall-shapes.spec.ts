@@ -44,7 +44,7 @@ test('chrome and holo volume follow all eight saved shape boundaries', async ({ 
     await expect(page.locator('[data-library-hall-stage]')).toBeVisible();
     // Hall thumbnails are eager: audit every native canvas directly.
     // Room navigation below remains presentation/paging coverage only.
-    await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', '1');
+    await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
 
     for (const shape of SHAPES) {
       const canvas = page.locator(`[data-library-thumbnail="shape-review-${material}-${shape}"]`);
@@ -65,9 +65,8 @@ test('chrome and holo volume follow all eight saved shape boundaries', async ({ 
     }
     const rooms = Math.ceil(SHAPES.length / 2);
     for (let pageNumber = 1; pageNumber <= rooms; pageNumber += 1) {
-      await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-room', String(pageNumber));
+      await page.locator('.sandbox-library-card').nth((pageNumber - 1) * 2).scrollIntoViewIfNeeded();
       await page.screenshot({ path: info.outputPath(`library-hall-shapes-${material}-page-${pageNumber}.png`), animations: 'disabled' });
-      if (pageNumber < rooms) await page.locator('[data-library-hall-next]').click();
     }
     if (material === 'chrome') await page.setViewportSize({ width: 390, height: 844 });
   }

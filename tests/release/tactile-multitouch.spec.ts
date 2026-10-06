@@ -76,13 +76,32 @@ test('desktop touch stroking and sparse idle blink preserve the saved toy', asyn
     const radiusRatio = await canvas.evaluate(el => Number.parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
     const radius = Math.min(box.width, box.height) * radiusRatio;
     const point = { id: 1, x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    // Stroking is transient: sample both metrics in the same active frame,
+    // rather than asking the stopped pointer to retain delight during polling.
+    await shell.evaluate(el => {
+      const deadline = performance.now() + 6000;
+      const record = (): void => {
+        const stroking = Number(el.getAttribute('data-squish-stroking'));
+        const delight = Number(el.getAttribute('data-face-reaction')?.split(':')[1]);
+        if (el.getAttribute('data-squish-active') === 'true' && stroking > .6 && delight > .5) {
+          el.setAttribute('data-observed-stroke', JSON.stringify({ stroking, delight }));
+          return;
+        }
+        if (performance.now() < deadline) requestAnimationFrame(record);
+      };
+      requestAnimationFrame(record);
+    });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
     for (let step = 1; step <= 24; step++) {
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + radius * .0075 * step }] });
-      await page.waitForTimeout(32);
+      // A Playwright wait traces WebGL/DOM snapshots between touch events and
+      // can turn slow travel into long stationary holds on CI's software GPU.
+      await new Promise(resolve => setTimeout(resolve, 32));
     }
-    await expect.poll(async () => Number(await shell.getAttribute('data-squish-stroking'))).toBeGreaterThan(.6);
-    await expect.poll(async () => Number((await shell.getAttribute('data-face-reaction'))?.split(':')[1])).toBeGreaterThan(.5);
+    await expect(shell).toHaveAttribute('data-observed-stroke', /stroking/);
+    const observed = JSON.parse((await shell.getAttribute('data-observed-stroke'))!) as { stroking: number; delight: number };
+    expect(observed.stroking).toBeGreaterThan(.6);
+    expect(observed.delight).toBeGreaterThan(.5);
     await mkdir('migration-baseline-evidence', { recursive: true });
     await page.screenshot({ path: 'migration-baseline-evidence/stroke-desktop.png' });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });

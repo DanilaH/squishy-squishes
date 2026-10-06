@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 
 const KEY = 'squishy.phaser-pages-preview.squishy.save.v3';
 
-test('30-second idle and 20 page turns retain one GPU context, stable V3 and bounded DOM', async ({ page }, info) => {
+test('30-second idle and repeated shelf scrolling retain one GPU context, stable V3 and bounded DOM', async ({ page }, info) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/phaser/');
@@ -69,7 +69,7 @@ test('30-second idle and 20 page turns retain one GPU context, stable V3 and bou
       cards: document.querySelectorAll('.sandbox-library-card').length,
       canvases: document.querySelectorAll('[data-library-thumbnail]').length,
       scene: document.querySelectorAll('.library-hall-scene').length,
-      rooms: document.querySelectorAll('.library-hall-nav').length,
+      rooms: document.querySelectorAll('.library-showcase-collection').length,
       gpuContexts: (window as unknown as { __hallGpuContexts: number }).__hallGpuContexts,
     };
   });
@@ -80,14 +80,14 @@ test('30-second idle and 20 page turns retain one GPU context, stable V3 and bou
   expect(idle).toMatchObject({ cards: 8, canvases: 8, scene: 1, rooms: 1, gpuContexts: 1 });
   await page.screenshot({ path: info.outputPath('library-hall-idle-30-seconds-phone-390.png'), animations: 'disabled' });
   for (let cycle = 0; cycle < 5; cycle++) {
-    for (let step = 0; step < 3; step++) await page.locator('[data-library-hall-next]').click();
-    for (let step = 0; step < 3; step++) await page.locator('[data-library-hall-prev]').click();
+    for (const index of [2,4,7]) await page.locator('.sandbox-library-card').nth(index).scrollIntoViewIfNeeded();
+    for (const index of [4,2,0]) await page.locator('.sandbox-library-card').nth(index).scrollIntoViewIfNeeded();
   }
   const after = await page.evaluate(() => ({
     cards: document.querySelectorAll('.sandbox-library-card').length,
     canvases: document.querySelectorAll('[data-library-thumbnail]').length,
     scene: document.querySelectorAll('.library-hall-scene').length,
-    rooms: document.querySelectorAll('.library-hall-nav').length,
+    rooms: document.querySelectorAll('.library-showcase-collection').length,
     gpuContexts: (window as unknown as { __hallGpuContexts: number }).__hallGpuContexts,
   }));
   expect(after).toEqual({ cards: 8, canvases: 8, scene: 1, rooms: 1, gpuContexts: 1 });
