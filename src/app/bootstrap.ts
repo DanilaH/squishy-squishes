@@ -1,5 +1,3 @@
-import { createRoomSettingsRepository } from '../platform/roomSettings';
-import { preloadRoomItems } from '../sandbox/roomCatalog';
 import { installReleaseSession } from '../platform/releaseSession';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../platform/runtime';
 import {
@@ -106,17 +104,24 @@ export const bootstrapSquishyApp = async (
   };
 
   const roomReview = new URLSearchParams(location.search).get('roomReview') === '1';
-  const roomRepository = roomReview ? createRoomSettingsRepository(runtime.storage) : null;
-  const roomSettings = roomRepository ? await roomRepository.loadOrDefault(error => reportError('room-settings-load', error)) : undefined;
+  const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
+  let createRoomEditor: ((blocked: () => boolean) => import('../sandbox/roomEditorReview').RoomEditorReview) | undefined;
   if (roomReview) {
+    const [{ createRoomSettingsRepository }, { preloadRoomItems }, { RoomEditorReview }] = await Promise.all([
+      import('../platform/roomSettings'), import('../sandbox/roomCatalog'), import('../sandbox/roomEditorReview'),
+    ]);
+    const roomRepository = createRoomSettingsRepository(runtime.storage);
+    const roomSettings = await roomRepository.loadOrDefault(error => reportError('room-settings-load', error));
     try { await preloadRoomItems(); } catch (error) { reportError('room-assets-load', error); }
+    createRoomEditor = blocked => new RoomEditorReview(language, blocked, roomSettings, async state => {
+      await roomRepository.write(state);
+      await roomRepository.flush();
+    });
   }
 
-  const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
   const app = new SandboxLibraryApp(root, {
     roomReview,
-    ...roomSettings ? { initialRoomSettings: roomSettings } : {},
-    ...roomRepository ? { onRoomSettingsCommit: async (state: import('../platform/roomSettings').RoomSettings) => { await roomRepository.write(state); await roomRepository.flush(); } } : {},
+    ...createRoomEditor ? { createRoomEditor } : {},
     ...options.makerRendererOptions ? { makerRendererOptions: options.makerRendererOptions } : {},
     ...options.loadMakerRendererOptions ? { loadMakerRendererOptions: options.loadMakerRendererOptions } : {},
     language,

@@ -1,8 +1,7 @@
 import { libraryCraftProps } from '../experiments/phaser/libraryCraftProps';
 import { libraryCraftCameraScale } from './libraryCraftFit';
 import { mountLibraryPersonality } from './libraryPersonality';
-import { RoomEditorReview } from './roomEditorReview';
-import type { RoomSettings } from '../platform/roomSettings';
+import type { RoomEditorReview } from './roomEditorReview';
 import { cardPagerMarkup, showCardPage } from './cardPages';
 import { getShape, shapeSvgPath } from '../game/shapes';
 import { SandboxApp, type SandboxAppOptions, type SandboxLanguage } from './SandboxApp';
@@ -28,8 +27,7 @@ export interface SandboxLibraryCommitResult {
 export interface SandboxLibraryAppOptions {
   /** Owner review of the room foundation; published Library stays unchanged. */
   readonly roomReview?: boolean;
-  readonly initialRoomSettings?: RoomSettings;
-  readonly onRoomSettingsCommit?: (state: RoomSettings) => Promise<void>;
+  readonly createRoomEditor?: (blocked: () => boolean) => RoomEditorReview;
   readonly language: SandboxLanguage;
   readonly muted: boolean;
   readonly initialLibrary: readonly SavedSquishy[];
@@ -256,7 +254,7 @@ export class SandboxLibraryApp {
     this.completedRecipeIds = [...options.initialCompletedRecipeIds];
     this.libraryCapacity = options.libraryCapacity;
     this.muted = options.muted;
-    this.roomEditor = options.roomReview ? new RoomEditorReview(options.language, () => this.activityBlocked, options.initialRoomSettings, options.onRoomSettingsCommit) : null;
+    this.roomEditor = options.roomReview ? options.createRoomEditor?.(() => this.activityBlocked) ?? null : null;
     this.root.addEventListener('click', this.handleClick, { signal: this.abortController.signal });
     this.root.addEventListener('keydown', this.handleKeyDown, { signal: this.abortController.signal });
     this.personality = mountLibraryPersonality(root, id => this.library.find(toy => toy.id === id), () => this.activityBlocked);

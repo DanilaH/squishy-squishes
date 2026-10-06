@@ -187,3 +187,11 @@ measured center of the bottom pedestal ellipse, rather than aligning each
 rug's bottom edge. Different rug aspect ratios now remain centered consistently.
 Local phone/short portrait/landscape/desktop checks verify caption bounds,
 visible hint, rug centers, furniture/arrow separation, fixed page and 44px areas.
+
+Pages publication follow-up: the first complete PR run exposed the unchanged
+Yandex DRAFT initial-entry budget (361,080 bytes against 350,000). Load the room
+repository, catalog and editor only for the explicit roomReview route; pass a
+typed editor factory into the Library rather than eagerly importing its class.
+The resulting DRAFT entry is 345,742 bytes and the original upload/entry audits
+pass. Room asset preloading still completes before room readiness, and retry,
+Cancel, persistence and default Library behavior keep the same contracts.
