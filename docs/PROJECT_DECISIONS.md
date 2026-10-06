@@ -762,3 +762,14 @@ coherent pastel furniture. The completed scope and publication evidence are in
 Selection reuses the existing lazy maker in a contained workbench; editing
 promotes that same instance to Studio. Keep Save V3, material constants,
 activity blockers, eight/optional-ten slots and reward cadence unchanged.
+
+## Custom room foundation — 6 October 2026
+
+The owner subsequently approved exhibit arrow navigation, a separate scrolling
+collection and click-to-Squeeze from both, preserving selected toy/catalog
+position on return. Start with an empty room and original illustrated pedestal;
+future furniture and wall/floor palettes customize that room using fixed slots,
+with portrait and desktop compositions. No forced landscape or plush photoreal
+style. [ROOM_FOUNDATION_2026-10-06.md](ROOM_FOUNDATION_2026-10-06.md) records the
+initial opt-in review stage and deferred room customization; the published
+showcase remains the default until owner visual acceptance.

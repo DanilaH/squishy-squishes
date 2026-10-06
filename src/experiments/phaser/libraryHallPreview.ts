@@ -56,10 +56,17 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
     if (!bench || !display) return;
     if (observed !== display) { geometry.disconnect(); geometry.observe(display); geometry.observe(bench); observed = display; }
     const hr = display.getBoundingClientRect(), br = bench.getBoundingClientRect();
+    if (!hr.width || !hr.height) return;
     const stageHeight = Math.max(0, hr.height - 52);
     const radius = Math.min(hr.width * .8, stageHeight * 1.2, 440) * .34;
     const top = hr.top - br.top + stageHeight * .5 + radius * .76;
     bench.style.setProperty('--library-table-top', `${top}px`);
+    const room = bench.closest<HTMLElement>('.room-library');
+    const podium = bench.querySelector<HTMLElement>('.library-showcase-table');
+    if (room && podium) {
+      const floorTop = podium.getBoundingClientRect().bottom - room.getBoundingClientRect().top - 30;
+      room.style.setProperty('--room-floor-top', `${floorTop}px`);
+    }
     bench.dataset.libraryTableReady = 'true';
   };
   const schedule = (): void => { if (!disposed && !frame) frame = requestAnimationFrame(sync); };

@@ -105,6 +105,7 @@ export const bootstrapSquishyApp = async (
 
   const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
   const app = new SandboxLibraryApp(root, {
+    roomReview: new URLSearchParams(location.search).get('roomReview') === '1',
     ...options.makerRendererOptions ? { makerRendererOptions: options.makerRendererOptions } : {},
     ...options.loadMakerRendererOptions ? { loadMakerRendererOptions: options.loadMakerRendererOptions } : {},
     language,

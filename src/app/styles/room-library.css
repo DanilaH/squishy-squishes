@@ -1,0 +1,126 @@
+/* Initial owner-review room. Existing approved wall/floor/podium pixels; no
+   furniture yet. All rules are scoped to the opt-in room presentation. */
+#app .sandbox-library-shell.room-library {
+  --room-wall-color: #e8d9df;
+  --room-floor-color: #e8c5a1;
+  --room-ink: #644c70;
+  --room-surface: #fff6ed;
+  --room-accent: #e6c9df;
+  padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  gap: 8px;
+}
+#app .room-library .library-hall-scene { background: var(--room-wall-color); }
+#app .room-library .library-hall-scene__wall {
+  inset: 0 0 auto; height: var(--room-floor-top, 77%); background-color: var(--room-wall-color);
+  background-image: radial-gradient(ellipse at 45% 30%, #fff8ec70, transparent 65%), var(--hall-wall);
+  background-blend-mode: normal, luminosity;
+}
+#app .room-library .library-hall-scene__wall::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, #76546c18, transparent 12%, transparent 88%, #76546c18);
+}
+#app .room-library .library-hall-scene__wall::after {
+  content: ''; position: absolute; bottom: 0; height: 12px; width: 100%;
+  background: linear-gradient(#f3dfce, #cba891); border-block: 1px solid #b18e8070;
+  box-shadow: 0 6px 14px #70505c22;
+}
+#app .room-library .library-hall-scene__floor {
+  inset: var(--room-floor-top, 77%) 0 0; border: 0; background-color: var(--room-floor-color);
+  background-image: linear-gradient(#71506626, transparent 35%), var(--hall-floor);
+  background-blend-mode: normal, luminosity;
+}
+#app .room-library .library-hall-scene__floor::before { background-color: var(--room-floor-color); background-blend-mode: luminosity; }
+#app .room-library .sandbox-library-topbar { width: min(100%, 1120px); margin-inline: auto; }
+#app .room-library .sandbox-library-heading { width: min(100%, 1120px); margin: 0 auto; flex-direction: row; align-items: center; gap: 16px; }
+#app .room-library .sandbox-library-heading h1 { font-size: clamp(22px, 3vw, 32px); line-height: 1.15; }
+#app .room-library .sandbox-library-status { font-size: 12px; letter-spacing: 0; }
+#app .room-library .sandbox-library-heading__actions { width: auto; flex: 0 0 auto; }
+#app .room-library .sandbox-library-heading__actions > button,
+#app .room-library .room-library-button {
+  min-width: 44px; min-height: 44px; border-radius: 17px; padding: 8px 16px;
+  background: var(--room-surface); border: 1px solid #c5a5bf; color: var(--room-ink);
+  box-shadow: inset 0 2px 0 #fffaf4, 0 3px 0 #b994b54d; text-shadow: none;
+  font-size: 13px; font-weight: 800; cursor: pointer;
+}
+#app .room-library .sandbox-library-heading__actions > button,
+#app .room-library .room-library-button--primary { background: linear-gradient(#f4e1ef, var(--room-accent)); }
+#app .room-library .room-library-button:disabled { opacity: .4; cursor: default; }
+#app .room-library .room-library-button:focus-visible { outline: 3px solid #85529b; outline-offset: 3px; }
+#app .room-library-stage {
+  width: min(100%, 1000px); display: block; flex: 1; min-height: 0;
+  padding: 0; margin: 0 auto; position: relative;
+}
+#app .room-library .library-showcase-workbench {
+  width: min(100%, 760px); height: 100%; margin-inline: auto;
+  grid-template-rows: minmax(0, 1fr) 64px; container-type: size;
+}
+#app .room-library .library-showcase-toy { overflow: hidden; }
+#app .room-library .library-showcase-table {
+  width: min(85cqw, 60cqh, 440px); height: auto; max-height: none; aspect-ratio: 460 / 260;
+  left: 50%; translate: -50% -18%; border: 0; border-radius: 0;
+  background: var(--hall-pedestal) center / contain no-repeat; box-shadow: none;
+}
+#app .room-library .library-showcase-table > span { display: none; }
+#app .room-library .library-showcase-table::after {
+  content: ''; position: absolute; inset: auto -8% -9%; height: 25%; z-index: -1;
+  background: var(--hall-ground-shadow) center / contain no-repeat;
+}
+#app .room-library .library-showcase-selected { height: 64px; min-height: 0; padding: 8px 48px 0; color: var(--room-ink); }
+#app .room-library .library-showcase-selected strong { font-size: 15px; }
+#app .room-library .library-showcase-selected > span { font-size: 12px; }
+#app .room-library .room-library-arrows {
+  position: absolute; z-index: 4; width: min(100%, 620px); left: 50%; translate: -50% 0;
+  bottom: 67px; display: flex; justify-content: space-between; align-items: center; pointer-events: none;
+}
+#app .room-library .room-library-arrows button { width: 48px; height: 48px; padding: 0; font-size: 30px; pointer-events: auto; }
+#app .room-library .room-library-arrows output { font-size: 12px; color: var(--room-ink); background: #fff6edcf; padding: 5px 12px; border-radius: 12px; }
+#app .room-library[data-library-count='0'] .room-library-arrows { visibility: hidden; }
+#app .room-library-footer {
+  flex: none; width: min(100%, 760px); margin-inline: auto; display: grid;
+  grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
+}
+#app .room-library-footer > :first-child { justify-self: start; }
+#app .room-library-footer > :last-child { justify-self: end; }
+#app .room-library-footer.room-library-footer--collection { width: min(100%, 940px); grid-template-columns: 1fr auto; }
+#app .room-library-capacity { font-size: 13px; color: var(--room-ink); }
+#app .room-library .library-showcase-collection { height: 100%; width: min(100%, 940px); margin-inline: auto; padding: 10px 16px; }
+#app .room-library .library-showcase-collection__heading { align-items: center; padding: 0 0 10px; }
+#app .room-library .sandbox-library-grid { height: 100%; align-content: start; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 0; }
+#app .room-library .sandbox-library-card, #app .room-library .library-showcase-slot { height: 190px; }
+#app .room-library[data-room-managing=false] .sandbox-library-delete { display: none; }
+#app .room-library .sandbox-library-card__footer { justify-content: center; text-align: center; padding-inline: 10px; }
+#app .room-library .sandbox-library-card__footer strong { font-size: 13px; }
+#app .room-library[data-room-view=collection] .library-showcase-workbench,
+#app .room-library:not([data-room-view=collection]) .library-showcase-collection { display: none; }
+#app .room-library[data-room-view=squeeze] .room-library-arrows,
+#app .room-library[data-room-view=squeeze] .room-library-footer { visibility: hidden; pointer-events: none; }
+#app .room-library[data-room-view=squeeze] .room-library-footer { height: 44px; }
+@media (max-width: 760px) {
+  #app .room-library .sandbox-library-heading { gap: 8px; }
+  #app .room-library .sandbox-library-heading h1 { font-size: 22px; }
+  #app .room-library .sandbox-library-heading__actions > button { font-size: 11px; padding-inline: 10px; }
+  #app .room-library .sandbox-library-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #app .room-library .sandbox-library-card, #app .room-library .library-showcase-slot { height: 180px; }
+  #app .room-library .library-showcase-collection { padding: 8px; border-radius: 24px; }
+  #app .room-library-footer { grid-template-columns: auto 1fr; gap: 8px; }
+  #app .room-library:not([data-room-view=collection]) .room-library-footer { height: 96px; }
+  #app .room-library-footer > :last-child { grid-column: 1 / -1; justify-self: center; background: transparent; box-shadow: none; font-size: 11px; }
+  #app .room-library-footer--collection > :last-child { grid-column: auto; justify-self: end; }
+  #app .room-library .library-showcase-welcome { padding: 8px 20px 84px; }
+}
+@media (max-height: 520px) {
+  #app .room-library { padding-block: 6px; gap: 4px; }
+  #app .room-library .sandbox-library-topbar > strong { display: none; }
+  #app .room-library .sandbox-library-topbar { position: absolute; right: 16px; top: 8px; width: auto; z-index: 3; }
+  #app .room-library .sandbox-library-heading { padding-right: 115px; }
+  #app .room-library .sandbox-library-heading h1 { font-size: 20px; }
+  #app .room-library .sandbox-library-status { display: none; }
+  #app .room-library .library-showcase-workbench { grid-template-rows: minmax(0, 1fr) 32px; }
+  #app .room-library .library-showcase-selected { height: 32px; padding-top: 4px; }
+  #app .room-library .library-showcase-selected > span { display: none; }
+  #app .room-library .room-library-arrows { bottom: 36px; }
+  #app .room-library-footer { grid-template-columns: 1fr auto 1fr; }
+  #app .room-library:not([data-room-view=collection]) .room-library-footer { height: 44px; }
+  #app .room-library-footer > :last-child { grid-column: auto; justify-self: end; }
+  #app .room-library .library-showcase-welcome { padding: 0 12px 35px; }
+}
