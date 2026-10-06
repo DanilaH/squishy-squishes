@@ -53,3 +53,6 @@ stands are included. This checklist records work and approval, not deployment.
 - Isolated ad cadence and desktop stroking/blink scenarios passed with unchanged
   time budgets. Concurrent local browser runs hit timing limits; full final-head
   browser/Pages acceptance remains in [PR #93](https://github.com/DanilaH/squishy-squishes/pull/93).
+- Final shelf sizing passed all four full-flow localized control audits and the
+  11-viewport geometry matrix again (five cases), retaining the original caption,
+  hit-target, page overflow and pixel-contact assertions.
