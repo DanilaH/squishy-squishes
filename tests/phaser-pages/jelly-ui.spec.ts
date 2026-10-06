@@ -18,8 +18,9 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
   });
   expect(loadedFontCount).toBeGreaterThan(0);
 
-  // Unlike the earlier side-by-side header, the full title and both touch
-  // targets must have their own space even on a narrow portrait phone.
+  // The compact showcase header shares one row without sacrificing the title
+  // or either 44px action. Wait for the actual Hall profile before measuring it.
+  await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 844 });
     const title = page.locator('.sandbox-library-heading h1');
@@ -32,11 +33,14 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
     expect(actionsBox).not.toBeNull();
     expect(ideasBox).not.toBeNull();
     expect(newBox).not.toBeNull();
-    expect(titleBox!.y + titleBox!.height).toBeLessThan(actionsBox!.y);
+    expect(titleBox!.x + titleBox!.width).toBeLessThanOrEqual(actionsBox!.x);
+    expect(ideasBox!.y).toBe(newBox!.y);
     expect(ideasBox!.x + ideasBox!.width).toBeLessThan(newBox!.x);
     expect(newBox!.x + newBox!.width).toBeLessThanOrEqual(width);
     expect(ideasBox!.height).toBeGreaterThanOrEqual(44);
     expect(newBox!.height).toBeGreaterThanOrEqual(44);
+    expect(ideasBox!.width).toBeGreaterThanOrEqual(44);
+    expect(newBox!.width).toBeGreaterThanOrEqual(44);
     const titleLineCount = await title.evaluate((element) =>
       element.getBoundingClientRect().height / parseFloat(getComputedStyle(element).lineHeight));
     expect(titleLineCount).toBeLessThan(1.2);

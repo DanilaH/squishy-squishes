@@ -56,3 +56,10 @@ stands are included. This checklist records work and approval, not deployment.
 - Final shelf sizing passed all four full-flow localized control audits and the
   11-viewport geometry matrix again (five cases), retaining the original caption,
   hit-target, page overflow and pixel-contact assertions.
+- All four Jelly UI cases and five workshop continuity cases passed locally
+  after adapting the compact heading and inline saved-toy path. The original
+  Studio geometry assertions remain, with added inline gesture/save checks.
+- Final CI diagnosed missing Library release feedback and a delayed Studio grid
+  on editor promotion. Feedback now uses the existing Hall light layer; Studio
+  prepares its already loaded art while inline and applies its layout before
+  the next paint. No material response constants or save fields changed.
