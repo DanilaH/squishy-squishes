@@ -36,7 +36,7 @@ Do not treat the published free-craft checklist as proof of this follow-up.
 
 ## Current polish invariants
 
-- Squeeze follows the pointer modestly; retain bounded whole-body travel and local tap/poke rebound.
+- Pinned Squeeze follows the pointer modestly; retain bounded whole-body travel and local tap/poke rebound. The owner-approved explicit Unpin mode adds viewport travel and room collisions using the same deformable toy; keep its state transient.
 - Draw volume sidewall backing before the front surface to avoid stretch stripes.
 - Composite eyes/mouth/blush after body material lighting.
 - The first Paint stroke must render before pointer-up, including live uncommitted appearance content.

@@ -1,0 +1,25 @@
+/* One existing canvas expands only after explicit Unpin. UI and pedestal keep
+   their original layout; all attachment overlays still use its UV projection. */
+#app .has-free-squeeze .library-showcase-workbench,
+#app .sandbox-shell[data-free-squeeze=true] .sandbox-stage { container-type: normal !important; }
+#app .has-free-squeeze .library-showcase-toy,
+#app .sandbox-shell[data-free-squeeze=true],
+#app .sandbox-shell[data-free-squeeze=true] .sandbox-stage { overflow: visible !important; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-free-squeeze=true] .sandbox-canvas {
+  position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100dvh !important;
+  min-width: 0 !important; min-height: 0 !important; max-width: none !important; max-height: none !important;
+  transform: none !important; aspect-ratio: auto !important; cursor: grab;
+}
+#app .sandbox-shell[data-free-squeeze=true] .sandbox-stage::after { opacity: 0 !important; }
+#app .free-squeeze-shadow {
+  position: fixed; z-index: 0; height: 12px; border-radius: 50%; pointer-events: none;
+  transform: translate(-50%, -50%); filter: blur(4px); background: #654757;
+}
+#app .sandbox-shell[data-free-squeeze=true] [data-action=free-squeeze] { background: #f0dfec; }
+@media (orientation: landscape) and (max-height: 500px) {
+  #app .room-library[data-room-view=squeeze] .library-showcase-toy,
+  #app .room-library[data-room-view=squeeze] [data-library-live] .sandbox-shell { overflow: visible; }
+  #app .room-library[data-room-view=squeeze] [data-library-live] .sandbox-controls {
+    transform: translateY(64px);
+  }
+}

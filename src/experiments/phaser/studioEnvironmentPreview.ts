@@ -148,6 +148,7 @@ export const mountStudioEnvironmentPreview = (root: HTMLElement): (() => void) =
       art.append(decorClip, desk, mat, sketch, ribbon);
       stage.insertBefore(art, stage.firstChild);
     }
+    if (shell.dataset.freeSqueeze === 'true') return;
     const sr = stage.getBoundingClientRect();
     const cr = canvas.getBoundingClientRect();
     const pr = controls.getBoundingClientRect();

@@ -388,6 +388,16 @@ export class SquishSimulation {
     return poke ? Math.max(energy, 0.16) : energy;
   }
 
+  /** A room collision excites the existing elastic field; no new shape physics. */
+  public applyCollisionImpulse(nx: number, ny: number, energy: number): void {
+    const profile = TACTILE_PROFILES[this.material];
+    for (const vertex of this.vertices) {
+      const contact = Math.max(0, -(vertex.restX * nx + vertex.restY * ny));
+      const strength = Math.min(.7, energy) * profile.poke * contact * contact * 2.4;
+      vertex.vx += nx * strength; vertex.vy += ny * strength;
+    }
+  }
+
   /** A short click creates a local rebound without translating the whole toy. */
   private applyPokeImpulse(): void {
     for (const vertex of this.vertices) {

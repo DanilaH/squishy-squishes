@@ -93,6 +93,7 @@ interface SideGpu {
   readonly positions: WebGLBuffer;
   readonly indices: WebGLBuffer;
   readonly uScale: WebGLUniformLocation;
+  readonly uWorldOffset: WebGLUniformLocation;
   readonly uMoldProgress: WebGLUniformLocation;
   readonly uAppearanceEnabled: WebGLUniformLocation;
   readonly uColorLow: WebGLUniformLocation;
@@ -154,6 +155,7 @@ export class PhaserDeformableVolume {
     return {
       program, vao, positions, indices,
       uScale: uniform('uScale'),
+      uWorldOffset: uniform('uWorldOffset'),
       uMoldProgress: uniform('uMoldProgress'),
       uAppearanceEnabled: uniform('uAppearanceEnabled'),
       uColorLow: uniform('uColorLow'),
@@ -202,6 +204,7 @@ export class PhaserDeformableVolume {
     compression: number,
     renderCenterOffsetY = 0,
     pose: ToyPose = REST_TOY,
+    worldX = 0, worldY = 0,
   ): void {
     const gl = this.gl;
     if (gl.isContextLost()) return;
@@ -239,6 +242,7 @@ export class PhaserDeformableVolume {
     gl.bindTexture(gl.TEXTURE_2D, appearance);
     gl.useProgram(gpu.program);
     gl.uniform2f(gpu.uScale, scaleX, scaleY);
+    gl.uniform2f(gpu.uWorldOffset, worldX, worldY);
     gl.uniform1f(gpu.uMoldProgress, moldProgress);
     gl.uniform1i(gpu.uAppearanceEnabled, appearanceEnabled ? 1 : 0);
     gl.uniform3f(gpu.uColorLow, ...material.low);
