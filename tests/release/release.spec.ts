@@ -758,7 +758,7 @@ test('S3 payload evidence measures valid decorated 1 / 8 / 24-slot V3 envelopes'
 test('Pages appearance probe still persists custom paint and uses the real squeeze surface', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${PAGES_URL}?appearanceProbe=1`);
+  await page.goto('/squishy-squishes/?appearanceProbe=1');
   await clearStorageAndReload(page);
 
   const shell = page.locator('[data-appearance-probe]');

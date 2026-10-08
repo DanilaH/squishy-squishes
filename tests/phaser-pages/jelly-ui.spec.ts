@@ -7,7 +7,7 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   await expect(root).toHaveAttribute('data-jelly-ui-ready', '');
   const newToy = page.locator('[data-library-new]').first();
-  await expect(newToy).toHaveCSS('background-image', 'none');
+  await expect(newToy).toHaveCSS('background-image', /honey-wide.*webp/);
 
   // Font must be part of the offline Pages bundle, including Cyrillic; a
   // fallback system font must not silently pass our visual QA.
@@ -155,5 +155,5 @@ test('a transient Library jelly-art failure recovers in-place without delaying p
     message: 'authored Library chrome should recover after one transient asset failure',
   }).toBe('');
   expect(requests).toBeGreaterThanOrEqual(2);
-  await expect(page.locator('[data-library-new]').first()).toHaveCSS('background-image', 'none');
+  await expect(page.locator('[data-library-new]').first()).toHaveCSS('background-image', /honey-wide.*webp/);
 });
