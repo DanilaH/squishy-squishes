@@ -24,6 +24,8 @@ test('stamps use the existing V1 document and reactions have bounded finite life
 for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
   { width: 320, height: 568 }, { width: 568, height: 320 }, { width: 1440, height: 900 },
 ]) test(`creative tools fit and stamps Undo without recoloring in ${locale} ${viewport.width}`, async ({ browser, baseURL }) => {
+  // This scenario checks every scrollable tool and captures every palette/stamp.
+  test.setTimeout(90_000);
   const context = await browser.newContext({ baseURL, locale, viewport, reducedMotion: 'reduce' });
   const page = await context.newPage();
   try {
