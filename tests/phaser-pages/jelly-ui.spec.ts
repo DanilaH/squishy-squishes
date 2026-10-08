@@ -49,22 +49,21 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
 
   await newToy.click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
-  const continueButton = page.locator('[data-action="shape-continue"]');
-  await expect(continueButton).toHaveCSS('background-image', /honey-wave.*webp/);
-  await expect(continueButton).toHaveCSS('background-size', 'contain');
+  const continueButton = page.locator('[data-action="save"]');
+  await expect(continueButton).toHaveCSS('background-image', /honey-wide.*webp/);
+  await expect(continueButton).toHaveCSS('background-size', '100% 100%');
   const buttonBox = await continueButton.boundingBox();
   expect(buttonBox).not.toBeNull();
-  expect(buttonBox!.width / buttonBox!.height).toBeGreaterThan(2.7);
-  expect(buttonBox!.width / buttonBox!.height).toBeLessThan(3.1);
+  expect(buttonBox!.width).toBeGreaterThanOrEqual(44);
   expect(buttonBox!.height).toBeGreaterThanOrEqual(44);
   await page.screenshot({ path: testInfo.outputPath('candy-jelly-shape-390.png') });
 
   await page.locator('button[data-shape="heart"]').click();
   await expect(page.locator('button[data-shape="heart"]')).toHaveAttribute('aria-pressed', 'true');
-  await continueButton.click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
   await expect(page.locator('[data-action="paint-clear"]')).toHaveCSS('background-image', 'none');
-  await expect(page.locator('[data-action="paint-clear"]')).toHaveCSS('background-color', 'rgb(255, 253, 250)');
+  await expect(page.locator('[data-action="paint-settings"]')).toHaveCSS('background-color', 'rgb(255, 253, 250)');
 });
 
 test('A missing jelly asset leaves all original CSS controls usable', async ({ page }) => {
@@ -84,7 +83,7 @@ test('dirty craft exit confirms, and painting continues beyond the former detail
   await page.locator('[data-library-new]').first().click();
   const shell = page.locator('[data-sandbox-app]');
   await page.locator('[data-shape="heart"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
 
   await page.locator('[data-action="exit-craft"]').click();
@@ -106,9 +105,12 @@ test('dirty craft exit confirms, and painting continues beyond the former detail
   await expect(shell, 'repeating Fill replaces the prior base fill instead of consuming budget')
     .toHaveAttribute('data-paint-strokes', '1');
 
+  await page.locator('[data-action="paint-settings"]').click();
   await page.locator('[data-action="paint-clear"]').click();
+  await page.locator('[data-action="tools-close"]').click();
   await page.locator('[data-paint-tool="paint"]').click();
-  await expect(page.locator('[data-tools-overlay]')).toBeVisible();
+  if (await page.locator('[data-tools-overlay]').isHidden()) await page.locator('[data-action="paint-settings"]').click();
+    await expect(page.locator('[data-tools-overlay]')).toBeVisible();
   await page.locator('[data-paint-stamp="none"]').click();
   for (let index = 0; index < 180; index += 1) {
     await page.mouse.click(x, y);
@@ -118,9 +120,11 @@ test('dirty craft exit confirms, and painting continues beyond the former detail
   await expect(shell).toHaveAttribute('data-appearance-full', 'false');
   await expect(page.locator('[data-sandbox-status]')).not.toHaveAttribute('data-limit', '');
   await expect(page.locator('[data-paint-tool="fill"]')).toBeEnabled();
-  await expect(page.locator('[data-action="paint-continue"]')).toBeEnabled();
+  await expect(page.locator('[data-craft-section="mixins"]')).toBeEnabled();
 
+  await page.locator('[data-action="paint-settings"]').click();
   await page.locator('[data-action="paint-clear"]').click();
+  await page.locator('[data-action="tools-close"]').click();
   await expect(shell).toHaveAttribute('data-appearance-full', 'false');
   await expect(page.locator('[data-paint-tool="fill"]')).toBeEnabled();
 

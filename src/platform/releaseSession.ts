@@ -2,7 +2,7 @@ import { ActionInterstitialGate } from '@danilah/mini-games-kit/platform';
 import type { SquishyPlatformRuntime } from './runtime';
 
 const LEGACY_ACTIVE_CRAFT_STAGES = new Set(['pour', 'add', 'mix', 'mold', 'reveal', 'test']);
-const SANDBOX_ACTIVE_CRAFT_STAGES = new Set(['paint', 'mixins', 'mix', 'finish']);
+const SANDBOX_ACTIVE_CRAFT_STAGES = new Set(['shape', 'paint', 'mixins', 'mix', 'decor', 'finish']);
 
 export interface ReleaseSessionHandle {
   dispose(): void;
@@ -105,10 +105,10 @@ export const installReleaseSession = (
 
     if (sandboxMode) {
       const sandboxShell = getSandboxShell();
-      if (previousStage === 'shape' && stage === 'paint' && sandboxShell?.dataset.saveKind !== 'edit') {
+      if (stage === 'shape' && ['library', 'squeeze', 'home'].includes(previousStage) && sandboxShell?.dataset.saveKind !== 'edit') {
         runtime.analytics.track('craft_start', selectionParams(sandboxShell));
       }
-      if (previousStage === 'finish' && stage === 'squeeze' && sandboxShell?.dataset.saveKind !== 'edit') {
+      if (SANDBOX_ACTIVE_CRAFT_STAGES.has(previousStage) && stage === 'squeeze' && sandboxShell?.dataset.saveKind !== 'edit') {
         completedCrafts += 1;
         pendingCompletedSaveActions += 1;
         runtime.analytics.track('craft_save', {

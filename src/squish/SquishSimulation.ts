@@ -388,6 +388,11 @@ export class SquishSimulation {
     return poke ? Math.max(energy, 0.16) : energy;
   }
 
+  private roomLoad = { nx: 0, ny: 0, pressure: 0, tension: 0, ax: 0, ay: 0, gx: 0, gy: -1, held: false, spin: 0 };
+  public setRoomLoad(nx: number, ny: number, pressure: number, tension: number, ax: number, ay: number, gx: number, gy: number, held = false, spin = 0): void {
+    this.roomLoad = { nx, ny, pressure: clamp01(pressure), tension: clamp01(tension), ax, ay, gx, gy, held, spin };
+  }
+
   /** A room collision excites the existing elastic field; no new shape physics. */
   public applyCollisionImpulse(nx: number, ny: number, energy: number): void {
     const profile = TACTILE_PROFILES[this.material];
@@ -598,6 +603,44 @@ export class SquishSimulation {
         heldRestX += this.foamMemory[index * 2]! * this.foamMemoryWeight;
         heldRestY += this.foamMemory[index * 2 + 1]! * this.foamMemoryWeight;
       }
+      // External load enters the same spring targets as hand deformation. No
+      // scaled sprite: the skin, authored UVs and collision contour share it.
+      const load = this.roomLoad;
+      const compliance = this.material === 'jelly' ? .62 : this.material === 'marshmallow' ? .40 : this.material === 'soft' ? .28 : this.material === 'pearl' ? .16 : this.material === 'holo' ? .12 : .035;
+      if (load.pressure || load.tension || load.held) {
+        const along = vertex.restX * load.nx + vertex.restY * load.ny;
+        const acrossX = vertex.restX - along * load.nx, acrossY = vertex.restY - along * load.ny;
+        const squash = compliance * load.pressure;
+        // Squash towards the contact, with transverse volume-preserving bulge.
+        const contactWeight = .65 + clamp01(.5 - along * .5) * .7;
+        let lx = -load.nx * along * squash * contactWeight + acrossX * squash * .65;
+        let ly = -load.ny * along * squash * contactWeight + acrossY * squash * .65;
+        if (load.held) {
+          const rx = vertex.restX - load.ax, ry = vertex.restY - load.ay;
+          const distance = Math.hypot(rx, ry);
+          // Distributed weight vanishes at the caught UV point and grows
+          // through the body. Grip acceleration and centrifugal loading use
+          // the same deformable field; the mesh retains authored UVs.
+          const weight = Math.min(1.8, distance * distance * .65);
+          lx += compliance * (load.gx * weight * .58 + rx * load.spin * .42);
+          ly += compliance * (load.gy * weight * .58 + ry * load.spin * .42);
+          const length = Math.max(.001, Math.hypot(load.gx, load.gy));
+          const dx = load.gx / length, dy = load.gy / length;
+          const across = rx * -dy + ry * dx;
+          const narrow = Math.min(.24, compliance * (length + load.spin) * .12);
+          lx -= -dy * across * narrow; ly -= dx * across * narrow;
+        } else if (load.tension && !load.spin) {
+          // Compatibility for isolated field probes. Live release stops
+          // applying grip loads; existing vertex velocity provides recovery.
+          const length = Math.max(.001, Math.hypot(load.ax, load.ay));
+          const dx = length > .12 ? -load.ax / length : load.gx;
+          const dy = length > .12 ? -load.ay / length : load.gy;
+          const axial = (vertex.restX - load.ax) * dx + (vertex.restY - load.ay) * dy;
+          lx += dx * axial * load.tension * compliance;
+          ly += dy * axial * load.tension * compliance;
+        }
+        heldRestX += lx; heldRestY += ly; targetX += lx; targetY += ly;
+      }
       let responseInfluence = 0;
       if (active) {
         const lx = vertex.restX - this.grabStartX;
@@ -663,7 +706,8 @@ export class SquishSimulation {
       const vertexFloor = Math.min(vertex.restY - .08, floor);
       if (this.viewportFollowEnabled) targetY = Math.max(vertexFloor, targetY);
       const stiffness = active ? GRAB_STIFFNESS_FAR + (GRAB_STIFFNESS_NEAR - GRAB_STIFFNESS_FAR) * responseInfluence : 0;
-      const dampingRate = second ? PINCH_DAMPING : DAMPING * dampingResponse;
+      const roomMotion = load.held || load.pressure > .01 || load.spin > .01;
+      const dampingRate = second ? PINCH_DAMPING : DAMPING * dampingResponse * (roomMotion ? .78 : 1);
       const damping = Math.exp(-(dampingRate * (0.88 + responseInfluence * 0.12)) * dt);
       const ax = (targetX - vertex.x) * stiffness + (heldRestX - vertex.x) * REST_STIFFNESS * restResponse;
       const ay = (targetY - vertex.y) * stiffness + (heldRestY - vertex.y) * REST_STIFFNESS * restResponse;

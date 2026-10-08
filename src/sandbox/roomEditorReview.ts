@@ -1,3 +1,4 @@
+import { mountCatalogScrollHints } from './catalogScrollHints';
 import type { SandboxLanguage } from './SandboxApp';
 import { CATEGORY_SLOTS, ROOM_ITEMS, ROOM_SLOTS, roomItemUrl, roomItemReady, preloadRoomItems, type RoomCategory, type RoomSlot } from './roomCatalog';
 import { ROOM_PALETTES } from './roomPalettes';
@@ -5,6 +6,7 @@ import { ROOM_ASSET_FRAMES } from './roomAssetFrames';
 import { defaultRoomSettings, type RoomSettings } from '../platform/roomSettings';
 
 export class RoomEditorReview {
+  private disposeScrollHints: (() => void) | null = null;
   private settings: RoomSettings;
   private before: RoomSettings;
   private editing = false;
@@ -27,6 +29,7 @@ export class RoomEditorReview {
     return ({ left: this.text('Слева', 'Left'), right: this.text('Справа', 'Right'), shelf: this.text('Полочка', 'Shelf'), wall: this.text('На стене', 'Wall'), rug: this.text('Коврик', 'Rug'), garland: this.text('Гирлянда', 'Garland'), detail: this.text('Рядом', 'Beside') })[slot];
   }
   public unmount(): void {
+    this.disposeScrollHints?.(); this.disposeScrollHints = null;
     this.events?.abort(); this.events = null; this.shell = null;
     if (this.editing && !this.saving) this.settings = this.before;
     this.editing = false;
@@ -44,6 +47,13 @@ export class RoomEditorReview {
     const furniture = document.createElement('div'); furniture.className = 'room-furniture'; furniture.dataset.roomFurniture = ''; furniture.setAttribute('aria-hidden', 'true'); bench?.prepend(furniture);
     const anchors = document.createElement('div'); anchors.className = 'room-editor-slots'; anchors.dataset.roomSlots = ''; anchors.hidden = true; bench?.append(anchors);
     shell.addEventListener('click', this.click, { signal: this.events.signal });
+    shell.addEventListener('change', event => {
+      const select = event.target;
+      if (!(select instanceof HTMLSelectElement) || !select.hasAttribute('data-room-category-select') || !this.editing || this.blocked() || this.saving) return;
+      if (!(select.value in CATEGORY_SLOTS)) return;
+      this.category = select.value as RoomCategory; this.slot = CATEGORY_SLOTS[this.category][0]!; this.render();
+      shell.querySelector<HTMLSelectElement>('[data-room-category-select]')?.focus({preventScroll:true});
+    }, { signal: this.events.signal });
     shell.addEventListener('keydown', event => { if (event.key === 'Escape' && this.editing && !this.blocked() && !this.saving) { event.preventDefault(); void this.close(false); } }, { signal: this.events.signal });
     this.apply();
   }
@@ -71,18 +81,23 @@ export class RoomEditorReview {
     this.shell?.querySelector<HTMLButtonElement>('[data-room-edit-open]')?.focus({ preventScroll: true });
   }
   private render(): void {
+    this.disposeScrollHints?.(); this.disposeScrollHints = null;
     const shell = this.shell, panel = shell?.querySelector<HTMLElement>('[data-room-editor]'), anchors = shell?.querySelector<HTMLElement>('[data-room-slots]');
     if (!shell || !panel || !anchors) return;
     shell.dataset.roomEditing = String(this.editing);
     const preview = shell.querySelector<HTMLButtonElement>('.library-showcase-preview'); if (preview) preview.disabled = this.editing;
     panel.hidden = !this.editing; panel.setAttribute('aria-busy', String(this.saving)); anchors.hidden = !this.editing || this.tab !== 'decor';
     if (!this.editing) return;
+    const active = document.activeElement;
+    const focusAttribute = active instanceof HTMLElement && panel.contains(active)
+      ? ['data-room-editor-tab','data-room-theme','data-room-category','data-room-slot','data-room-item','data-room-category-select'].find(key => active.hasAttribute(key)) : undefined;
+    const focusValue = focusAttribute ? active!.getAttribute(focusAttribute) ?? '' : '';
     const categories: [RoomCategory, string][] = [['furniture', this.text('Мебель', 'Furniture')], ['shelves', this.text('Полочки', 'Shelves')], ['posters', this.text('На стену', 'Wall decor')], ['rugs', this.text('Коврики', 'Rugs')], ['details', this.text('Мелочи', 'Details')]];
     const scrollTop = panel.dataset.editorTab === this.tab && panel.dataset.editorCategory === this.category && panel.dataset.editorSlot === this.slot ? panel.querySelector('.room-editor-content')?.scrollTop ?? 0 : 0;
     const categoryScroll = panel.querySelector('.room-editor-categories')?.scrollLeft ?? 0;
     panel.dataset.editorTab = this.tab; panel.dataset.editorCategory = this.category; panel.dataset.editorSlot = this.slot;
     const choices = ROOM_ITEMS.filter(item => item.category === this.category && item.slots.includes(this.slot));
-    const decorNav = `<div class="room-editor-decor-nav"><div class="room-editor-categories">${categories.map(([id, label]) => `<button type="button" data-room-category="${id}" aria-pressed="${this.category === id}">${label}</button>`).join('')}</div><div class="room-editor-surfaces">${CATEGORY_SLOTS[this.category].map(id => `<button type="button" data-room-slot="${id}" aria-pressed="${this.slot === id}">${this.slotLabel(id)}</button>`).join('')}</div></div>`;
+    const decorNav = `<div class="room-editor-decor-nav"><select class="room-editor-category-select" data-room-category-select aria-label="${this.text('Категория предметов', 'Item category')}">${categories.map(([id,label]) => `<option value="${id}" ${id === this.category ? 'selected' : ''}>${label}</option>`).join('')}</select><div class="room-editor-categories">${categories.map(([id, label]) => `<button type="button" data-room-category="${id}" aria-pressed="${this.category === id}">${label}</button>`).join('')}</div><div class="room-editor-surfaces">${CATEGORY_SLOTS[this.category].map(id => `<button type="button" data-room-slot="${id}" aria-pressed="${this.slot === id}">${this.slotLabel(id)}</button>`).join('')}</div></div>`;
     panel.innerHTML = `<header><strong>${this.text('Твоя комната', 'Your room')}</strong><span>${this.text('Примеряй — результат виден сразу', 'Try it — see the change right away')}</span></header>
       <div class="room-editor-tabs" aria-label="${this.text('Разделы', 'Sections')}">${(['colors', 'decor'] as const).map(tab => `<button type="button" data-room-editor-tab="${tab}" aria-pressed="${tab === this.tab}">${tab === 'colors' ? this.text('Палитры', 'Palettes') : this.text('Обстановка', 'Decor')}</button>`).join('')}</div>
       ${this.tab === 'decor' ? decorNav : ''}
@@ -91,9 +106,11 @@ export class RoomEditorReview {
       ${this.tab === 'decor' && ROOM_ITEMS.some(item => !roomItemReady(item.id)) ? `<button type="button" data-room-assets-retry>${this.text('Загрузить предметы ещё раз', 'Retry loading items')}</button>` : ''}
       ${this.error ? `<p class="room-editor-error" role="alert">${this.text('Не удалось сохранить. Попробуй ещё раз.', 'Could not save. Please try again.')}</p>` : ''}
       <footer><button type="button" data-room-edit-cancel>${this.text('Отмена', 'Cancel')}</button><button class="room-library-button--primary" type="button" data-room-edit-done>${this.saving ? this.text('Сохраняем…', 'Saving…') : this.text('Готово', 'Done')}</button></footer>`;
+    this.disposeScrollHints = mountCatalogScrollHints(panel, this.events!.signal, '.room-editor-content');
     const content = panel.querySelector('.room-editor-content'); if (content) content.scrollTop = scrollTop;
     const row = panel.querySelector('.room-editor-categories'); if (row) row.scrollLeft = categoryScroll;
-    if (this.saving) for (const button of panel.querySelectorAll('button')) button.disabled = true;
+    if (this.saving) for (const control of panel.querySelectorAll<HTMLButtonElement | HTMLSelectElement>('button,select')) control.disabled = true;
+    if (focusAttribute) panel.querySelector<HTMLElement>(`[${focusAttribute}="${CSS.escape(focusValue)}"]`)?.focus({preventScroll:true});
     anchors.innerHTML = CATEGORY_SLOTS[this.category].map(slot => `<button type="button" class="room-editor-slot room-editor-slot--${slot}" data-room-slot="${slot}" aria-pressed="${this.slot === slot}"><span aria-hidden="true">${this.settings.items[slot] ? '✓' : '+'}</span>${this.slotLabel(slot)}</button>`).join('');
   }
   private readonly click = (event: MouseEvent): void => {

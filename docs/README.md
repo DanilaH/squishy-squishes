@@ -1,6 +1,6 @@
 # Documentation map — Squishy Squishes
 
-**Updated 2026-10-01.** Start with [`../AGENTS.md`](../AGENTS.md) and current code/tests. A filename containing `PLAN`, `REVIEW` or `PASS` does **not** imply current scope or approval.
+**Updated 2026-10-08.** Start with [`../AGENTS.md`](../AGENTS.md) and current code/tests. A filename containing `PLAN`, `REVIEW` or `PASS` does **not** imply current scope or approval.
 
 ## Working on the current game
 
@@ -19,7 +19,15 @@
 owner-approved empty customizable room foundation and exhibit/catalog flow.
 PR #95 published 16 palettes and 22 room items in seven fixed slots with
 separate room storage. The room remains opt-in (`roomReview=1`) for visual review.
-The authorized free Squeeze motion is recorded in `PROJECT_DECISIONS.md`.
+The independent full-screen UX review is in
+[`UX_FREEZE_REVIEW_2026-10-08.md`](UX_FREEZE_REVIEW_2026-10-08.md): the main flow
+is recommended for freeze, and all four targeted follow-up fixes are implemented
+and verified locally. This does not switch the room to the default entry.
+
+The local 8 October screen polish (collection/play split, responsive room editor,
+Ideas and explicit replacement confirmation) is recorded in
+[`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md). It has not been deployed.
+The authorized free Squeeze motion and its paused Unpin entry are recorded there.
 
 [`LIBRARY_SHOWCASE_2026-10-06.md`](LIBRARY_SHOWCASE_2026-10-06.md) records the
 published collection/table redesign and its verification evidence. The earlier
@@ -28,6 +36,14 @@ free-craft atmosphere release does not establish completion of this new pass.
 ## Published free-craft scope
 
 [`FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md`](FREE_CRAFT_IMPLEMENTATION_CHECKLIST_2026-10-06.md) records the published free crafting, new content, seven shapes including a real donut hole, and earlier Library atmosphere. It records implementation and verification separately; deferred ideas are not current tasks. The owner permits targeted internal scrolling in long catalogs/settings, with a fixed page/scene.
+
+## Current craft direction — 7 October 2026
+
+The owner approved one freely navigable Workshop with Base, Paint, Fillings
+and Decor; no mandatory mixing or six-step Next chain. Global undo, try-on and
+save remain available, with contextual detail editing. Tutorial work is deferred.
+The local implementation and validation are recorded in PROJECT_DECISIONS.
+Published checklist entries below describe the earlier released flow.
 
 ## Current improvement direction
 

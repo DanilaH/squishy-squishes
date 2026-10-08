@@ -24,29 +24,35 @@ test('stamps use the existing V1 document and reactions have bounded finite life
 for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
   { width: 320, height: 568 }, { width: 568, height: 320 }, { width: 1440, height: 900 },
 ]) test(`creative tools fit and stamps Undo without recoloring in ${locale} ${viewport.width}`, async ({ browser, baseURL }) => {
+  // This scenario checks every scrollable tool and captures every palette/stamp.
+  test.setTimeout(90_000);
   const context = await browser.newContext({ baseURL, locale, viewport, reducedMotion: 'reduce' });
   const page = await context.newPage();
   try {
     await page.goto('/squishy-squishes/');
     await page.locator('[data-library-new]').first().click();
-    await page.locator('[data-action="shape-continue"]').click();
+    await page.locator('[data-craft-section="paint"]').click();
     const shell = page.locator('[data-sandbox-app]'), body = page.locator('[data-sandbox-canvas]');
     const box = (await body.boundingBox())!;
     const x = box.x + box.width / 2, y = box.y + box.height / 2;
     await page.mouse.click(x, y);
     await expect(shell).toHaveAttribute('data-paint-strokes', '1');
     for (const theme of CREATIVE_PALETTES) {
-      await page.locator('[data-paint-tool="paint"]').click();
+      await page.locator('[data-action="paint-settings"]').click();
       await expect(page.locator('[data-tools-overlay]')).toBeVisible();
       const dialog = page.locator('.sandbox-tools-dialog');
       for (const button of await dialog.getByRole('button').all()) {
-        const rect = (await button.boundingBox())!;
+        await button.scrollIntoViewIfNeeded(); const rect = (await button.boundingBox())!;
         expect(rect.width).toBeGreaterThanOrEqual(44); expect(rect.height).toBeGreaterThanOrEqual(44);
         expect(rect.x).toBeGreaterThanOrEqual(0); expect(rect.y).toBeGreaterThanOrEqual(0);
         expect(rect.x + rect.width).toBeLessThanOrEqual(viewport.width);
         expect(rect.y + rect.height).toBeLessThanOrEqual(viewport.height);
+        expect(await button.evaluate(node => {
+          const r = node.getBoundingClientRect();
+          return [r.top + 2, r.bottom - 2].every(y => node.contains(document.elementFromPoint(r.x + r.width / 2, y)));
+        })).toBe(true);
       }
-      expect(await dialog.evaluate(el => el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth)).toBe(true);
+      expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
       await mkdir('migration-baseline-evidence', { recursive: true });
       await page.screenshot({ path: `migration-baseline-evidence/tools-${locale}-${viewport.width}.png` });
       await page.locator(`[data-paint-theme="${theme.id}"]`).click();
@@ -56,9 +62,9 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
       await expect(page.locator('[data-paint-color]').first()).toHaveAttribute('data-paint-color', String(theme.colors[0]));
       expect(await body.boundingBox()).toEqual(box);
     }
-    await page.locator('[data-brush-size="56"]').click();
+    await page.locator('[data-action="paint-settings"]').click(); await page.locator('[data-brush-size="56"]').click(); await page.locator('[data-action="tools-close"]').click();
     for (const stamp of PAINT_STAMPS) {
-      await page.locator('[data-paint-tool="paint"]').click();
+      await page.locator('[data-action="paint-settings"]').click();
       await page.locator(`[data-paint-stamp="${stamp.id}"]`).click();
       await page.mouse.move(x, y); await page.mouse.down();
       // A stamp is visible and committed before pointer-up, and dragging does
@@ -67,19 +73,19 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
       await page.mouse.move(x + 12, y + 12); await page.mouse.up();
       await expect(shell).toHaveAttribute('data-paint-strokes', '2');
       await page.screenshot({ path: `migration-baseline-evidence/stamp-${stamp.id}-${locale}-${viewport.width}.png` });
-      await page.locator('[data-action="paint-undo"]').click();
+      await page.locator('.craft-actions [data-action="draft-undo"]').click();
       await expect(shell).toHaveAttribute('data-paint-strokes', '1');
     }
     await page.locator('[data-paint-tool="erase"]').click();
     await page.mouse.move(x - 12, y); await page.mouse.down(); await page.mouse.move(x + 12, y, { steps: 6 }); await page.mouse.up();
     await expect(shell).toHaveAttribute('data-paint-strokes', '2');
-    await page.locator('[data-action="paint-undo"]').click();
+    await page.locator('.craft-actions [data-action="draft-undo"]').click();
     await expect(shell).toHaveAttribute('data-paint-strokes', '1');
-    await page.locator('[data-paint-tool="paint"]').click();
+    await page.locator('[data-action="paint-settings"]').click();
     await expect(page.locator('[data-tools-overlay]')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-tools-overlay]')).toBeHidden();
-    await expect(page.locator('[data-paint-tool="paint"]')).toBeFocused();
+    await expect(page.locator('[data-action="paint-settings"]')).toBeFocused();
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   } finally { await context.close(); }
 });

@@ -30,23 +30,13 @@ for (const locale of ['ru-RU', 'en-US']) {
         await page.locator('[data-ideas-back]').click();
         await page.locator('[data-library-new]').first().click();
         await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-        await page.locator('[data-action="shape-continue"]').click();
+        await page.locator('[data-craft-section="paint"]').click();
         await capture('paint');
-        await page.locator('[data-action="paint-continue"]').click();
-        await page.locator('[data-action="mixin-continue"]').click();
-        const box = await page.locator('[data-sandbox-canvas]').boundingBox();
-        if (!box) throw new Error('Missing mixing surface');
-        const x = box.x + box.width / 2;
-        const y = box.y + box.height / 2;
-        await page.mouse.move(x, y);
-        await page.mouse.down();
-        for (let n = 0; n < 34; n += 1) await page.mouse.move(x + (n % 2 ? -55 : 55), y, { steps: 2 });
-        await page.mouse.up();
-        await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-        await page.locator('[data-action="mix-continue"]').click();
+        await page.locator('[data-craft-section="decor"]').click();
         await capture('decor');
-        await page.locator('[data-action="decor-continue"]').click();
-        await capture('finish');
+        await page.locator('[data-craft-section="shape"]').click();
+        await page.locator('[data-base-tab="material"]').click();
+        await capture('material');
       } finally {
         await context.close();
       }

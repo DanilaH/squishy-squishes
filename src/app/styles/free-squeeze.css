@@ -1,6 +1,5 @@
 /* One existing canvas expands only after explicit Unpin. UI and pedestal keep
    their original layout; all attachment overlays still use its UV projection. */
-#app .has-free-squeeze .library-showcase-workbench,
 #app .sandbox-shell[data-free-squeeze=true] .sandbox-stage { container-type: normal !important; }
 #app .has-free-squeeze .library-showcase-toy,
 #app .sandbox-shell[data-free-squeeze=true],
@@ -16,10 +15,18 @@
   transform: translate(-50%, -50%); filter: blur(4px); background: #654757;
 }
 #app .sandbox-shell[data-free-squeeze=true] [data-action=free-squeeze] { background: #f0dfec; }
-@media (orientation: landscape) and (max-height: 500px) {
-  #app .room-library[data-room-view=squeeze] .library-showcase-toy,
-  #app .room-library[data-room-view=squeeze] [data-library-live] .sandbox-shell { overflow: visible; }
-  #app .room-library[data-room-view=squeeze] [data-library-live] .sandbox-controls {
-    transform: translateY(64px);
-  }
+/* Room actions occupy the reserved lower UI band, below the floor. */
+#app .room-library[data-room-view=squeeze] [data-library-live] .sandbox-controls {
+  position: fixed; left: 50%; bottom: max(8px, env(safe-area-inset-bottom));
+  width: min(calc(100vw - 24px), 560px); transform: translateX(-50%);
+  z-index: 5;
+}
+#app .room-library[data-room-view=squeeze] .library-showcase-selected > span { display: none; }
+#app .room-library[data-room-view=squeeze] [data-panel=squeeze] { flex-wrap: nowrap; }
+#app .room-library[data-room-view=squeeze] [data-panel=squeeze] button { flex: 1 1 0; min-width: 0; white-space: normal; }
+
+#app .free-squeeze-grip {
+  position: fixed; z-index: 4; width: 16px; height: 16px; pointer-events: none;
+  transform: translate(-50%, -50%); border-radius: 50%;
+  border: 2px solid #fff9; background: #9c658233; box-shadow: 0 0 0 1px #68426088;
 }

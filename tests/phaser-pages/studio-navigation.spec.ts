@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('studio back navigation retains creative work and completed Mix, then resets for a new toy', async ({ page }) => {
+test('free Workshop navigation retains creative work and resets for a new toy', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -13,10 +13,10 @@ test('studio back navigation retains creative work and completed Mix, then reset
   await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
   await expect(back).toBeHidden();
   await page.locator('button[data-shape="heart"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
-  await expect(back).toBeVisible();
-  await expect(page.locator('[data-action="paint-undo"]')).toBeEnabled();
+  await expect(back).toBeHidden();
+  await expect(page.locator('.craft-actions [data-action="draft-undo"]')).toBeEnabled();
   await expect(page.locator('[data-action="paint-clear"]')).toBeDisabled();
 
   const center = async (): Promise<{ x: number; y: number }> => {
@@ -30,56 +30,46 @@ test('studio back navigation retains creative work and completed Mix, then reset
   await page.mouse.move(paint.x + 28, paint.y + 12, { steps: 8 });
   await page.mouse.up();
   await expect(shell).toHaveAttribute('data-paint-strokes', '1');
-  await expect(page.locator('[data-action="paint-undo"]')).toBeEnabled();
-  await page.locator('[data-action="paint-continue"]').click();
-  await expect(page.locator('[data-action="mixin-undo"]')).toBeEnabled();
+  await expect(page.locator('.craft-actions [data-action="draft-undo"]')).toBeEnabled();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await expect(page.locator('.craft-actions [data-action="draft-undo"]')).toBeEnabled();
   await page.locator('[data-mixin="pearls"]').click();
   const mixin = await center();
   await page.mouse.click(mixin.x, mixin.y);
   await expect(shell).toHaveAttribute('data-mixin-count', '1');
   await expect(page.locator('[data-action="mixin-clear"]')).toBeEnabled();
 
-  await back.click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
   await expect(shell).toHaveAttribute('data-paint-strokes', '1');
   await expect(shell).toHaveAttribute('data-mixin-count', '1');
-  await back.click();
+  await page.locator('[data-craft-section="shape"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await expect(back).toBeHidden();
   await expect(page.locator('button[data-shape="heart"]')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
   await expect(shell).toHaveAttribute('data-mixin-count', '1');
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-action="try-on"]').click();
 
-  const mix = await center();
-  await page.mouse.move(mix.x, mix.y);
-  await page.mouse.down();
-  for (let n = 0; n < 34; n += 1) {
-    await page.mouse.move(mix.x + (n % 2 ? -55 : 55), mix.y, { steps: 2 });
-  }
-  await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await expect(shell).toHaveAttribute('data-mix-progress', '1.000');
-  await back.click();
-  await expect(shell).toHaveAttribute('data-stage', 'mixins');
-  await page.locator('[data-action="mixin-continue"]').click();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await expect(shell).toHaveAttribute('data-mix-progress', '1.000');
-  await page.locator('[data-action="mix-continue"]').click();
+  await expect(shell).toHaveAttribute('data-try-on', 'true');
+  await page.locator('[data-action="try-return"]').click();
+  await expect(shell).toHaveAttribute('data-mixin-count', '1');
+  await expect(page.locator('[data-action="save"]')).toBeEnabled();
+  await page.locator('[data-craft-section="decor"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
   await page.locator('[data-decor-section="stickers"]').click();
-  await expect(page.locator('[data-panel="decor"] [data-action="draft-undo"]')).toBeEnabled();
+  await expect(page.locator('.craft-actions [data-action="draft-undo"]')).toBeEnabled();
   const decor = await center();
   await page.mouse.click(decor.x, decor.y);
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
-  await expect(page.locator('[data-panel="decor"] [data-action="draft-undo"]')).toBeEnabled();
-  await back.click();
-  await expect(shell).toHaveAttribute('data-stage', 'mix');
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
+  await expect(page.locator('.craft-actions [data-action="draft-undo"]')).toBeEnabled();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'mixins');
+  await page.locator('[data-craft-section="decor"]').click();
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
-  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-material="holo"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
@@ -97,10 +87,13 @@ test('studio back navigation retains creative work and completed Mix, then reset
 
   await page.locator('[data-panel="squeeze"] [data-action="new"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'shape');
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
-  await expect(shell).toHaveAttribute('data-mix-progress', '0.000');
-  await expect(page.locator('[data-action="mix-continue"]')).toBeDisabled();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
+  await expect(shell).toHaveAttribute('data-paint-strokes', '0');
+  await expect(shell).toHaveAttribute('data-mixin-count', '0');
+  await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');
+  await page.locator('[data-action="try-return"]').click();
+  await expect(page.locator('[data-action="save"]')).toBeEnabled();
   expect(errors).toEqual([]);
 });

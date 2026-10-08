@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-const SCROLL_TRAYS = '.free-shape-catalog, .free-mixin-catalog, [data-decor-panel="accessory"] .sandbox-decor-grid, .free-object-panel, .free-light-panel';
+const SCROLL_TRAYS = '.free-shape-catalog, .free-mixin-catalog, [data-decor-panel="accessory"] .sandbox-decor-grid, .free-object-panel, .free-light-panel, [data-base-panel="material"], .sandbox-palette-grid, .sandbox-decor-section';
 /** Every control must be reachable; only agreed catalogs/settings may scroll. */
 export const reachableControlIssues = async (page: Page): Promise<string[]> => {
   const scroll = await page.locator(SCROLL_TRAYS).evaluateAll(nodes => nodes.map(node => ({ top: node.scrollTop, left: node.scrollLeft })));

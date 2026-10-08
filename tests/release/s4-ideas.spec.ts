@@ -36,30 +36,6 @@ const seedCompleted = async (page: Page, ids: readonly string[]): Promise<void> 
   await page.reload();
 };
 
-const performRealMix = async (page: Page): Promise<void> => {
-  const canvas = page.locator('[data-sandbox-canvas]');
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error('Missing sandbox canvas');
-  const cx = box.x + box.width * 0.5;
-  const cy = box.y + box.height * 0.5;
-  const dx = Math.min(72, box.width * 0.2);
-  const dy = Math.min(64, box.height * 0.18);
-  const points = [
-    [cx + dx, cy],
-    [cx, cy - dy],
-    [cx - dx, cy],
-    [cx, cy + dy],
-  ] as const;
-  await page.mouse.move(cx, cy);
-  await page.mouse.down();
-  for (let index = 0; index < 36; index += 1) {
-    const [x, y] = points[index % points.length]!;
-    await page.mouse.move(x, y, { steps: 2 });
-  }
-  await page.mouse.up();
-  await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-mix-progress')))
-    .toBeGreaterThanOrEqual(1);
-};
 
 const paintDefaultGrapeStroke = async (page: Page): Promise<void> => {
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
@@ -79,6 +55,7 @@ const startTargetIdea = async (page: Page): Promise<void> => {
   const shell = page.locator('[data-sandbox-app]');
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await expect(shell).toHaveAttribute('data-shape', 'soft-square');
+  await expect(page.locator('[data-phaser-ready]')).toHaveAttribute('data-phaser-ready','true');
   await expect(page.locator('[data-idea-guide]')).toHaveAttribute('data-idea-active', TARGET_ID);
   await expect(page.locator('.sandbox-shape')).toHaveCount(15);
   await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);
@@ -86,17 +63,17 @@ const startTargetIdea = async (page: Page): Promise<void> => {
 
 const finishAndSave = async (page: Page): Promise<void> => {
   const shell = page.locator('[data-sandbox-app]');
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
   await paintDefaultGrapeStroke(page);
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'mix');
-  await performRealMix(page);
-  await page.locator('[data-action="mix-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
-  await page.locator('[data-action="decor-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'finish');
+
+  await page.locator('[data-craft-section="decor"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'decor');
+  await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator('.sandbox-material[data-material="soft"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');

@@ -124,7 +124,7 @@
 #app .room-library:not([data-room-view=collection]) .library-showcase-collection { display: none; }
 #app .room-library[data-room-view=squeeze] .room-library-arrows,
 #app .room-library[data-room-view=squeeze] .room-library-footer { visibility: hidden; pointer-events: none; }
-#app .room-library[data-room-view=squeeze] .room-library-footer { height: 44px; }
+
 @media (max-width: 760px) {
   #app .room-library .sandbox-library-heading { gap: 8px; }
   #app .room-library .sandbox-library-heading h1 { font-size: 22px; }
@@ -144,6 +144,7 @@
   #app .room-library .sandbox-library-topbar { position: absolute; right: 16px; top: 8px; width: auto; z-index: 3; }
   #app .room-library .sandbox-library-heading { padding-right: 115px; }
   #app .room-library .sandbox-library-heading h1 { font-size: 20px; }
+  #app .room-library:not([data-room-view=collection]) .sandbox-library-heading { height: 44px; min-height: 44px; flex: none; }
   #app .room-library .sandbox-library-status { display: none; }
   #app .room-library .library-showcase-workbench { grid-template-rows: minmax(0, 1fr) 32px; }
   #app .room-library .room-library-arrows { bottom: 0; }

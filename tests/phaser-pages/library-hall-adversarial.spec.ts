@@ -7,7 +7,7 @@ const makeDecoratedPearl = async (page: Page): Promise<void> => {
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-shape="heart"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await page.locator('[data-paint-color]').nth(2).click();
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!box) throw new Error('No real paint surface');
@@ -15,8 +15,8 @@ const makeDecoratedPearl = async (page: Page): Promise<void> => {
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * 0.54, box.y + box.height * 0.49, { steps: 10 });
   await page.mouse.up();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
   const mix = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!mix) throw new Error('No real mix surface');
   const x = mix.x + mix.width / 2;
@@ -25,13 +25,15 @@ const makeDecoratedPearl = async (page: Page): Promise<void> => {
   await page.mouse.down();
   for (let i = 0; i < 22; i += 1) await page.mouse.move(x + (i % 2 ? -65 : 65), y, { steps: 3 });
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
   await page.locator('[data-decor-eyes="dot"]').click();
   await page.locator('[data-decor-mouth="smile"]').click();
   await page.locator('[data-decor-section="accessory"]').click();
   await page.locator('[data-decor-accessory="bow"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-material="pearl"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');

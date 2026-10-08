@@ -24,7 +24,7 @@ test('a finger scrolls only the craft catalog without painting or squeezing the 
       expect(await canvas.boundingBox()).toEqual(stable);
       expect(await page.evaluate(() => scrollY)).toBe(0);
       if (selector === '.free-shape-catalog') {
-        await page.locator('[data-action="shape-continue"]').click(); await page.locator('[data-action="paint-continue"]').click();
+        await page.locator('[data-craft-section="paint"]').click(); await page.locator('[data-craft-section="mixins"]').click();
       }
     }
     const tray = page.locator('.free-mixin-catalog'), box = (await canvas.boundingBox())!;
@@ -48,7 +48,7 @@ test('overlapping objects remain reachable with a native horizontal swipe', asyn
         decor: { v: 1, eyes: 'dot', mouth: 'smile', blush: false, accessory: null, stickers: [],
           accessories: Array.from({ length: 12 }, (_, i) => ({ a: 'bow', x: 70 + i * 8, y: 180, s: .7, r: 0, side: 'whole' })) } }] })));
     await page.reload(); await page.locator('[data-library-play-id="objects"]').click();
-    await page.locator('[data-action="edit-saved"]').click(); await page.locator('[data-decor-section="objects"]').click();
+    await page.locator('[data-action="edit-saved"]').click(); await page.locator('button[data-decor-section="objects"]').click();
     const saved = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
     const list = page.locator('.free-object-list'), rect = (await list.boundingBox())!;
     const cdp = await context.newCDPSession(page), start = { x: rect.x + rect.width - 15, y: rect.y + rect.height / 2, id: 1 };
@@ -59,7 +59,7 @@ test('overlapping objects remain reachable with a native horizontal swipe', asyn
     }
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect.poll(() => list.evaluate(node => node.scrollLeft)).toBeGreaterThan(80);
-    await expect(page.locator('[data-panel="decor"] [data-action="draft-undo"]')).toBeDisabled();
+    await expect(page.locator('.craft-actions [data-action="draft-undo"]')).toBeDisabled();
     expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(saved);
     await page.locator('[data-object="accessory:11"]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-selected-object', 'accessory:11');

@@ -139,7 +139,7 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
     await expect(canvas).toHaveAttribute('data-toy-idle', 'jiggle');
     await expect(shell).toHaveAttribute('data-workshop-reaction', 'release');
     await page.screenshot({ path: `migration-baseline-evidence/personality-${width}-release.png` });
-    await page.locator('[data-action="edit-saved"]').click(); await page.locator('[data-decor-section="stickers"]').click();
+    await page.locator('[data-action="edit-saved"]').click(); await page.locator('button[data-decor-section="stickers"]').click();
     box = (await canvas.boundingBox())!; const a = { id: 1, x: box.x + box.width * .45, y: box.y + box.height * .55 };
     const b = { ...a, x: a.x + box.width * .07 };
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [a] });
@@ -158,13 +158,13 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [b] });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
-    await page.locator('[data-action="decor-erase"]').click();
+    await page.locator('button[data-decor-section="stickers"]').click(); await page.locator('[data-action="decor-erase"]').click();
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [b] });
     await expect(page.locator('[data-sticker-preview]')).toHaveAttribute('data-preview-tool', 'erase');
     await page.screenshot({ path: `migration-baseline-evidence/personality-${width}-eraser.png` });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');
-    await page.locator('[data-panel="decor"] [data-action="draft-undo"]').click(); await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
+    await page.locator('.craft-actions [data-action="draft-undo"]').click(); await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
     expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(before);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect(canvas).toHaveAttribute('data-toy-idle', 'rest');

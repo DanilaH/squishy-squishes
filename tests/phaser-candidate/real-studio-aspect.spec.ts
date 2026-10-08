@@ -22,12 +22,12 @@ test('M4: real Phaser studio keeps original toy aspect through every responsive 
   await page.locator('[data-shape="heart"]').click();
   await page.screenshot({ path: 'phaser-candidate-evidence/real-studio-shape-portrait.png', fullPage: true });
 
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
   await matchesDisplayedPlayfield(page);
-  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
   await matchesDisplayedPlayfield(page);
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-action="try-on"]').click();
   await matchesDisplayedPlayfield(page);
 
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
@@ -40,8 +40,9 @@ test('M4: real Phaser studio keeps original toy aspect through every responsive 
     await page.mouse.move(centerX + (n % 2 ? -65 : 65), centerY, { steps: 3 });
   }
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
   await matchesDisplayedPlayfield(page);
   await page.screenshot({ path: 'phaser-candidate-evidence/real-studio-decor-portrait.png', fullPage: true });
@@ -50,8 +51,9 @@ test('M4: real Phaser studio keeps original toy aspect through every responsive 
   await page.setViewportSize({ width: 390, height: 844 });
   await matchesDisplayedPlayfield(page);
 
-  await page.locator('[data-action="decor-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'finish');
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
   await matchesDisplayedPlayfield(page);
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');

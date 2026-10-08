@@ -11,9 +11,9 @@ test('chrome and holo volume follow all eight saved shape boundaries', async ({ 
   await page.goto('/phaser/');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
   const surface = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!surface) throw new Error('No real maker surface');
   const x = surface.x + surface.width / 2;
@@ -22,9 +22,11 @@ test('chrome and holo volume follow all eight saved shape boundaries', async ({ 
   await page.mouse.down();
   for (let i = 0; i < 22; i += 1) await page.mouse.move(x + (i % 2 ? -65 : 65), y, { steps: 3 });
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
 
@@ -83,7 +85,7 @@ test('owner regression: painted Holo Paw keeps front art registered with pearls 
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('button[data-shape="paw"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
 
   // Author real paint on the same concave silhouette that exposed the visual
   // registration bug; do not synthesize V3 appearance bytes for this fixture.
@@ -96,7 +98,7 @@ test('owner regression: painted Holo Paw keeps front art registered with pearls 
     await page.mouse.move(paint.x + paint.width * (x + .06), paint.y + paint.height * (y + .02), { steps: 8 });
     await page.mouse.up();
   }
-  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
 
   await page.locator('[data-mixin="pearls"]').click();
   const mixin = await page.locator('[data-sandbox-canvas]').boundingBox();
@@ -105,7 +107,7 @@ test('owner regression: painted Holo Paw keeps front art registered with pearls 
   await page.mouse.down();
   await page.mouse.move(mixin.x + mixin.width * .70, mixin.y + mixin.height * .58, { steps: 8 });
   await page.mouse.up();
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-action="try-on"]').click();
 
   const mix = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!mix) throw new Error('No Paw mix surface');
@@ -115,8 +117,9 @@ test('owner regression: painted Holo Paw keeps front art registered with pearls 
   await page.mouse.down();
   for (let i = 0; i < 22; i += 1) await page.mouse.move(cx + (i % 2 ? -70 : 70), cy, { steps: 3 });
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
 
   await page.locator('[data-decor-eyes="dot"]').click();
   await page.locator('[data-decor-mouth="smile"]').click();
@@ -126,7 +129,8 @@ test('owner regression: painted Holo Paw keeps front art registered with pearls 
   await page.locator('[data-sandbox-canvas]').click({ position: { x: decor.width * .31, y: decor.height * .56 } });
   await page.locator('[data-decor-section="accessory"]').click();
   await page.locator('[data-decor-accessory="bunny-ears"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.locator('button[data-material="holo"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');

@@ -12,9 +12,9 @@ test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('[data-shape="heart"]').click();
-    await page.locator('[data-action="shape-continue"]').click();
-    await page.locator('[data-action="paint-continue"]').click();
-    await page.locator('[data-action="mixin-continue"]').click();
+    await page.locator('[data-craft-section="paint"]').click();
+    await page.locator('[data-craft-section="mixins"]').click();
+    await page.locator('[data-action="try-on"]').click();
     const surface = await page.locator('[data-sandbox-canvas]').boundingBox();
     if (!surface) throw new Error('No real maker surface');
     const x = surface.x + surface.width / 2;
@@ -23,9 +23,11 @@ test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or
     await page.mouse.down();
     for (let i = 0; i < 22; i += 1) await page.mouse.move(x + (i % 2 ? -65 : 65), y, { steps: 3 });
     await page.mouse.up();
-    await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-    await page.locator('[data-action="mix-continue"]').click();
-    await page.locator('[data-action="decor-continue"]').click();
+    await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+    await page.locator('[data-action="try-return"]').click();
+    await page.locator('[data-craft-section="decor"]').click();
+    await page.locator('[data-craft-section="shape"]').click();
+    await page.locator('[data-base-tab="material"]').click();
     await page.locator('[data-action="save"]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     // Duplicate a genuinely saved V3 object with unique IDs; don't bypass the codec
@@ -67,6 +69,7 @@ test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or
     await expect(page.locator('.library-hall-scene')).toHaveCount(1);
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
+    if (await page.locator('[data-room-manage]').getAttribute('aria-pressed') !== 'true') await page.locator('[data-room-manage]').click();
     await page.locator('[data-library-delete-id="stress-toy-7"]').click();
     await page.locator('[data-library-delete-confirm]').click();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '7');

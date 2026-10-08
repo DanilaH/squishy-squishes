@@ -23,9 +23,9 @@ for (const viewport of viewports) {
     await expect(heart).toHaveCSS('background-color', 'rgb(242, 222, 237)');
     await page.screenshot({ path: testInfo.outputPath(`candy-shape-${viewport.name}.png`) });
 
-    await page.locator('[data-action="shape-continue"]').click();
-    await page.locator('[data-action="paint-continue"]').click();
-    await page.locator('[data-action="mixin-continue"]').click();
+    await page.locator('[data-craft-section="paint"]').click();
+    await page.locator('[data-craft-section="mixins"]').click();
+    await page.locator('[data-action="try-on"]').click();
     const box = await page.locator('[data-sandbox-canvas]').boundingBox();
     if (!box) throw new Error('Phaser canvas is missing');
     const x = box.x + box.width / 2;
@@ -36,11 +36,13 @@ for (const viewport of viewports) {
       await page.mouse.move(x + (n % 2 ? -65 : 65), y, { steps: 3 });
     }
     await page.mouse.up();
-    await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-    await page.locator('[data-action="mix-continue"]').click();
-    await page.locator('[data-action="decor-continue"]').click();
-    await expect(shell).toHaveAttribute('data-stage', 'finish');
-    await expect(page.locator('[data-panel="finish"] .sandbox-material')).toHaveCount(6);
+    await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+    await page.locator('[data-action="try-return"]').click();
+    await page.locator('[data-craft-section="decor"]').click();
+    await page.locator('[data-craft-section="shape"]').click();
+    await page.locator('[data-base-tab="material"]').click();
+    await expect(shell).toHaveAttribute('data-stage', 'shape');
+    await expect(page.locator('[data-base-panel="material"] .sandbox-material')).toHaveCount(6);
     const pearl = page.locator('button.sandbox-material[data-material="pearl"]');
     await pearl.click();
     await expect(shell).toHaveAttribute('data-material', 'pearl');

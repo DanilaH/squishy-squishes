@@ -60,7 +60,7 @@ test('release spreads locally through the elastic field and settles for each tac
   }
 });
 
-for (const [width, height, stage] of [[390, 844, 'squeeze'], [1440, 900, 'finish']] as const) {
+for (const [width, height, stage] of [[390, 844, 'squeeze'], [1440, 900, 'preview']] as const) {
   test(`real mouse catches the visible edge and returning protrusion in ${stage}`, async ({ browser, baseURL }, info) => {
     const context = await browser.newContext({ baseURL, viewport: { width, height }, reducedMotion: 'reduce' });
     const page = await context.newPage();
@@ -71,8 +71,8 @@ for (const [width, height, stage] of [[390, 844, 'squeeze'], [1440, 900, 'finish
       await page.reload(); await page.locator('[data-library-play-id="catch"]').click();
       const canvas = page.locator('[data-sandbox-canvas]'), shell = page.locator('[data-sandbox-app]');
       await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
-      if (stage === 'finish') { await page.locator('[data-action="edit-saved"]').click(); await page.locator('[data-action="decor-continue"]').click(); }
-      await expect(shell).toHaveAttribute('data-stage', stage);
+      if (stage === 'preview') { await page.locator('[data-action="edit-saved"]').click(); await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click(); await page.locator('[data-action="try-on"]').click(); }
+      await expect(shell).toHaveAttribute('data-stage', stage === 'preview' ? 'shape' : stage);
       const box = (await canvas.boundingBox())!, radius = await canvas.evaluate(el => el.clientWidth * parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
       const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
       const edge = async () => canvas.evaluate(el => new Promise<{ x: number; y: number }>(resolve => requestAnimationFrame(() => {

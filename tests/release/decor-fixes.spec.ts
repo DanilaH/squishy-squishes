@@ -24,16 +24,10 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     try {
       await page.goto('/squishy-squishes/');
       await page.locator('[data-library-new]').first().click();
-      await page.locator('[data-action="shape-continue"]').click();
-      await page.locator('[data-action="paint-continue"]').click();
-      await page.locator('[data-action="mixin-continue"]').click();
+      await page.locator('[data-craft-section="paint"]').click();
+      await page.locator('[data-craft-section="mixins"]').click();
+      await page.locator('[data-craft-section="decor"]').click();
       const body = page.locator('[data-sandbox-canvas]');
-      const box = (await body.boundingBox())!;
-      const x = box.x + box.width / 2, y = box.y + box.height / 2;
-      await page.mouse.move(x, y); await page.mouse.down();
-      for (let n = 0; n < 38; n++) await page.mouse.move(x + (n % 2 ? -55 : 55), y, { steps: 2 });
-      await page.mouse.up();
-      await page.locator('[data-action="mix-continue"]').click();
       if (locale === 'en-US' && viewport.width === 320) {
         const pixels = await page.locator('[data-sticker-icon]').evaluateAll(icons => icons.map(el => {
           const canvas = el as HTMLCanvasElement;
@@ -44,13 +38,13 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
         expect(pixels[2]![1]!).toBeGreaterThan(pixels[2]![0]! + 4); // Mint flower.
         expect(pixels[3]![2]!).toBeGreaterThan(pixels[3]![1]! + 4); // Lilac sparkle.
       }
-      const tabs = page.locator('.sandbox-decor-tabs'), next = page.locator('[data-action="decor-continue"]');
+      const tabs = page.locator('.sandbox-decor-tabs'), next = page.locator('[data-action="save"]');
       const before = { tabs: await tabs.boundingBox(), next: await next.boundingBox(), body: await body.boundingBox() };
       for (const section of ['face', 'stickers', 'accessory', 'face']) {
-        await page.locator(`[data-decor-section="${section}"]`).click();
+        await page.locator(`button[data-decor-section="${section}"]`).click();
         expect({ tabs: await tabs.boundingBox(), next: await next.boundingBox(), body: await body.boundingBox() }).toEqual(before);
         const panel = page.locator(`[data-decor-panel="${section}"]`);
-        expect(await panel.evaluate(el => ({ vertical: el.scrollHeight > el.clientHeight + 1, horizontal: el.scrollWidth > el.clientWidth + 1 }))).toEqual({ vertical: false, horizontal: false });
+        expect(await panel.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
         if(section === 'accessory') expect(await panel.locator('.sandbox-decor-grid').evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
         for (const button of await panel.getByRole('button').all()) {
           await button.scrollIntoViewIfNeeded();
@@ -82,7 +76,7 @@ test('paw pads remain intact throughout a live stroke and adding sprinkles', asy
   await page.goto('/squishy-squishes/');
   await page.locator('[data-library-new]').first().click();
   await page.locator('[data-shape="paw"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   // Find the detached clean UV layer by the pad's actual pixel, independently
   // of implementation field names. On the old path it exists only in paint.
   const pads = await page.evaluate(() => {
@@ -107,12 +101,12 @@ test('paw pads remain intact throughout a live stroke and adding sprinkles', asy
   const radius = Math.min(box.width, box.height) * transform.radius;
   const x = box.x + box.width / 2 + (99 / 256 * 2 - 1) * radius;
   const y = box.y + box.height / 2 - ((1 - 61 / 256) * 2 - 1 + transform.offset) * radius;
-  await page.locator('[data-brush-size="56"]').click();
+  await page.locator('[data-action="paint-settings"]').click(); await page.locator('[data-brush-size="56"]').click(); await page.locator('[data-action="tools-close"]').click();
   await page.mouse.move(x - 8, y); await page.mouse.down();
   await page.mouse.move(x + 8, y, { steps: 10 });
   await checkPad(); // Before pointer-up, the user's reported failure.
   await page.mouse.up(); await checkPad();
-  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
   await page.locator('[data-mixin="stars"]').click();
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-mixin-count', '1');

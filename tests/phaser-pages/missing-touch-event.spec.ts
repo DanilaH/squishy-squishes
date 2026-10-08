@@ -13,7 +13,7 @@ test('Phaser Pages gestures work when TouchEvent is absent', async ({ page }) =>
   await page.locator('[data-library-new]').first().click();
   const canvas = page.locator('[data-sandbox-canvas]');
   await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
   let box = await canvas.boundingBox();
   if (!box) throw new Error('Paint canvas missing');
@@ -22,13 +22,13 @@ test('Phaser Pages gestures work when TouchEvent is absent', async ({ page }) =>
   await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2, { steps: 5 });
   await page.mouse.up();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-paint-strokes', '1');
-  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
   await page.locator('[data-mixin="pearls"]').click();
   box = await canvas.boundingBox();
   if (!box) throw new Error('Mix-in canvas missing');
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-mixin-count', '1');
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-action="try-on"]').click();
   box = await canvas.boundingBox();
   if (!box) throw new Error('Mix canvas missing');
   const x = box.x + box.width / 2;
@@ -39,6 +39,6 @@ test('Phaser Pages gestures work when TouchEvent is absent', async ({ page }) =>
     await page.mouse.move(x + (i % 2 ? -65 : 65), y, { steps: 3 });
   }
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
   expect(errors).toEqual([]);
 });

@@ -120,6 +120,18 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
   private renderRadiusRatio = 0.34;
   /** Local simulation-space render offset; positive Y points upward. */
   private renderCenterOffsetY = 0;
+  private physicalAngle = 0;
+  public setPhysicalRotation(angle: number): void { this.physicalAngle = angle; }
+  private rotatePhysical(x: number, y: number, inverse = false): { x: number; y: number } {
+    const angle = this.physicalAngle * (inverse ? 1 : -1), c = Math.cos(angle), s = Math.sin(angle);
+    return { x: x * c - y * s, y: x * s + y * c };
+  }
+  public setRoomLoad(nx: number, ny: number, pressure: number, tension: number, ax: number, ay: number, held = false, fx = 0, fy = 1, spin = 0): void {
+    const normal = this.rotatePhysical(nx, -ny, true);
+    // Gravity/centrifugal pull point away from the caught point in body space.
+    const gravity = this.rotatePhysical(fx, -fy, true);
+    this.simulation.setRoomLoad(normal.x, normal.y, pressure, tension, ax, ay, gravity.x, gravity.y, held, spin);
+  }
   private worldOffset = { x: 0, y: 0 };
   public setWorldOffset(x: number, y: number): void { this.worldOffset = { x, y }; }
   public pixelRadius(): number { return this.radius(); }
@@ -127,7 +139,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     return getShape(this.shapeId).boundary.map(p => this.projectUvToCanvas(p.x * .5 + .5, p.y * .5 + .5));
   }
   public impact(nx: number, ny: number, speed: number): void {
-    this.simulation.applyCollisionImpulse(nx, -ny, Math.min(1, speed / this.radius() / 12));
+    const normal = this.rotatePhysical(nx, -ny, true);
+    this.simulation.applyCollisionImpulse(normal.x, normal.y, Math.min(1, speed / this.radius() / 12));
   }
   private readonly gestureOffsets = new Map<number, { x: number; y: number }>();
 
@@ -200,10 +213,9 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const radius = this.radius();
     const mold = moldFactors(this.moldProgress);
     const inverse = captured ? uncontainGestureAxis : uncontainClipAxis;
-    return {
-      x: inverse((x - this.worldOffset.x - width / 2) * 2 / width) * width / 2 / radius / mold.x,
-      y: (inverse((height / 2 - y + this.worldOffset.y) * 2 / height) * height / 2 / radius + mold.offsetY) / mold.y - this.renderCenterOffsetY,
-    };
+    return this.rotatePhysical(
+      inverse((x - this.worldOffset.x - width / 2) * 2 / width) * width / 2 / radius / mold.x,
+      (inverse((height / 2 - y + this.worldOffset.y) * 2 / height) * height / 2 / radius + mold.offsetY) / mold.y - this.renderCenterOffsetY, true);
   }
 
   public pointToUv(x: number, y: number): AppearancePoint | null {
@@ -211,6 +223,13 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const point = this.localPoint(x, y);
     const hit = unposePoint(point.x, point.y, this.pose);
     return this.simulation.pointToUv(hit.x, hit.y);
+  }
+
+  public pointToSurfaceUv(x: number, y: number): AppearancePoint | null {
+    if (this.disposed) return null;
+    const point = this.localPoint(x, y);
+    const hit = unposePoint(point.x, point.y, this.pose);
+    return this.simulation.surfacePointToUv(hit.x, hit.y);
   }
 
   public pointToAppearanceUv(x: number, y: number): AppearancePoint | null {
@@ -224,7 +243,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     const { width, height } = this.scene.scale;
     const radius = this.radius();
     const local = this.simulation.projectUvToLocal(u, v);
-    const point = posePoint(local.x, local.y, this.pose);
+    const posed = posePoint(local.x, local.y, this.pose);
+    const point = this.rotatePhysical(posed.x, posed.y);
     const mold = moldFactors(this.moldProgress);
     return {
       x: this.worldOffset.x + width / 2 + containClipAxis(point.x * mold.x * radius * 2 / width) * width / 2,
@@ -520,7 +540,8 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
     for (let index = 0; index < this.simulation.vertices.length; index += 1) {
       const vertex = this.simulation.vertices[index]!;
       const offset = index * 4;
-      const point = posePoint(vertex.x, vertex.y, this.pose);
+      const posed = posePoint(vertex.x, vertex.y, this.pose);
+      const point = this.rotatePhysical(posed.x, posed.y);
       this.packed[offset] = point.x;
       this.packed[offset + 1] = point.y + this.renderCenterOffsetY;
       this.packed[offset + 2] = vertex.u;
@@ -544,7 +565,7 @@ export class PhaserSquishCandidate extends Phaser.GameObjects.Extern {
       this.volume ??= new PhaserDeformableVolume(gl);
       this.volume.render(this.simulation, getShape(this.shapeId), material, gpu.appearance,
         this.appearanceEnabled, radius * 2 / width, radius * 2 / height,
-        this.moldProgress, sample.compression, this.renderCenterOffsetY, this.pose, this.worldOffset.x * 2 / width, -this.worldOffset.y * 2 / height);
+        this.moldProgress, sample.compression, this.renderCenterOffsetY, this.pose, this.worldOffset.x * 2 / width, -this.worldOffset.y * 2 / height, this.physicalAngle);
     }
     gl.useProgram(gpu.program);
     const u = (name: typeof UNIFORMS[number]): WebGLUniformLocation => gpu.uniforms.get(name)!;

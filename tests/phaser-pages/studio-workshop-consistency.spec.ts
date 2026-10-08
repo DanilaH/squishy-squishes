@@ -49,13 +49,13 @@ for (const device of devices) {
           const stepElement = shell.querySelector<HTMLElement>('[data-sandbox-step]');
           const step = stepElement?.getBoundingClientRect();
           const hit = document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2);
-          // Resolve the old seat in the same query-container context. The
+          // Resolve the Workshop seat in the same query-container context. The
           // stage's border box is not necessarily its container content box.
-          const oldSeat = document.createElement('div');
-          oldSeat.style.cssText = 'position:absolute;width:min(64vh,280px,calc(100cqh - 45px));height:0;visibility:hidden;pointer-events:none';
-          canvas.parentElement!.append(oldSeat);
-          const originalLandscapeRadius = oldSeat.getBoundingClientRect().width * .34;
-          oldSeat.remove();
+          const seatProbe = document.createElement('div');
+          seatProbe.style.cssText = 'position:absolute;width:min(96vh,380px,calc(80vw - 32px),180cqh);height:0;visibility:hidden;pointer-events:none';
+          canvas.parentElement!.append(seatProbe);
+          const landscapeRadius = seatProbe.getBoundingClientRect().width * .34;
+          seatProbe.remove();
           return {
             stage: label, canvas: { x: c.left, y: c.top, width: c.width, height: c.height },
             stageTop: s.top, stageHeight: s.height, deskTop: d.top, deskBottom: d.bottom, floorTop: floor.getBoundingClientRect().top,
@@ -77,7 +77,7 @@ for (const device of devices) {
             contactShadowZ: Number.parseInt(getComputedStyle(stage, '::after').zIndex || '0', 10),
             deskZ: Number.parseInt(getComputedStyle(desk).zIndex || '0', 10),
             canvasZ: Number.parseInt(getComputedStyle(canvas).zIndex || '0', 10),
-            originalLandscapeRadius,
+            landscapeRadius,
             radiusRatio: Number.parseFloat(getComputedStyle(canvas).getPropertyValue('--squish-radius-ratio') || '0.34'),
           };
         }, name);
@@ -115,8 +115,8 @@ for (const device of devices) {
           expect(Math.abs(result.floorTop - first.floorTop), `${device.name}/${name}: floor never jumps`).toBeLessThan(2);
         }
         if (device.name === 'landscape-ru') {
-          // The larger draw buffer must preserve the original seat in pixels.
-          expect(result.canvas.width * result.radiusRatio, `${device.name}: original resting size`).toBeCloseTo(result.originalLandscapeRadius, 1);
+          // The larger draw buffer preserves the responsive Workshop seat in pixels.
+          expect(result.canvas.width * result.radiusRatio, `${device.name}: responsive resting size`).toBeCloseTo(result.landscapeRadius, 1);
           expect(result.canvas.width, `${device.name}: long pulls have drawing room`).toBeGreaterThanOrEqual(device.width);
         } else expect(result.radiusRatio, `${device.name}: every stage shares its resting projection`).toBeCloseTo(.14, 3);
         history.push({ stage: name, canvas: result.canvas, radius: result.canvas.width * result.radiusRatio, stageTop: result.stageTop,
@@ -126,7 +126,7 @@ for (const device of devices) {
       };
       await sample('shape');
       await page.locator('button[data-shape="paw"]').click();
-      await page.locator('[data-action="shape-continue"]').click();
+      await page.locator('[data-craft-section="paint"]').click();
       await sample('paint');
       const paint = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!paint) throw new Error('Missing paint surface');
@@ -135,26 +135,29 @@ for (const device of devices) {
       await page.mouse.down();
       await page.mouse.move(paint.x + paint.width * .5 + radius * .3, paint.y + paint.height * .5 + radius * .3, { steps: 5 });
       await page.mouse.up();
-      await page.locator('[data-action="paint-continue"]').click();
+      await page.locator('[data-craft-section="mixins"]').click();
       await sample('mixins');
-      await page.locator('[data-action="mixin-continue"]').click();
-      await sample('mix');
+      await page.locator('[data-action="try-on"]').click();
+      await sample('try-on', 'mixins');
       const mix = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!mix) throw new Error('Missing mix surface');
       const x = mix.x + mix.width / 2, y = mix.y + mix.height / 2;
       await page.mouse.move(x, y); await page.mouse.down();
       for (let i = 0; i < 36; i += 1) await page.mouse.move(x + (i % 2 ? -55 : 55), y, { steps: 2 });
       await page.mouse.up();
-      await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-      await page.locator('[data-action="mix-continue"]').click();
+      await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+      await page.locator('[data-action="try-return"]').click();
+      await page.locator('[data-craft-section="decor"]').click();
       await sample('decor');
       await page.locator('[data-decor-section="stickers"]').click();
       await sample('decor-stickers', 'decor');
       await page.locator('[data-decor-section="accessory"]').click();
       await sample('decor-accessory', 'decor');
       await page.locator('[data-decor-accessory="crown"]').click();
-      await page.locator('[data-action="decor-continue"]').click();
-      await sample('finish');
+      await page.locator('[data-craft-section="shape"]').click();
+      await page.locator('[data-base-tab="material"]').click();
+      await sample('material', 'shape');
+      await page.locator('[data-action="try-on"]').click();
       const finishSurface = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!finishSurface) throw new Error('Missing Finish squish surface');
       const readBodyOffsetX = async (): Promise<number> =>
@@ -180,6 +183,7 @@ for (const device of devices) {
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-finish-pulled.png`), animations: 'disabled' });
       await page.mouse.up();
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'false');
+      await page.locator('[data-action="try-return"]').click();
       const materialLabels = await page.locator('button[data-material] > span:last-child').evaluateAll((labels) =>
         labels.map((label) => {
           const range = document.createRange();
@@ -231,7 +235,7 @@ for (const device of devices) {
       });
       expect(savedMaterial, `${device.name}: Finish material survives V3 save`).toBe('holo');
       const savedBeforeReopen = await page.evaluate(() => localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3'));
-      const table = await page.locator('.library-showcase-table').boundingBox();
+      await expect(page.locator('.library-showcase-table')).toBeHidden();
       await page.locator('.sandbox-library-card:visible [data-library-play-id]').first().click();
       // Reopening now seats the same Phaser maker in Library, with its own
       // fixed table. Studio geometry still has to return unchanged on editing.
@@ -240,19 +244,22 @@ for (const device of devices) {
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-material', 'holo');
       await expect(page.locator('[data-studio-desk]')).toHaveCount(0);
-      expect(await page.locator('.library-showcase-table').boundingBox()).toEqual(table);
+      await expect(page.locator('.library-showcase-table')).toBeVisible();
+      const table = await page.locator('.library-showcase-table').boundingBox();
       const inline = (await page.locator('[data-sandbox-canvas]').boundingBox())!;
       await page.mouse.move(inline.x + inline.width / 2, inline.y + inline.height / 2);
       await page.mouse.down();
       await page.mouse.move(inline.x + inline.width / 2 + 12, inline.y + inline.height / 2 - 8, { steps: 5 });
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'true');
       await page.mouse.up();
+      expect(await page.locator('.library-showcase-table').boundingBox()).toEqual(table);
       expect(await page.evaluate(() => localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3'))).toBe(savedBeforeReopen);
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-library-squeeze.png`) });
       await page.locator('[data-action="edit-saved"]').click();
       await sample('decor-reopened', 'decor');
-      await page.locator('[data-action="decor-continue"]').click();
-      await sample('finish-reopened', 'finish');
+      await page.locator('[data-craft-section="shape"]').click();
+      await page.locator('[data-base-tab="material"]').click();
+      await sample('material-reopened', 'shape');
       await page.locator('[data-action="save"]').click();
       await sample('squeeze-reopened', 'squeeze');
       expect(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3')!).library.length)).toBe(1);

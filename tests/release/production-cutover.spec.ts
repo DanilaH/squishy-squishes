@@ -88,7 +88,7 @@ test('production web uses the accepted 512px Hall profile and lazy Phaser maker'
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
   await expect(canvas).toHaveAttribute('data-phaser-volume', 'deformable');
-  await expect(page.locator('.library-showcase-collection')).toBeVisible();
+  await expect(page.locator('.library-showcase-collection')).toBeHidden();
   await expect(page.locator('.library-showcase-table')).toBeVisible();
   await expect(page.locator('[data-library-live]')).toBeVisible();
   await expect.poll(() => page.evaluate(() => performance.getEntriesByType('resource')
@@ -103,6 +103,9 @@ test('production web uses the accepted 512px Hall profile and lazy Phaser maker'
     Math.abs(Number(await canvas.getAttribute('data-squish-body-offset-x') ?? '0')),
   ).toBeLessThanOrEqual(0.305);
   await page.mouse.up();
+  await page.locator('[data-action="home"]').click();
+  await expect(page.locator('.library-showcase-collection')).toBeVisible();
+  await expect(page.locator('.library-showcase-table')).toBeHidden();
 });
 
 test('production Yandex entry uses the same Phaser maker without the DRAFT namespace', async ({ page }) => {
@@ -131,7 +134,7 @@ test('first production paint gesture is visible before pointerup', async ({ page
 
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
 
   const canvas = page.locator('[data-sandbox-canvas]');

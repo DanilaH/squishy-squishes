@@ -9,7 +9,7 @@ for (const locale of ['ru-RU', 'en-US']) {
         await page.goto('/squishy-squishes/');
         await page.locator('[data-library-new]').first().click();
         await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-        await page.locator('[data-action="shape-continue"]').click();
+        await page.locator('[data-craft-section="paint"]').click();
         for (const swatch of await page.locator('.sandbox-swatch').all()) {
           const rect = await swatch.boundingBox();
           expect(rect!.width).toBe(44);
@@ -17,12 +17,11 @@ for (const locale of ['ru-RU', 'en-US']) {
         }
         await expect(page.getByRole('button', { name: locale === 'ru-RU' ? 'Бирюзовый' : 'Turquoise', exact: true })).toBeVisible();
         const tools = await page.locator('.sandbox-paint-tools').boundingBox();
-        const actions = await page.locator('[data-panel="paint"] .sandbox-tool-row--actions').boundingBox();
+        const actions = await page.locator('.craft-actions').boundingBox();
         expect(tools).not.toBeNull();
         expect(actions).not.toBeNull();
-        expect(Math.abs(tools!.x - actions!.x)).toBeLessThan(1);
-        expect(Math.abs(tools!.width - actions!.width)).toBeLessThan(1);
-        for (const button of await page.locator('[data-panel="paint"] .sandbox-tool-row button').all()) {
+        expect(Math.abs(tools!.x + tools!.width/2 - actions!.x - actions!.width/2)).toBeLessThan(1);
+        for (const button of await page.locator('[data-panel="paint"] .sandbox-tool-row button:visible, .craft-actions button').all()) {
           const box = await button.boundingBox();
           expect(box).not.toBeNull();
           expect(box!.width).toBeGreaterThanOrEqual(44);

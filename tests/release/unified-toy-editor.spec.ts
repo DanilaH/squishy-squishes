@@ -1,4 +1,5 @@
 import { mkdir } from 'node:fs/promises';
+import { reachableControlIssues } from '../phaser-pages/helpers/reachableControls';
 import sharp from 'sharp';
 import { expect, test } from '@playwright/test';
 import { SHAPES, getShape } from '../../src/game/shapes';
@@ -68,7 +69,7 @@ test('Hall recovers a failed furniture request and keeps decoded props after rea
 });
 
 for (const [locale, width, height] of [['ru-RU', 320, 568], ['en-US', 390, 844], ['ru-RU', 568, 320], ['en-US', 1440, 900]] as const) {
-  test(`one stable editor grid and Finish physics ${locale} ${width}`, async ({ browser, baseURL }) => {
+  test(`one stable editor grid and preview physics ${locale} ${width}`, async ({ browser, baseURL }) => {
     const context = await browser.newContext({ baseURL, locale, viewport: { width, height }, hasTouch: true, reducedMotion: 'reduce' });
     const page = await context.newPage(); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     try {
@@ -92,20 +93,13 @@ for (const [locale, width, height] of [['ru-RU', 320, 568], ['en-US', 390, 844],
         }
         const measurements = await page.evaluate(() => {
           const shell = document.querySelector('[data-sandbox-app]')!, exit = shell.querySelector('[data-action="exit-craft"]')!.getBoundingClientRect();
-          const bad = [...shell.querySelectorAll('.sandbox-controls button')].filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden').filter(el => {
-            const r = el.getBoundingClientRect();
-            const tray = el.closest('[data-decor-panel="accessory"] > .sandbox-decor-grid')?.getBoundingClientRect();
-            if (tray && (r.bottom > tray.bottom + 1 || r.top < tray.top - 1)) return false;
-            const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-            return r.left < 0 || r.right > innerWidth || r.bottom > innerHeight || r.height < 43.9 || !hit || !el.contains(hit);
-          }).map(el => el.textContent);
-          return { bad, exitCenter: exit.x + exit.width / 2, scroll: document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight };
+          return { exitCenter: exit.x + exit.width / 2, scroll: document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight };
         });
-        expect(measurements.bad).toEqual([]); expect(measurements.exitCenter).toBeCloseTo(width / 2, 0); expect(measurements.scroll).toBe(false);
+        expect(await reachableControlIssues(page)).toEqual([]); expect(measurements.exitCenter).toBeCloseTo(width / 2, 0); expect(measurements.scroll).toBe(false);
         expect(await geometry()).toEqual(stable);
         await page.screenshot({ path: `migration-baseline-evidence/editor-${width}-${section}.png` });
       }
-      await page.locator('[data-action="decor-continue"]').click();
+      await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click(); await page.locator('[data-action="try-on"]').click();
       await expect.poll(geometry).toEqual(stable);
       await page.screenshot({ path: `migration-baseline-evidence/editor-${width}-finish.png` });
       await page.emulateMedia({ reducedMotion: 'no-preference' });

@@ -71,7 +71,7 @@ for (const d of devices) {
       expect(shape.hitIssues).toEqual([]);
       await page.screenshot({ path: info.outputPath(`studio-gate1-${d.name}-shape.png`), animations: 'disabled' });
       await page.locator('button[data-shape="heart"]').click();
-      await page.locator('[data-action="shape-continue"]').click();
+      await page.locator('[data-craft-section="paint"]').click();
       await expect(shell).toHaveAttribute('data-stage', 'paint');
       const paint = { ...await measureAndPreview(page), hitIssues: await reachableControlIssues(page) };
       expect(paint.hitIssues).toEqual([]);

@@ -59,10 +59,10 @@ test('Studio degrades to the original interactive UI if one PNG cannot decode', 
     await expect(shell).not.toHaveClass(/studio-env-active/);
     await expect(shell.locator('.studio-env-floor, .studio-env-stage-art')).toHaveCount(0);
     await page.locator('button[data-shape="heart"]').click();
-    await page.locator('[data-action="shape-continue"]').click();
+    await page.locator('[data-craft-section="paint"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'paint');
     await expect(shell).not.toHaveClass(/studio-env-active/);
-    await page.locator('[data-action="paint-continue"]').click();
+    await page.locator('[data-craft-section="mixins"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'mixins');
     expect(errors).toEqual([]);
   } finally {
@@ -95,7 +95,7 @@ test('Studio reflows through live portrait, desktop and landscape resizes on Sha
       }
     }
     await page.locator('button[data-shape="heart"]').click();
-    await page.locator('[data-action="shape-continue"]').click();
+    await page.locator('[data-craft-section="paint"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'paint');
     for (const view of [
       { name: 'phone-320-paint', width: 320, height: 700 },

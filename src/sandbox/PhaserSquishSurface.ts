@@ -131,7 +131,10 @@ export class PhaserSquishSurface {
     this.freeScene = new FreeSqueezeScene(canvas, {
       radius: () => this.squish?.pixelRadius() ?? 1,
       points: () => this.squish?.skinPoints() ?? [],
-      uv: (x, y) => this.squish?.pointToUv(x, y) ?? null,
+      project: (u, v) => this.squish?.projectUvToCanvas(u, v) ?? { x: 0, y: 0 },
+      uv: (x, y) => this.squish?.pointToSurfaceUv(x, y) ?? null,
+      rotation: angle => this.squish?.setPhysicalRotation(angle),
+      load: (nx, ny, pressure, tension, ax, ay, held, fx, fy, spin) => this.squish?.setRoomLoad(nx, ny, pressure, tension, ax, ay, held, fx, fy, spin),
       offset: (x, y) => this.squish?.setWorldOffset(x, y),
       impact: (nx, ny, speed) => { this.squish?.impact(nx, ny, speed); this.audio.releaseTactile(Math.min(.7, speed / 1600)); },
       resize: () => this.syncCanvasSize(),
@@ -245,6 +248,8 @@ export class PhaserSquishSurface {
     if (claimed && this.freeScene.enabled) { this.freeScene.body.vx = this.freeScene.body.vy = 0; this.freePointers.set(pointer.id, pointer); }
     return claimed;
   }
+  public freeRotation(): number { return this.freeScene.enabled ? this.freeScene.body.angle : 0; }
+  public isFreeSqueeze(): boolean { return this.freeScene.enabled; }
   public toggleFreeSqueeze(): void {
     if (!this.squish || this.stage !== 'squeeze' || this.blocked) return;
     if (this.freeScene.enabled) this.freeScene.returnHome();

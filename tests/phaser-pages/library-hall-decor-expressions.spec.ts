@@ -17,9 +17,9 @@ test('all face and sticker styles remain visible and distinct on each saved cont
   await page.goto('/phaser/');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!box) throw new Error('No real Studio surface');
   const x = box.x + box.width / 2;
@@ -28,9 +28,11 @@ test('all face and sticker styles remain visible and distinct on each saved cont
   await page.mouse.down();
   for (let i = 0; i < 22; i++) await page.mouse.move(x + (i % 2 ? -65 : 65), y, { steps: 3 });
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   const original = await page.evaluate((key) => {

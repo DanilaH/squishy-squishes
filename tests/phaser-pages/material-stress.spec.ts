@@ -9,9 +9,9 @@ test('owner material stress matrix keeps authored colour legible across six mate
   await page.setViewportSize({ width: 900, height: 900 });
   await page.goto('/phaser/');
   await page.locator('[data-library-new]').first().click();
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
 
   const mixSurface = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!mixSurface) throw new Error('Missing mix surface for material stress seed');
@@ -23,9 +23,11 @@ test('owner material stress matrix keeps authored colour legible across six mate
     await page.mouse.move(mixX + (index % 2 ? -80 : 80), mixY, { steps: 3 });
   }
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
 

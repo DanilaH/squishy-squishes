@@ -54,7 +54,7 @@ const installSdk = async (page: Page): Promise<void> => {
 const sdkControls = async (page: Page): Promise<DraftCounters> =>
   page.evaluate(() => (window as Window & { __phaserDraftSdk: DraftSdkControls }).__phaserDraftSdk.counters);
 
-const completeMix = async (page: Page): Promise<void> => {
+const tryAndContinue = async (page: Page): Promise<void> => {
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!box) throw new Error('Missing Phaser DRAFT workbench');
   const x = box.x + box.width / 2;
@@ -63,8 +63,9 @@ const completeMix = async (page: Page): Promise<void> => {
   await page.mouse.down();
   for (let n = 0; n < 22; n += 1) await page.mouse.move(x + (n % 2 ? -65 : 65), y, { steps: 3 });
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
 };
 
 test('exact upload-root index boots real Yandex adapter and Phaser; pause and bfcache stack safely', async ({ page }) => {
@@ -107,11 +108,12 @@ test('same upload-root bundle writes isolated V3 with unchanged real Library flo
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-volume', 'deformable');
   await page.locator('[data-shape="heart"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
-  await completeMix(page);
-  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
+  await tryAndContinue(page);
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   const persisted = await page.evaluate(() => {

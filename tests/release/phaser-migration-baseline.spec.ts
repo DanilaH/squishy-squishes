@@ -137,7 +137,7 @@ test('M0: a Paint stroke beginning outside the silhouette starts on entry', asyn
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/squishy-squishes/');
   await page.locator('[data-library-new]').first().click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   const shell = page.locator('[data-sandbox-app]');
   await expect(shell).toHaveAttribute('data-stage', 'paint');
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();

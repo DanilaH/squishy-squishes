@@ -7,7 +7,10 @@ interface FreeSqueezePort {
   radius(): number;
   points(): readonly RoomPoint[];
   uv(x: number, y: number): AppearancePoint | null;
+  project(u: number, v: number): RoomPoint;
   offset(x: number, y: number): void;
+  rotation(angle: number): void;
+  load(nx: number, ny: number, pressure: number, tension: number, ax: number, ay: number, held?: boolean, fx?: number, fy?: number, spin?: number): void;
   impact(nx: number, ny: number, speed: number): void;
   resize(): void;
   reset(): void;
@@ -23,10 +26,12 @@ export class FreeSqueezeScene {
   private library: HTMLElement | null = null;
   private home = { x: 0, y: 0 };
   private rendered = { x: 0, y: 0 };
+  private gripUv: AppearancePoint | null = null;
   private camera = { x: 0, y: 0 };
   private viewport = { width: 0, height: 0 };
   private readonly savedStyles = new Map<string, string>();
   private readonly accessorySizes = new Map<HTMLElement, { width: string; height: string }>();
+  private gripMarker: HTMLDivElement | null = null;
   private shadow: HTMLDivElement | null = null;
   public constructor(private readonly canvas: HTMLCanvasElement, private readonly port: FreeSqueezePort) {
     this.shell = canvas.closest<HTMLElement>('[data-sandbox-app]')!;
@@ -40,7 +45,7 @@ export class FreeSqueezeScene {
     this.canvas.dataset.freeHomeY = String(this.home.y);
     this.viewport = { width: innerWidth, height: innerHeight };
     this.library = this.canvas.closest<HTMLElement>('[data-sandbox-library]');
-    this.port.reset(); this.body.cancel(); this.body.x = this.body.y = 0;
+    this.port.reset(); this.body.reset(); this.body.setOrigin(this.home);
     for (const name of ['--squish-seat-size', '--squish-radius-ratio']) this.savedStyles.set(name, this.canvas.style.getPropertyValue(name));
     for (const art of this.stage.querySelectorAll<HTMLElement>('.sandbox-accessory-layer')) {
       const size = getComputedStyle(art);
@@ -51,6 +56,8 @@ export class FreeSqueezeScene {
     this.shell.dataset.freeSqueeze = 'true'; this.library?.classList.add('has-free-squeeze');
     this.enabled = true;
     this.shadow = document.createElement('div'); this.shadow.className = 'free-squeeze-shadow'; this.shadow.setAttribute('aria-hidden', 'true'); this.stage.prepend(this.shadow);
+    this.gripMarker = document.createElement('div'); this.gripMarker.className = 'free-squeeze-grip';
+    this.gripMarker.setAttribute('aria-hidden', 'true'); this.gripMarker.hidden = true; this.stage.append(this.gripMarker);
     this.port.resize();
     this.camera = { x: this.home.x - innerWidth / 2, y: this.home.y - innerHeight / 2 };
     this.offset(); this.updateButton();
@@ -59,8 +66,9 @@ export class FreeSqueezeScene {
   public begin(pointer: StagePointer): boolean {
     if (!this.enabled || this.body.returning || this.body.held !== null) return false;
     const uv = this.port.uv(pointer.x, pointer.y);
-    if (!uv || Math.hypot(uv.u - .5, uv.v - .5) > .29) return false;
-    this.body.begin(pointer.id, pointer.clientX, pointer.clientY, pointer.inputTime ?? performance.now()); return true;
+    if (!uv) return false;
+    this.gripUv = uv;
+    this.body.begin(pointer.id, pointer.clientX, pointer.clientY, pointer.inputTime ?? performance.now(), this.home); return true;
   }
   public move(pointer: StagePointer): boolean {
     if (this.body.held !== pointer.id) return false;
@@ -72,21 +80,48 @@ export class FreeSqueezeScene {
     this.body.end(id, time); return true;
   }
   public cancel(): void { this.body.cancel(); }
-  private offset(): void { this.port.offset(this.camera.x + this.body.x, this.camera.y + this.body.y); this.rendered = { x: this.body.x, y: this.body.y }; }
+  private offset(): void { this.port.offset(this.camera.x + this.body.x, this.camera.y + this.body.y); this.port.rotation(this.body.angle); this.rendered = { x: this.body.x, y: this.body.y }; }
   public advance(delta: number, material: MaterialId, deforming: boolean): void {
     if (!this.enabled) return;
     // Resize/orientation returns to the reviewed seat rather than keeping stale
     // viewport collision geometry or changing the toy's size mid-flight.
     if (innerWidth !== this.viewport.width || innerHeight !== this.viewport.height) { this.restore(); return; }
-    const points = this.port.points().map(p => ({ x: p.x - this.rendered.x, y: p.y - this.rendered.y }));
+    const c = Math.cos(this.body.angle), s = Math.sin(this.body.angle);
+    const points = this.port.points().map(p => {
+      const x = p.x - this.rendered.x - this.home.x, y = p.y - this.rendered.y - this.home.y;
+      return { x: this.home.x + x * c + y * s, y: this.home.y - x * s + y * c };
+    });
+    if (this.body.held !== null && this.gripUv) {
+      const grip = this.port.project(this.gripUv.u, this.gripUv.v);
+      const dx = grip.x - this.home.x - this.rendered.x, dy = grip.y - this.home.y - this.rendered.y;
+      // The body spring follows the actual deformed UV point, not the
+      // undeformed radial lever. The same tip stays caught as it stretches.
+      this.body.anchor = { x: dx * c + dy * s, y: -dx * s + dy * c };
+    }
     const room = this.room();
     const done = this.body.advance(deforming && this.body.held === null && !this.body.returning ? 0 : delta,
       points, room, material, this.port.radius(), (nx, ny, speed) => this.port.impact(nx, ny, speed));
-    if (done) { this.restore(); return; }
+    const contact = this.body.contact;
     this.offset();
+    const grip = this.gripUv;
+    this.port.load(contact.nx, contact.ny, contact.pressure, this.body.held !== null ? this.body.tension * (1 - contact.pressure * .8) : 0,
+      grip ? grip.u * 2 - 1 : 0, grip ? grip.v * 2 - 1 : 0,
+      this.body.held !== null, this.body.pull.x, this.body.pull.y,
+      Math.min(2, this.body.omega ** 2 * this.port.radius() / 980));
+    if (done) { this.restore(); return; }
     this.canvas.dataset.freeBodyX = this.body.x.toFixed(2); this.canvas.dataset.freeBodyY = this.body.y.toFixed(2);
     this.canvas.dataset.freeBodyVx = this.body.vx.toFixed(2); this.canvas.dataset.freeBodyVy = this.body.vy.toFixed(2);
     this.canvas.dataset.freeBodyHeld = String(this.body.held !== null);
+    this.canvas.dataset.freeBodyAngle = this.body.angle.toFixed(4);
+    this.canvas.dataset.freeBodyOmega = this.body.omega.toFixed(4);
+    this.canvas.dataset.freeTension = this.body.tension.toFixed(4);
+    this.canvas.dataset.freeContact = contact.pressure.toFixed(4);
+    this.canvas.dataset.freeFloorY = room.bottom.toFixed(2);
+    if (this.gripUv) {
+      const point = this.port.project(this.gripUv.u, this.gripUv.v);
+      this.canvas.dataset.freeGrip = JSON.stringify(point);
+      if (this.gripMarker) { this.gripMarker.hidden = this.body.held === null; this.gripMarker.style.left = `${point.x}px`; this.gripMarker.style.top = `${point.y}px`; }
+    }
     const current = this.port.points();
     const bottom = Math.max(...current.map(p => p.y));
     this.canvas.dataset.freeSkinBounds = JSON.stringify({ left: Math.min(...current.map(p => p.x)), right: Math.max(...current.map(p => p.x)), top: Math.min(...current.map(p => p.y)), bottom });
@@ -114,6 +149,7 @@ export class FreeSqueezeScene {
     const pedestal = this.library?.querySelector<HTMLElement>('.library-showcase-table') ?? this.shell.querySelector<HTMLElement>('[data-studio-desk]');
     const visible = pedestal && getComputedStyle(pedestal).display !== 'none';
     const r = visible ? pedestal.getBoundingClientRect() : null;
+    if (r && this.library) bottom = r.top + r.height * .85;
     const polygon: RoomPoint[] = r ? [
       { x: r.left + r.width * .06, y: r.top + r.height * .20 }, { x: r.right - r.width * .06, y: r.top + r.height * .20 },
       { x: r.right, y: r.top + r.height * .31 }, { x: r.right, y: r.bottom - r.height * .12 },
@@ -130,13 +166,13 @@ export class FreeSqueezeScene {
     button.setAttribute('aria-pressed', String(this.enabled)); button.disabled = this.body.returning;
   }
   private restore(): void {
-    this.enabled = false; this.body.returning = false; this.body.cancel(); this.body.x = this.body.y = 0;
+    this.gripUv = null; this.enabled = false; this.body.returning = false; this.body.reset(); this.body.setOrigin(this.home);
     this.shell.removeAttribute('data-free-squeeze'); this.library?.classList.remove('has-free-squeeze');
     for (const [name, value] of this.savedStyles) { if (value) this.canvas.style.setProperty(name, value); else this.canvas.style.removeProperty(name); }
-    this.savedStyles.clear(); this.rendered = { x: 0, y: 0 }; this.port.locked(); this.port.offset(0, 0); this.port.resize(); this.port.reset();
+    this.savedStyles.clear(); this.rendered = { x: 0, y: 0 }; this.port.locked(); this.port.offset(0, 0); this.port.rotation(0); this.port.load(0, 0, 0, 0, 0, 0); this.port.resize(); this.port.reset();
     for (const [art, size] of this.accessorySizes) { art.style.width = size.width; art.style.height = size.height; }
     this.accessorySizes.clear();
-    this.shadow?.remove(); this.shadow = null; this.updateButton();
+    this.shadow?.remove(); this.shadow = null; this.gripMarker?.remove(); this.gripMarker = null; this.updateButton();
   }
   public dispose(): void { if (this.enabled) this.restore(); }
 }

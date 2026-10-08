@@ -22,16 +22,11 @@ for (const locale of ['ru-RU', 'en-US']) {
           expect(result.scroll).toBe(false);
         };
         await centered();
-        await page.locator('[data-action="shape-continue"]').click(); await centered();
-        await page.locator('[data-action="paint-continue"]').click(); await centered();
-        await page.locator('[data-action="mixin-continue"]').click(); await centered();
-        const r=(await canvas.boundingBox())!,x=r.x+r.width/2,y=r.y+r.height/2;
-        await page.mouse.move(x,y);await page.mouse.down();
-        for(let n=0;n<34;n++) await page.mouse.move(x+(n%2?-55:55),y,{steps:2});
-        await page.mouse.up(); await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-        await page.locator('[data-action="mix-continue"]').click();
+        await page.locator('[data-craft-section="paint"]').click(); await centered();
+        await page.locator('[data-craft-section="mixins"]').click(); await centered();
+        await page.locator('[data-craft-section="decor"]').click(); await centered();
         for(const section of ['face','stickers','accessory']) {await page.locator(`button[data-decor-section="${section}"]`).click();await centered();}
-        await page.locator('[data-action="decor-continue"]').click(); await centered();
+        await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click(); await centered();
       } finally {await context.close();}
     });
   }

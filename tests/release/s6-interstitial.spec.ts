@@ -102,45 +102,22 @@ const getCanvasBox = async (page: Page): Promise<{ x: number; y: number; width: 
   return box;
 };
 
-const performRealMix = async (page: Page): Promise<void> => {
-  const box = await getCanvasBox(page);
-  const cx = box.x + box.width * 0.5;
-  const cy = box.y + box.height * 0.5;
-  const dx = Math.min(72, box.width * 0.2);
-  const dy = Math.min(64, box.height * 0.18);
-  const points = [
-    [cx + dx, cy],
-    [cx, cy - dy],
-    [cx - dx, cy],
-    [cx, cy + dy],
-  ] as const;
-
-  await page.mouse.move(cx, cy);
-  await page.mouse.down();
-  for (let index = 0; index < 36; index += 1) {
-    const [x, y] = points[index % points.length]!;
-    await page.mouse.move(x, y, { steps: 2 });
-  }
-  await page.mouse.up();
-  await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-mix-progress')))
-    .toBeGreaterThanOrEqual(1);
-};
 
 const completeToyFromShape = async (page: Page, shapeId: SavedSquishy['shapeId']): Promise<void> => {
   const shell = page.locator('[data-sandbox-app]');
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
-  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'mixins');
-  await page.locator('[data-action="mixin-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'mix');
-  await performRealMix(page);
-  await page.locator('[data-action="mix-continue"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
-  await page.locator('[data-action="decor-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'finish');
+
+  await page.locator('[data-craft-section="decor"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'decor');
+  await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
 };
@@ -206,4 +183,30 @@ test('S6 interstitial cadence counts completed saves, not saved-toy revisits, an
   const state = await readYandexState(page);
   expect(state.gameplayStop).toBeGreaterThanOrEqual(1);
   expect(state.gameplayStart).toBeGreaterThanOrEqual(2);
+});
+
+test('saving directly from every Workshop section counts durable creations at the Library break', async ({ page }) => {
+  await installYandexStubWithClock(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedSave(page, fixtureSave);
+  await expect.poll(async () => (await readYandexState(page)).loadingReady).toBe(1);
+  await advanceGateClock(page, 121_000);
+  await page.locator('[data-library-play-id="s6-revisit-fixture"]').click();
+  await page.locator('[data-action="edit-saved"]').click();
+  await page.locator('[data-action="save"]').click();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+  await page.locator('[data-action="home"]').click();
+  await expect(page.locator('[data-sandbox-library]')).toBeVisible();
+  expect((await readYandexState(page)).fullscreenRequests).toBe(0);
+  for (const section of ['shape', 'paint', 'mixins', 'decor']) {
+    await page.locator('[data-library-new]').first().click();
+    await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
+    await page.locator(`[data-craft-section="${section}"]`).click();
+    await page.locator('[data-action="save"]').click();
+    await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
+    await page.locator('[data-action="home"]').click();
+    await expect(page.locator('[data-sandbox-library]')).toBeVisible();
+    expect((await readYandexState(page)).fullscreenRequests).toBe(section === 'shape' || section === 'paint' ? 0 : 1);
+  }
+  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('squishy.save.v3')))!).library).toHaveLength(5);
 });

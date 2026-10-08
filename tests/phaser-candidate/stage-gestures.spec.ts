@@ -38,7 +38,7 @@ const setup = () => {
   };
   const router = new StageGestureRouter(host);
   return {
-    router, events,
+    router, events, host,
     get squeezeCount() { return squeezeCount; },
     get paintEnds() { return paintEnds; },
     get paintStamps() { return paintStamps; },
@@ -176,4 +176,17 @@ for (const firstUp of [1, 2]) test(`Squeeze owns two touches, hands off ${firstU
   router.setBlocked(false); router.setStage('paint');
   expect(router.down(pointer(1, 0))).toBe(true); expect(router.down(pointer(2, .3))).toBe(false);
   expect(router.snapshot().secondOwner).toBeNull();
+});
+
+
+test('a detail selected from Face enters Arrange and keeps the same drag owner', () => {
+  const s = setup();
+  s.host.beginDecorEdit = () => { s.events.push('detail-down'); s.router.setStage('decor', 'objects'); return true; };
+  s.host.moveDecorEdit = () => s.events.push('detail-move');
+  s.host.endDecorEdit = cancelled => s.events.push(cancelled ? 'detail-cancel' : 'detail-up');
+  s.router.setStage('decor', 'face');
+  expect(s.router.down(pointer(1, 0))).toBe(true);
+  s.router.move(pointer(1, .2)); s.router.up(1);
+  expect(s.events.filter(event => event.startsWith('detail-'))).toEqual(['detail-down', 'detail-move', 'detail-up']);
+  expect(s.squeezeCount).toBe(0);
 });
