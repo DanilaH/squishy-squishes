@@ -5,7 +5,7 @@ import { mountLibraryPersonality } from './libraryPersonality';
 import type { RoomEditorReview } from './roomEditorReview';
 import { cardPagerMarkup, showCardPage } from './cardPages';
 import { getShape } from '../game/shapes';
-import { SandboxApp, type SandboxAppOptions, type SandboxLanguage } from './SandboxApp';
+import type { SandboxApp, SandboxAppOptions, SandboxLanguage } from './SandboxApp';
 import {
   SQUISHY_IDEAS,
   getIdeaLabel,
@@ -607,7 +607,7 @@ export class SandboxLibraryApp {
     const message = shell.querySelector<HTMLElement>('[data-library-maker-error]');
     if (message) { message.hidden = false; message.textContent = this.copy.studioLoading; }
     try {
-      const renderer = await this.resolveMakerRendererOptions();
+      const [renderer, { SandboxApp }] = await Promise.all([this.resolveMakerRendererOptions(), import('./SandboxApp')]);
       if (this.disposed || token !== this.makerStartToken || !shell.isConnected) return;
       this.presentationObserver?.disconnect();
       this.currentMaker?.dispose();
@@ -704,7 +704,7 @@ export class SandboxLibraryApp {
       loadingMessage.classList.remove('is-error');
     }
     try {
-      const makerRendererOptions = await this.resolveMakerRendererOptions();
+      const [makerRendererOptions, { SandboxApp }] = await Promise.all([this.resolveMakerRendererOptions(), import('./SandboxApp')]);
       if (this.disposed || startToken !== this.makerStartToken || !currentShell?.isConnected) return;
       this.currentMaker?.dispose();
       this.currentMaker = null;
