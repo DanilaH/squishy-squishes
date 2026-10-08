@@ -19,7 +19,7 @@ test('every accessory has finite individual seats and keeps its specified layer 
       const x = placement.x / 255 * 2 - 1, y = placement.y / 255 * 2 - 1;
       expect([-1, 0, 1].some(dx => [-1, 0, 1].some(dy => isPointInsideShape(shape, x + dx * .012, y + dy * .012))), `${shape.id}/${accessory} root`).toBe(true);
     }
-    expect(getAccessoryDepth(accessory)).toBe(['cat-ears', 'bunny-ears', 'horns', 'wings'].includes(accessory) ? 'rear' : 'front');
+    expect(getAccessoryDepth(accessory)).toBe(['cat-ears', 'bunny-ears', 'horns', 'wings', 'antennae', 'halo'].includes(accessory) ? 'rear' : 'front');
   }
 });
 

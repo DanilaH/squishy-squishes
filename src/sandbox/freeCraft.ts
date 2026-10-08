@@ -18,7 +18,7 @@ export const MAX_ACCESSORY_PLACEMENTS = 128;
 
 export const initialAccessoryPlacements = (shape: ShapeDefinition, a: AccessoryId): readonly AccessoryPlacement[] =>
   getAccessorySeats(shape, a).map(seat => ({ a, x: Math.round(seat.u * 255), y: Math.round(seat.v * 255),
-    s: a === 'glasses' ? 1.5 : a === 'headphones' ? 1.8 : 1, r: seat.angle, side: seat.side }));
+    s: a === 'glasses' ? 1.5 : a === 'headphones' ? 1.8 : a === 'antennae' ? .65 : 1, r: seat.angle, side: seat.side }));
 
 /** Legacy single accessories keep their exact unquantized seats until edited. */
 export const accessoryPlacements = (decor: DecorDocumentV1, shape: ShapeDefinition): readonly AccessoryPlacement[] =>

@@ -1,9 +1,11 @@
+import { drawExpandedEye, drawExpandedMouth, drawExpandedSticker } from './expandedDecorArt';
 import { REST_FACE, type FaceReaction } from './toyReactions';
 import { drawToyMixIn } from './toyMixins';
 import { drawPearlStar } from './pearlStars';
 import { drawToyAccessory } from './toyArt';
 import type { ShapeDefinition, ShapeId } from '../game/shapes';
 import { APPEARANCE_TEXTURE_SIZE } from './appearance';
+import { STICKER_IDS } from './decor';
 import type { AccessoryId, DecorDocumentV1, DecorFrame, StickerId } from './decor';
 
 /** Shared production decor profile. Studio, Squeeze and Hall share these pixels;
@@ -45,6 +47,7 @@ const eye = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1['
   const cheek = (reaction.cheek ?? 0) * (p.u < .5 ? -1 : 1);
   ctx.rotate(cheek * .08);
   ctx.scale(1 + reaction.squeeze * .08, (1 - reaction.squeeze * .62 - Math.max(0, cheek) * .22 + (reaction.stretch ?? 0) * .35 + (reaction.surprise ?? 0) * .35) * (1 - (reaction.blink ?? 0) * .9)); ctx.translate(-x, -y);
+  if (drawExpandedEye(ctx, style, x, y, p.u < .5)) { ctx.restore(); return; }
   if (style === 'dot') { bead(ctx, x, y); ctx.restore(); return; }
   ctx.save();
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -61,6 +64,7 @@ const mouth = (ctx: CanvasRenderingContext2D, style: NonNullable<DecorDocumentV1
   ctx.rotate((reaction.cheek ?? 0) * -.11);
   ctx.scale(1 + reaction.delight * .18, 1 - reaction.squeeze * .22 + reaction.delight * .22 + (reaction.stretch ?? 0) * .45); ctx.translate(-x, -y);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (drawExpandedMouth(ctx, style, x, y)) { ctx.restore(); return; }
   if (style === 'o' || (reaction.surprise ?? 0) > .25) {
     ctx.beginPath(); ctx.ellipse(x, y + 2, 5.4, 6.8, 0, 0, TAU);
     ctx.fillStyle = '#73516c'; ctx.fill(); ctx.strokeStyle = '#4b384f'; ctx.lineWidth = 2; ctx.stroke();
@@ -86,8 +90,9 @@ const blush = (ctx: CanvasRenderingContext2D, p: { u: number; v: number }): void
   ctx.restore();
 };
 const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number, variant = 0): void => {
+  if (drawExpandedSticker(ctx, id, size)) return;
   const r = size * .5;
-  const base = { heart: 0, flower: 1, star: 2, sparkle: 3 }[id];
+  const base = ({ heart: 0, flower: 1, star: 2, sparkle: 3 } as Partial<Record<StickerId, number>>)[id] ?? 0;
   const colors = stickerColors[(base + variant) % stickerColors.length]!;
   ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.shadowColor = 'rgba(61,42,45,.25)'; ctx.shadowBlur = 1.5; ctx.shadowOffsetY = 1.2;
@@ -136,7 +141,7 @@ export const renderPagesSurfaceStickers = (
   ctx: CanvasRenderingContext2D, decor: DecorDocumentV1, _shape: ShapeDefinition, frame: DecorFrame,
 ): void => {
   const [faceX, faceY] = point(frame.mouth);
-  const ids: readonly StickerId[] = ['heart', 'star', 'flower', 'sparkle'];
+  const ids: readonly StickerId[] = STICKER_IDS;
   for (const placed of decor.stickers) {
     const x = placed.x / 255 * S;
     const y = (1 - placed.y / 255) * S;

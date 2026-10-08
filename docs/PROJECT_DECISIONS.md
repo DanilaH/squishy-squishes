@@ -1142,3 +1142,35 @@ Temporary local browser configuration is not checked in. No push, CI or deploy.
 The owner approved merging the room into the normal entry. Ordinary web/Yandex and preview entrypoints now use the room; `roomReview=0` explicitly selects the previous gallery for its historical regression scenarios. Room foundation/persistence tests now exercise the parameter-free entry.
 
 Arrange highlights selected stickers as well as accessories, including crafts with no accessories. Sticker controls identify the design and instance (for example, Flower · 12). The frame follows size, rotation and placement and stays hidden outside Arrange or during try-on. The horizontal object tray cannot gain a vertical scrollbar from its pressed-button transform. Save uses a plain purple background with white text instead of stretching honey artwork. V3 IDs/documents are unchanged.
+
+## 8 October — owner-approved customization expansion
+
+The owner approved six additional accessories (antennae, mushroom/witch hats,
+halo, eye patch and bolt), four eye styles (angry, sly, crosses, sparkling), four
+mouths (tongue, fangs, straight, stitched), nine stickers (candy, donut,
+strawberry, lightning, flame, skull, planet, eye, ghost), and four paint patterns
+(spots, melon stripes, patches, plush seams). These are code-native art using the
+existing renderer, transforms and materials. New sticker codes append after the
+original four; V3 storage and original encoded content retain their meaning.
+
+Patterns apply in the selected paint color as ordinary UV pigment strokes,
+with one undo/redo transaction. They remain paint after reload: no independent
+pattern layer or replacement setting is introduced. New faces retain existing
+Phaser reactions. Ordinary ornaments retain face priority; the eye patch is an
+intentional exception, composited above the face in Studio and thumbnails.
+Antennae start at a smaller scale to keep their tall silhouette usable on phones.
+Expanded faces/stickers scroll inside the fixed catalog, without overlapping
+rows; desktop face rows use eight columns. The paint settings close action stays
+visible during internal scrolling. Old limits, room, physics, rewards, tutorial
+and paused Unpin scope are unchanged. Cyclops/asymmetric faces remain deferred.
+
+Accessory overlays request a pixel-reading Canvas 2D context from the first
+draw: tint and ink-bound measurements no longer trigger a rasterization change
+that changes soft alpha edges. Existing recolor/mirror coverage passes unchanged.
+
+Local verification passed strict TypeScript, tooling/asset smoke, clean web and
+Yandex builds and the upload-root audit (63 files, 3,346,433 bytes), 33 targeted
+browser/data scenarios, and all 30 interface snapshots across EN/RU, portrait,
+short landscape and desktop. Only the six Decor baselines changed for the
+expanded choices. Old compact sticker bytes and all 196 face/pattern save
+combinations round-trip; the full browser and preview suites remain PR gates.

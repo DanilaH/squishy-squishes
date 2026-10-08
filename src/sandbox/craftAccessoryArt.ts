@@ -1,8 +1,10 @@
+import { drawExpandedAccessory } from './expandedDecorArt';
 import type { AccessoryId } from './decor';
 
 const NEW_IDS = new Set<AccessoryId>(['glasses','headphones','bucket-hat','petal-flower','leaves','butterfly','cream','cherry','heart-patch','handbag','wings']);
 /** Code-native padded forms share one logical canvas and light, with no late asset requests. */
 export const drawCraftAccessory = (ctx:CanvasRenderingContext2D,id:AccessoryId,width:number,height:number,icon=false):boolean=>{
+  if(drawExpandedAccessory(ctx,id,width,height,icon))return true;
   if(!NEW_IDS.has(id))return false;
   ctx.save();ctx.scale(width/180,height/120);
   if(icon){ctx.translate(0,-8);}

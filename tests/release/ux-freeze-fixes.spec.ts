@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createDefaultSaveV3 } from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
-import { createEmptyDecorDocument } from '../../src/sandbox/decor';
+import { createEmptyDecorDocument, STICKER_IDS } from '../../src/sandbox/decor';
 
 const ready = async (page: Page) => expect(page.locator('[data-phaser-ready]')).toHaveAttribute('data-phaser-ready', 'true');
 const save = async (page: Page) => {
@@ -95,7 +95,7 @@ for (const locale of ['ru-RU', 'en-US']) {
         await expect(page.locator('[data-object-action="mirror"]')).toBeDisabled();
         await page.locator('[data-object-action="delete"]').click();
         await page.locator('[data-decor-section="stickers"]').click();
-        await expect(page.locator('[data-decor-sticker]:enabled')).toHaveCount(4);
+        await expect(page.locator('[data-decor-sticker]:enabled')).toHaveCount(STICKER_IDS.length);
         expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight || document.documentElement.scrollWidth > innerWidth)).toBe(false);
       });
     }
