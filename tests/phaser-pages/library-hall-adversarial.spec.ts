@@ -51,7 +51,7 @@ test('Russian and English Hall expose the actual document and navigation languag
     const context = await browser.newContext({ locale, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     try {
-      await page.goto('/phaser/');
+      await page.goto('/phaser/?roomReview=0');
       await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
       await expect(page.locator('html')).toHaveAttribute('lang', locale.slice(0, 2));
       await expect(page.locator('.sandbox-library-grid')).toHaveAttribute('aria-label', expected);
@@ -65,7 +65,7 @@ test('a real painted, faced and accessorized pearl survives Library and V3 reloa
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   try {
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await makeDecoratedPearl(page);
     await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath('library-hall-audit-studio-decor-pearl-390.png') });
     await page.locator('[data-action="home"]').click();
@@ -89,7 +89,7 @@ test('mobile Hall controls provide 44px touch targets and readable labels', asyn
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   try {
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await makeDecoratedPearl(page);
     await page.locator('[data-action="home"]').click();
     for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 700 }, { width: 667, height: 375 }]) {

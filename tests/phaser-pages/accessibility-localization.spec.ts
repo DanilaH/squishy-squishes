@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const PAGES_URL = '/phaser/';
+const PAGES_URL = '/phaser/?roomReview=0';
 const PREVIEW_SAVE_KEY = 'squishy.phaser-pages-preview.squishy.save.v3';
 
 test.describe('Russian maker localization', () => {

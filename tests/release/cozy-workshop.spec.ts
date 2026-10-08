@@ -18,7 +18,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of views) {
     const errors: string[] = [];
     page.on('pageerror', e => errors.push(e.message));
     try {
-      await page.goto('/squishy-squishes/');
+      await page.goto('/squishy-squishes/?roomReview=0');
       await expect(page.locator('.library-hall-scene')).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       await page.screenshot({ path: info.outputPath('cozy-library.png') });
@@ -64,7 +64,7 @@ for (const materialId of ['soft', 'jelly', 'holo', 'marshmallow', 'pearl', 'chro
   test(`cozy material touch ${materialId}`, async ({ page }, info) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     const toy = { id: 'cozy-material', createdAt: 1700000000000,
       shapeId: 'dumpling', materialId,
       appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [

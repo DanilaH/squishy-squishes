@@ -14,7 +14,7 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await expect(page.locator('[data-sandbox-library]')).toBeVisible();
     await page.evaluate(() => localStorage.setItem('squishy.save.v3', 'keep-original-save'));
     await page.locator('[data-library-new]').first().tap();
@@ -129,7 +129,7 @@ test('DPR 3 phone keeps the tactile Phaser framebuffer in CSS pixels', async ({ 
   });
   const page = await context.newPage();
   try {
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await page.locator('[data-library-new]').first().tap();
     const canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');

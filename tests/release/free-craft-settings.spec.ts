@@ -12,7 +12,7 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
   test(`light, try-on and local mixed brush preserve craft at ${viewport.width}`, async ({ page }, info) => {
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     const toy = { ...createSandboxDraft(), id: 'craft-settings', createdAt: 1700000000000,
       appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [] },
       decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', accessory: 'bow' } };

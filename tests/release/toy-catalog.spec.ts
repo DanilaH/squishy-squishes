@@ -20,7 +20,7 @@ for (const locale of ['ru-RU', 'en-US']) {
       }));
       // Validate fixtures through the production codec before browser injection.
       decodeSaveStateV3({ ...createDefaultSaveV3(), libraryCapacity:24, library: toys, totalCrafts: 5 });
-      await page.goto('/squishy-squishes/');
+      await page.goto('/squishy-squishes/?roomReview=0');
       await page.evaluate((library) => localStorage.setItem('squishy.save.v3', JSON.stringify({ ...library.save, libraryCapacity:24, library: library.toys, totalCrafts: 5 })), { save: createDefaultSaveV3(), toys });
       await page.reload();
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', String(ACCESSORY_IDS.length));
@@ -55,7 +55,7 @@ for (const locale of ['ru-RU', 'en-US']) {
 
 test('all accessory formats failing keeps the existing collection usable', async ({ page }) => {
   await page.route('**/assets/toy-polish/*', (route) => route.abort());
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
@@ -63,7 +63,7 @@ test('all accessory formats failing keeps the existing collection usable', async
 
 test('actual face and catalog choices stay visible on short phone screens', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await page.locator('[data-craft-section="paint"]').click();
   await page.locator('[data-craft-section="mixins"]').click();

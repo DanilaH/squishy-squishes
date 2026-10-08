@@ -604,6 +604,7 @@ export class SandboxApp {
             this.updateContactFeedback();
             if (!this.rigidMixinCanvas.hidden) this.updateRigidMixinOverlay();
             if (!this.accessoryCanvas.hidden) this.updateAccessoryOverlay();
+            this.updateObjectSelection();
           },
         })
       : new SquishSurface(this.canvas, this.handleMetrics, this.audio);
@@ -1936,7 +1937,7 @@ export class SandboxApp {
       else this.accessoryInkBounds.delete(canvas);
     }
     if (!pieces.length) {
-      if (this.accessorySelectionFrame) this.accessorySelectionFrame.hidden = true;
+      this.updateObjectSelection();
       this.foregroundFace.hidden=true;
       this.accessoryCanvas.removeAttribute('data-accessory-id');
       if (this.accessoryFrame) cancelAnimationFrame(this.accessoryFrame); this.accessoryFrame = 0; return;
@@ -2015,19 +2016,44 @@ export class SandboxApp {
         accessoryCanvas.dataset.accessoryMatrix = [a, b, c, d].map((value) => value.toFixed(4)).join(',');
       }
     }
-    this.updateAccessorySelection();
+    if (this.options.rendererBackend !== 'phaser') this.updateObjectSelection();
     this.updateForegroundFace();
     if (this.options.rendererBackend !== 'phaser') this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
   };
 
-  private updateAccessorySelection(): void {
-    const selected = this.shell.dataset.selectedObject?.match(/^accessory:(\d+)$/);
+  private updateObjectSelection(): void {
+    const selected = this.shell.dataset.selectedObject?.match(/^(accessory|sticker):(\d+)$/);
     const visible = this.stage === 'decor' && this.decorSection === 'objects' && !this.tryOn && !!selected;
     if (!visible) {
       if (this.accessorySelectionFrame) this.accessorySelectionFrame.hidden = true;
       return;
     }
-    const index = Number(selected![1]), canvas = this.accessoryCanvasAt(index), bounds = this.accessoryInkBounds.get(canvas);
+    const index = Number(selected![2]);
+    if (selected![1] === 'sticker') {
+      const item = this.draft.decor.stickers[index];
+      if (!item) { if (this.accessorySelectionFrame) this.accessorySelectionFrame.hidden = true; return; }
+      if (!this.accessorySelectionFrame) {
+        this.accessorySelectionFrame = document.createElement('div');
+        this.accessorySelectionFrame.className = 'accessory-selection-frame';
+        this.accessorySelectionFrame.setAttribute('aria-hidden', 'true');
+        this.canvas.parentElement!.append(this.accessorySelectionFrame);
+      }
+      const frame = this.accessorySelectionFrame;
+      const center = this.renderer.projectUvToCanvas(item.x / 255, item.y / 255);
+      const left = this.renderer.projectUvToCanvas(item.x / 255 - item.s / 512, item.y / 255);
+      const right = this.renderer.projectUvToCanvas(item.x / 255 + item.s / 512, item.y / 255);
+      const size = Math.hypot(right.x - left.x, right.y - left.y) + 10;
+      const canvasRect = this.canvas.getBoundingClientRect(), parent = this.canvas.parentElement!.getBoundingClientRect();
+      frame.hidden = false; frame.removeAttribute('data-accessory-selection');
+      frame.dataset.stickerSelection = String(index);
+      frame.style.left = `${canvasRect.left - parent.left + center.x - size / 2}px`;
+      frame.style.top = `${canvasRect.top - parent.top + center.y - size / 2}px`;
+      frame.style.width = frame.style.height = `${size}px`;
+      frame.style.transformOrigin = '50% 50%';
+      frame.style.transform = `rotate(${item.r / 255 * 360}deg)`;
+      return;
+    }
+    const canvas = this.accessoryCanvasAt(index), bounds = this.accessoryInkBounds.get(canvas);
     if (canvas.hidden || !bounds) {
       if (this.accessorySelectionFrame) this.accessorySelectionFrame.hidden = true;
       return;
@@ -2041,7 +2067,7 @@ export class SandboxApp {
     const frame = this.accessorySelectionFrame, padding = 5;
     const x = bounds.x * canvas.offsetWidth - padding, y = bounds.y * canvas.offsetHeight - padding;
     const origin = canvas.style.transformOrigin.split(' ');
-    frame.hidden = false; frame.dataset.accessorySelection = String(index);
+    frame.hidden = false; frame.removeAttribute('data-sticker-selection'); frame.dataset.accessorySelection = String(index);
     frame.style.left = `${Number.parseFloat(canvas.style.left) + x}px`;
     frame.style.top = `${Number.parseFloat(canvas.style.top) + y}px`;
     frame.style.width = `${bounds.width * canvas.offsetWidth + padding * 2}px`;

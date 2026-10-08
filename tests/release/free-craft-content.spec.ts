@@ -27,7 +27,7 @@ test('rich new-content toys keep identity, face priority and complete gear acros
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   const groups = [['glasses', 'butterfly', 'wings'], ['headphones', 'heart-patch'], ['bucket-hat', 'handbag'], ['cream', 'cherry'], ['petal-flower', 'leaves']] as const;
   const library = SHAPES.map((shape, i) => ({
@@ -63,7 +63,7 @@ test('rich new-content toys keep identity, face priority and complete gear acros
 
 test('Hall frames the whole craft when freely enlarged decorations extend beyond its body', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   const ordinary = { id: 'ordinary', createdAt: 1700000000000, shapeId: 'mochi', materialId: 'soft',
     appearance: { v: 1, strokes: [], mixins: [] }, decor: createEmptyDecorDocument() };
   const rich = { ...ordinary, id: 'wide-craft', decor: { ...ordinary.decor, accessories: [
@@ -113,7 +113,7 @@ test('Hall frames the whole craft when freely enlarged decorations extend beyond
 test('new front and rear gear stays attached through full-screen downward pulls', async ({ page }) => {
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   for (const shapeId of ['paw', 'donut', 'ice-cream'] as const) {
     const shape = SHAPES.find(shape => shape.id === shapeId)!;
     const toy = { id: 'pull-gear', createdAt: 1700000000000, shapeId, materialId: 'jelly',

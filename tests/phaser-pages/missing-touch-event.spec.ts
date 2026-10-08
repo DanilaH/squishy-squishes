@@ -8,7 +8,7 @@ test('Phaser Pages gestures work when TouchEvent is absent', async ({ page }) =>
     Object.defineProperty(window, 'TouchEvent', { configurable: true, value: undefined });
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   await page.locator('[data-library-new]').first().click();
   const canvas = page.locator('[data-sandbox-canvas]');

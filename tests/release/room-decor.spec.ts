@@ -4,7 +4,7 @@ import { createSandboxDraft } from '../../src/sandbox/types';
 
 test('room choices persist, cancel rolls back and toy saves stay unchanged', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/squishy-squishes/?roomReview=1');
+  await page.goto('/squishy-squishes/');
   await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
     ...createDefaultSaveV3(), library: [{ ...createSandboxDraft(), id: 'room-decor', shapeId: 'paw', createdAt: 1700000000000 }], totalCrafts: 1,
   });
@@ -37,7 +37,7 @@ test('room choices persist, cancel rolls back and toy saves stay unchanged', asy
 
 test('failed item loading leaves a usable room and retries before selection', async ({ page }) => {
   await page.route('**/assets/room/dresser.webp', route => route.abort());
-  await page.goto('/squishy-squishes/?roomReview=1');
+  await page.goto('/squishy-squishes/');
   await expect(page.locator('[data-library-table-ready]')).toHaveAttribute('data-library-table-ready', 'true');
   await page.locator('[data-room-edit-open]').click();
   await page.locator('[data-room-editor-tab="decor"]').click();
@@ -53,7 +53,7 @@ test('failed item loading leaves a usable room and retries before selection', as
 });
 
 test('failed persistence keeps the preview editable and supports retry', async ({ page }) => {
-  await page.goto('/squishy-squishes/?roomReview=1');
+  await page.goto('/squishy-squishes/');
   await page.locator('[data-room-edit-open]').click();
   await page.locator('[data-room-theme="4"]').click();
   await page.evaluate(() => {

@@ -91,7 +91,7 @@ test.skip('touch carry keeps a second stretch, attachments and cancellation cohe
 
 test.skip('saved Studio squeeze keeps its desk anchored when unpinned', async ({page}) => {
   await page.setViewportSize({width:390,height:844});
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await page.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'studio',createdAt:1}]});
   await page.reload(); await page.locator('[data-library-play-id="studio"]').click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
@@ -220,7 +220,7 @@ test('room grip load stretches Jelly below a fixed UV tip and respects material 
 });
 
  test('Unpin is absent from the player interface',async({page})=>{
-  await page.goto('/squishy-squishes/');await page.locator('[data-library-new]').first().click();
+  await page.goto('/squishy-squishes/?roomReview=0');await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
   await page.locator('[data-action="save"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');
   await expect(page.locator('[data-action="free-squeeze"]')).toHaveCount(0);

@@ -4,7 +4,7 @@ test('Studio v8 keeps the real heading visible and desk hidden in short landscap
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 844, height: 390 } });
   const page = await context.newPage();
   try {
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await expect(page.locator('#app')).not.toHaveAttribute('data-studio-env-ready', '');
     await page.locator('[data-library-new]').first().click();
     const shell = page.locator('[data-sandbox-app]');

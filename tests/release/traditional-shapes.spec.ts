@@ -38,7 +38,7 @@ for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) {
       decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory },
     })), totalCrafts: 5 };
     decodeSaveStateV3(save);
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), save);
     await page.reload();
     const beforeSave = await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library));
@@ -81,7 +81,7 @@ for (const locale of ['ru-RU', 'en-US']) {
       const context = await browser.newContext({ baseURL, locale, viewport });
       const page = await context.newPage();
       try {
-        await page.goto('/squishy-squishes/');
+        await page.goto('/squishy-squishes/?roomReview=0');
         await page.locator('[data-library-new]').first().click();
         const panel = page.locator('[data-panel="shape"]');
         await expect(panel.locator('[data-shape]')).toHaveCount(15);

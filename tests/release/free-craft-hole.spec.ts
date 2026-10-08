@@ -29,7 +29,7 @@ test('donut field, authoring and deformed grab agree on a genuine empty hole', (
 test('production donut preserves its hole through Hall, Squeeze and reload', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   const save = { ...createDefaultSaveV3(), totalCrafts: 1, library: [{
     id: 'hole-proof', createdAt: 1700000000000, shapeId: 'donut', materialId: 'soft',
     appearance: { v: 1, strokes: [], mixins: [] },

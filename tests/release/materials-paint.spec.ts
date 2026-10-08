@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const PAGES_URL = '/squishy-squishes/';
+const PAGES_URL = '/squishy-squishes/?roomReview=0';
 
 const freshMaker = async (page: Page): Promise<ReturnType<Page['locator']>> => {
   await page.goto(PAGES_URL);

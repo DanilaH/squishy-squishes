@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('shelf contact shading and table remain passive behind eight creation places', async ({ page }) => {
   await page.setViewportSize({width:390,height:844});
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await expect(page.locator('.library-showcase-slot')).toHaveCount(8);
   const layers=await page.locator('.library-showcase-slot').evaluateAll(slots=>slots.map(slot=>({
     image:getComputedStyle(slot,'::before').backgroundImage,events:getComputedStyle(slot,'::before').pointerEvents,
@@ -15,7 +15,7 @@ test('shelf contact shading and table remain passive behind eight creation place
 
 test('broken owner shadow keeps original usable library grid', async ({ page }) => {
   await page.route(/ground-shadow[^/]*\.webp(?:\?.*)?$/, (route) => route.abort());
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   await expect(page.locator('[data-sandbox-library]')).not.toHaveClass(/is-library-hall/);
   await page.locator('[data-library-new]').first().click();

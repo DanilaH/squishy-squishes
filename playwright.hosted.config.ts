@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/release',
-  testMatch: 'free-paint.spec.ts',
+  testMatch: ['free-paint.spec.ts', 'default-room-feedback.spec.ts'],
   timeout: 45_000,
   expect: { timeout: 6_000 },
   workers: 1,

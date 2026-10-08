@@ -108,7 +108,7 @@ for (const viewport of [
 ]) {
   test(`M0: production renderer/layout evidence at ${viewport.name}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await expect(page.locator('[data-sandbox-library]')).toBeVisible();
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
@@ -135,7 +135,7 @@ for (const viewport of [
 
 test('M0: a Paint stroke beginning outside the silhouette starts on entry', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await page.locator('[data-craft-section="paint"]').click();
   const shell = page.locator('[data-sandbox-app]');

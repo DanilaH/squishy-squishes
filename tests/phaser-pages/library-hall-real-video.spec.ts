@@ -12,7 +12,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
   const maker = await setup.newPage();
   let saved = '';
   try {
-    await maker.goto('/phaser/');
+    await maker.goto('/phaser/?roomReview=0');
     await maker.locator('[data-library-new]').first().click();
     await expect(maker.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await maker.locator('[data-shape="heart"]').click();
@@ -53,7 +53,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '2');
     await expect(page.locator('.sandbox-library-card:visible')).toHaveCount(2);
     // One complete 6.2s ambient cycle before any UI interaction.

@@ -30,7 +30,7 @@ test('one continuous gesture has one undo and redo, with no history for cancelle
 
 for(const viewport of [{width:390,height:844},{width:568,height:320}]) test(`multiple details can be dragged, locked, mirrored, undone and saved at ${viewport.width}`,async({page})=>{
   await page.setViewportSize(viewport);await page.emulateMedia({reducedMotion:'reduce'});
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   const state={...createDefaultSaveV3(),library:[{...createSandboxDraft(),id:'edit-rich',createdAt:1700000000000,decor:{...createEmptyDecorDocument(),eyes:'dot',mouth:'smile',accessory:'bow'}}],totalCrafts:1};
   await page.evaluate(value=>localStorage.setItem('squishy.save.v3',JSON.stringify(value)),state);await page.reload();
   await page.locator('[data-library-play-id="edit-rich"]').click();await page.locator('[data-action="edit-saved"]').click();
@@ -58,7 +58,7 @@ for(const viewport of [{width:390,height:844},{width:568,height:320}]) test(`mul
 test('accessory colours retain soft alpha, and mirrored pieces preserve the reflected source through redraw and save', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   const toy = { ...createSandboxDraft(), id: 'colour-proof', createdAt: 1700000000000,
     appearance: { v: 1, strokes: [createBodyFillStroke(0x88bbcc)], mixins: [] },
     decor: { ...createEmptyDecorDocument(), accessory: 'handbag' } };

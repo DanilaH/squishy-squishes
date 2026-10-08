@@ -9,7 +9,7 @@ test.beforeAll(async ({ browser, baseURL }, info) => {
   const page = await context.newPage();
   try {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('[data-shape="heart"]').click();
@@ -51,7 +51,7 @@ test.beforeAll(async ({ browser, baseURL }, info) => {
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.evaluate(save => localStorage.setItem('squishy.phaser-pages-preview.squishy.save.v3', save), fixtureSave);
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');

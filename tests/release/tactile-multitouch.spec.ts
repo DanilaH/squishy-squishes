@@ -10,7 +10,7 @@ for (const [locale, width, height, shapeId] of [
   const context = await browser.newContext({ baseURL, locale, viewport: { width, height }, hasTouch: true });
   const page = await context.newPage();
   try {
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
       ...createDefaultSaveV3(), totalCrafts: 1,
       library: [{ id: 'multi', createdAt: 1700000000000, shapeId, materialId: 'jelly',
@@ -61,7 +61,7 @@ test('desktop touch stroking and sparse idle blink preserve the saved toy', asyn
   const context = await browser.newContext({ baseURL, locale: 'en-US', viewport: { width: 1440, height: 900 }, hasTouch: true });
   const page = await context.newPage();
   try {
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
       ...createDefaultSaveV3(), totalCrafts: 1,
       library: [{ id: 'stroke', createdAt: 1700000000000, shapeId: 'dumpling', materialId: 'marshmallow',

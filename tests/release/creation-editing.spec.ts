@@ -27,7 +27,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     else await page.mouse.click(x, y);
   };
   try {
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     const state = { ...createDefaultSaveV3(), library: Array.from({ length: 8 }, (_, i) => saved(`toy-${i}`)), totalCrafts: 19 };
     await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), state);
     await page.reload();

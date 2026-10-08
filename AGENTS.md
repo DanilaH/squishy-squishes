@@ -24,8 +24,8 @@ The subsequent owner-approved room direction is in
 [`docs/ROOM_FOUNDATION_2026-10-06.md`](docs/ROOM_FOUNDATION_2026-10-06.md).
 Start with an empty room and original pedestal, separate exhibit/catalog views,
 and responsive fixed furniture slots later. The generated plush-room sketch is
-not an approved art style. Keep the initial `roomReview=1` presentation opt-in
-until its real-game composition has been reviewed by the owner.
+not an approved art style. The owner approved the room as the default entry on 8 October 2026.
+`roomReview=0` retains the previous gallery for explicit legacy QA.
 
 The collection presentation pass shipped in PR #93 after the owner rejected the
 previous atmosphere-only treatment. Follow

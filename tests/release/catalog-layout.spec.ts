@@ -9,7 +9,7 @@ for (const locale of ['ru-RU', 'en-US']) for (const viewport of [
   const page=await context.newPage();
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   try {
-    await page.goto('/squishy-squishes/');await page.locator('[data-library-new]').first().click();
+    await page.goto('/squishy-squishes/?roomReview=0');await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
     await page.locator('[data-shape="mochi"]').click();
     const canvas=page.locator('[data-sandbox-canvas]'),scene=page.locator('.sandbox-stage'),actions=page.locator('.craft-actions');
@@ -51,7 +51,7 @@ for (const locale of ['ru-RU', 'en-US']) for (const viewport of [
 });
 
 test('the scroll hint follows filling catalog and compact settings replacement',async({page})=>{
-  await page.setViewportSize({width:320,height:568});await page.goto('/squishy-squishes/');await page.locator('[data-library-new]').first().click();
+  await page.setViewportSize({width:320,height:568});await page.goto('/squishy-squishes/?roomReview=0');await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
   await page.locator('[data-craft-section="mixins"]').click();
   const catalog=page.locator('.free-mixin-catalog'),rail=page.locator('[data-panel="mixins"] .craft-scroll-rail');

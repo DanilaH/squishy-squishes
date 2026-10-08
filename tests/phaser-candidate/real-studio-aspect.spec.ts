@@ -15,7 +15,7 @@ const matchesDisplayedPlayfield = async (page: Page): Promise<void> => {
 
 test('M4: real Phaser studio keeps original toy aspect through every responsive stage and rotation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser-studio.html?lang=ru');
+  await page.goto('/phaser-studio.html?roomReview=0&lang=ru');
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   const shell = page.locator('[data-sandbox-app]');
   await matchesDisplayedPlayfield(page);

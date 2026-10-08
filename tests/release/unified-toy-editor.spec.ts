@@ -60,7 +60,7 @@ test('Hall recovers a failed furniture request and keeps decoded props after rea
   await page.route('**/cabinet-*.webp', async route => {
     if (++attempts === 1) await route.abort('failed'); else await route.continue();
   });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
   expect(attempts).toBeGreaterThan(1);
   const sources = await page.locator('.library-hall-scene').evaluate(el => ['cabinet', 'shelf', 'plant'].map(name => (el as HTMLElement).style.getPropertyValue(`--hall-${name}`)));
@@ -73,7 +73,7 @@ for (const [locale, width, height] of [['ru-RU', 320, 568], ['en-US', 390, 844],
     const context = await browser.newContext({ baseURL, locale, viewport: { width, height }, hasTouch: true, reducedMotion: 'reduce' });
     const page = await context.newPage(); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     try {
-      await page.goto('/squishy-squishes/');
+      await page.goto('/squishy-squishes/?roomReview=0');
       await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), { ...createDefaultSaveV3(), library: [savedToy] });
       await page.reload(); await page.locator('[data-library-play-id="unified"]').click();
       const canvas = page.locator('[data-sandbox-canvas]'), shell = page.locator('[data-sandbox-app]');
@@ -120,7 +120,7 @@ test('Hall and Squeeze share material pixels and face ink covers existing pearls
   const context = await browser.newContext({ baseURL, viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
   const page = await context.newPage();
   try {
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     for (const material of MATERIALS) {
       await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), { ...createDefaultSaveV3(), library: [{ ...savedToy, materialId: material.id, decor: { ...savedToy.decor, accessory: null } }] });
       await page.reload(); await expect(page.locator('[data-library-thumbnail]')).toHaveAttribute('data-library-renderer', 'volume-mesh');

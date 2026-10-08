@@ -8,7 +8,7 @@ const ACCESSORIES = ['cat-ears', 'bunny-ears', 'horns', 'bow', 'crown'] as const
 
 /** Every fixture starts with an actual Studio creation, mix and V3 save. */
 const saveRealToy = async (page: import('@playwright/test').Page): Promise<void> => {
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('button[data-shape="heart"]').click();

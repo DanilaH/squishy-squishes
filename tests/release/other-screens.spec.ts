@@ -12,7 +12,7 @@ for (const locale of ['ru-RU','en-US']) for (const viewport of viewports) test(`
   await p.screenshot({path:info.outputPath(name+'.png')});
   expect(await p.evaluate(()=>[document.documentElement.scrollWidth>innerWidth,document.documentElement.scrollHeight>innerHeight])).toEqual([false,false]);};
  try{
- await p.goto('/squishy-squishes/');
+ await p.goto('/squishy-squishes/?roomReview=0');
   await p.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),library:toys,totalCrafts:8});
   await p.reload();
   await expect(p.locator('[data-library-toy]')).toHaveCount(8);
@@ -84,7 +84,7 @@ for (const locale of ['ru-RU','en-US']) for (const viewport of viewports) test(`
 
 test('desktop Ideas preserve the page anchor across phone resizing', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await page.locator('[data-library-ideas]').click();
   const ideas = page.locator('[data-sandbox-ideas]');
   await expect(ideas.locator('[data-idea-id]:visible')).toHaveCount(12);
@@ -99,7 +99,7 @@ test('desktop Ideas preserve the page anchor across phone resizing', async ({ pa
 });
 
 test('failed replacement preserves the draft, selection and save until a successful retry', async ({ page }) => {
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
     ...createDefaultSaveV3(), library: toys, totalCrafts: 8,
   });
@@ -132,7 +132,7 @@ test('failed replacement preserves the draft, selection and save until a success
 });
 
 test('a newly saved toy is selected when returning to the collection', async ({ page }) => {
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-phaser-ready]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-shape="heart"]').click();

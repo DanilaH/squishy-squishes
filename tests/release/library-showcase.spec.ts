@@ -11,7 +11,7 @@ for (const locale of ['en-US','ru-RU']) {
       const context = await browser.newContext({baseURL, locale, viewport, hasTouch:true, reducedMotion:'reduce'});
       const page = await context.newPage();
       try {
-        await page.goto('/squishy-squishes/');
+        await page.goto('/squishy-squishes/?roomReview=0');
         await expect(page.locator('.library-showcase-slot')).toHaveCount(8);
         await expect(page.locator('.library-showcase-welcome')).toBeVisible();
         await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {...createDefaultSaveV3(), library:toys,totalCrafts:8});

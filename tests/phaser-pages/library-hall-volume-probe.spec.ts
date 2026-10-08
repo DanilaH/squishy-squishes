@@ -5,7 +5,7 @@ test('desktop: actual Hall and nine 512px candidates share toy and visible size'
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/phaser/?volume-probe=1');
+  await page.goto('/phaser/?roomReview=0&volume-probe=1');
   const lab = page.locator('#library-volume-probe');
   await expect(lab).toBeVisible();
   await expect(lab.locator('article canvas')).toHaveCount(10);
@@ -52,7 +52,7 @@ test('desktop: actual Hall and nine 512px candidates share toy and visible size'
 
 test('phone: ten-way comparison closes without touching saved Hall', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser/?volume-probe=1');
+  await page.goto('/phaser/?roomReview=0&volume-probe=1');
   const lab = page.locator('#library-volume-probe');
   await expect(lab.locator('article canvas')).toHaveCount(10);
   await lab.locator('[data-shape="heart"]').click();

@@ -7,7 +7,7 @@ import { createAppearanceStroke } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import type { SandboxDraft } from '../../src/sandbox/types';
 
-const PAGES_URL = '/squishy-squishes/';
+const PAGES_URL = '/squishy-squishes/?roomReview=0';
 const TARGET_ID = 'grape-smooth';
 
 const resetPages = async (page: Page): Promise<void> => {

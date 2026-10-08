@@ -6,7 +6,7 @@ const KEY = 'squishy.phaser-pages-preview.squishy.save.v3';
 test('30-second idle and repeated shelf scrolling retain one GPU context, stable V3 and bounded DOM', async ({ page }, info) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-craft-section="paint"]').click();

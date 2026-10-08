@@ -6,7 +6,7 @@ for (const locale of ['ru-RU', 'en-US']) {
       const context = await browser.newContext({baseURL,locale,viewport,reducedMotion:'reduce'});
       const page = await context.newPage();
       try {
-        await page.goto('/squishy-squishes/');
+        await page.goto('/squishy-squishes/?roomReview=0');
         await page.locator('[data-library-new]').first().click();
         const canvas = page.locator('[data-sandbox-canvas]');
         await expect(canvas).toHaveAttribute('data-phaser-ready','true');

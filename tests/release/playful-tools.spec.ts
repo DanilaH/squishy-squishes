@@ -29,7 +29,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
   const context = await browser.newContext({ baseURL, locale, viewport, reducedMotion: 'reduce' });
   const page = await context.newPage();
   try {
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await page.locator('[data-library-new]').first().click();
     await page.locator('[data-craft-section="paint"]').click();
     const shell = page.locator('[data-sandbox-app]'), body = page.locator('[data-sandbox-canvas]');
@@ -93,7 +93,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
 for (const reduced of [false, true]) test(`saved face reacts and returns to rest, reduced motion=${reduced}`, async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: reduced ? 'reduce' : 'no-preference' });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   const toy = { id: 'reaction', createdAt: 1700000000000, shapeId: 'paw', materialId: 'jelly',
     appearance: { v: 1, strokes: PAINT_STAMPS.map((s, i) => createPaintStamp(s.id, 0xff79a8, 40, { u: .3 + i * .13, v: .4 })), mixins: [] },
     decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory: 'cat-ears' } };

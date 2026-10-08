@@ -20,7 +20,7 @@ const centerPixels = async (page: Page): Promise<Buffer> => {
 };
 
 const open = async (page: Page): Promise<void> => {
-  await page.goto('/phaser-studio.html?lang=ru');
+  await page.goto('/phaser-studio.html?roomReview=0&lang=ru');
   await expect(page.locator('#app')).toHaveAttribute('data-phaser-studio-ready', 'true');
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   expect(await page.evaluate(() => window.__squishyRealStudio!.snapshot().canvasCount)).toBe(1);
