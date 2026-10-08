@@ -9,7 +9,7 @@ const viewports = [
 for (const viewport of viewports) {
   test(`Phaser candy Shape and Finish stay playable on ${viewport.name}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
 

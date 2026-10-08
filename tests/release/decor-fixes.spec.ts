@@ -22,7 +22,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     const context = await browser.newContext({ baseURL, locale, viewport, reducedMotion: 'reduce' });
     const page = await context.newPage();
     try {
-      await page.goto('/squishy-squishes/');
+      await page.goto('/squishy-squishes/?roomReview=0');
       await page.locator('[data-library-new]').first().click();
       await page.locator('[data-craft-section="paint"]').click();
       await page.locator('[data-craft-section="mixins"]').click();
@@ -73,7 +73,7 @@ test('paw pads remain intact throughout a live stroke and adding sprinkles', asy
     }) as typeof document.createElement;
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await page.locator('[data-shape="paw"]').click();
   await page.locator('[data-craft-section="paint"]').click();

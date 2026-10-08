@@ -77,7 +77,7 @@ test('M1: shape changes retain mesh but change hit testing without resetting sav
 
 test('M1: the production Phaser sandbox renders, accepts a real drag and reports one squeeze', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   const state = {
     ...createDefaultSaveV3(),
     library: [{

@@ -14,7 +14,7 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
       return result;
     } as typeof HTMLCanvasElement.prototype.getContext;
   });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-craft-section="paint"]').click();
@@ -70,7 +70,7 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
 
 test('missing WebGL2 uses Canvas2D without discarding a genuinely saved V3 toy', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-craft-section="paint"]').click();

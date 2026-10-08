@@ -21,7 +21,7 @@ for (const locale of ['ru-RU', 'en-US']) {
     const context = await browser.newContext({ baseURL, locale, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     try {
-      await page.goto('/squishy-squishes/');
+      await page.goto('/squishy-squishes/?roomReview=0');
       await page.evaluate((toy) => localStorage.setItem('squishy.save.v3', JSON.stringify({
         ...toy.save, library: [toy.sample], totalCrafts: 1,
       })), { sample, save: createDefaultSaveV3() });
@@ -60,7 +60,7 @@ for (const locale of ['ru-RU', 'en-US']) {
 
 test('bow image failure retains usable maker entry', async ({ page }) => {
   await page.route('**/assets/toy-polish/puffy-bow.*', (route) => route.abort());
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
@@ -70,7 +70,7 @@ test('real creation saves pearl stars and bow, with reduced motion and WebP fall
   await page.setViewportSize({ width: 320, height: 568 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('**/assets/toy-polish/puffy-bow.avif', (route) => route.abort());
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await page.locator('[data-shape="mochi"]').click();
   await page.locator('[data-craft-section="paint"]').click();

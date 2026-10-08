@@ -61,7 +61,7 @@ for (const d of devices) {
     const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: d.width, height: d.height } });
     const page = await context.newPage();
     try {
-      await page.goto('/phaser/');
+      await page.goto('/phaser/?roomReview=0');
       await expect(page.locator('#app')).toHaveAttribute('data-jelly-ui-ready', '');
       await expect(page.locator('[data-sandbox-library]')).toBeVisible();
       await page.locator('[data-library-new]').first().click();

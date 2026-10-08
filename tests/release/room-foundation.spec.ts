@@ -12,7 +12,7 @@ for (const locale of ['en-US', 'ru-RU']) {
       const context = await browser.newContext({ baseURL, locale, viewport, hasTouch: true, reducedMotion: 'reduce' });
       const page = await context.newPage();
       try {
-        await page.goto('/squishy-squishes/?roomReview=1');
+        await page.goto('/squishy-squishes/');
         await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view', 'room');
         await expect(page.locator('[data-room-step="1"]')).toBeDisabled();
         await expect(page.locator('.library-showcase-welcome')).toBeVisible();

@@ -6,7 +6,7 @@ for (const locale of ['ru-RU', 'en-US']) {
       const context = await browser.newContext({ baseURL, locale, viewport });
       const page = await context.newPage();
       try {
-        await page.goto('/squishy-squishes/');
+        await page.goto('/squishy-squishes/?roomReview=0');
         await page.locator('[data-library-ideas]').click();
         const shell = page.locator('[data-sandbox-ideas]');
         await page.screenshot({ path: test.info().outputPath('ideas-page1.png'), animations: 'disabled' });
@@ -46,7 +46,7 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }
         })),
       }));
     });
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await page.screenshot({ path: test.info().outputPath('full-library.png'), animations: 'disabled' });
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');

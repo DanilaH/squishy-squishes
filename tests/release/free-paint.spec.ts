@@ -32,7 +32,7 @@ for (const locale of ['ru-RU', 'en-US']) test.describe(locale, () => {
   test(`rich saved toy remains editable and durable ${locale}`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await page.evaluate(state => localStorage.setItem('squishy.save.v3', JSON.stringify(state)), encodeSaveStateV3({ ...createDefaultSaveV3(), library: [richToy] }));
     await page.reload();
     await page.locator('[data-library-play-id="rich-toy"]').click();

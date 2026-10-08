@@ -58,7 +58,7 @@ test('independent responsive visual geometry: empty room and two real saved toys
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   try {
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     for (const size of sizes) {
       await page.setViewportSize({ width: size.width, height: size.height });
       const facts = await audit(page, `${size.name}/empty`, false);

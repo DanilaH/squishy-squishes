@@ -4,7 +4,7 @@ test('a finger scrolls only the craft catalog without painting or squeezing the 
   const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, hasTouch: true });
   const page = await context.newPage();
   try {
-    await page.goto('/squishy-squishes/'); await page.locator('[data-library-new]').first().click();
+    await page.goto('/squishy-squishes/?roomReview=0'); await page.locator('[data-library-new]').first().click();
     const shell = page.locator('[data-sandbox-app]'), canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
     const cdp = await context.newCDPSession(page), stable = await canvas.boundingBox();
@@ -41,7 +41,7 @@ test('overlapping objects remain reachable with a native horizontal swipe', asyn
   const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, hasTouch: true });
   const page = await context.newPage();
   try {
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await page.evaluate(() => localStorage.setItem('squishy.save.v3', JSON.stringify({ version: 3, libraryCapacity: 8,
       totalCrafts: 1, updatedAt: 1700000000000, completedRecipeIds: [], unlockedRewardIds: [], library: [{ id: 'objects', createdAt: 1700000000000,
         shapeId: 'mochi', materialId: 'soft', appearance: { v: 1, strokes: [], mixins: [] },

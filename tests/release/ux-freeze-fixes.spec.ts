@@ -23,7 +23,7 @@ for (const locale of ['ru-RU', 'en-US']) {
     test.use({ locale });
     test('a completed Idea never resurfaces after editing or creating another toy', async ({ page }, info) => {
       await page.setViewportSize({ width: 320, height: 568 });
-      await page.goto('/squishy-squishes/');
+      await page.goto('/squishy-squishes/?roomReview=0');
       await page.locator('[data-library-ideas]').click();
       await page.locator('[data-idea-id="grape-smooth"]').click();
       await ready(page); await fillIdea(page); await save(page);
@@ -43,7 +43,7 @@ for (const locale of ['ru-RU', 'en-US']) {
     });
 
     test('New after an unfinished Idea starts free creation without hidden credit', async ({ page }) => {
-      await page.goto('/squishy-squishes/'); await page.locator('[data-library-ideas]').click();
+      await page.goto('/squishy-squishes/?roomReview=0'); await page.locator('[data-library-ideas]').click();
       await page.locator('[data-idea-id="grape-smooth"]').click(); await ready(page);
       const color = await page.locator('[data-idea-guide] i').getAttribute('style');
       await save(page); await page.locator('[data-action="new"]:visible').click();
@@ -59,7 +59,7 @@ for (const locale of ['ru-RU', 'en-US']) {
 
     for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }, { width: 1440, height: 900 }]) {
       test(`detail caps stay explained and reversible at ${viewport.width}`, async ({ page }, info) => {
-        await page.setViewportSize(viewport); await page.goto('/squishy-squishes/');
+        await page.setViewportSize(viewport); await page.goto('/squishy-squishes/?roomReview=0');
         const toy = { ...createSandboxDraft(), id: 'detail-cap', createdAt: 1700000000000,
           decor: { ...createEmptyDecorDocument(), accessories: Array.from({ length: 127 }, () => ({ a: 'bow' as const, x: 72, y: 226, s: 1, r: 0, side: 'whole' as const })),
             stickers: Array.from({ length: 128 }, () => ({ t: 0, x: 128, y: 128, s: 28, r: 0 })) } };

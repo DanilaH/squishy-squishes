@@ -20,8 +20,8 @@ import {
   type SaveStateV3,
 } from '../../src/platform/saveV3';
 
-const PAGES_URL = '/squishy-squishes/';
-const YANDEX_URL = '/yandex/';
+const PAGES_URL = '/squishy-squishes/?roomReview=0';
+const YANDEX_URL = '/yandex/?roomReview=0';
 
 const watchFatalBrowserErrors = (page: Page): string[] => {
   const errors: string[] = [];

@@ -57,7 +57,7 @@ for (const layout of layouts) {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
-      await page.goto('/phaser/');
+      await page.goto('/phaser/?roomReview=0');
       await expect(page.locator('#app')).toHaveAttribute('data-jelly-ui-ready', '');
       await expect(page.locator('[data-sandbox-library]')).toBeVisible();
       await capture(page, testInfo, layout.name, 'library-empty');

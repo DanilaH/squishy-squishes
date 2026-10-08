@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }, { width: 1440, height: 900 }]) {
   test(`accessory selection follows the active object only in Arrange at ${viewport.width}`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-phaser-ready]')).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('[data-craft-section="decor"]').click();

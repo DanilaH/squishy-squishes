@@ -66,7 +66,7 @@ for (const [width, height] of [[390, 844], [1440, 900]] as const) test(`berry pr
   const context = await browser.newContext({ baseURL, viewport: { width, height } });
   const page = await context.newPage();
   try {
-    await page.goto('/squishy-squishes/'); await page.locator('[data-library-new]').first().click();
+    await page.goto('/squishy-squishes/?roomReview=0'); await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('[data-shape="strawberry"]').click();
     await page.screenshot({ path: info.outputPath('berry-shape.png') });

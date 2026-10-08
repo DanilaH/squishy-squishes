@@ -47,7 +47,7 @@ test('Studio degrades to the original interactive UI if one PNG cannot decode', 
   page.on('pageerror', (error) => errors.push(error.message));
   try {
     await page.route(/studio-decor-left[^/]*\.png(?:\?.*)?$/, (route) => route.abort());
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await expect(page.locator('#app')).toHaveAttribute('data-jelly-ui-ready', '');
     await expect.poll(() => warnings.some((message) => message.includes('Environment assets failed to decode')), {
       message: 'Failed PNG triggers explicit graceful-fallback warning', timeout: 8_000,
@@ -76,7 +76,7 @@ test('Studio reflows through live portrait, desktop and landscape resizes on Sha
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await expect(page.locator('#app')).not.toHaveAttribute('data-studio-env-ready', '');
     await page.locator('[data-library-new]').first().click();
     const shell = page.locator('[data-sandbox-app]');

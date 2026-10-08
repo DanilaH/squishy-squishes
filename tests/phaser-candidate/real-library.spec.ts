@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const openLibrary = async (page: Page): Promise<void> => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser-library.html?lang=ru');
+  await page.goto('/phaser-library.html?roomReview=0&lang=ru');
   await expect(page.locator('#app')).toHaveAttribute('data-phaser-library-ready', 'true');
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
 };

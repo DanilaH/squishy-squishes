@@ -103,7 +103,7 @@ export const bootstrapSquishyApp = async (
     return completeRecipeIdea(state, ideaId);
   };
 
-  const roomReview = new URLSearchParams(location.search).get('roomReview') === '1';
+  const roomReview = new URLSearchParams(location.search).get('roomReview') !== '0';
   const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
   let createRoomEditor: ((blocked: () => boolean) => import('../sandbox/roomEditorReview').RoomEditorReview) | undefined;
   if (roomReview) {

@@ -125,7 +125,7 @@ for (const shape of SHAPES) test(`every material survives reversals, pinch hando
 test('all six saved materials share tactile preview in Finish and Squeeze', async ({page}) => {
   test.setTimeout(90_000);
   await page.setViewportSize({width:390,height:844}); await page.emulateMedia({reducedMotion:'reduce'});
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
   for (const material of materials) {
     const save={...createDefaultSaveV3(),totalCrafts:1,library:[{id:'material',createdAt:1,shapeId:'mochi',materialId:material,appearance:{v:1,strokes:[],mixins:[]},decor:createEmptyDecorDocument()}]};
     await page.evaluate(value=>localStorage.setItem('squishy.save.v3',JSON.stringify(value)),save);

@@ -62,7 +62,7 @@ test(`captured Jelly follows outside the canvas and releases cleanly ${stage} ${
   const context = await browser.newContext({baseURL, viewport:{width,height}, hasTouch:touch, reducedMotion:'reduce'});
   const page = await context.newPage();
   try {
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
       ...createDefaultSaveV3(), totalCrafts:1, library:[{id:'long',createdAt:1,shapeId:'mochi',materialId:'jelly',appearance:{v:1,strokes:[],mixins:[]},decor:{...createEmptyDecorDocument(),eyes:'dot',mouth:'smile',blush:true}}]
     });

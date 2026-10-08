@@ -1135,3 +1135,10 @@ without changing snapshots. Real game captures were reviewed for the new rows,
 normal Mirror copy labels and limit explanation. This scoped result does not
 claim a green full release gate: the prior two raster failures were not fixed.
 Temporary local browser configuration is not checked in. No push, CI or deploy.
+
+
+## 8 October — default room and clear object feedback
+
+The owner approved merging the room into the normal entry. Ordinary web/Yandex and preview entrypoints now use the room; `roomReview=0` explicitly selects the previous gallery for its historical regression scenarios. Room foundation/persistence tests now exercise the parameter-free entry.
+
+Arrange highlights selected stickers as well as accessories, including crafts with no accessories. Sticker controls identify the design and instance (for example, Flower · 12). The frame follows size, rotation and placement and stays hidden outside Arrange or during try-on. The horizontal object tray cannot gain a vertical scrollbar from its pressed-button transform. Save uses a plain purple background with white text instead of stretching honey artwork. V3 IDs/documents are unchanged.

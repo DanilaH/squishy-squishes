@@ -85,7 +85,7 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
   });
   const page = await context.newPage(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   try {
-    await page.goto('/squishy-squishes/');
+    await page.goto('/squishy-squishes/?roomReview=0');
     await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
       ...createDefaultSaveV3(), library: [{ id: 'personality', createdAt: 1700000000000, shapeId: 'dumpling', materialId: 'jelly',
         appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [] },

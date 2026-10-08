@@ -19,7 +19,7 @@ for (const view of views) {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
-      await page.goto('/phaser/');
+      await page.goto('/phaser/?roomReview=0');
       await verifyHall(page, view.name);
       await page.screenshot({ path: info.outputPath(`library-hall-empty-${view.name}.png`), animations: 'disabled' });
       await writeFile(info.outputPath(`library-hall-empty-${view.name}.json`), JSON.stringify({ viewport: view, stage: await page.locator('[data-library-hall-stage]').boundingBox() }, null, 2));
@@ -36,7 +36,7 @@ test('real saved toys share the shelf; selection and confirmed deletion stay int
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   try {
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
@@ -90,7 +90,7 @@ test('real saved toys share the shelf; selection and confirmed deletion stay int
 
 test('one missing Library WebP preserves the original playable grid', async ({ page }) => {
   await page.route(/wall[^/]*\.webp(?:\?.*)?$/, (route) => route.abort());
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   await expect(page.locator('[data-sandbox-library]')).not.toHaveClass(/is-library-hall/);
   await page.locator('[data-library-new]').first().click();

@@ -40,7 +40,7 @@ export const roomItemUrl = (id: string): string => `${import.meta.env.BASE_URL}a
 let ready: Promise<void> | null = null;
 const retained = new Map<string, HTMLImageElement>();
 export const roomItemReady = (id: string): boolean => retained.has(id);
-/** Only the opt-in room uses this boundary; normal Library requests no room furniture. */
+/** Room furniture is decoded before the default Library is shown. */
 export const preloadRoomItems = (): Promise<void> => ready ??= Promise.allSettled(ROOM_ITEMS.map(async item => {
   const image = new Image(); image.src = roomItemUrl(item.id); await image.decode();
   if (!image.naturalWidth || !image.naturalHeight) throw new Error(`Empty room asset: ${item.id}`);

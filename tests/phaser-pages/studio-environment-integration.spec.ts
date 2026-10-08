@@ -105,7 +105,7 @@ for (const view of views) {
     const pageErrors: string[] = [];
     page.on('pageerror', (err) => pageErrors.push(err.message));
     try {
-      await page.goto('/phaser/');
+      await page.goto('/phaser/?roomReview=0');
       await expect(page.locator('#app')).toHaveAttribute('data-jelly-ui-ready', '');
       await expect(page.locator('#app')).not.toHaveAttribute('data-studio-env-ready', '');
       await page.locator('[data-library-new]').first().click();

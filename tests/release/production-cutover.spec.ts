@@ -4,8 +4,8 @@ import { createEmptyAppearanceDocument } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import type { SavedSquishy } from '../../src/sandbox/types';
 
-const WEB_URL = '/squishy-squishes/';
-const YANDEX_URL = '/yandex/';
+const WEB_URL = '/squishy-squishes/?roomReview=0';
+const YANDEX_URL = '/yandex/?roomReview=0';
 
 const toy: SavedSquishy = {
   id: 'production-cutover-toy',

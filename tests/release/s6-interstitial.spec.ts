@@ -4,7 +4,7 @@ import { createEmptyAppearanceDocument } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import type { SavedSquishy } from '../../src/sandbox/types';
 
-const YANDEX_URL = '/yandex/';
+const YANDEX_URL = '/yandex/?roomReview=0';
 
 interface YandexQaState {
   loadingReady: number;

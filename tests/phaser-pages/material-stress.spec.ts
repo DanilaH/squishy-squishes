@@ -7,7 +7,7 @@ test.skip(process.env.MATERIAL_STRESS !== '1', 'owner-only material stress revie
 test('owner material stress matrix keeps authored colour legible across six materials', async ({ page }, info) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 900, height: 900 });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await page.locator('[data-craft-section="paint"]').click();
   await page.locator('[data-craft-section="mixins"]').click();

@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const open = async (page: Page): Promise<void> => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser-platform.html?sdk=stub&lang=ru');
+  await page.goto('/phaser-platform.html?roomReview=0&sdk=stub&lang=ru');
   await expect(page.locator('#app')).toHaveAttribute('data-phaser-platform-ready', 'true');
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   expect(await page.evaluate(() => window.__squishyPhaserPlatform!.getReadyCalls())).toBe(1);

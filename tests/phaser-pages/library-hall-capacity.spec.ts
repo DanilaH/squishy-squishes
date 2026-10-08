@@ -8,7 +8,7 @@ test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
-    await page.goto('/phaser/');
+    await page.goto('/phaser/?roomReview=0');
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('[data-shape="heart"]').click();

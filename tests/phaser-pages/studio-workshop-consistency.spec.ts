@@ -20,7 +20,7 @@ for (const device of devices) {
     page.on('pageerror', error => errors.push(error.message));
     const history: Array<{ stage: string; canvas: { x: number; y: number; width: number; height: number }; deskTop: number; deskBottom: number; floorTop: number; stageTop: number; stageHeight: number; radius: number }> = [];
     try {
-      await page.goto('/phaser/');
+      await page.goto('/phaser/?roomReview=0');
       await expect(page.locator('#app')).not.toHaveAttribute('data-studio-env-ready', '');
       await page.locator('[data-library-new]').first().click();
       await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');

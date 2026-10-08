@@ -2,12 +2,12 @@ import { expect, test } from '@playwright/test';
 
 test('Jelly buttons decode before the Library is playable and keep Shape functional', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   const root = page.locator('#app');
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   await expect(root).toHaveAttribute('data-jelly-ui-ready', '');
   const newToy = page.locator('[data-library-new]').first();
-  await expect(newToy).toHaveCSS('background-image', /honey-wide.*webp/);
+  await expect(newToy).toHaveCSS('background-image', 'none');
 
   // Font must be part of the offline Pages bundle, including Cyrillic; a
   // fallback system font must not silently pass our visual QA.
@@ -50,8 +50,8 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
   await newToy.click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
   const continueButton = page.locator('[data-action="save"]');
-  await expect(continueButton).toHaveCSS('background-image', /honey-wide.*webp/);
-  await expect(continueButton).toHaveCSS('background-size', '100% 100%');
+  await expect(continueButton).toHaveCSS('background-image', 'none');
+  await expect(continueButton).toHaveCSS('color', 'rgb(255, 255, 255)');
   const buttonBox = await continueButton.boundingBox();
   expect(buttonBox).not.toBeNull();
   expect(buttonBox!.width).toBeGreaterThanOrEqual(44);
@@ -68,7 +68,7 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
 
 test('A missing jelly asset leaves all original CSS controls usable', async ({ page }) => {
   await page.route('**/*honey-wide*.webp', (route) => route.abort());
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   await expect(page.locator('#app')).not.toHaveAttribute('data-jelly-ui-ready', '');
   await page.locator('[data-library-new]').first().click();
@@ -79,7 +79,7 @@ test('A missing jelly asset leaves all original CSS controls usable', async ({ p
 
 test('dirty craft exit confirms, and painting continues beyond the former detail quota', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   const shell = page.locator('[data-sandbox-app]');
   await page.locator('[data-shape="heart"]').click();
@@ -145,7 +145,7 @@ test('a transient Library jelly-art failure recovers in-place without delaying p
     await route.continue();
   });
 
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   const library = page.locator('[data-sandbox-library]');
   await expect(library).toBeVisible();
   await expect(page.locator('[data-library-new]').first()).toBeEnabled();
@@ -155,5 +155,5 @@ test('a transient Library jelly-art failure recovers in-place without delaying p
     message: 'authored Library chrome should recover after one transient asset failure',
   }).toBe('');
   expect(requests).toBeGreaterThanOrEqual(2);
-  await expect(page.locator('[data-library-new]').first()).toHaveCSS('background-image', /honey-wide.*webp/);
+  await expect(page.locator('[data-library-new]').first()).toHaveCSS('background-image', 'none');
 });

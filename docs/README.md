@@ -18,15 +18,15 @@
 [`ROOM_FOUNDATION_2026-10-06.md`](ROOM_FOUNDATION_2026-10-06.md) records the new
 owner-approved empty customizable room foundation and exhibit/catalog flow.
 PR #95 published 16 palettes and 22 room items in seven fixed slots with
-separate room storage. The room remains opt-in (`roomReview=1`) for visual review.
+separate room storage. The owner approved the room as the default entry on 8 October; the prior gallery remains available with `roomReview=0` for regression QA.
 The independent full-screen UX review is in
 [`UX_FREEZE_REVIEW_2026-10-08.md`](UX_FREEZE_REVIEW_2026-10-08.md): the main flow
 is recommended for freeze, and all four targeted follow-up fixes are implemented
-and verified locally. This does not switch the room to the default entry.
+and verified locally. The follow-up now switches the room to the default entry.
 
 The local 8 October screen polish (collection/play split, responsive room editor,
 Ideas and explicit replacement confirmation) is recorded in
-[`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md). It has not been deployed.
+[`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md). It shipped in PR #97.
 The authorized free Squeeze motion and its paused Unpin entry are recorded there.
 
 [`LIBRARY_SHOWCASE_2026-10-06.md`](LIBRARY_SHOWCASE_2026-10-06.md) records the

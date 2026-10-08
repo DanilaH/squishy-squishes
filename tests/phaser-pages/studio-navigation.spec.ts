@@ -4,7 +4,7 @@ test('free Workshop navigation retains creative work and resets for a new toy', 
   await page.setViewportSize({ width: 390, height: 844 });
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.evaluate(() => localStorage.setItem('squishy.save.v3', 'original-save-untouched'));
   await page.locator('[data-library-new]').first().click();
   const shell = page.locator('[data-sandbox-app]');

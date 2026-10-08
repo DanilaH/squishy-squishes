@@ -8,7 +8,7 @@ for (const accessory of ['bow', 'crown', 'cat-ears', 'bunny-ears', 'horns'] as c
   test.setTimeout(150_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/squishy-squishes/');
+  await page.goto('/squishy-squishes/?roomReview=0');
     await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), {
       ...createDefaultSaveV3(), totalCrafts: 8,
       libraryCapacity: 24, library: SHAPES.map((shape, n) => ({ id: shape.id, createdAt: 1700000000000 + n, shapeId: shape.id, materialId: 'soft',

@@ -7,7 +7,7 @@ for (const [locale, width, height] of [
   const context = await browser.newContext({baseURL,locale,viewport:{width,height},hasTouch:true,reducedMotion:'reduce'});
   const page = await context.newPage();
   try {
-    await page.goto('/squishy-squishes/'); await page.locator('[data-library-new]').first().click();
+    await page.goto('/squishy-squishes/?roomReview=0'); await page.locator('[data-library-new]').first().click();
     const shell=page.locator('[data-sandbox-app]');
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
     await page.evaluate(()=>document.fonts.ready);
@@ -74,7 +74,7 @@ for (const [locale, width, height] of [
 });
 
 test('a plain squishy saves immediately without mixing or visiting optional tools',async({page})=>{
-  await page.goto('/squishy-squishes/');await page.locator('[data-library-new]').first().click();
+  await page.goto('/squishy-squishes/?roomReview=0');await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
   await page.locator('[data-action="save"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');
   expect(decodeSaveStateV3(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!))).library).toHaveLength(1);
@@ -89,7 +89,7 @@ test('exit cancellation retains the draft and save can be retried after storage 
       original.call(this,key,value);
     };
   });
-  await page.goto('/squishy-squishes/');await page.locator('[data-library-new]').first().click();
+  await page.goto('/squishy-squishes/?roomReview=0');await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
   await page.locator('[data-shape="mochi"]').click();await page.locator('[data-action="exit-craft"]').click();
   await expect(page.locator('[data-exit-overlay]')).toBeVisible();await page.locator('[data-action="exit-cancel"]').click();
@@ -104,7 +104,7 @@ test('exit cancellation retains the draft and save can be retried after storage 
 
 
 test('Paint settings keep brush selection separate and Clear remains undoable',async({page})=>{
-  await page.setViewportSize({width:320,height:568});await page.goto('/squishy-squishes/');await page.locator('[data-library-new]').first().click();
+  await page.setViewportSize({width:320,height:568});await page.goto('/squishy-squishes/?roomReview=0');await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
   await page.locator('[data-craft-section="paint"]').click();await page.locator('[data-action="paint-settings"]').click();
   await expect(page.locator('[data-tools-overlay]')).toBeVisible();await expect(page.locator('[data-action="paint-settings"]')).toHaveAttribute('aria-expanded','true');
@@ -122,7 +122,7 @@ for (const [tab, edit, value] of [
   ['light', '[data-light-axis="x"]', '0.8'],
   ['light', '[data-light-preset="moon"]', null],
 ] as const) test(`a standalone ${edit} change is protected on exit and Undo returns to a clean draft`, async ({page}) => {
-  await page.goto('/squishy-squishes/'); await page.locator('[data-library-new]').first().click();
+  await page.goto('/squishy-squishes/?roomReview=0'); await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
   await page.locator(`[data-base-tab="${tab}"]`).click();
   if (value) {await page.locator(edit).fill(value); await page.locator(edit).dispatchEvent('change');} else await page.locator(edit).click();
@@ -132,7 +132,7 @@ for (const [tab, edit, value] of [
 });
 
 test('first size edit of a saved face immediately enables Undo and a fresh branch disables Redo', async ({page}) => {
-  await page.goto('/squishy-squishes/');await page.locator('[data-library-new]').first().click();
+  await page.goto('/squishy-squishes/?roomReview=0');await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
   await page.locator('[data-craft-section="decor"]').click();await page.locator('[data-decor-eyes="dot"]').click();
   await page.locator('[data-action="save"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');
@@ -147,7 +147,7 @@ test('first size edit of a saved face immediately enables Undo and a fresh branc
 test('three toys in one session reset tools; choosing a filling exits Eraser; touch gestures remain undoable', async ({browser,baseURL}) => {
   const context=await browser.newContext({baseURL,viewport:{width:390,height:844},hasTouch:true});const page=await context.newPage();
   try {
-    await page.goto('/squishy-squishes/');await page.locator('[data-library-new]').first().click();
+    await page.goto('/squishy-squishes/?roomReview=0');await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
     for(let i=0;i<3;i++){
       await page.locator('[data-craft-section="mixins"]').click();
@@ -175,7 +175,7 @@ test('three toys in one session reset tools; choosing a filling exits Eraser; to
 });
 
 for(const viewport of [{width:320,height:568},{width:568,height:320}])test(`detail settings replace the scrolled core and every action stays reachable at ${viewport.width}`,async({page})=>{
- await page.setViewportSize(viewport);await page.goto('/squishy-squishes/');await page.locator('[data-library-new]').first().click();
+ await page.setViewportSize(viewport);await page.goto('/squishy-squishes/?roomReview=0');await page.locator('[data-library-new]').first().click();
  await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
  await page.locator('[data-craft-section="decor"]').click();await page.locator('button[data-decor-section="accessory"]').click();await page.locator('[data-decor-accessory="bow"]').click();
  await page.locator('[data-object-action="more"]').click();await expect(page.locator('.free-object-core')).toBeHidden();

@@ -14,7 +14,7 @@ test('all face and sticker styles remain visible and distinct on each saved cont
   await page.setViewportSize({ width: 320, height: 700 });
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-craft-section="paint"]').click();

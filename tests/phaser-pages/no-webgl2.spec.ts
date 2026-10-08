@@ -13,7 +13,7 @@ test('Pages preview without WebGL2 keeps Library usable and preserves existing s
       },
     });
   });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   const library = page.locator('[data-sandbox-library]');
   await expect(library).toBeVisible();
   await page.evaluate(() => localStorage.setItem('squishy.save.v3', 'original-player-save'));
@@ -60,7 +60,7 @@ test('a transient WebGL2 probe failure does not poison later maker entry', async
     });
   });
 
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   const newButton = page.locator('[data-library-new]').first();
   await newButton.click();
   const warning = page.locator('[data-phaser-unsupported]');

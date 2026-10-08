@@ -337,8 +337,8 @@
 }
 #app .craft-actions > button { flex: 1; }
 #app[data-jelly-ui-ready] .craft-actions > .sandbox-primary {
-  min-height: 44px !important; background: transparent url('../../experiments/phaser/ui-assets/honey-wide.webp') center / 100% 100% no-repeat;
-  color: #fffef6; -webkit-text-stroke: .75px #945315; border: 0; font-size: 13px;
+  min-height: 44px !important; background: #725184;
+  color: #fff; -webkit-text-stroke: 0; text-shadow: none; border: 1px solid #60416f; border-radius: 12px; font-size: 14px; font-weight: 800;
 }
 #app .craft-base-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; }
 #app [data-crafting='true'] .free-shape-catalog { height: 132px; }
@@ -441,3 +441,7 @@
   #app[data-jelly-ui-ready] .sandbox-shell[data-stage='paint'][data-crafting='true'] .sandbox-swatch { width: 60px; height: 60px; }
   #app [data-crafting='true'] :is(.sandbox-paint-tools,.craft-mixin-tools) button { font-size: 14px; }
 }
+
+/* A pressed object stays inside the horizontal tray. */
+#app .free-object-list { overflow-y: hidden; padding-block: 2px; touch-action: pan-x; }
+#app[data-jelly-ui-ready] .free-object-list button:active:not(:disabled) { transform: none; }

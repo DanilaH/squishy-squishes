@@ -4,7 +4,7 @@ const key = 'squishy.phaser-pages-preview.squishy.save.v3';
 
 test('review: parquet repeats, shelf fits, toys stay still and catalog scrolling keeps the table fixed', async ({ page }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-craft-section="paint"]').click();

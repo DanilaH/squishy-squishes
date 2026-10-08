@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const openPreview = async (page: Page): Promise<void> => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   expect(await page.evaluate(() => document.body.dataset.releasePlatform)).not.toBe('yandex');
   expect(await page.locator('script[src*="sdk.js"]').count()).toBe(0);
@@ -118,7 +118,7 @@ test('failed first Hall art request falls back to Library and retries in-place',
     await route.continue();
   });
 
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   const library = page.locator('[data-sandbox-library]');
   await expect(library).toBeVisible();
   await expect(library).toHaveClass(/is-library-hall/, { timeout: 6_000 });
@@ -189,7 +189,7 @@ test('renderer init failure restores the originating Library with a retryable er
     });
   });
 
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   const library = page.locator('[data-sandbox-library]');
   await expect(library).toBeVisible();
   await page.locator('[data-library-new]').first().click();

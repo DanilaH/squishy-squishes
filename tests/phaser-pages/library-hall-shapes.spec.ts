@@ -8,7 +8,7 @@ const SHAPES = ['soft-square', 'heart', 'mochi', 'peach', 'mushroom', 'paw', 'du
 // the real Studio save flow, and never changes the production SaveState codec.
 test('chrome and holo volume follow all eight saved shape boundaries', async ({ page }, info) => {
   await page.setViewportSize({ width: 320, height: 700 });
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-craft-section="paint"]').click();
@@ -81,7 +81,7 @@ test('owner regression: painted Holo Paw keeps front art registered with pearls 
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
 
-  await page.goto('/phaser/');
+  await page.goto('/phaser/?roomReview=0');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('button[data-shape="paw"]').click();
