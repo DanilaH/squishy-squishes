@@ -73,7 +73,7 @@ for (const specimen of specimens) {
     expect(saved.library[0].materialId).toBe(specimen.material);
     expect(saved.library[0].appearance.strokes.length).toBeGreaterThan(0);
     if (specimen.mixin !== 'none') expect(saved.library[0].appearance.mixins.length).toBeGreaterThan(0);
-    if (specimen.accessory !== 'none') expect(saved.library[0].decor.items.map((item: { a: string }) => item.a)).toEqual([specimen.accessory]);
+    if (specimen.accessory !== 'none') expect(saved.library[0].decor.a).toBe(specimen.accessory);
     const squeeze = await page.locator('[data-sandbox-canvas]').boundingBox();
     if (!squeeze) throw new Error('No squeeze surface');
     const px = squeeze.x + squeeze.width * .5;

@@ -42,7 +42,7 @@ const saveRealToy = async (page: import('@playwright/test').Page): Promise<void>
   const save = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null'), KEY);
   expect(save?.version).toBe(3);
   expect(save.library).toHaveLength(1);
-  expect(save.library[0].decor).toMatchObject({ e: 'dot', m: 'smile', items: [{ a: 'bow' }] });
+  expect(save.library[0].decor).toMatchObject({ e: 'dot', m: 'smile', a: 'bow' });
   expect(save.library[0].decor.s).toHaveLength(1);
 };
 

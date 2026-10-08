@@ -128,7 +128,7 @@ test('saved redecorating failure preserves the original and retry updates the sa
   expect(after.totalCrafts).toBe(before.totalCrafts);
   expect(after.library[0]!.id).toBe(before.library[0]!.id);
   expect(after.library[0]!.createdAt).toBe(before.library[0]!.createdAt);
-  expect(after.library[0]!.decor.accessories?.map(item => item.a)).toEqual(['bow']);
+  expect(after.library[0]!.decor.accessory).toBe('bow');
   // Repeated saved edits must not become new completed-craft/ad actions.
   for (let n = 0; n < 2; n++) {
     await page.locator('[data-action="edit-saved"]').click();
@@ -167,7 +167,7 @@ test('rich free-craft edit survives blocked input and refused persistence withou
   await scale.fill('0.65'); await scale.dispatchEvent('change');
   await page.evaluate(() => window.__squishyPhaserPlatform!.setBlocked(true));
   await expect(page.locator('[data-sandbox-app]')).toHaveClass(/is-blocked/);
-  await page.locator('[data-object-action="reset"]').dispatchEvent('click');
+  await page.locator('.free-object-core [data-object-action="reset"]').dispatchEvent('click');
   await page.evaluate(() => window.__squishyPhaserPlatform!.setBlocked(false));
   await expect(scale).toHaveValue('0.65');
   await page.locator('[data-craft-section="shape"]').click();

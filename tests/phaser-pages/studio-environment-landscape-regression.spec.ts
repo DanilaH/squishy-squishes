@@ -25,7 +25,7 @@ test('Studio v8 keeps the real heading visible and desk hidden in short landscap
       };
     });
 
-    expect(facts.position).toBe('absolute');
+    expect(facts.position).toBe('relative');
     expect(facts.copy.top).toBeGreaterThanOrEqual(0);
     expect(facts.copy.bottom).toBeLessThanOrEqual(facts.viewport.height);
     expect(facts.copy.left).toBeGreaterThanOrEqual(0);

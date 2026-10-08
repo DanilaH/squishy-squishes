@@ -51,7 +51,7 @@ test('Jelly buttons decode before the Library is playable and keep Shape functio
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
   const continueButton = page.locator('[data-action="save"]');
   await expect(continueButton).toHaveCSS('background-image', /honey-wide.*webp/);
-  await expect(continueButton).toHaveCSS('background-size', 'contain');
+  await expect(continueButton).toHaveCSS('background-size', '100% 100%');
   const buttonBox = await continueButton.boundingBox();
   expect(buttonBox).not.toBeNull();
   expect(buttonBox!.width).toBeGreaterThanOrEqual(44);

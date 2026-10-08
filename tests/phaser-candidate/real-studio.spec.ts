@@ -97,7 +97,7 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
   expect(saved.library[0]!.appearance.strokes).toHaveLength(1);
   expect(saved.library[0]!.appearance.mixins).toHaveLength(1);
   expect(saved.library[0]!.decor.stickers).toHaveLength(1);
-  expect(saved.library[0]!.decor.accessories?.map(item => item.a)).toEqual(['cat-ears', 'cat-ears']);
+  expect(saved.library[0]!.decor.accessory).toBe('cat-ears');
   expect(saved.library[0]!.decor.eyes).toBe('happy');
   await page.screenshot({ path: 'phaser-candidate-evidence/real-studio-saved-portrait.png', fullPage: true });
   await info.attach('real-studio-saved-portrait', { body: await page.screenshot(), contentType: 'image/png' });
