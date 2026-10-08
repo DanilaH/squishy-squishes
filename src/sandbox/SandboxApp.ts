@@ -815,6 +815,7 @@ export class SandboxApp {
         <div class="sandbox-status" data-sandbox-status aria-live="polite"></div>
         <div class="sandbox-tools-overlay" data-tools-overlay hidden>
           <section class="sandbox-tools-dialog" role="dialog" aria-modal="true" aria-labelledby="tools-title">
+            <div class="sandbox-tools-content">
             <strong id="tools-title">${this.options.language === 'ru' ? 'Краски и штампы' : 'Colors & stamps'}</strong>
             <div class="sandbox-theme-choices">${CREATIVE_PALETTES.map(theme => `<button type="button" data-paint-theme="${theme.id}" aria-pressed="false"><span>${theme.colors.map(c => `<i style="background:#${c.toString(16).padStart(6, '0')}"></i>`).join('')}</span>${theme[this.options.language]}</button>`).join('')}</div>
             <div class="sandbox-stamp-choices">
@@ -823,6 +824,7 @@ export class SandboxApp {
             </div>
             <p class="sandbox-pattern-hint">${this.options.language === 'ru' ? 'Нанести узор текущим цветом. Отменяется одним шагом.' : 'Apply a pattern in your current color. Undo in one step.'}</p>
             <div class="sandbox-pattern-choices sandbox-stamp-choices">${PAINT_PATTERNS.map(pattern => `<button type="button" data-paint-pattern="${pattern.id}"><span aria-hidden="true">${pattern.icon}</span>${pattern[this.options.language]}</button>`).join('')}</div>
+            </div>
             <button class="sandbox-secondary" type="button" data-action="tools-close">${this.copy.done}</button>
           </section>
         </div>

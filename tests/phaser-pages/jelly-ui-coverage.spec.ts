@@ -9,13 +9,15 @@ const layouts = [
 
 /** Inspect the actual hit targets and captions, not deliberate SVG silhouette overflow. */
 const checkControls = async (page: Page, label: string): Promise<void> => {
+  const expandedCatalogs = page.locator('[data-decor-panel="face"], [data-decor-panel="stickers"]');
+  const offsets = await expandedCatalogs.evaluateAll(nodes => nodes.map(node => node.scrollTop));
   const controls = page.locator(
     '.sandbox-controls button:visible, .sandbox-topbar button:visible, '
     + '.sandbox-library-heading__actions button:visible, .library-showcase button:visible, '
     + '.sandbox-ideas-heading button:visible, .sandbox-library-modal button:visible',
   );
   const issues = await controls.evaluateAll(elements => elements.flatMap(element => {
-    if (element.closest('.sandbox-library-grid, .free-shape-catalog, .free-mixin-catalog, [data-decor-panel="accessory"] .sandbox-decor-grid, .free-object-panel, .free-light-panel')) {
+    if (element.closest('.sandbox-library-grid, .free-shape-catalog, .free-mixin-catalog, [data-decor-panel="accessory"] .sandbox-decor-grid, [data-decor-panel="face"], [data-decor-panel="stickers"], .free-object-panel, .free-light-panel')) {
       element.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' });
     }
     if (!(element instanceof HTMLButtonElement)) return [];
@@ -37,6 +39,7 @@ const checkControls = async (page: Page, label: string): Promise<void> => {
     if (!hit || !element.contains(hit)) errors.push(`${id}: hit target intercepted by ${hit?.tagName ?? 'nothing'}`);
     return errors;
   }));
+  await expandedCatalogs.evaluateAll((nodes, offsets) => nodes.forEach((node, i) => { node.scrollTop = offsets[i]!; }), offsets);
   expect(issues, `${label}: button text and click targets`).toEqual([]);
   const pageWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(pageWidth, `${label}: horizontal document overflow`).toBeLessThanOrEqual(page.viewportSize()!.width + 2);

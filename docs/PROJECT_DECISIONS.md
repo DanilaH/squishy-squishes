@@ -1169,8 +1169,15 @@ draw: tint and ink-bound measurements no longer trigger a rasterization change
 that changes soft alpha edges. Existing recolor/mirror coverage passes unchanged.
 
 Local verification passed strict TypeScript, tooling/asset smoke, clean web and
-Yandex builds and the upload-root audit (63 files, 3,346,433 bytes), 33 targeted
+Yandex builds and the upload-root audit (63 files, 3,346,988 bytes), 33 targeted
 browser/data scenarios, and all 30 interface snapshots across EN/RU, portrait,
 short landscape and desktop. Only the six Decor baselines changed for the
 expanded choices. Old compact sticker bytes and all 196 face/pattern save
 combinations round-trip; the full browser and preview suites remain PR gates.
+
+Full-suite follow-up reserves two caption lines in accessory cards, including
+both long hat names on 320px screens. Paint settings use a separate scrolling
+content area and fixed close action, so the close button cannot cover tools.
+The existing full-flow audits now scroll Face/Stickers before checking every
+caption and hit target, and retain a fixed page/scene requirement. The short
+phone catalog audit additionally checks 44px targets and both vertical edges.

@@ -448,6 +448,9 @@
 #app[data-jelly-ui-ready] .free-object-list button:active:not(:disabled) { transform: none; }
 
 /* Expanded faces and stickers keep full rows inside the fixed catalog tray. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='accessory'] > .sandbox-decor-grid { grid-auto-rows: minmax(64px, auto); }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] [data-decor-panel='accessory'] .sandbox-decor-choice { grid-template-rows: 28px max-content; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] [data-decor-panel='accessory'] .sandbox-decor-choice small { min-height: 2.2em; }
 #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] :is([data-decor-panel='face'],[data-decor-panel='stickers']) {
   height: 128px; overflow-y: auto; align-content: start;
   overscroll-behavior: contain; touch-action: pan-y;

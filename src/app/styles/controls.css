@@ -6,12 +6,12 @@
 .sandbox-tools-overlay[hidden] { display: none; }
 .sandbox-tools-dialog {
   width: min(520px, 100%); min-width: 0; box-sizing: border-box;
-  max-height: calc(100dvh - 24px); overflow-y: auto;
-  grid-auto-rows: max-content;
-  display: grid; gap: 10px; padding: 16px;
+  max-height: calc(100dvh - 24px); overflow: hidden;
+  display: flex; flex-direction: column; gap: 10px; padding: 16px;
   border: 2px solid #c7a9bc; border-radius: 22px; background: #fff7ed;
   color: #56375f; box-shadow: 0 8px 24px rgba(68, 43, 68, .2);
 }
+.sandbox-tools-content { min-height: 0; overflow-y: auto; display: grid; grid-auto-rows: max-content; gap: 10px; overscroll-behavior: contain; }
 .sandbox-theme-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .sandbox-stamp-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
 #app .sandbox-tools-dialog button {
@@ -27,7 +27,7 @@
 .sandbox-stamp-choices button > span { display: block; font-size: 22px; line-height: 1.1; }
 .sandbox-pattern-hint { margin: 4px 0 0; font-size: 12px; line-height: 1.35; }
 .sandbox-pattern-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-#app .sandbox-tools-dialog [data-action="tools-close"] { position: sticky; bottom: 0; z-index: 1; }
+#app .sandbox-tools-dialog [data-action="tools-close"] { flex-shrink: 0; }
 #app .sandbox-swatch.is-theme-color::before { border-color: #efce85; }
 @media (min-width: 480px) {
   .sandbox-stamp-choices { grid-template-columns: repeat(5, minmax(0, 1fr)); }

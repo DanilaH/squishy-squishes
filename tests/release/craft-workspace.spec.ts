@@ -4,6 +4,8 @@ import { decodeSaveStateV3 } from '../../src/platform/saveV3';
 for (const [locale, width, height] of [
   ['ru-RU',320,568],['en-US',390,844],['ru-RU',568,320],['en-US',844,390],['ru-RU',1440,900],['en-US',1440,900],
 ] as const) test(`free workspace ${locale} ${width}`, async ({ browser, baseURL }, info) => {
+  // This full round-trip captures every section and reloads the saved craft twice.
+  test.setTimeout(90_000);
   const context = await browser.newContext({baseURL,locale,viewport:{width,height},hasTouch:true,reducedMotion:'reduce'});
   const page = await context.newPage();
   try {
