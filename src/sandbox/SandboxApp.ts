@@ -2,6 +2,8 @@ import { drawFaceForeground } from './faceForeground';
 import { LIGHT_PRESETS, type CraftLight } from './craftLighting';
 import { DraftHistory } from './draftHistory';
 import { FreeCraftEditor } from './freeCraftEditor';
+import { mountCraftWorkspace } from './craftWorkspace';
+import { mountCatalogScrollHints } from './catalogScrollHints';
 import { tintAccessory, accessoryPlacements, accessoryFrame, initialAccessoryPlacements, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
 import { renderToyInclusions, renderToyInk, renderToyPigment } from './toySurfaceLayers';
 import { accessoryMotion } from './toyPersonality';
@@ -72,6 +74,7 @@ export interface SandboxAppOptions {
   readonly initialShapeId?: ShapeId;
   readonly startSavedInSqueeze?: boolean;
   readonly onExitToLibrary?: () => void;
+  readonly onResetCraftContext?: () => void;
   readonly rendererBackend?: 'legacy' | 'phaser'; // Phaser is opt-in only in the isolated candidate.
   readonly makePhaserRenderer?: (
     canvas: HTMLCanvasElement,
@@ -391,6 +394,7 @@ export class SandboxApp {
   private readonly draftHistory = new DraftHistory();
   private readonly freeEditor: FreeCraftEditor;
   private draftValue: SandboxDraft = createSandboxDraft();
+  private cleanDraft = JSON.stringify(this.draftValue);
   private get draft(): SandboxDraft { return this.draftValue; }
   private set draft(value: SandboxDraft) { this.draftHistory.record(this.draftValue, value); this.draftValue = value; }
   private savedSquishy: SavedSquishy | null;
@@ -433,6 +437,8 @@ export class SandboxApp {
   private mixDistance = 0;
   private uploadFrame = 0;
   private accessoryFrame = 0;
+  private accessorySelectionFrame: HTMLDivElement | null = null;
+  private readonly accessoryInkBounds = new WeakMap<HTMLCanvasElement, { x: number; y: number; width: number; height: number }>();
   private rigidMixinFrame = 0;
   private accessoryRestU = [0, 0];
   private accessoryRestV = [0, 0];
@@ -450,6 +456,7 @@ export class SandboxApp {
   private exitReturnFocus: HTMLElement | null = null;
   private saving = false;
   private disposed = false;
+  private readonly disposeCatalogScrollHints: () => void;
 
   public constructor(
     private readonly root: HTMLDivElement,
@@ -460,6 +467,7 @@ export class SandboxApp {
     if (!this.savedSquishy && options.initialShapeId) {
       this.draft = { ...this.draft, shapeId: options.initialShapeId };
     }
+    this.cleanDraft = JSON.stringify(this.draft);
     this.muted = options.muted;
     this.stage = this.savedSquishy ? (options.startSavedInSqueeze ? 'squeeze' : 'home') : 'shape';
 
@@ -475,6 +483,8 @@ export class SandboxApp {
     this.faceContext = faceContext;
 
     root.innerHTML = this.renderShell();
+    mountCraftWorkspace(root, this.options.language === 'ru');
+    this.disposeCatalogScrollHints = mountCatalogScrollHints(root, this.abortController.signal);
     this.shell = this.requireElement<HTMLElement>('[data-sandbox-app]');
     for (const icon of this.root.querySelectorAll<HTMLCanvasElement>('[data-mixin-icon]')) {
       const ctx = icon.getContext('2d'); const id = icon.dataset.mixinIcon as MixInId;
@@ -530,7 +540,10 @@ export class SandboxApp {
       ? options.makePhaserRenderer!(this.canvas, this.handleMetrics, this.audio, {
           authoringBegin: () => this.draftHistory.begin(this.draft),
           authoringEnd: () => { this.draftHistory.end(this.draft); this.updateHistoryUi(); },
-          beginDecorEdit: pointer => this.freeEditor.begin(pointer),
+          beginDecorEdit: pointer => {
+            if (!this.freeEditor.begin(pointer)) return false;
+            this.setDecorSection('objects'); return true;
+          },
           moveDecorEdit: pointer => this.freeEditor.move(pointer),
           endDecorEdit: cancelled => { this.freeEditor.end(cancelled); this.updateHistoryUi(); },
           paintStamp: (point) => {
@@ -607,7 +620,7 @@ export class SandboxApp {
       accessoryHit: (index, x, y) => this.accessoryHit(index, x, y),
       radius: () => { const rect = this.canvas.getBoundingClientRect(); return Math.min(rect.width, rect.height) * (Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio')) || .34); },
       begin: () => this.draftHistory.begin(this.draft),
-      end: () => this.draftHistory.end(this.draft),
+      end: () => { this.draftHistory.end(this.draft); this.updateHistoryUi(); },
     });
     this.bindEvents();
     if (this.savedSquishy) this.loadSavedSquishy(this.savedSquishy);
@@ -639,6 +652,7 @@ export class SandboxApp {
     if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);
     if (this.rigidMixinFrame !== 0) cancelAnimationFrame(this.rigidMixinFrame);
     this.freeEditor.dispose();
+    this.disposeCatalogScrollHints();
     this.abortController.abort();
     this.clearPlacementFeedback();
     this.renderer.dispose();
@@ -704,8 +718,10 @@ export class SandboxApp {
         </header>
 
         <section class="sandbox-copy">
-          <span data-sandbox-step></span>
-          <h1 data-sandbox-title></h1>
+          <div class="sandbox-heading">
+            <span data-sandbox-step></span>
+            <h1 data-sandbox-title></h1>
+          </div>
           <p data-sandbox-hint></p>
         </section>
 
@@ -723,7 +739,7 @@ export class SandboxApp {
           <div class="sandbox-panel" data-panel="paint">
             <div class="sandbox-palette-grid">${paintColors}</div>
             <div class="sandbox-tool-row sandbox-paint-tools">
-              <button type="button" data-paint-tool="paint" aria-haspopup="dialog" aria-pressed="true">${this.copy.brush} ▾</button>
+              <button type="button" data-paint-tool="paint" aria-pressed="true">${this.copy.brush}</button>
               <button type="button" data-paint-tool="erase" aria-pressed="false">${this.copy.eraser}</button>
               <button type="button" data-paint-tool="fill" aria-pressed="false">${this.copy.fill}</button>
               ${brushSizes}
@@ -787,8 +803,7 @@ export class SandboxApp {
           </div>
 
           <div class="sandbox-panel sandbox-panel--center" data-panel="squeeze">
-            ${this.options.rendererBackend === 'phaser' ? `<button class="sandbox-secondary" type="button" data-action="free-squeeze" data-language="${this.options.language}" aria-pressed="false">${this.options.language === 'ru' ? 'Отцепить' : 'Unpin'}</button>` : ''}
-            <button class="sandbox-secondary" type="button" data-action="edit-saved">${this.options.language === 'ru' ? 'Украсить ещё' : 'Decorate again'}</button>
+            <button class="sandbox-secondary" type="button" data-action="edit-saved">${this.options.language === 'ru' ? 'Редактировать' : 'Edit'}</button>
             <button class="sandbox-secondary" type="button" data-action="home">${this.copy.done}</button>
             <button class="sandbox-primary" type="button" data-action="new">${this.copy.newSquishy}</button>
           </div>
@@ -824,7 +839,7 @@ export class SandboxApp {
     this.root.addEventListener('click', this.handleClick, { signal });
     this.root.addEventListener('pointerdown', () => { if (!this.activityBlocked) void this.audio.prime().catch(() => {}); }, { signal });
     this.root.addEventListener('input', event => {
-      const input = event.target instanceof HTMLInputElement ? event.target : null; if (!input || this.activityBlocked) return;
+      const input = event.target instanceof HTMLInputElement ? event.target : null; if (!input || this.activityBlocked || this.saving || this.exitConfirmOpen) return;
       if (input.dataset.mixinSetting) {
         this.draftHistory.begin(this.draft);
         const settings = this.draft.appearance.mixinBrush ?? {size:18,density:1};
@@ -850,6 +865,22 @@ export class SandboxApp {
     if (this.activityBlocked || this.saving) return;
     const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
     if (!target) return;
+
+    const section = target.dataset.craftSection;
+    if (section === 'shape' || section === 'paint' || section === 'mixins' || section === 'decor') {
+      this.freeEditor.end(); this.setStage(section); return;
+    }
+    if (target.dataset.baseTab) {
+      for (const panel of this.root.querySelectorAll<HTMLElement>('[data-base-panel]')) panel.hidden = panel.dataset.basePanel !== target.dataset.baseTab;
+      this.updatePressed('[data-base-tab]', 'baseTab', target.dataset.baseTab); return;
+    }
+    if (target.dataset.action === 'paint-settings') { this.setToolsOpen(true); return; }
+    if (target.dataset.action === 'mixin-settings') {
+      const settings = this.requireElement<HTMLElement>('.free-mixin-settings');
+      settings.hidden = !settings.hidden;
+      this.requireElement<HTMLElement>('.sandbox-mixin-grid').hidden = !settings.hidden;
+      target.setAttribute('aria-expanded', String(!settings.hidden)); return;
+    }
 
     if (target.dataset.action === 'draft-undo' || target.dataset.action === 'draft-redo') { this.restoreDraftHistory(target.dataset.action === 'draft-redo'); return; }
     if (target.dataset.finishTab) {
@@ -910,7 +941,7 @@ export class SandboxApp {
       this.paintTool = 'paint';
       const brush = this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]');
       const selected = PAINT_STAMPS.find(s => s.id === stamp);
-      brush.textContent = `${selected?.icon ?? this.copy.brush} ▾`;
+      brush.textContent = selected?.icon ?? this.copy.brush;
       brush.setAttribute('aria-label', selected?.[this.options.language] ?? this.copy.brush);
       this.shell.dataset.paintStamp = stamp;
       this.updatePressed('[data-paint-stamp]', 'paintStamp', stamp);
@@ -936,10 +967,9 @@ export class SandboxApp {
         this.paintStampId = null;
         this.updatePressed('[data-paint-stamp]', 'paintStamp', 'none');
         const brush = this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]');
-        brush.textContent = `${this.copy.brush} ▾`; brush.setAttribute('aria-label', this.copy.brush);
+        brush.textContent = this.copy.brush; brush.setAttribute('aria-label', this.copy.brush);
       }
       this.updatePressed('[data-paint-tool]', 'paintTool', paintTool);
-      if (paintTool === 'paint') this.setToolsOpen(true);
       return;
     }
 
@@ -953,6 +983,8 @@ export class SandboxApp {
     const mixin = target.dataset.mixin as MixInId | undefined;
     if (mixin && MIXIN_IDS.includes(mixin)) {
       this.selectedMixIn = mixin;
+      this.mixinErase = false;
+      this.requireElement<HTMLButtonElement>('[data-action="mixin-erase"]').setAttribute('aria-pressed', 'false');
       this.updatePressed('[data-mixin]', 'mixin', mixin);
       return;
     }
@@ -1009,6 +1041,7 @@ export class SandboxApp {
         if (accessory) { this.freeEditor.selectAccessory(accessories.length - 1); this.playPlacementFeedback(this.accessoryCanvasAt(accessories.length - 1), 'bow'); }
         this.updateDecorUi();
         this.freeEditor.refresh();
+        if (accessory) this.setDecorSection('objects');
       }
       return;
     }
@@ -1043,6 +1076,7 @@ export class SandboxApp {
     else if (action === 'finish-back') this.setStage('decor');
     else if (action === 'save') void this.saveDraft();
     else if (action === 'edit-saved' && this.savedSquishy) {
+      this.options.onResetCraftContext?.();
       this.loadSavedSquishy(this.savedSquishy);
       this.editingId = this.savedSquishy.id;
       this.shell.dataset.saveKind = 'edit';
@@ -1224,7 +1258,7 @@ export class SandboxApp {
   private setToolsOpen(open: boolean): void {
     if (open === this.toolsOpen) return;
     this.toolsOpen = open;
-    this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]').setAttribute('aria-expanded', String(open));
+    this.requireElement<HTMLButtonElement>('[data-action="paint-settings"]').setAttribute('aria-expanded', String(open));
     const overlay = this.requireElement<HTMLElement>('[data-tools-overlay]');
     overlay.hidden = !open;
     if (open) {
@@ -1506,6 +1540,13 @@ export class SandboxApp {
     this.draft = { ...this.draft, decor: { ...this.draft.decor, stickers } };
     this.status.textContent = '';
     this.replayAndUpload();
+    if (!this.stickerErase) {
+      const index = stickers.length - 1;
+      queueMicrotask(() => {
+        if (this.disposed || this.stage !== 'decor' || !this.draft.decor.stickers[index]) return;
+        this.freeEditor.selectSticker(index); this.setDecorSection('objects');
+      });
+    }
   }
 
   private undoSticker(): void { this.restoreDraftHistory(false); }
@@ -1536,9 +1577,28 @@ export class SandboxApp {
     this.requireElement<HTMLButtonElement>('[data-action="decor-erase"]').setAttribute('aria-pressed', String(this.stickerErase));
     this.shell.dataset.decorTool = this.stickerErase ? 'erase' : 'sticker';
     const stickerTip = this.requireElement<HTMLElement>('.sandbox-decor-tip');
+    const stickersFull = this.draft.decor.stickers.length >= MAX_DECOR_STICKERS;
+    for (const button of this.root.querySelectorAll<HTMLButtonElement>('[data-decor-sticker]')) button.disabled = stickersFull;
     stickerTip.textContent = this.stickerErase
       ? (this.options.language === 'ru' ? 'Коснись наклейки, чтобы убрать её. Отменой можно вернуть.' : 'Tap a sticker to erase it. Undo brings it back.')
-      : DECOR_LABELS[this.options.language].stickerTip;
+      : stickersFull ? (this.options.language === 'ru' ? 'Лимит наклеек. Удали одну, чтобы добавить новую.' : 'Sticker limit reached. Delete one to add another.')
+        : DECOR_LABELS[this.options.language].stickerTip;
+    const items = accessoryPlacements(this.draft.decor, getShape(this.draft.shapeId));
+    let blockedAccessory = false;
+    for (const button of this.root.querySelectorAll<HTMLButtonElement>('button[data-decor-accessory]')) {
+      const id = button.dataset.decorAccessory as AccessoryId | 'none';
+      button.disabled = id !== 'none' && items.length + initialAccessoryPlacements(getShape(this.draft.shapeId), id).length > MAX_ACCESSORY_PLACEMENTS;
+      blockedAccessory ||= button.disabled;
+    }
+    const grid = this.root.querySelector<HTMLElement>('[data-decor-panel="accessory"] .sandbox-decor-grid');
+    if (grid && !grid.querySelector('[data-accessory-limit]')) grid.insertAdjacentHTML('afterbegin', '<p class="decor-limit-notice" data-accessory-limit role="status" hidden></p>');
+    const notice = grid?.querySelector<HTMLElement>('[data-accessory-limit]');
+    if (notice) {
+      notice.hidden = !blockedAccessory;
+      notice.textContent = this.options.language === 'ru'
+        ? `Детали: ${items.length}/${MAX_ACCESSORY_PLACEMENTS}. Удали деталь, чтобы освободить место.`
+        : `Details: ${items.length}/${MAX_ACCESSORY_PLACEMENTS}. Delete an item to make room.`;
+    }
     const blush = this.root.querySelector<HTMLButtonElement>('[data-action="decor-blush"]');
     blush?.setAttribute('aria-pressed', String(this.draft.decor.blush));
     this.shell.dataset.decorEyes = this.draft.decor.eyes ?? 'none';
@@ -1554,15 +1614,7 @@ export class SandboxApp {
   }
 
   private isDraftDirty(): boolean {
-    const pristine = createSandboxDraft();
-    return this.draft.shapeId !== pristine.shapeId
-      || this.draft.materialId !== pristine.materialId
-      || this.draft.appearance.strokes.length > 0
-      || this.draft.appearance.mixins.length > 0
-      || hasSurfaceDecor(this.draft.decor)
-      || this.draft.decor.accessory !== null
-      || Boolean(this.draft.decor.accessories?.length)
-      || this.mixDistance > 0;
+    return JSON.stringify(this.draft) !== this.cleanDraft;
   }
 
   private requestCraftExit(): void {
@@ -1630,6 +1682,7 @@ export class SandboxApp {
   private async saveDraft(): Promise<void> {
     if (this.saving) return;
     this.saving = true;
+    this.syncInteractivity();
     this.saveButton.disabled = true;
     this.saveButton.textContent = this.copy.saving;
     try {
@@ -1655,7 +1708,8 @@ export class SandboxApp {
       this.saving = false;
       if (!this.disposed) {
         this.saveButton.disabled = false;
-        this.saveButton.textContent = this.copy.save;
+        this.saveButton.textContent = this.options.language === 'ru' ? 'Сохранить' : 'Save';
+        this.syncInteractivity();
       }
     }
   }
@@ -1667,17 +1721,24 @@ export class SandboxApp {
   }
 
   private startNew(): void {
+    this.options.onResetCraftContext?.();
     this.setExitConfirmOpen(false);
     this.setAppearanceLimitReached(false);
     this.editingId = null;
     this.shell.dataset.saveKind = 'craft';
     this.stickerErase = false;
+    this.mixinErase = false;
+    this.requireElement<HTMLButtonElement>('[data-action="mixin-erase"]').setAttribute('aria-pressed', 'false');
+    this.requireElement<HTMLElement>('.free-mixin-settings').hidden = true;
+    this.requireElement<HTMLElement>('.sandbox-mixin-grid').hidden = false;
+    this.requireElement<HTMLButtonElement>('[data-action="mixin-settings"]').setAttribute('aria-expanded', 'false');
     this.draftHistory.clear();
     this.draft = createSandboxDraft();
+    this.cleanDraft = JSON.stringify(this.draft);
     this.paintStampId = null;
     this.updatePressed('[data-paint-stamp]', 'paintStamp', 'none');
     const brush = this.requireElement<HTMLButtonElement>('[data-paint-tool="paint"]');
-    brush.textContent = `${this.copy.brush} ▾`; brush.setAttribute('aria-label', this.copy.brush);
+    brush.textContent = this.copy.brush; brush.setAttribute('aria-label', this.copy.brush);
     this.paintTool = 'paint';
     this.paintColor = PAINT_COLORS[0];
     this.brushSize = BRUSH_SIZES[1];
@@ -1696,6 +1757,8 @@ export class SandboxApp {
     this.setDecorSection('face');
     this.updateDecorUi();
     this.shell.dataset.saveComplete = 'false';
+    for (const panel of this.root.querySelectorAll<HTMLElement>('[data-base-panel]')) panel.hidden = panel.dataset.basePanel !== 'shape';
+    this.updatePressed('[data-base-tab]', 'baseTab', 'shape');
     this.setStage('shape');
     this.draftHistory.clear(); this.updateAppearanceDataset(); this.updateHistoryUi();
   }
@@ -1709,6 +1772,7 @@ export class SandboxApp {
       appearance: saved.appearance,
       decor: saved.decor,
     };
+    this.cleanDraft = JSON.stringify(this.draft);
     this.applyDraftToRenderer();
     this.replayAndUpload();
     this.updatePressed('[data-shape]', 'shape', saved.shapeId);
@@ -1827,7 +1891,7 @@ export class SandboxApp {
         else {
           context.save(); context.translate(center.x, center.y);
           const pose = (this.renderer as PhaserSquishSurface).presentation();
-          context.rotate((placement.r / 255) * Math.PI * 2 - pose.rotation);
+          context.rotate((placement.r / 255) * Math.PI * 2 - pose.rotation + (this.renderer as PhaserSquishSurface).freeRotation());
           const depth = this.draft.materialId === 'jelly' ? ((placement.x * 7 + placement.y * 3 + placement.r) % 5) / 4 : 0;
           drawToyMixIn(context, getMixInId(placement), radius, placement.r, depth);
           context.restore();
@@ -1860,8 +1924,19 @@ export class SandboxApp {
       canvas.dataset.accessoryIndex = String(index); canvas.dataset.accessoryDepth = getAccessoryDepth(placement.a);
       drawAccessoryPiece(ctx, placement.a, 180, 120, placement.side, placement.mirrored);
       if (placement.color !== undefined) tintAccessory(ctx, 180, 120, placement.color);
+      // Measure once when the art changes; transparent source margins are not part of the selection.
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let left = canvas.width, top = canvas.height, right = -1, bottom = -1;
+      for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+        if (pixels[(y * canvas.width + x) * 4 + 3]! <= 24) continue;
+        left = Math.min(left, x); top = Math.min(top, y); right = Math.max(right, x); bottom = Math.max(bottom, y);
+      }
+      if (right >= left) this.accessoryInkBounds.set(canvas, { x: left / canvas.width, y: top / canvas.height,
+        width: (right - left + 1) / canvas.width, height: (bottom - top + 1) / canvas.height });
+      else this.accessoryInkBounds.delete(canvas);
     }
     if (!pieces.length) {
+      if (this.accessorySelectionFrame) this.accessorySelectionFrame.hidden = true;
       this.foregroundFace.hidden=true;
       this.accessoryCanvas.removeAttribute('data-accessory-id');
       if (this.accessoryFrame) cancelAnimationFrame(this.accessoryFrame); this.accessoryFrame = 0; return;
@@ -1904,7 +1979,8 @@ export class SandboxApp {
       const idleSway = this.options.rendererBackend === 'phaser' ? (this.renderer as PhaserSquishSurface).presentation().sway : 0;
       const motion = this.activityBlocked || this.reducedMotion.matches ? { angle: 0, lift: 0, scale: 1 } : accessoryMotion(placement.a, performance.now() - this.releasedAt, this.releaseStrength, piece);
       const sway = this.activityBlocked || this.reducedMotion.matches ? 0 : idleSway + motion.angle;
-      const angle = Math.min(Math.PI / 6, Math.max(-Math.PI / 6, rawAngle)) + frame.headAngle + sway;
+      const free = this.options.rendererBackend === 'phaser' && (this.renderer as PhaserSquishSurface).isFreeSqueeze();
+      const angle = (free ? rawAngle : Math.min(Math.PI / 6, Math.max(-Math.PI / 6, rawAngle))) + frame.headAngle + sway;
       accessoryCanvas.dataset.accessorySway = sway.toFixed(4);
       const cosAngle = Math.cos(angle);
       const sinAngle = Math.sin(angle);
@@ -1939,9 +2015,40 @@ export class SandboxApp {
         accessoryCanvas.dataset.accessoryMatrix = [a, b, c, d].map((value) => value.toFixed(4)).join(',');
       }
     }
+    this.updateAccessorySelection();
     this.updateForegroundFace();
     if (this.options.rendererBackend !== 'phaser') this.accessoryFrame = requestAnimationFrame(this.updateAccessoryOverlay);
   };
+
+  private updateAccessorySelection(): void {
+    const selected = this.shell.dataset.selectedObject?.match(/^accessory:(\d+)$/);
+    const visible = this.stage === 'decor' && this.decorSection === 'objects' && !this.tryOn && !!selected;
+    if (!visible) {
+      if (this.accessorySelectionFrame) this.accessorySelectionFrame.hidden = true;
+      return;
+    }
+    const index = Number(selected![1]), canvas = this.accessoryCanvasAt(index), bounds = this.accessoryInkBounds.get(canvas);
+    if (canvas.hidden || !bounds) {
+      if (this.accessorySelectionFrame) this.accessorySelectionFrame.hidden = true;
+      return;
+    }
+    if (!this.accessorySelectionFrame) {
+      this.accessorySelectionFrame = document.createElement('div');
+      this.accessorySelectionFrame.className = 'accessory-selection-frame';
+      this.accessorySelectionFrame.setAttribute('aria-hidden', 'true');
+      canvas.parentElement!.append(this.accessorySelectionFrame);
+    }
+    const frame = this.accessorySelectionFrame, padding = 5;
+    const x = bounds.x * canvas.offsetWidth - padding, y = bounds.y * canvas.offsetHeight - padding;
+    const origin = canvas.style.transformOrigin.split(' ');
+    frame.hidden = false; frame.dataset.accessorySelection = String(index);
+    frame.style.left = `${Number.parseFloat(canvas.style.left) + x}px`;
+    frame.style.top = `${Number.parseFloat(canvas.style.top) + y}px`;
+    frame.style.width = `${bounds.width * canvas.offsetWidth + padding * 2}px`;
+    frame.style.height = `${bounds.height * canvas.offsetHeight + padding * 2}px`;
+    frame.style.transformOrigin = `${Number.parseFloat(origin[0]!) / 100 * canvas.offsetWidth - x}px ${Number.parseFloat(origin[1]!) / 100 * canvas.offsetHeight - y}px`;
+    frame.style.transform = canvas.style.transform;
+  }
 
   private applyMaterial(materialId: MaterialId): void {
     const palette = getPalette(BASE_PALETTE_ID);
@@ -1973,6 +2080,13 @@ export class SandboxApp {
     const overlayChanged = this.options.rendererBackend === 'phaser' && (next === 'squeeze') !== (this.stage === 'squeeze');
     this.stage = next;
     this.shell.dataset.stage = next;
+    const crafting = next === 'shape' || next === 'paint' || next === 'mixins' || next === 'decor';
+    this.shell.dataset.crafting = String(crafting);
+    this.updatePressed('[data-craft-section]', 'craftSection', next);
+    if (!crafting) {
+      this.tryOn = false; this.shell.dataset.tryOn = 'false';
+      this.requireElement<HTMLButtonElement>('[data-action="try-return"]').hidden = true;
+    }
     const details = this.stageCopy(next);
     this.stageStep.textContent = details.step;
     this.stageTitle.textContent = details.title;
@@ -1980,11 +2094,10 @@ export class SandboxApp {
     this.status.textContent = next === 'mix'
       ? (this.mixDistance >= MIX_DISTANCE_FOR_COMPLETE_PX ? this.copy.mixReady : this.copy.mixMore) : '';
     this.updateHistoryUi();
-    const canGoBack = next === 'paint' || next === 'mixins' || next === 'mix' || next === 'decor';
     const inCraft = next === 'shape' || next === 'paint' || next === 'mixins' || next === 'mix' || next === 'decor' || next === 'finish';
-    this.requireElement<HTMLButtonElement>('[data-action="stage-back"]').hidden = !canGoBack;
+    this.requireElement<HTMLButtonElement>('[data-action="stage-back"]').hidden = true;
     this.requireElement<HTMLButtonElement>('[data-action="exit-craft"]').hidden = !inCraft || !this.options.onExitToLibrary;
-    this.requireElement<HTMLElement>('[data-sandbox-brand]').hidden = canGoBack;
+    this.requireElement<HTMLElement>('[data-sandbox-brand]').hidden = false;
     for (const panel of this.root.querySelectorAll<HTMLElement>('[data-panel]')) {
       panel.hidden = panel.dataset.panel !== next;
     }
@@ -2006,14 +2119,14 @@ export class SandboxApp {
   }
 
   private syncInteractivity(): void {
-    const blocked = this.activityBlocked || this.exitConfirmOpen || this.toolsOpen;
+    const blocked = this.activityBlocked || this.exitConfirmOpen || this.toolsOpen || this.saving;
     if (blocked) { this.clearPlacementFeedback(); this.roomReaction?.cancel(); this.roomLight?.cancel(); this.shell.dataset.workshopReaction = 'rest'; }
     if (this.options.rendererBackend === 'phaser') {
       (this.renderer as PhaserSquishSurface).setStudioStage(this.tryOn ? 'finish' : this.stage, this.decorSection);
       (this.renderer as PhaserSquishSurface).setActivityBlocked(blocked);
       return;
     }
-    const shouldRenderInteract = !blocked && (this.stage === 'mix' || this.stage === 'finish' || this.stage === 'squeeze');
+    const shouldRenderInteract = !blocked && (this.tryOn || this.stage === 'mix' || this.stage === 'finish' || this.stage === 'squeeze');
     this.renderer.setInteractive(shouldRenderInteract);
   }
 

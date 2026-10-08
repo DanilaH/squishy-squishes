@@ -70,10 +70,10 @@ for (const [width, height] of [[390, 844], [1440, 900]] as const) test(`berry pr
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('[data-shape="strawberry"]').click();
     await page.screenshot({ path: info.outputPath('berry-shape.png') });
-    await page.locator('[data-action="shape-continue"]').click();
+    await page.locator('[data-craft-section="paint"]').click();
     // The starting pink is normal editable pigment, and clears like any fill.
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-paint-strokes', '1');
-    await page.locator('[data-action="paint-clear"]').click();
+    await page.locator('[data-action="paint-settings"]').click(); await page.locator('[data-action="paint-clear"]').click(); await page.locator('[data-action="tools-close"]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-paint-strokes', '0');
     const save = { ...createDefaultSaveV3(), totalCrafts: 1, library: [{ id: 'berry', createdAt: 1, shapeId: 'strawberry', materialId: 'jelly',
       appearance: { v: 1, strokes: [createBodyFillStroke(0x8acfe0)], mixins: [] },

@@ -45,20 +45,13 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of views) {
         await page.screenshot({ path: info.outputPath(`cozy-${stage}.png`) });
       };
       await capture('shape');
-      await page.locator('[data-action="shape-continue"]').click();
+      await page.locator('[data-craft-section="paint"]').click();
       await capture('paint');
-      await page.locator('[data-action="paint-continue"]').click();
-      await page.locator('[data-action="mixin-continue"]').click();
-      const box = await page.locator('[data-sandbox-canvas]').boundingBox();
-      if (!box) throw new Error('No toy canvas');
-      const x = box.x + box.width / 2, y = box.y + box.height / 2;
-      await page.mouse.move(x, y); await page.mouse.down();
-      for (let n = 0; n < 34; n++) await page.mouse.move(x + (n % 2 ? -55 : 55), y, { steps: 2 });
-      await page.mouse.up();
-      await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-      await page.locator('[data-action="mix-continue"]').click();
+      await page.locator('[data-craft-section="mixins"]').click();
+      await page.locator('[data-craft-section="decor"]').click();
+
       await capture('decor');
-      await page.locator('[data-action="decor-continue"]').click();
+      await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
       await capture('finish');
       expect(errors).toEqual([]);
     } finally { await context.close(); }

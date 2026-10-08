@@ -131,7 +131,7 @@ test('first production paint gesture is visible before pointerup', async ({ page
 
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
 
   const canvas = page.locator('[data-sandbox-canvas]');

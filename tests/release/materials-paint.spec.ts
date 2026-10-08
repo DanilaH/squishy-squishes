@@ -10,7 +10,7 @@ const freshMaker = async (page: Page): Promise<ReturnType<Page['locator']>> => {
   const shell = page.locator('[data-sandbox-app]');
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator('.sandbox-shape[data-shape="soft-square"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
   return shell;
 };
@@ -21,20 +21,6 @@ const canvasBox = async (page: Page) => {
   return box;
 };
 
-const completeMix = async (page: Page): Promise<void> => {
-  const box = await canvasBox(page);
-  const cx = box.x + box.width * 0.5;
-  const cy = box.y + box.height * 0.5;
-  const points = [[cx + 70, cy], [cx, cy - 62], [cx - 70, cy], [cx, cy + 62]] as const;
-  await page.mouse.move(cx, cy);
-  await page.mouse.down();
-  for (let index = 0; index < 38; index += 1) {
-    const [x, y] = points[index % points.length]!;
-    await page.mouse.move(x, y, { steps: 2 });
-  }
-  await page.mouse.up();
-  await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-mix-progress'))).toBeGreaterThanOrEqual(1);
-};
 
 test('paint pointer can arm outside the squishy and begin drawing when it enters the surface', async ({ page }) => {
   await page.setViewportSize({ width: 1180, height: 760 });
@@ -53,16 +39,16 @@ test('paint pointer can arm outside the squishy and begin drawing when it enters
   await expect(shell).toHaveAttribute('data-paint-strokes', '1');
 });
 
-test('finish exposes six material identities and a new material persists through Save V3', async ({ page }) => {
+test('Base exposes six material identities and a new material persists through Save V3', async ({ page }) => {
   await page.setViewportSize({ width: 1180, height: 760 });
   const shell = await freshMaker(page);
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'mix');
-  await completeMix(page);
-  await page.locator('[data-action="mix-continue"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'finish');
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'decor');
+
+  await page.locator('[data-craft-section="decor"]').click();
+  await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
 
   const ids = ['soft', 'jelly', 'holo', 'marshmallow', 'pearl', 'chrome'] as const;
   await expect(page.locator('.sandbox-material')).toHaveCount(ids.length);

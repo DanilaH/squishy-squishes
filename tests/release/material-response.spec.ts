@@ -133,9 +133,9 @@ test('all six saved materials share tactile preview in Finish and Squeeze', asyn
     const canvas=page.locator('[data-sandbox-canvas]'),shell=page.locator('[data-sandbox-app]');
     await expect(canvas).toHaveAttribute('data-phaser-ready','true');
     const before=await page.evaluate(()=>localStorage.getItem('squishy.save.v3'));
-    for (const stage of ['squeeze','finish']) {
-      if(stage==='finish'){await page.locator('[data-action="edit-saved"]').click();await page.locator('[data-action="decor-continue"]').click();}
-      await expect(shell).toHaveAttribute('data-stage',stage); await expect(shell).toHaveAttribute('data-material',material);
+    for (const stage of ['squeeze','preview']) {
+      if(stage==='preview'){await page.locator('[data-action="edit-saved"]').click();await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click(); await page.locator('[data-action="try-on"]').click();}
+      await expect(shell).toHaveAttribute('data-stage',stage==='preview'?'shape':stage); await expect(shell).toHaveAttribute('data-material',material);
       const r=(await canvas.boundingBox())!, radius=await canvas.evaluate(el=>el.clientWidth*parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
       const x=r.x+r.width/2+radius*.45,y=r.y+r.height/2;
       await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+radius*.45,y-radius*.1,{steps:8});

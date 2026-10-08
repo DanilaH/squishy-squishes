@@ -120,6 +120,10 @@ const yandexState = async (page: Page): Promise<{
 });
 
 const clearStorageAndReload = async (page: Page): Promise<void> => {
+  // Initial eager furniture decoding may still be loading after DOM readiness.
+  // Finish it before the test deliberately reloads, so reload aborts are not
+  // mistaken for production asset failures by the fatal-error observer.
+  await page.waitForLoadState('networkidle');
   await page.evaluate(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -159,30 +163,6 @@ const drawSandboxStroke = async (
   await page.mouse.up();
 };
 
-const performRealMix = async (page: Page): Promise<void> => {
-  const box = await getCanvasBox(page);
-  const cx = box.x + box.width * 0.5;
-  const cy = box.y + box.height * 0.5;
-  const dx = Math.min(72, box.width * 0.2);
-  const dy = Math.min(64, box.height * 0.18);
-  const points = [
-    [cx + dx, cy],
-    [cx, cy - dy],
-    [cx - dx, cy],
-    [cx, cy + dy],
-  ] as const;
-
-  await page.mouse.move(cx, cy);
-  await page.mouse.down();
-  for (let index = 0; index < 36; index += 1) {
-    const [x, y] = points[index % points.length]!;
-    await page.mouse.move(x, y, { steps: 2 });
-  }
-  await page.mouse.up();
-
-  await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-mix-progress')))
-    .toBeGreaterThanOrEqual(1);
-};
 
 const craftMinimalToy = async (
   page: Page,
@@ -194,7 +174,7 @@ const craftMinimalToy = async (
   const shell = page.locator('[data-sandbox-app]');
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
 
   const box = await getCanvasBox(page);
@@ -202,14 +182,14 @@ const craftMinimalToy = async (
   const cy = box.y + box.height * 0.5;
   await page.locator('.sandbox-swatch').nth(paintColorIndex).click();
   await drawSandboxStroke(page, [[cx - 18, cy - 10], [cx, cy], [cx + 20, cy + 12]]);
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'mix');
-  await performRealMix(page);
-  await page.locator('[data-action="mix-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
-  await page.locator('[data-action="decor-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'finish');
+
+  await page.locator('[data-craft-section="decor"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'decor');
+  await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator(`.sandbox-material[data-material="${materialId}"]`).click();
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
@@ -223,14 +203,14 @@ const advanceFreshToyToDecor = async (
   const shell = page.locator('[data-sandbox-app]');
   await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'paint');
-  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'mixins');
-  await page.locator('[data-action="mixin-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'mix');
-  await performRealMix(page);
-  await page.locator('[data-action="mix-continue"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'decor');
+
+  await page.locator('[data-craft-section="decor"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
   return shell;
 };
@@ -484,6 +464,7 @@ test('delete is explicit, removes a middle toy only after confirmation, and pers
   const seeded = createFixtureSave(3);
   await seedSaveV3(page, seeded);
 
+  await page.locator('[data-room-manage]').click();
   const middleId = seeded.library[1]!.id;
   const beforeRaw = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
   await page.locator(`[data-library-delete-id="${middleId}"]`).click();
@@ -519,14 +500,12 @@ test('full 8-slot Library allows creation, mutates nothing before replacement, s
   await page.locator('[data-library-new]').first().click();
   const shell = page.locator('[data-sandbox-app]');
   await page.locator('.sandbox-shape[data-shape="paw"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
-  await performRealMix(page);
-  await page.locator('[data-action="mix-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
-  await page.locator('[data-action="decor-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'finish');
+  await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
   await page.locator('.sandbox-material[data-material="holo"]').click();
   await page.locator('[data-action="save"]').click();
 
@@ -534,7 +513,7 @@ test('full 8-slot Library allows creation, mutates nothing before replacement, s
   expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
   await page.locator('[data-library-replace-cancel]').click();
   await expect(page.locator('[data-library-replace-overlay]')).toHaveCount(0);
-  await expect(shell).toHaveAttribute('data-stage', 'finish');
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
   expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
 
   const targetIndex = 2;
@@ -542,6 +521,8 @@ test('full 8-slot Library allows creation, mutates nothing before replacement, s
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-library-replace-overlay]')).toBeVisible();
   await page.locator(`[data-library-replace-id="${targetId}"]`).click();
+  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
+  await page.locator('[data-library-replace-confirm]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
   await expect(shell).toHaveAttribute('data-shape', 'paw');
   await expect(shell).toHaveAttribute('data-material', 'holo');
@@ -565,20 +546,18 @@ test('S3 Decor authors identity through real UI, preserves paint/mix-ins, saves,
   await page.locator('[data-library-new]').first().click();
   const shell = page.locator('[data-sandbox-app]');
   await page.locator('.sandbox-shape[data-shape="heart"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   const box = await getCanvasBox(page);
   const cx = box.x + box.width * 0.5;
   const cy = box.y + box.height * 0.5;
   await drawSandboxStroke(page, [[cx - 26, cy - 12], [cx, cy], [cx + 28, cy + 14]]);
-  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
   await page.locator('[data-mixin="hearts"]').click();
   await page.mouse.click(cx - 22, cy + 10);
   await page.mouse.click(cx + 24, cy + 18);
-  await page.locator('[data-action="mixin-continue"]').click();
-  await performRealMix(page);
-  await page.locator('[data-action="mix-continue"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
-  await expect(shell).toContainText('5 / 6');
+  await expect(page.locator('.craft-sections')).toBeVisible();
   const decorBox = await getCanvasBox(page);
   const decorCx = decorBox.x + decorBox.width * 0.5;
   const decorCy = decorBox.y + decorBox.height * 0.5;
@@ -595,40 +574,38 @@ test('S3 Decor authors identity through real UI, preserves paint/mix-ins, saves,
   await expect(shell).toHaveAttribute('data-decor-mouth', 'cat');
   await expect(shell).toHaveAttribute('data-decor-blush', 'true');
 
-  await page.locator('[data-decor-section="stickers"]').click();
-  await page.locator('[data-decor-sticker="star"]').click();
+  await page.locator('button[data-decor-section="stickers"]').click(); await page.locator('[data-decor-sticker="star"]').click();
   await page.mouse.click(decorCx - 30, decorCy + 25);
-  await page.locator('[data-decor-sticker="flower"]').click();
+  await page.locator('button[data-decor-section="stickers"]').click(); await page.locator('[data-decor-sticker="flower"]').click();
   await page.mouse.click(decorCx + 34, decorCy + 28);
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '2');
-  await page.locator('[data-panel="decor"] [data-action="draft-undo"]').click();
+  await page.locator('.craft-actions [data-action="draft-undo"]').click();
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
-  await page.locator('[data-action="decor-clear"]').click();
+  await page.locator('button[data-decor-section="stickers"]').click(); await page.locator('[data-action="decor-clear"]').click();
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');
-  await page.locator('[data-decor-sticker="sparkle"]').click();
+  await page.locator('button[data-decor-section="stickers"]').click(); await page.locator('[data-decor-sticker="sparkle"]').click();
   await page.mouse.click(decorCx + 5, decorCy - 16);
   await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
   await expect(shell).toHaveAttribute('data-paint-strokes', paintStrokes ?? '0');
   await expect(shell).toHaveAttribute('data-mixin-count', mixinCount ?? '0');
 
-  await page.locator('[data-decor-section="accessory"]').click();
-  await page.locator('[data-decor-accessory="crown"]').click();
+  await page.locator('button[data-decor-section="accessory"]').click(); await page.locator('[data-decor-accessory="crown"]').click();
   await expect(shell).toHaveAttribute('data-decor-accessory', 'crown');
   await expect(page.locator('[data-sandbox-accessory]')).toBeVisible();
-  await page.locator('[data-decor-accessory="none"]').click();
+  await page.locator('button[data-decor-section="accessory"]').click(); await page.locator('[data-decor-accessory="none"]').click();
   await expect(shell).toHaveAttribute('data-decor-accessory', 'none');
   await expect(page.locator('[data-sandbox-accessory]')).toBeHidden();
-  await page.locator('[data-decor-accessory="cat-ears"]').click();
+  await page.locator('button[data-decor-section="accessory"]').click(); await page.locator('[data-decor-accessory="cat-ears"]').click();
   await expect(shell).toHaveAttribute('data-decor-accessory', 'cat-ears');
 
-  await page.locator('[data-action="decor-continue"]').click();
-  await expect(shell).toHaveAttribute('data-stage', 'finish');
-  await expect(shell).toContainText('6 / 6');
-  await page.locator('[data-action="finish-back"]').click();
+  await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
+  await expect(page.locator('.craft-actions')).toBeVisible();
+  await page.locator('[data-craft-section="decor"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'decor');
   await expect(shell).toHaveAttribute('data-decor-eyes', 'happy');
   await expect(shell).toHaveAttribute('data-decor-accessory', 'cat-ears');
-  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
   await page.locator('.sandbox-material[data-material="holo"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
@@ -739,8 +716,8 @@ for (const viewport of [
     const shell = await advanceFreshToyToDecor(page, 'mochi');
     await expect(shell).toHaveAttribute('data-stage', 'decor');
     await expectInViewport(page, page.locator('.sandbox-decor-tabs'));
-    await expectInViewport(page, page.locator('[data-action="decor-continue"]'));
-    await page.locator('[data-decor-section="accessory"]').click();
+    await expectInViewport(page, page.locator('[data-action="save"]'));
+    await page.locator('button[data-decor-section="accessory"]').click();
     const accessoryPanel = page.locator('[data-decor-panel="accessory"]');
     await expectInViewport(page, page.locator('[data-decor-accessory="crown"]'));
     if (viewport.name === 'short landscape') {

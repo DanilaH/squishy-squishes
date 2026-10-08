@@ -204,7 +204,7 @@ export class PhaserDeformableVolume {
     compression: number,
     renderCenterOffsetY = 0,
     pose: ToyPose = REST_TOY,
-    worldX = 0, worldY = 0,
+    worldX = 0, worldY = 0, physicalAngle = 0,
   ): void {
     const gl = this.gl;
     if (gl.isContextLost()) return;
@@ -226,8 +226,9 @@ export class PhaserDeformableVolume {
       const inset = simulation.projectUvToLocal(0.5 + (u - 0.5) * rimScale, 0.5 + (v - 0.5) * rimScale);
       const a = i * 4;
       const b = (n + i) * 4;
-      const front = posePoint(inset.x, inset.y + .025, pose);
-      const back = posePoint(deformed.x + thickness * .31, deformed.y - thickness, pose);
+      const rotate = (p: { x: number; y: number }) => ({ x: p.x * Math.cos(physicalAngle) + p.y * Math.sin(physicalAngle), y: -p.x * Math.sin(physicalAngle) + p.y * Math.cos(physicalAngle) });
+      const front = rotate(posePoint(inset.x, inset.y + .025, pose));
+      const back = rotate(posePoint(deformed.x + thickness * .31, deformed.y - thickness, pose));
       this.packed[a] = front.x;
       // Raise the side's inner rim into the opaque front, covering the
       // subpixel antialias transition without changing the outer silhouette.

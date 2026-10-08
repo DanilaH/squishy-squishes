@@ -53,7 +53,7 @@ test('rich new-content toys keep identity, face priority and complete gear acros
     expect(Number(await page.locator('.free-face-foreground').evaluate(node => getComputedStyle(node).zIndex))).toBeGreaterThan(Math.max(...depths));
     await page.screenshot({ path: `migration-baseline-evidence/free-craft/${toy.shapeId}-squeeze.png` });
     await page.locator('[data-action="edit-saved"]').click();
-    await page.locator('[data-action="decor-continue"]').click();
+    await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
     await page.screenshot({ path: `migration-baseline-evidence/free-craft/${toy.shapeId}-finish.png` });
     await page.reload();
   }

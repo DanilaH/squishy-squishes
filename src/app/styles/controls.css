@@ -1,4 +1,4 @@
-/* Shared production controls. Fit the viewport; never introduce a scroll tray. */
+/* Shared production controls. Keep the page fixed; scroll tall settings locally. */
 .sandbox-tools-overlay {
   position: fixed; inset: 0; z-index: 50; display: grid; place-items: center;
   padding: 12px; background: rgba(68, 43, 68, .32);
@@ -6,6 +6,8 @@
 .sandbox-tools-overlay[hidden] { display: none; }
 .sandbox-tools-dialog {
   width: min(520px, 100%); min-width: 0; box-sizing: border-box;
+  max-height: calc(100dvh - 24px); overflow-y: auto;
+  grid-auto-rows: max-content;
   display: grid; gap: 10px; padding: 16px;
   border: 2px solid #c7a9bc; border-radius: 22px; background: #fff7ed;
   color: #56375f; box-shadow: 0 8px 24px rgba(68, 43, 68, .2);

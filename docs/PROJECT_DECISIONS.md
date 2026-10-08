@@ -796,3 +796,342 @@ reviewed tactile profiles are unchanged. `tests/release/free-squeeze.spec.ts`
 covers swept collision, mouse carry/return at three viewports, touch carry plus
 second-finger deformation, attachment sizes, cancellation, unchanged saves and
 stationary Studio furniture. Publication requires the normal PR and Pages gates.
+
+## Physical free Squeeze follow-up — 7 October 2026
+
+The owner authorized the complete follow-up: preserve the room composition
+through Squeeze/Unpin, use the pedestal footing as the room floor, point-based
+inertial grab with rotation and centrifugal stretch, and material-dependent
+contact flattening, rebound and brief wall adhesion/sliding. The room remains
+opt-in; no new save schema, furniture placement rules or renderer is authorized.
+
+The free body owns translation/angular momentum and a spring at the grabbed
+point. Its transformed live contour supplies collision support; substeps bound
+fast travel. Off-center grip transfers torque, release retains spin, and catch
+preserves the current body pose. Force/rotation load and contact pressure feed
+the existing SquishSimulation spring targets, with bounded material compliance.
+Jelly is most compliant; Chrome least. Contact impulses use the local normal;
+wall adhesion has a finite duration and a cooldown, followed by falling. Floor
+support produces squash and lateral bulge; it does not simulate a flowing liquid.
+
+Physical rotation shares front/back skin projection and its inverse input
+mapping. Foreground face, accessory anchor/basis and rigid inclusion positions
+follow that projection. Free accessories allow full rotation; pinned accessory
+limits remain unchanged. Material constants for the existing pinned tactile
+profiles, Save V3, ads/rewards and the default Library are preserved.
+
+In the opt-in room, floor height is the measured pedestal bottom ellipse center
+(the same 0.85 art-frame ratio used by rugs). The workbench retains its CSS size
+container during Unpin. The room footer retains its layout space in Squeeze;
+the short-landscape heading has a fixed row height across font readiness and
+preview-to-live handoff. The exhibited thumbnail stays visible until the live
+Phaser surface is ready and reaches its first render frame, avoiding a blank
+room during startup.
+The original Studio desk remains anchored; its existing free-space floor is
+unchanged. Turning orientation returns to the pinned seat.
+
+Local verification (7 October 2026): `npm run release:check` passed, including
+strict TypeScript, web/Yandex builds and the unchanged upload size limit. The
+six visual scenarios (30 EN/RU baseline comparisons) passed without changing
+snapshots or tolerances. New cases cover three-size room geometry/floor/return,
+decorated Jelly/Chrome real pointer spin/contact, actual released throw and
+landing, preview-to-live handoff, six-material rotated-skin containment, catch
+without teleport, shortest-angle return, transient wall adhesion and spring
+material response/recovery. All 18 free-squeeze cases passed across focused
+runs: the three cold-start timeouts cleared in an isolated repeat, together
+with the updated shortest-angle unit case (4/4). Recorded real game motion
+accompanies local review.
+
+The broader browser regression is not green: 270/288 passed in the two-worker
+run. Its 18 failures include two pixel comparisons, cold renderer/test timeouts,
+an unloaded-font request and an exact default Hall table position comparison.
+The two pixel failures reproduce on untouched `79c4aa7`; aborted-font loading
+also reproduces there, while the default Hall geometry case passes serially on
+that baseline. Other broad failures have not all been isolated. This is not a
+claim of complete regression acceptance or readiness to merge/deploy.
+
+The environment could not fetch the pinned Chromium 153 archive. Local browser
+verification used Chromium 134 headless-shell with software WebGL via temporary
+config overrides; test timeouts, assertions and visual baselines were unchanged.
+GitHub push was rejected by automatic approval review because this new public
+source payload needs explicit owner authorization. All changes remain local;
+no new PR, CI, merge or deployment is established by this note.
+
+
+### Coupled surface grip and visible soft-body follow-through
+
+The free grip now captures UVs through the inverse rendered triangle mesh,
+then updates the body lever from that deformed UV point every frame. This
+allows a stretched tip to remain caught and makes catches use the live skin.
+Grip damping is relative to sampled hand velocity, with a finite idle fade.
+
+Held room loads distribute gravity and filtered hand acceleration through the
+existing spring mesh with zero weight at the caught tip and increasing weight
+through the body. Centrifugal load extends away from the grip; transverse
+narrowing retains a volume proxy. Hand acceleration is sampled independently:
+feeding the deforming grip's spring reaction back into its load created an
+unstable feedback loop. Release removes the grip load without clearing the
+existing field or vertex velocities. Contact compression is biased toward the
+contact side, with existing material-dependent recovery. The softer room-only
+damping does not change the published pinned tactile constants.
+
+A subtle transient contact ring shows the held surface point. Opt-in room
+Squeeze controls now occupy the reserved bottom UI band instead of the pedestal
+label, and the long duplicate label hint is hidden during play. Three-size
+room geometry, V3 persistence, second-finger deformation and Studio remain
+covered by the focused free-squeeze suite.
+
+This refinement passed release:check, 20 focused physics/browser scenarios,
+the stronger fast-spin recording case and all 30 unchanged visual baseline
+comparisons. The grip-field case also verifies six-material sag/recovery.
+A new 26-second real-game recording shows hanging, swing, loaded rotation,
+throw, collision and return. The earlier broad regression limitations above
+remain open; that full suite has not been rerun on this refinement. This is
+local visual-review work, without GitHub push or publication authorization.
+
+
+### Free-squeeze entry paused
+
+On 7 October 2026 the owner paused the free-flight interaction after visual
+review. The Squeeze panel no longer renders the Unpin / Отцепить button in
+Library or Studio. Pinned squeezing and its existing actions remain available.
+Experimental physics code is retained for possible later work; it is not
+reachable through the player UI. Browser scenarios that click the paused entry
+need an explicit diagnostic harness before this work can become a release PR.
+
+### Craft controls polish — 7 October 2026 (local review)
+
+The owner requested a more usable craft interface after pausing free flight.
+The craft heading now groups the step counter with its title instead of
+allowing the counter to collide with the title on short phones. Portrait
+heading tracks reserve 56px (48px on short phones), consistently across every
+step, giving the scene more height without moving the toy between stages.
+
+Arrange now exposes the selected object list, size and rotation sliders,
+Lock / Mirror / Delete actions and More in a fixed 132px contextual area.
+Colour, Copy and Reset open within that area; global Undo / Redo and Continue
+remain outside it. Opening settings disables the covered controls with inert,
+restores keyboard focus on close, and supports Escape even after history
+navigation disables its focused button. Locked pieces disable colour and
+transform inputs. Selected object chips stay within the horizontal list's
+visible area without scrolling the page. V3 encoding and renderer/physics
+are unchanged by this interface pass.
+
+The new craft-interface scenarios cover four screen/locale combinations,
+control hit targets, heading containment, colour undo/redo, settings focus,
+locking, deletion undo and size/rotation/colour persistence after reload.
+The existing rich-detail drag and full new-craft scenarios remain relevant.
+This is a local interface review; no push, CI, deployment or phone tactile
+acceptance is claimed.
+
+Validation: release:check passed for both production builds, including the
+Yandex upload limit. Twenty-two distinct focused browser/data scenarios passed;
+the four new interface scenarios were rerun after the Escape fix, and desktop
+was rerun after centering the hint. Six visual scenarios (30 captures) passed
+against the reviewed baselines; 18 craft-stage images were intentionally
+refreshed for the heading/tray changes, while Library/Ideas stayed unchanged.
+The prior full-suite limitations and paused Unpin scenarios remain open.
+
+### One freely navigable Workshop — 7 October 2026 (local review)
+
+The owner approved replacing the six-step creation flow with one Workshop,
+without a tutorial in this pass. New Squishy opens immediately on Base with
+an editable default toy. Four persistent sections switch the existing tools:
+Base (shape, material, optional light), Paint, Fillings and Decor. The same
+scene and draft survive section changes. Undo/Redo, Try it and Save have one
+shared action strip; any section can save a plain or decorated toy. The old
+Mix progress barrier and Next chain are no longer part of the player path.
+Internal stage identifiers still select existing renderer/authoring behaviour;
+this is not a new renderer, physics model or save schema.
+
+Brush selects its tool without opening a dialog; Settings contains brush size,
+palette themes, stamps and Clear. Fillings keeps Eraser, Settings and Clear
+outside the scrolling choices. Adding an accessory or placing a sticker opens
+its contextual editor immediately. Existing detail selection from Face/Details
+enters Arrange while retaining the original gesture owner; explicit sticker
+placement remains its own mode. The object list resolves overlaps. The colour
+button also exposes Copy/Reset. Squeeze's action now says Edit and reopens this
+same Workshop, with existing V3 identity preserved.
+
+Portrait navigation uses the former heading track. Short landscape uses a
+2×2 section group beside the tools, keeping 44px targets and the toy below it.
+The controls sit above the render buffer in hit testing; authoring pointer
+handling remains owned by Phaser. Preview hides tools without changing the
+scene geometry and returns to the previous section. Saving blocks authoring
+while awaiting persistence, and an error retains the editable draft for retry.
+
+The prior craft-interface test was superseded by the new workflow scenarios.
+The visual route now captures freely selected Paint, Decor and Base/Material
+instead of driving the retired mixing sequence. Older broad browser cases
+that explicitly assert the sequential stage path need migration before this
+branch can pass a release gate; they are not evidence against the new product
+contract. The earlier baseline failures and paused free-flight entry cases
+also remain recorded above. No push, CI, deployment or tutorial is included.
+
+Validation: release:check passed for both production builds and the Yandex
+upload limit. Thirteen focused workflow/data scenarios passed, covering RU/EN,
+portrait phones, short landscape and desktop, plain creation, preview, detail
+editing, history, same-ID saved editing and persistence-error retry. Seven
+gesture routing cases passed. Six visual scenarios (30 captures) passed after
+reviewing all 18 craft captures and updating Paint/Decor/Material baselines;
+Library/Ideas baselines stayed unchanged. Actual gameplay screenshots were
+also reviewed at 320, 568 and 1440 widths. The full older browser gate has not
+been rerun or claimed passing.
+
+### Independent Workshop review fixes — 7 October 2026 (local)
+
+An independent pass reproduced three state defects: a face-size slider recorded
+history without updating Undo/Redo, light-only edits bypassed the exit warning,
+and the next toy inherited the mix-in eraser and settings panel. History UI now
+updates when the editor closes a transaction. Exit checks compare the complete
+draft with its initial/loaded document, including light and brush settings;
+returning to that document with Undo is clean. New resets the mix-in tools and
+catalogue; selecting a filling also exits Eraser.
+
+Short landscape now uses one full-width section row, readable 12px labels and a
+larger toy beside the controls. At heights up to 350px, catalogues/contextual
+settings scroll within 88px while navigation and the shared action strip stay
+fixed. Detail settings hide the covered core and reset its scroll position;
+this prevents the clipped colour overlay from exposing underlying buttons.
+Light buttons keep their 44px targets after moving from Finish into Base.
+The Paint Settings dialog is bounded by the viewport and scrolls locally when
+its translated choices exceed the short landscape height, retaining 44px
+targets and returning keyboard focus to Settings.
+
+The broad regression pass also caught the release-session integration still
+counting only Finish → Squeeze. Successful creations now count from every
+Workshop section; saved edits and Library revisits remain excluded. New-workshop
+entry supplies the start event even without Paint. The existing 120s initial
+grace, 150s cooldown and three-action ad policy are unchanged.
+
+Browser paths were adapted to section navigation, shared history, Paint
+Settings, contextual placement and Try it. Save/V3/slot/reward assertions remain.
+Browser free-flight cases are explicitly skipped while Unpin is
+paused; its physics units stay active, and a new player-interface test checks
+that the button is absent. The two strict raster checks for paw-pad pixels and
+accessory alpha also fail on the unchanged `abab225` baseline with the same
+adapted test drivers. They remain active release-gate failures, not waived
+assertions or evidence that the Workshop fixes caused those differences.
+
+Final local validation: release:check passed (strict TypeScript, smoke checks,
+both production builds and the Yandex size limit). The 309-case release suite
+was covered in partitions with targeted reruns after fixes: 295 active cases
+passed, 12 owner-paused Unpin browser cases were skipped, and the two unchanged
+strict raster failures remain. This is not a green full release gate. The local
+software-GPU browser used a 120s test timeout; the checked-in 45s default was not
+changed. Initial eager asset requests are allowed to finish before test-directed
+reloads, so intentional reload cancellation is not reported as an asset failure.
+
+Six visual scenarios / 30 captures passed without updating snapshots after
+reviewing the six changed RU/EN landscape Paint/Decor/Material baselines. Other
+baselines stayed unchanged. Real gameplay captures were reviewed at 320 and
+568 widths. Short-screen face rows use their content height and a 44px blush
+button, avoiding label overlap and unscrollable clipping. Local commit only;
+no push, CI, deployment or tutorial work.
+
+### Workshop catalog layout — 2026-10-08 (local)
+
+Desktop Workshop panels now share a 940px width at viewports above 900px wide
+and at least 640px high. Catalog height scales from 160 to 208px; shape and
+accessory catalogs use five columns of 76px cards. Navigation and shared actions
+use 52px targets, with larger labels and choice art. Existing narrow-panel caps
+were removed for this desktop layout. Scene, section navigation and action-strip
+geometry remain stable across Base, Paint, Fillings and Decor.
+
+Overflowing shape, filling, material and accessory catalogs show a persistent
+proportional position indicator with a direction arrow. Catalogs retain native
+touch, wheel and keyboard scrolling; the indicator does not intercept input.
+Resize/content observation hides it for short content and compact settings,
+and observers are disconnected on disposal. Mobile retains the toy above the
+tools and a partially visible next catalog row. Physics, save formats and assets
+are unchanged. Desktop workspace assertions now expect 940px rather than 620px.
+
+Local release:check passed, including strict TypeScript, smoke checks, production
+builds and the Yandex size limit. The scoped layout/workflow regression has 39
+passing cases across RU/EN, phones, short landscape and desktop, including touch
+scrolling, selection, settings, history, save/reload and panel centering. Reviewed
+visual changes affect ten RU/EN Paint/Decor/Material baselines; Library and Ideas
+remain unchanged. All six visual scenarios / 30 captures then passed without
+updating snapshots. The full release suite was not rerun in this layout pass; its
+two previously recorded strict raster failures remain unresolved. Local browser
+timeouts and executable overrides are temporary; checked-in defaults remain.
+Local commit only; no push, CI, deployment or tutorial work.
+
+### Remaining screen polish — 2026-10-08 (local)
+
+The ordinary nonempty Library now browses the collection alone; choosing a toy
+opens a separate Squeeze view using the existing Phaser maker. The table gets
+more space in play, intentionally changing its geometry between browsing and
+play while staying stable during play. Empty shelves retain their welcome/table.
+Back buttons name their destination and restore collection scroll; newly saved
+toys are selected on return. Delete appears only in Manage mode, with the existing
+confirmation. Room remains opt-in (`roomReview=1`); its furniture slots, relative
+scales and clipping are unchanged. Room, collection and Squeeze keep distinct
+headings and return paths.
+
+The room editor uses a wider desktop panel and readable art/labels. Phones keep
+an internally scrolling catalog with its native input and proportional scroll
+hint. Short screens replace the category strip with a native select and reserve
+at least 72px for catalog content, keeping cancel/save visible. Colors and decor
+still save separately from V3; cancel and persistence/loading retries retain
+existing behavior. The shared scroll-hint helper now accepts a selector and is
+disposed when its host is replaced; Workshop's default selector is unchanged.
+
+Ideas show real renderer thumbnails, including target paint and optional
+fillings, without applying them to the player's draft. Desktop shows 12 cards
+per page; other sizes show four, preserving the page anchor when resized. The
+optional goal becomes an expandable 44px control in the topbar brand cell,
+without covering Workshop navigation. It retains the maker's required brand
+marker and restores the brand after completion; Escape closes its details.
+
+Full-shelf replacement now has two distinct actions: select an old toy, then
+confirm Replace & save. Selection and cancel do not mutate storage. The dialog
+shows the new preview, the selected old toy and an explicit return to creation.
+Short screens scroll only the card grid, leaving dialog actions accessible.
+Failed writes keep the draft, selection and original pager-disabled states for
+retry. Existing V3 migration, capacity/reward cadence, asset content, physics,
+Unpin pause and tutorial deferral are unchanged.
+
+Final local release:check passed: strict TypeScript, smoke/asset checks, both
+production builds and the Yandex size limit. The final functional runs passed
+28 cases (11 new screen scenarios plus Ideas and core save/migration workflows)
+and 16 Workshop catalog/settings/native-touch cases. Separate earlier scoped
+runs passed six card-pager and three room-decor failure/retry cases, plus Library,
+room-foundation and rewarded-expansion regressions. The completion regression
+caught during that run was fixed and passed in the final 28-case run. Reviewed
+visual updates affect exactly 12 RU/EN Library/Ideas baselines; the other 18
+captures remain unchanged. Six visual scenarios / 30 captures then passed
+without updating snapshots. Real unmasked game screenshots were reviewed at
+390, 568 and 1440 widths, including all seven room slots together; the new
+functional scenarios also cover 320 width. Browser emulation does not establish
+physical-phone acceptance. The full release suite was not rerun: the two
+previously recorded strict raster failures remain unresolved. This is not a
+green full release gate. Temporary browser overrides are not checked in.
+Local commit only; no push, CI, deployment or tutorial work.
+
+### UX freeze follow-up — 2026-10-08 (local)
+
+The four concrete findings in UX_FREEZE_REVIEW_2026-10-08 are addressed. A new
+craft explicitly clears the active Idea, guide and old completion notice; editing
+also clears that session context. The maker signals that intent through an
+optional callback to its Library owner rather than mutating completion credit.
+On portrait viewports up to 400px, the three post-save actions use two rows;
+Library's two play actions retain their layout. Mirror copy is named explicitly
+in RU/EN and retains its existing reflected-copy behavior. Object actions share
+available row width and wrap their labels.
+
+Accessory and sticker addition/copy controls reflect their existing 128-item
+limits with a visible explanation. Paired accessories require two free places;
+normal copies require one. Removal, transformations and undo remain available,
+and update control availability. No save format, durable capacity, physics,
+reward, tutorial, Unpin or asset changes.
+
+Local release:check passed. Ten new RU/EN tests cover Idea reset and completed
+notice lifetime, actual text boundaries/touch size at 320px, paired placement at
+127 items, limits at 128 accessories/stickers, deletion, undo and recovery across
+320 portrait, 568 landscape and 1440 desktop. Four existing editor/history cases
+and ten S4 Idea cases also passed. Six visual scenarios / 30 captures passed
+without changing snapshots. Real game captures were reviewed for the new rows,
+normal Mirror copy labels and limit explanation. This scoped result does not
+claim a green full release gate: the prior two raster failures were not fixed.
+Temporary local browser configuration is not checked in. No push, CI or deploy.

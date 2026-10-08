@@ -93,7 +93,7 @@ for (const locale of ['en-US', 'ru-RU']) {
         await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'decor');
         await expect(page.locator('[data-library-live]')).toHaveCount(0);
         await page.locator('[data-action="exit-craft"]').click();
-        await page.locator('[data-action="exit-confirm"]').click();
+        await expect(page.locator('[data-exit-overlay]')).toHaveCount(0); // Unchanged saved draft exits directly.
         await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view', 'room');
         await expect(page.locator('[data-library-table-ready]')).toHaveAttribute('data-library-table-ready', 'true');
         expect(await page.locator('.library-showcase-table').boundingBox()).toEqual(table);

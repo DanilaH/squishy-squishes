@@ -1,5 +1,5 @@
 import { getShape } from '../game/shapes';
-import { getDecorFrame, type DecorDocumentV1 } from './decor';
+import { getDecorFrame, MAX_DECOR_STICKERS, type DecorDocumentV1 } from './decor';
 import { accessoryPlacements, initialAccessoryPlacements, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
 import type { SandboxDraft } from './types';
 import type { StagePointer } from './StageGestureRouter';
@@ -18,6 +18,7 @@ interface EditorPort {
 }
 export class FreeCraftEditor {
   private selection: Selection = { kind: 'face' };
+  private moreOpen = false;
   private drag: { selection: Selection; x: number; y: number; before: DecorDocumentV1 } | null = null;
   private readonly abort = new AbortController();
   constructor(private readonly root: HTMLElement, private readonly ru: boolean, private readonly port: EditorPort) {
@@ -29,7 +30,12 @@ export class FreeCraftEditor {
       if (object) {
         const [kind, raw] = object.split(':');
         this.selection = kind === 'face' ? { kind } : { kind: kind as 'accessory' | 'sticker', index: Number(raw) };
-        this.refresh(); return;
+        this.moreOpen = false; this.refresh(); return;
+      }
+      if (button.dataset.objectAction === 'more' || button.dataset.objectAction === 'close-more') {
+        this.moreOpen = button.dataset.objectAction === 'more'; this.refresh();
+        this.root.querySelector<HTMLElement>(this.moreOpen ? '[data-object-action="close-more"]' : '[data-object-action="more"]')?.focus({ preventScroll: true });
+        return;
       }
       if(button.dataset.objectAction?.startsWith('color:')){const draft=this.port.get(),items=[...accessoryPlacements(draft.decor,getShape(draft.shapeId))];if(this.selection.kind==='accessory'){const item=items[this.selection.index]!;if(!item.locked){const value=button.dataset.objectAction.slice(6);items[this.selection.index]={...item,color:value==='body'?this.bodyColor():Number(value)};this.port.set({...draft.decor,accessory:null,accessories:items});this.refresh();}}return;}
       this.action(button.dataset.objectAction!);
@@ -43,6 +49,13 @@ export class FreeCraftEditor {
     root.addEventListener('change', event => {
       if (event.target instanceof HTMLInputElement && event.target.dataset.objectControl) { this.port.end(); this.refresh(); }
     }, { signal: this.abort.signal });
+    root.ownerDocument.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || !this.moreOpen || this.port.blocked()
+        || !root.querySelector<HTMLElement>('.free-object-more')?.getClientRects().length) return;
+      event.preventDefault();
+      this.moreOpen = false; this.refresh();
+      this.root.querySelector<HTMLElement>('[data-object-action="more"]')?.focus({ preventScroll: true });
+    }, { signal: this.abort.signal });
   }
   public dispose(): void { this.abort.abort(); }
   private bodyColor(): number {
@@ -55,7 +68,8 @@ export class FreeCraftEditor {
     return { x: Math.round((frame.eyesLeft.u + frame.eyesRight.u) * 127.5),
       y: Math.round((frame.eyesLeft.v + frame.mouth.v) * 127.5), s: 1 };
   }
-  public selectAccessory(index: number): void { this.selection = { kind: 'accessory', index }; this.refresh(); }
+  public selectAccessory(index: number): void { this.selection = { kind: 'accessory', index }; this.moreOpen = false; this.refresh(); }
+  public selectSticker(index: number): void { this.selection = { kind: 'sticker', index }; this.moreOpen = false; this.refresh(); }
   public refresh(): void {
     const panel = this.root.querySelector<HTMLElement>('[data-free-objects]'); if (!panel) return;
     const panelTop = panel.scrollTop;
@@ -75,14 +89,33 @@ export class FreeCraftEditor {
     const names: Record<string, readonly [string,string]> = {'cat-ears':['Cat ears','Ушки'],'bunny-ears':['Bunny ears','Ушки зайца'],horns:['Horns','Рожки'],bow:['Bow','Бантик'],crown:['Crown','Корона'],glasses:['Glasses','Очки'],headphones:['Headphones','Наушники'],'bucket-hat':['Bucket hat','Панамка'],'petal-flower':['Flower','Цветок'],leaves:['Leaves','Листики'],butterfly:['Butterfly','Бабочка'],cream:['Cream','Сливки'],cherry:['Cherry','Вишенка'],'heart-patch':['Patch','Пластырь'],handbag:['Bag','Сумочка'],wings:['Wing','Крылышко']};
     const name = (a: string) => names[a]?.[this.ru ? 1 : 0] ?? t('Detail','Деталь');
     const objectButton = (id: string, label: string) => `<button type="button" data-object="${id}" aria-pressed="${id === (selected.kind === 'face' ? 'face' : `${selected.kind}:${selected.index}`)}">${label}</button>`;
-    panel.innerHTML = `<div class="free-object-list" aria-label="${t('Objects', 'Объекты')}">${objectButton('face', t('Face', 'Личико'))}${items.map((item, i) => objectButton(`accessory:${i}`, `${i + 1} · ${name(item.a)}${item.locked ? ' 🔒' : ''}`)).join('')}${decor.stickers.map((item, i) => objectButton(`sticker:${i}`, `${t('Sticker', 'Наклейка')} ${i + 1}${item.locked ? ' 🔒' : ''}`)).join('')}</div>
-      <p class="free-object-hint">${t('Drag a detail on your squishy. Select overlapping pieces here.', 'Тяни деталь на сквише. Перекрытые детали выбирай здесь.')}</p>
-      <label>${t('Size', 'Размер')} <input data-object-control="scale" type="range" min="${selected.kind === 'face' ? .45 : selected.kind === 'sticker' ? .5 : .25}" max="${selected.kind === 'face' ? 1.65 : 2.5}" step=".01" value="${scale}" ${locked ? 'disabled' : ''}></label>
-      ${selected.kind === 'face' ? '' : `<label>${t('Rotation', 'Поворот')} <input data-object-control="rotation" type="range" min="-180" max="180" step="1" value="${rotation > 180 ? rotation - 360 : rotation}" ${locked ? 'disabled' : ''}></label>`}
-      ${selected.kind === 'accessory' ? `<div class="free-color-choices" aria-label="${t('Color','Цвет')}">${[[0xffa6cb,t('Pink','Розовый')],[0xcab0e8,t('Lavender','Лаванда')],[0xa1e2ce,t('Mint','Мята')],[0xffcea8,t('Peach','Персик')],[0xeec984,t('Gold','Золото')],[0xe8e5f0,t('Pearl','Перламутр')]].map(([color,label])=>`<button type="button" data-object-action="color:${color}" aria-label="${label}" style="--craft-color:#${Number(color).toString(16)}">●</button>`).join('')}<button type="button" data-object-action="color:body" aria-label="${t('Body colour','Цвет тела')}" style="--craft-color:#${this.bodyColor().toString(16)}">●</button></div>` : ''}
-      <div class="free-object-actions">${['reset', ...(selected.kind === 'face' ? [] : ['lock', 'duplicate', 'mirror', 'delete'])].map(action => `<button type="button" data-object-action="${action}">${({reset:t('Reset','Сброс'),lock:locked?t('Unlock','Открепить'):t('Lock','Закрепить'),duplicate:t('Copy','Копия'),mirror:t('Mirror','Зеркало'),delete:t('Delete','Удалить')} as Record<string,string>)[action]}</button>`).join('')}</div>`;
-    panel.scrollTop = panelTop;
-    const list = panel.querySelector('.free-object-list'); if (list) list.scrollLeft = listLeft;
+    const atLimit = selected.kind === 'accessory' ? items.length >= MAX_ACCESSORY_PLACEMENTS
+      : selected.kind === 'sticker' && decor.stickers.length >= MAX_DECOR_STICKERS;
+    const limitHint = atLimit ? t('Limit reached. Delete an item to add a copy.', 'Лимит достигнут. Удали деталь, чтобы добавить копию.') : '';
+    const actionButton = (action: string) => `<button type="button" data-object-action="${action}" ${action === 'lock' ? `aria-pressed="${!!locked}"` : action === 'more' ? `aria-expanded="${this.moreOpen}" aria-controls="free-object-more"` : ''} ${(action === 'reset' && locked) || (atLimit && (action === 'duplicate' || action === 'mirror')) ? 'disabled' : ''}>${({reset:t('Reset','Сброс'),lock:locked?t('Unlock','Открепить'):t('Lock','Закрепить'),duplicate:t('Copy','Копия'),mirror:t('Mirror copy','Парная копия'),delete:t('Delete','Удалить'),more:selected.kind === 'accessory' ? t('Color','Цвет') : t('More','Ещё')} as Record<string,string>)[action]}</button>`;
+    panel.innerHTML = `<div class="free-object-core" ${this.moreOpen && selected.kind !== 'face' ? 'hidden inert' : ''}><div class="free-object-list" aria-label="${t('Objects', 'Объекты')}">${objectButton('face', t('Face', 'Личико'))}${items.map((item, i) => objectButton(`accessory:${i}`, `${i + 1} · ${name(item.a)}${item.locked ? ' 🔒' : ''}`)).join('')}${decor.stickers.map((item, i) => objectButton(`sticker:${i}`, `${t('Sticker', 'Наклейка')} ${i + 1}${item.locked ? ' 🔒' : ''}`)).join('')}</div>
+      ${atLimit ? `<p class="decor-limit-notice" data-object-limit role="status">${limitHint}</p>` : ''}
+      <div class="free-object-transforms">
+        <label>${t('Size', 'Размер')} <input aria-label="${t('Size', 'Размер')}" data-object-control="scale" type="range" min="${selected.kind === 'face' ? .45 : selected.kind === 'sticker' ? .5 : .25}" max="${selected.kind === 'face' ? 1.65 : 2.5}" step=".01" value="${scale}" ${locked ? 'disabled' : ''}></label>
+        ${selected.kind === 'face' ? '' : `<label>${t('Rotation', 'Поворот')} <input aria-label="${t('Rotation', 'Поворот')}" data-object-control="rotation" type="range" min="-180" max="180" step="1" value="${rotation > 180 ? rotation - 360 : rotation}" ${locked ? 'disabled' : ''}></label>`}
+      </div>
+      <div class="free-object-actions">${(selected.kind === 'face' ? ['reset'] : ['lock','mirror','delete','more']).map(actionButton).join('')}</div>
+      </div><div class="free-object-more" id="free-object-more" role="group" aria-label="${t('Detail settings','Настройки детали')}" ${this.moreOpen && selected.kind !== 'face' ? '' : 'hidden'}>
+        <div class="free-object-more-heading"><strong>${selected.kind === 'accessory' ? name(items[selected.index]!.a) : t('Sticker','Наклейка')}</strong><button type="button" data-object-action="close-more" aria-label="${t('Close settings','Закрыть настройки')}">×</button></div>
+        ${selected.kind === 'accessory' ? `<div class="free-color-choices" aria-label="${t('Color','Цвет')}">${[[0xffa6cb,t('Pink','Розовый')],[0xcab0e8,t('Lavender','Лаванда')],[0xa1e2ce,t('Mint','Мята')],[0xffcea8,t('Peach','Персик')],[0xeec984,t('Gold','Золото')],[0xe8e5f0,t('Pearl','Перламутр')]].map(([color,label])=>`<button type="button" data-object-action="color:${color}" aria-label="${label}" aria-pressed="${'color' in current && current.color === color}" style="--craft-color:#${Number(color).toString(16)}" ${locked ? 'disabled' : ''}>●</button>`).join('')}<button type="button" data-object-action="color:body" aria-label="${t('Body colour','Цвет тела')}" aria-pressed="${'color' in current && current.color === this.bodyColor()}" style="--craft-color:#${this.bodyColor().toString(16)}" ${locked ? 'disabled' : ''}>●</button></div>` : ''}
+        ${atLimit ? `<p class="decor-limit-notice" data-object-limit role="status">${limitHint}</p>` : ''}
+        <div class="free-object-actions">${['duplicate','reset'].map(actionButton).join('')}</div>
+      </div>`;
+    panel.scrollTop = this.moreOpen ? 0 : panelTop;
+    const list = panel.querySelector('.free-object-list');
+    if (list) {
+      list.scrollLeft = listLeft;
+      const selectedButton = list.querySelector('[aria-pressed="true"]');
+      if (selectedButton) {
+        const tray = list.getBoundingClientRect(), item = selectedButton.getBoundingClientRect();
+        list.scrollLeft += Math.min(0, item.left - tray.left) + Math.max(0, item.right - tray.right);
+      }
+    }
     const colors = panel.querySelector('.free-color-choices'); if (colors) colors.scrollLeft = colorsLeft;
     if (focusKey && focusValue) {
       const attribute = focusKey.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase());
@@ -124,7 +157,7 @@ export class FreeCraftEditor {
       if (action === 'lock') { const {locked:_locked,...rest}=item; stickers[selected.index]=item.locked?rest:{...item,locked:true}; }
       else if(action==='delete')stickers.splice(selected.index,1);
       else if(action==='reset'&&!item.locked)stickers[selected.index]={...item,x:item.home?.[0]??item.x,y:item.home?.[1]??item.y,s:28,r:0};
-      else if((action==='duplicate'||action==='mirror')&&stickers.length<128){
+      else if((action==='duplicate'||action==='mirror')&&stickers.length<MAX_DECOR_STICKERS){
         const {locked:_locked,...copy}=item; const x=action==='mirror'?255-item.x:Math.min(255,item.x+12);
         stickers.push({...copy,x,home:[x,item.y],...(action==='mirror'?{r:255-item.r}:{})});
         this.selection={kind:'sticker',index:stickers.length-1};

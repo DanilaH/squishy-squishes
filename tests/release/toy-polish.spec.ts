@@ -73,7 +73,7 @@ test('real creation saves pearl stars and bow, with reduced motion and WebP fall
   await page.goto('/squishy-squishes/');
   await page.locator('[data-library-new]').first().click();
   await page.locator('[data-shape="mochi"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await page.locator('[data-paint-color="16742824"]').click();
   await page.locator('[data-paint-tool="fill"]').click();
   const body = page.locator('[data-sandbox-canvas]');
@@ -82,7 +82,7 @@ test('real creation saves pearl stars and bow, with reduced motion and WebP fall
   const x = box.x + box.width * .5;
   const y = box.y + box.height * .5;
   await page.mouse.click(x, y);
-  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
   await page.locator('[data-mixin="stars"]').click();
   for (const choice of await page.locator('.sandbox-mixin').all()) {
     expect(await choice.evaluate((el) => el.scrollWidth <= el.clientWidth + 2)).toBe(true);
@@ -92,16 +92,10 @@ test('real creation saves pearl stars and bow, with reduced motion and WebP fall
   await expect(page.locator('.toy-star-sprinkle')).toHaveCount(0);
   await mkdir('migration-baseline-evidence', { recursive: true });
   await page.screenshot({ path: 'migration-baseline-evidence/toy-sample-mixins-320.png' });
-  await page.locator('[data-action="mixin-continue"]').click();
-  await page.mouse.move(x, y); await page.mouse.down();
-  for (let n = 0; n < 38; n++) await page.mouse.move(x + (n % 2 ? -55 : 55), y, { steps: 2 });
-  await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
-  await page.locator('[data-decor-section="accessory"]').click();
-  await page.locator('[data-decor-accessory="bow"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
+  await page.locator('button[data-decor-section="accessory"]').click(); await page.locator('[data-decor-accessory="bow"]').click();
   expect(await page.locator('[data-sandbox-accessory]').evaluate((el) => el.getAnimations().length)).toBe(0);
-  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-material="jelly"]').click();
   await mkdir('migration-baseline-evidence', { recursive: true });
   await page.screenshot({ path: 'migration-baseline-evidence/toy-sample-created-320.png' });

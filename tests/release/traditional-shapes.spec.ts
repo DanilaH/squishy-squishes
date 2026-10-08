@@ -95,6 +95,10 @@ for (const locale of ['ru-RU', 'en-US']) {
           expect(rect!.x).toBeGreaterThanOrEqual(0);
           expect(rect!.x + rect!.width).toBeLessThanOrEqual(viewport.width + 1);
           expect(rect!.y + rect!.height).toBeLessThanOrEqual(viewport.height + 1);
+          expect(await choice.evaluate(el => {
+            const r = el.getBoundingClientRect();
+            return [r.top + 2, r.bottom - 2].every(y => el.contains(document.elementFromPoint(r.x + r.width / 2, y)));
+          })).toBe(true);
           // The established selection badge is intentionally outside the button.
           // Audit actual text/icons, while tray/page overflow stays strict below.
           const content = await choice.evaluate(el => {
@@ -114,13 +118,13 @@ for (const locale of ['ru-RU', 'en-US']) {
             expect(child.scroll <= child.client + 1, JSON.stringify(content)).toBe(true);
           }
         }
-        expect(await panel.evaluate(el => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+        expect(await panel.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
         expect(await page.evaluate(() => ({ x: document.documentElement.scrollWidth > innerWidth, y: document.documentElement.scrollHeight > innerHeight }))).toEqual({ x: false, y: false });
         await mkdir('migration-baseline-evidence', { recursive: true });
         await page.screenshot({ path: `migration-baseline-evidence/mold-choices-${locale}-${viewport.width}.png` });
         await page.locator('[data-shape="dumpling"]').click();
         await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-shape', 'dumpling');
-        await page.locator('[data-action="shape-continue"]').click();
+        await page.locator('[data-craft-section="paint"]').click();
         await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
       } finally { await context.close(); }
     });

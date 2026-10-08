@@ -21,8 +21,8 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
     await page.reload();
     await page.locator('[data-library-play-id="craft-settings"]').click();
     await page.locator('[data-action="edit-saved"]').click();
-    await page.locator('[data-action="stage-back"]').click();
-    await page.locator('[data-action="stage-back"]').click();
+    await page.locator('[data-craft-section="mixins"]').click();
+    await page.locator('[data-action="mixin-settings"]').click();
     const shell = page.locator('[data-sandbox-app]'), canvas = page.locator('[data-sandbox-canvas]');
     await expect(shell).toHaveAttribute('data-stage', 'mixins');
     const box = (await canvas.boundingBox())!;
@@ -31,29 +31,28 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
       const input = page.locator(`[data-mixin-setting="${setting}"]`);
       await input.fill(value!); await input.dispatchEvent('change');
     }
-    await page.locator('[data-mixin="bubbles"]').click();
+    await page.locator('[data-action="mixin-settings"]').click(); await page.locator('[data-mixin="bubbles"]').click();
     await page.mouse.move(x - 25, y); await page.mouse.down();
     await page.mouse.move(x + 25, y, { steps: 12 }); await page.mouse.up();
     const count = Number(await shell.getAttribute('data-mixin-count'));
     expect(count).toBeGreaterThan(2);
-    await page.locator('[data-action="mixin-undo"]').click();
+    await page.locator('.craft-actions [data-action="draft-undo"]').click();
     await expect(shell).toHaveAttribute('data-mixin-count', '0');
-    await page.locator('[data-panel="mixins"] [data-action="draft-redo"]').click();
+    await page.locator('.craft-actions [data-action="draft-redo"]').click();
     await expect(shell).toHaveAttribute('data-mixin-count', String(count));
     await page.locator('[data-mixin="flowers"]').click(); await page.mouse.click(x, y - 30);
     await page.locator('[data-action="mixin-erase"]').click(); await page.mouse.click(x, y - 30);
     expect(Number(await shell.getAttribute('data-mixin-count'))).toBeLessThan(count + 1);
-    await page.locator('[data-action="mixin-undo"]').click();
+    await page.locator('.craft-actions [data-action="draft-undo"]').click();
     await expect(shell).toHaveAttribute('data-mixin-count', String(count + 1));
-    await page.locator('[data-action="mixin-continue"]').click();
-    await page.locator('[data-action="mix-continue"]').click();
-    await page.locator('[data-action="decor-continue"]').click();
+    await page.locator('[data-craft-section="decor"]').click();
+    await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
     const stable = await canvas.boundingBox();
     const desk = await page.locator('[data-studio-desk]').boundingBox();
-    await page.locator('[data-finish-tab="light"]').click();
+    await page.locator('[data-base-tab="light"]').click();
     expect(await reachableControlIssues(page)).toEqual([]);
     await page.screenshot({ path: info.outputPath('free-craft-light.png') });
-    for (const action of await page.locator('.sandbox-finish-actions button').all()) {
+    for (const action of await page.locator('.craft-actions button').all()) {
       expect(await action.evaluate(node => {
         const r = node.getBoundingClientRect();
         return [r.top + 2, r.bottom - 2].every(y => node.contains(document.elementFromPoint(r.x + r.width / 2, y)));
@@ -79,17 +78,17 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
     await expect(shell).not.toHaveAttribute('data-squish-active', 'true');
     expect(await canvas.boundingBox()).toEqual(stable);
     expect(await page.locator('[data-studio-desk]').boundingBox()).toEqual(desk);
-    await page.locator('[data-panel="finish"] [data-action="draft-undo"]').click();
+    await page.locator('.craft-actions [data-action="draft-undo"]').click();
     await expect(axis).toHaveValue('-0.45');
     await page.touchscreen.tap(slider.x + slider.width * .75, slider.y + slider.height / 2);
     expect(Number(await axis.inputValue())).toBeGreaterThan(0);
     await expect(shell).toHaveAttribute('data-squish-active', 'false');
-    await page.locator('[data-panel="finish"] [data-action="draft-undo"]').click();
+    await page.locator('.craft-actions [data-action="draft-undo"]').click();
     await expect(axis).toHaveValue('-0.45');
     await axis.fill('0.8'); await axis.dispatchEvent('change');
-    await page.locator('[data-panel="finish"] [data-action="draft-undo"]').click();
+    await page.locator('.craft-actions [data-action="draft-undo"]').click();
     await expect(axis).toHaveValue('-0.45');
-    await page.locator('[data-panel="finish"] [data-action="draft-redo"]').click();
+    await page.locator('.craft-actions [data-action="draft-redo"]').click();
     await expect(axis).toHaveValue('0.8');
     await page.locator('[data-action="try-on"]').click();
     await expect(shell).toHaveAttribute('data-try-on', 'true');
@@ -101,7 +100,7 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
     expect(await canvas.boundingBox()).toEqual(stable);
     await page.locator('[data-action="light-reset"]').click();
     await expect(axis).toHaveValue('-0.45');
-    await page.locator('[data-panel="finish"] [data-action="draft-undo"]').click();
+    await page.locator('.craft-actions [data-action="draft-undo"]').click();
     await expect(axis).toHaveValue('0.8');
     await page.locator('[data-action="save"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'squeeze');
@@ -112,8 +111,8 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
     expect(saved.appearance.strokes).toEqual(toy.appearance.strokes);
     expect(saved.decor).toEqual(toy.decor);
     await page.reload(); await page.locator('[data-library-play-id="craft-settings"]').click();
-    await page.locator('[data-action="edit-saved"]').click(); await page.locator('[data-action="decor-continue"]').click();
-    await page.locator('[data-finish-tab="light"]').click(); await expect(axis).toHaveValue('0.8');
+    await page.locator('[data-action="edit-saved"]').click(); await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
+    await page.locator('[data-base-tab="light"]').click(); await expect(axis).toHaveValue('0.8');
     expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight || document.documentElement.scrollWidth > innerWidth)).toBe(false);
   });
 }

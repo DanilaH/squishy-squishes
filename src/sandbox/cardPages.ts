@@ -12,10 +12,11 @@ export const cardPagerMarkup = (language: SandboxLanguage): string => `
 
 export const showCardPage = (scope: HTMLElement, requested = 0): void => {
   const cards = [...scope.querySelectorAll<HTMLButtonElement>('[data-card-page-item]')];
-  const count = Math.max(1, Math.ceil(cards.length / CARDS_PER_PAGE));
+  const perPage = Math.max(1, Number(scope.dataset.cardsPerPage) || CARDS_PER_PAGE);
+  const count = Math.max(1, Math.ceil(cards.length / perPage));
   const page = Math.max(0, Math.min(requested, count - 1));
   scope.dataset.cardPage = String(page);
-  cards.forEach((card, index) => { card.hidden = Math.floor(index / CARDS_PER_PAGE) !== page; });
+  cards.forEach((card, index) => { card.hidden = Math.floor(index / perPage) !== page; });
   const prev = scope.querySelector<HTMLButtonElement>('[data-card-page-step="-1"]');
   const next = scope.querySelector<HTMLButtonElement>('[data-card-page-step="1"]');
   if (prev) prev.disabled = page === 0;
@@ -24,6 +25,6 @@ export const showCardPage = (scope: HTMLElement, requested = 0): void => {
   if (counter) counter.textContent = `${page + 1} / ${count}`;
   // A disabled paging control must not leave keyboard focus stranded.
   if (document.activeElement === prev && prev?.disabled || document.activeElement === next && next?.disabled) {
-    cards[page * CARDS_PER_PAGE]?.focus({ preventScroll: true });
+    cards[page * perPage]?.focus({ preventScroll: true });
   }
 };

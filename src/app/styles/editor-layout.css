@@ -241,3 +241,203 @@
   #app[data-jelly-ui-ready] .sandbox-shell[data-stage='finish'] .sandbox-material { min-height: 60px !important; }
   #app .free-light-panel { height: 128px; }
 }
+
+/* Compact, non-overlapping progress heading; every craft step shares its track. */
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active:not([data-library-live]) .sandbox-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: center; justify-content: center; align-items: center;
+  row-gap: 4px;
+}
+#app .sandbox-heading { display: flex; align-items: center; justify-content: center; gap: 8px; }
+#app .sandbox-heading > span {
+  margin: 0; min-height: 0; white-space: nowrap;
+  padding: 2px 10px; border-radius: 999px;
+  border: 1px solid #b06f2929; background: #fff9eded; color: #94531b;
+}
+#app .sandbox-heading > span:empty { display: none; }
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-heading > h1 {
+  margin: 0; font-size: clamp(21px, 5vw, 30px);
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy > p {
+  grid-column: 1 / -1; justify-self: center; margin: 0; font-size: 11px;
+}
+@media (orientation: portrait) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active:not([data-library-live]) {
+    grid-template-rows: 44px 56px minmax(0, 1fr) var(--studio-controls-height) 18px;
+  }
+}
+@media (max-height: 620px) and (orientation: portrait) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active:not([data-library-live]) {
+    grid-template-rows: 44px 48px minmax(0, 1fr) var(--studio-controls-height) 18px;
+  }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active:not([data-library-live]) .sandbox-copy {
+    justify-content: start; column-gap: 5px;
+  }
+  #app .sandbox-heading { justify-content: start; gap: 5px; }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-copy > p { justify-self: start; }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-heading > h1 { font-size: 18px; }
+}
+
+/* Selection, transforms and core actions fit without vertical scrolling. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .sandbox-panel--decor {
+  grid-template-rows: 44px 132px 44px; padding: 6px; gap: 4px;
+}
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] .free-object-panel,
+#app .free-object-panel {
+  position: relative; height: 132px; overflow-y: hidden;
+}
+#app .free-object-transforms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+#app .free-object-transforms > label { min-width: 0; gap: 4px; font-size: 11px; }
+#app .free-object-transforms > label:only-child { grid-column: 1 / -1; }
+#app .free-object-transforms input { width: 0; height: 44px; margin: 0; }
+#app .free-object-actions { flex-wrap: nowrap; gap: 4px; }
+#app .free-object-actions > button { flex: 1; min-width: 0; padding-inline: 2px; font-size: 11px; }
+#app .free-object-actions [data-object-action='delete'] { color: #9d3c58; }
+#app .free-object-actions [aria-pressed='true'] { background: #f2deed; border-color: #84508f; }
+#app .free-object-more { position: absolute; inset: 0; background: #fff8f0; z-index: 2; }
+#app .free-object-more-heading { display: flex; height: 44px; align-items: center; justify-content: space-between; font-size: 12px; }
+#app .free-object-more-heading > button { width: 44px; padding: 0; font-size: 24px; }
+#app .free-color-choices [aria-pressed='true'] { border-color: #84508f; box-shadow: inset 0 0 0 1px #84508f; }
+#app .free-object-panel button:focus-visible { outline: 2px solid #84508f; outline-offset: -2px; }
+
+/* Free creation: four tool sections, one scene and a permanent action strip. */
+#app [data-craft-workspace] .craft-sections,
+#app [data-craft-workspace] .craft-actions { display: none; }
+#app [data-crafting='true'] .sandbox-copy > :is(.sandbox-heading,p) { display: none; }
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) {
+  grid-template-rows: 44px 44px minmax(0,1fr) var(--studio-controls-height) 18px;
+}
+#app [data-crafting='true'] .craft-sections {
+  display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px;
+  width: min(100%,var(--craft-panel-width,620px)); margin-inline: auto; pointer-events: auto;
+}
+#app .craft-sections button, #app .craft-base-tabs button,
+#app .craft-actions > button, #app .craft-brush-sizes button {
+  min-width: 0; min-height: 44px; border: 1px solid #ddc5d2; border-radius: 12px;
+  background: #fffdfa; color: #56375f; font: inherit; font-size: 12px; font-weight: 800;
+  padding: 4px;
+}
+#app .craft-sections [aria-pressed='true'], #app .craft-base-tabs [aria-pressed='true'] {
+  background: #f2deed; border-color: #84508f; box-shadow: inset 0 0 0 1px #84508f;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='true'] .sandbox-controls {
+  display: grid; grid-template-columns: minmax(0,1fr); grid-template-rows: minmax(0,1fr) 44px;
+  gap: 4px; align-content: stretch; justify-items: center; z-index: 20;
+}
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='true'] .sandbox-copy { z-index: 20; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-panel {
+  padding: 6px; gap: 4px; align-self: end; width: min(100%,var(--craft-panel-width,620px));
+}
+#app [data-crafting='true'] .craft-actions {
+  display: flex; gap: 6px; width: min(100%,var(--craft-panel-width,620px)); margin-inline: auto;
+}
+#app .craft-actions > button { flex: 1; }
+#app[data-jelly-ui-ready] .craft-actions > .sandbox-primary {
+  min-height: 44px !important; background: transparent url('../../experiments/phaser/ui-assets/honey-wide.webp') center / 100% 100% no-repeat;
+  color: #fffef6; -webkit-text-stroke: .75px #945315; border: 0; font-size: 13px;
+}
+#app .craft-base-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; }
+#app [data-crafting='true'] .free-shape-catalog { height: 132px; }
+#app [data-base-panel='material'] { height: 132px; overflow-y: auto; grid-template-columns: repeat(3,minmax(0,1fr)); }
+#app [data-base-panel='material'] .sandbox-material { min-height: 60px !important; padding: 4px; font-size: 11px; }
+#app [data-base-panel='light'] { height: 132px; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-panel--decor { grid-template-rows: 44px 132px; }
+#app [data-crafting='true'] .sandbox-paint-tools { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); }
+#app [data-crafting='true'] .free-mixin-catalog { height: 132px; }
+#app .craft-mixin-tools { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; }
+#app .craft-mixin-tools button { min-height: 44px; }
+#app .craft-brush-sizes { display: flex; gap: 8px; }
+#app .craft-brush-sizes button { flex: 1; }
+#app [data-try-on='true'][data-crafting='true'] .sandbox-copy { visibility: hidden; }
+@media (max-width: 360px) { #app .craft-sections button { font-size: 10px; padding-inline: 1px; } }
+@media (max-height: 520px) and (orientation: landscape) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) { grid-template-rows: 44px 44px minmax(0,1fr) 18px; }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='true'] .sandbox-copy {
+    position: relative; grid-column: 1 / -1; grid-row: 2; left: auto; top: auto; width: 100%;
+  }
+  #app .craft-sections button { font-size: 12px; padding-inline: 2px; }
+  #app [data-crafting='true'] .craft-sections { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) .sandbox-canvas {
+    --squish-seat-size: min(96vh,380px,calc(80vw - 32px),180cqh); top: 50%;
+  }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-decor-tabs > button { font-size: 11px; padding-inline: 2px; }
+  #app [data-crafting='true'] .decor-tab-icon { display: none; }
+}
+
+#app[data-jelly-ui-ready] .craft-actions > [data-action='save']::before { display: none !important; }
+
+@media (max-height: 520px) and (orientation: landscape) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) .sandbox-stage { grid-row: 3; padding-top: 0; }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) .sandbox-controls { grid-row: 3; }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) .sandbox-status { grid-row: 4; }
+}
+@media (max-height: 350px) and (orientation: landscape) {
+  #app [data-crafting='true'] :is(.free-shape-catalog,.free-mixin-catalog,[data-base-panel='material'],[data-base-panel='light']) { height: 88px; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-panel--decor { grid-template-rows: 44px 88px; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-decor-section { min-height: 88px; height: 88px; overflow-y: auto; align-content: start; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='face'] { grid-template-rows: max-content max-content; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='face'] .sandbox-decor-toggle { height: 44px; align-self: start; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .free-object-panel { height: 88px; overflow-y: auto; }
+  #app [data-crafting='true'] .free-object-more { overflow-y: auto; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-palette-grid { height: 88px; overflow-y: auto; grid-auto-rows: 44px; overscroll-behavior: contain; touch-action: pan-y; }
+}
+
+#app [data-crafting='true'] .free-light-panel button { min-height: 44px !important; }
+
+/* Explicit progress remains visible on touch devices with overlay scrollbars. */
+#app .craft-scroll-host { position: relative; }
+#app [data-catalog-scroll] { padding-right: 18px; scrollbar-width: none; }
+#app [data-catalog-scroll]::-webkit-scrollbar { display: none; }
+#app .craft-scroll-rail {
+  position: absolute; width: 10px; border-radius: 6px; background: #ead6e2;
+  pointer-events: none; z-index: 3;
+}
+#app .craft-scroll-rail > span { display: block; width: 6px; margin-left: 2px; border-radius: 4px; background: #9862a1; }
+#app .craft-scroll-rail::after { content: '↓'; position: absolute; bottom: 0; left: -1px; font: bold 15px/20px sans-serif; color: #76507e; }
+#app .craft-scroll-rail[data-at-end='true']::after { content: '↑'; }
+@media (min-width: 901px) and (min-height: 640px) {
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) {
+    --craft-panel-width: 940px;
+    --craft-catalog-height: clamp(160px,22dvh,208px);
+    --studio-controls-height: calc(var(--craft-catalog-height) + 154px);
+    grid-template-rows: 44px 52px minmax(0,1fr) var(--studio-controls-height) 18px;
+  }
+  #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='true'] .sandbox-controls { grid-template-rows: minmax(0,1fr) 52px; gap: 8px; width: min(100%,var(--craft-panel-width)); }
+  #app [data-crafting='true'] .craft-sections { gap: 8px; }
+  #app [data-crafting='true'] :is(.craft-sections,.craft-base-tabs,.sandbox-decor-tabs) button,
+  #app [data-crafting='true'] .craft-actions > button { min-height: 52px !important; font-size: 15px; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-panel {
+    height: calc(var(--craft-catalog-height) + 84px); padding: 12px; gap: 8px;
+    max-width: none;
+    grid-template-rows: 52px minmax(0,1fr);
+  }
+  #app [data-crafting='true'] :is(.free-shape-catalog,.free-mixin-catalog,[data-base-panel='material'],[data-base-panel='light']) { height: var(--craft-catalog-height); }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-decor-section,
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .free-object-panel { height: var(--craft-catalog-height); min-height: 0; }
+  #app [data-crafting='true'] .free-shape-catalog,
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='accessory'] > .sandbox-decor-grid {
+    grid-template-columns: repeat(5,minmax(0,1fr)); grid-auto-rows: 76px; gap: 8px;
+    max-height: none; align-content: start;
+  }
+  #app [data-crafting='true'] .free-mixin-catalog .sandbox-mixin-grid { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 8px; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] :is(.sandbox-shape,.sandbox-mixin,.sandbox-material,.sandbox-decor-choice) { min-height: 76px !important; font-size: 14px; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] :is(.sandbox-shape > span:last-child,.sandbox-mixin small,.sandbox-decor-choice small) { font-size: 14px; line-height: 1.2; }
+  #app [data-crafting='true'] .toy-choice-art { width: 64px; max-height: 40px; }
+  #app [data-crafting='true'] .free-object-panel :is(button,label),
+  #app [data-crafting='true'] .free-object-actions > button { min-height: 52px; font-size: 14px; }
+  #app [data-crafting='true'] .free-object-more-heading { height: 52px; font-size: 15px; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='face'] { grid-template-rows: max-content max-content; align-content: start; overflow-y: auto; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='face'] .sandbox-decor-toggle { height: 76px; width: 92px; align-self: start; font-size: 14px; }
+  #app [data-crafting='true'] .free-color-choices button { min-width: 52px; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='paint'][data-crafting='true'] .sandbox-panel,
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='mixins'][data-crafting='true'] .sandbox-panel { grid-template-rows: minmax(0,1fr) 52px; }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='paint'][data-crafting='true'] .sandbox-palette-grid {
+    grid-template-columns: repeat(9,60px); gap: 12px; grid-auto-rows: 60px; justify-content: center; align-content: center;
+  }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage='paint'][data-crafting='true'] .sandbox-swatch { width: 60px; height: 60px; }
+  #app [data-crafting='true'] :is(.sandbox-paint-tools,.craft-mixin-tools) button { font-size: 14px; }
+}

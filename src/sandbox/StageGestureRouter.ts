@@ -95,6 +95,9 @@ export class StageGestureRouter {
       if (!this.host.beginDecorEdit?.(pointer)) return false;
       this.owner = pointer.id; return true;
     }
+    if (this.stage === 'decor' && this.decorSection !== 'stickers' && this.host.beginDecorEdit?.(pointer)) {
+      this.owner = pointer.id; return true;
+    }
     if (this.stage === 'paint') {
       this.host.authoringBegin?.();
       const paintPoint = this.host.paintPointToUv(pointer.x, pointer.y);

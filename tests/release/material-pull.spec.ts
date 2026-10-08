@@ -57,7 +57,7 @@ for (const shape of SHAPES) test(`long Jelly pull and returning regrab remain or
   sim.cancel(); expect(sim.snapshot().squeezes).toBe(1);
 });
 
-for (const [width, height, stage, touch] of [[390,844,'squeeze',false], [1440,900,'finish',false], [568,320,'squeeze',true]] as const)
+for (const [width, height, stage, touch] of [[390,844,'squeeze',false], [1440,900,'preview',false], [568,320,'squeeze',true]] as const)
 test(`captured Jelly follows outside the canvas and releases cleanly ${stage} ${width} touch=${touch}`, async ({browser, baseURL}, info) => {
   const context = await browser.newContext({baseURL, viewport:{width,height}, hasTouch:touch, reducedMotion:'reduce'});
   const page = await context.newPage();
@@ -69,7 +69,7 @@ test(`captured Jelly follows outside the canvas and releases cleanly ${stage} ${
     await page.reload(); await page.locator('[data-library-play-id="long"]').click();
     const canvas=page.locator('[data-sandbox-canvas]'), shell=page.locator('[data-sandbox-app]');
     await expect(canvas).toHaveAttribute('data-phaser-ready','true');
-    if(stage==='finish'){await page.locator('[data-action="edit-saved"]').click();await page.locator('[data-action="decor-continue"]').click();}
+    if(stage==='preview'){await page.locator('[data-action="edit-saved"]').click();await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click(); await page.locator('[data-action="try-on"]').click();}
     const before=await page.evaluate(()=>localStorage.getItem('squishy.save.v3'));
     const box=(await canvas.boundingBox())!, radius=await canvas.evaluate(el=>el.clientWidth*parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
     const start={x:box.x+box.width/2+radius*.5,y:box.y+box.height/2};
