@@ -9,9 +9,9 @@ const open = async (page: Page): Promise<void> => {
 const reachFinish = async (page: Page): Promise<void> => {
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!box) throw new Error('Missing real Phaser workbench');
   const x = box.x + box.width / 2;
@@ -20,10 +20,12 @@ const reachFinish = async (page: Page): Promise<void> => {
   await page.mouse.down();
   for (let n = 0; n < 22; n += 1) await page.mouse.move(x + (n % 2 ? -65 : 65), y, { steps: 3 });
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
-  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'finish');
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
 };
 
 const seedFullShelf = async (page: Page): Promise<void> => {
@@ -58,7 +60,7 @@ test('M5: a failed durable save stays on Finish and never emits a completed craf
   await page.evaluate(() => window.__squishyPhaserPlatform!.setSaveWriteFailure(true));
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-save-complete', 'false');
-  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'finish');
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
   expect((await page.evaluate(() => window.__squishyPhaserPlatform!.readSave())).library).toHaveLength(0);
   expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).filter((event) => event.startsWith('analytics:craft_save:'))).toHaveLength(0);
   await page.evaluate(() => window.__squishyPhaserPlatform!.setSaveWriteFailure(false));
@@ -111,11 +113,12 @@ test('saved redecorating failure preserves the original and retry updates the sa
   await page.locator('[data-action="edit-saved"]').click();
   await page.locator('[data-decor-section="accessory"]').click();
   await page.locator('[data-decor-accessory="bow"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.evaluate(() => window.__squishyPhaserPlatform!.setSaveWriteFailure(true));
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-save-complete', 'false');
-  await expect(shell).toHaveAttribute('data-stage', 'finish');
+  await expect(shell).toHaveAttribute('data-stage', 'shape');
   expect(await page.evaluate(() => window.__squishyPhaserPlatform!.readSave())).toEqual(before);
   await page.evaluate(() => window.__squishyPhaserPlatform!.setSaveWriteFailure(false));
   await page.locator('[data-action="save"]').click();
@@ -125,11 +128,12 @@ test('saved redecorating failure preserves the original and retry updates the sa
   expect(after.totalCrafts).toBe(before.totalCrafts);
   expect(after.library[0]!.id).toBe(before.library[0]!.id);
   expect(after.library[0]!.createdAt).toBe(before.library[0]!.createdAt);
-  expect(after.library[0]!.decor.accessory).toBe('bow');
+  expect(after.library[0]!.decor.accessories?.map(item => item.a)).toEqual(['bow']);
   // Repeated saved edits must not become new completed-craft/ad actions.
   for (let n = 0; n < 2; n++) {
     await page.locator('[data-action="edit-saved"]').click();
-    await page.locator('[data-action="decor-continue"]').click();
+    await page.locator('[data-craft-section="shape"]').click();
+    await page.locator('[data-base-tab="material"]').click();
     await page.locator('[data-action="save"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'squeeze');
   }
@@ -138,7 +142,7 @@ test('saved redecorating failure preserves the original and retry updates the sa
   expect(await page.evaluate(() => window.__squishyPhaserPlatform!.getSdkCounters()?.interstitials)).toBe(0);
   await page.reload();
   await page.locator(`[data-library-play-id="${before.library[0]!.id}"]`).click();
-  await expect(shell).toHaveAttribute('data-decor-accessory', 'bow');
+  await expect(page.locator('[data-accessory-index="0"]')).toHaveAttribute('data-accessory-id', 'bow');
 });
 
 test('rich free-craft edit survives blocked input and refused persistence without replacing its original', async ({ page }) => {
@@ -166,10 +170,11 @@ test('rich free-craft edit survives blocked input and refused persistence withou
   await page.locator('[data-object-action="reset"]').dispatchEvent('click');
   await page.evaluate(() => window.__squishyPhaserPlatform!.setBlocked(false));
   await expect(scale).toHaveValue('0.65');
-  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.evaluate(() => window.__squishyPhaserPlatform!.setSaveWriteFailure(true));
   await page.locator('[data-action="save"]').click();
-  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'finish');
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
   expect((await page.evaluate(() => window.__squishyPhaserPlatform!.readSave())).library[0]).toEqual(toy);
   await page.evaluate(() => window.__squishyPhaserPlatform!.setSaveWriteFailure(false));
   await page.locator('[data-action="save"]').click();

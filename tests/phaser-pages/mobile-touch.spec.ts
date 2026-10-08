@@ -21,7 +21,7 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     const canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('[data-shape="heart"]').tap();
-    await page.locator('[data-action="shape-continue"]').tap();
+    await page.locator('[data-craft-section="paint"]').tap();
     const shell = page.locator('[data-sandbox-app]');
     await expect(shell).toHaveAttribute('data-stage', 'paint');
 
@@ -53,6 +53,7 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     await page.touchscreen.tap(paint.x, paint.y);
     await expect(shell).toHaveAttribute('data-paint-strokes', '1');
     await page.locator('[data-paint-tool="paint"]').tap();
+    if (await page.locator('[data-tools-overlay]').isHidden()) await page.locator('[data-action="paint-settings"]').click();
     await expect(page.locator('[data-tools-overlay]')).toBeVisible();
     await page.locator('[data-paint-stamp="none"]').tap();
 
@@ -65,13 +66,13 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     }
     await touch('touchEnd');
     await expect(shell).toHaveAttribute('data-paint-strokes', '2');
-    await page.locator('[data-action="paint-continue"]').tap();
+    await page.locator('[data-craft-section="mixins"]').tap();
 
     await page.locator('[data-mixin="pearls"]').tap();
     const mixin = await bounds();
     await page.touchscreen.tap(mixin.x, mixin.y);
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-mixin-count', '1');
-    await page.locator('[data-action="mixin-continue"]').tap();
+    await page.locator('[data-action="try-on"]').tap();
 
     const mix = await bounds();
     await touch('touchStart', mix.x, mix.y);
@@ -79,13 +80,15 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
       await touch('touchMove', mix.x + (n % 2 ? -55 : 55), mix.y);
     }
     await touch('touchEnd');
-    await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-    await page.locator('[data-action="mix-continue"]').tap();
+    await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+    await page.locator('[data-action="try-return"]').tap();
+    await page.locator('[data-craft-section="decor"]').tap();
     await page.locator('[data-decor-section="stickers"]').tap();
     const decor = await bounds();
     await page.touchscreen.tap(decor.x, decor.y);
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-decor-sticker-count', '1');
-    await page.locator('[data-action="decor-continue"]').tap();
+    await page.locator('[data-craft-section="shape"]').tap();
+    await page.locator('[data-base-tab="material"]').tap();
     await page.locator('[data-material="holo"]').tap();
     await page.locator('[data-action="save"]').tap();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
@@ -130,9 +133,9 @@ test('DPR 3 phone keeps the tactile Phaser framebuffer in CSS pixels', async ({ 
     await page.locator('[data-library-new]').first().tap();
     const canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
-    await page.locator('[data-action="shape-continue"]').tap();
-    await page.locator('[data-action="paint-continue"]').tap();
-    await page.locator('[data-action="mixin-continue"]').tap();
+    await page.locator('[data-craft-section="paint"]').tap();
+    await page.locator('[data-craft-section="mixins"]').tap();
+    await page.locator('[data-action="try-on"]').tap();
 
     const mixBox = await canvas.boundingBox();
     if (!mixBox) throw new Error('Missing mix surface');
@@ -144,9 +147,11 @@ test('DPR 3 phone keeps the tactile Phaser framebuffer in CSS pixels', async ({ 
       await page.mouse.move(cx + (i % 2 ? -65 : 65), cy, { steps: 2 });
     }
     await page.mouse.up();
-    await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-    await page.locator('[data-action="mix-continue"]').tap();
-    await page.locator('[data-action="decor-continue"]').tap();
+    await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+    await page.locator('[data-action="try-return"]').tap();
+    await page.locator('[data-craft-section="decor"]').tap();
+    await page.locator('[data-craft-section="shape"]').tap();
+    await page.locator('[data-base-tab="material"]').tap();
     await page.locator('[data-action="save"]').tap();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
 

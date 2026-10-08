@@ -117,7 +117,7 @@ for (const view of views) {
       await check(page, `${view.name}/shape`);
       await page.screenshot({ path: info.outputPath(`studio-v8-${view.name}-shape.png`), animations: 'disabled' });
       await page.locator('button[data-shape="heart"]').click();
-      await page.locator('[data-action="shape-continue"]').click();
+      await page.locator('[data-craft-section="paint"]').click();
       await expect(shell).toHaveAttribute('data-stage', 'paint');
       await expect(shell.locator('[data-studio-desk]')).toHaveAttribute('data-studio-desk', '');
       await check(page, `${view.name}/paint`);
@@ -128,7 +128,7 @@ for (const view of views) {
       await page.mouse.down();
       await page.mouse.move(box.x + box.width / 2 + 12, box.y + box.height / 2 + 12, { steps: 3 });
       await page.mouse.up();
-      await page.locator('[data-action="paint-continue"]').click();
+      await page.locator('[data-craft-section="mixins"]').click();
       await expect(shell).toHaveAttribute('data-stage', 'mixins');
       await expect(shell).toHaveClass(/studio-env-active/);
       await expect(shell.locator('.studio-env-floor, .studio-env-stage-art')).toHaveCount(2);

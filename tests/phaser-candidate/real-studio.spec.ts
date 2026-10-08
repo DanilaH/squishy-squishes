@@ -33,7 +33,7 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
   await enter(page, 'shape');
   await page.locator('[data-shape="heart"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-shape', 'heart');
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await enter(page, 'paint');
 
   const paint = await canvasCenter(page);
@@ -43,7 +43,7 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
   await page.mouse.move(paint.x + paint.radius * 0.35, paint.y + paint.radius * 0.1, { steps: 10 });
   await page.mouse.up();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-paint-strokes', '1');
-  await page.locator('[data-action="paint-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
   await enter(page, 'mixins');
 
   await page.locator('[data-mixin="pearls"]').click();
@@ -57,8 +57,8 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
   }).toBeGreaterThan(4);
   // Pearls now belong to the deforming WebGL surface; the old DOM overlay hid faces.
   await expect(page.locator('[data-sandbox-rigid-mixins]')).toBeHidden();
-  await page.locator('[data-action="mixin-continue"]').click();
-  await enter(page, 'mix');
+  await page.locator('[data-action="try-on"]').click();
+  await enter(page, 'mixins');
   const mixing = await canvasCenter(page);
   await page.mouse.move(mixing.x, mixing.y);
   await page.mouse.down();
@@ -66,8 +66,9 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
     await page.mouse.move(mixing.x + (n % 2 === 0 ? 65 : -65), mixing.y, { steps: 3 });
   }
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
   await enter(page, 'decor');
 
   await page.locator('[data-decor-eyes="happy"]').click();
@@ -79,8 +80,9 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
   await page.locator('[data-decor-section="accessory"]').click();
   await page.locator('[data-decor-accessory="cat-ears"]').click();
   await expect(page.locator('[data-sandbox-accessory]')).toBeVisible();
-  await page.locator('[data-action="decor-continue"]').click();
-  await enter(page, 'finish');
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
+  await enter(page, 'shape');
   await page.locator('[data-material="holo"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-material', 'holo');
   await page.locator('[data-action="save"]').click();
@@ -95,7 +97,7 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
   expect(saved.library[0]!.appearance.strokes).toHaveLength(1);
   expect(saved.library[0]!.appearance.mixins).toHaveLength(1);
   expect(saved.library[0]!.decor.stickers).toHaveLength(1);
-  expect(saved.library[0]!.decor.accessory).toBe('cat-ears');
+  expect(saved.library[0]!.decor.accessories?.map(item => item.a)).toEqual(['cat-ears', 'cat-ears']);
   expect(saved.library[0]!.decor.eyes).toBe('happy');
   await page.screenshot({ path: 'phaser-candidate-evidence/real-studio-saved-portrait.png', fullPage: true });
   await info.attach('real-studio-saved-portrait', { body: await page.screenshot(), contentType: 'image/png' });
@@ -119,7 +121,7 @@ test('M4 real SandboxApp: Paint outside-in, pearls, Mix, Decor, material, actual
 test('M4 real studio: activity blockers cancel gesture and Finish stays tactile under UI', async ({ page }) => {
   await page.setViewportSize({ width: 430, height: 840 });
   await open(page);
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await enter(page, 'paint');
   const center = await canvasCenter(page);
   await page.mouse.move(center.x, center.y);
@@ -130,18 +132,21 @@ test('M4 real studio: activity blockers cancel gesture and Finish stays tactile 
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('aria-busy', 'true');
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-paint-strokes', '1');
   await page.evaluate(() => window.__squishyRealStudio!.setBlocked(false));
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
   const mixing = await canvasCenter(page);
   await page.mouse.move(mixing.x, mixing.y);
   await page.mouse.down();
   for (let n = 0; n < 22; n += 1) await page.mouse.move(mixing.x + (n % 2 === 0 ? 65 : -65), mixing.y, { steps: 3 });
   await page.mouse.up();
-  await page.locator('[data-action="mix-continue"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
-  await enter(page, 'finish');
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
+  await enter(page, 'shape');
   await expect(page.locator('[data-sandbox-canvas]')).toHaveCSS('pointer-events', 'auto');
   await expect(page.locator('[data-action="save"]')).toBeEnabled();
+  await page.locator('[data-action="try-on"]').click();
   const finish = await canvasCenter(page);
   await page.mouse.move(finish.x, finish.y);
   await page.mouse.down();

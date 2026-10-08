@@ -7,9 +7,9 @@ test('review: parquet repeats, shelf fits, toys stay still and catalog scrolling
   await page.goto('/phaser/');
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!box) throw new Error('Missing real Studio canvas');
   const x = box.x + box.width / 2;
@@ -18,8 +18,10 @@ test('review: parquet repeats, shelf fits, toys stay still and catalog scrolling
   await page.mouse.down();
   for (let i = 0; i < 22; i++) await page.mouse.move(x + (i % 2 ? -65 : 65), y, { steps: 3 });
   await page.mouse.up();
-  await page.locator('[data-action="mix-continue"]').click();
-  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   await page.evaluate((storageKey) => {
@@ -60,7 +62,7 @@ test('review: parquet repeats, shelf fits, toys stay still and catalog scrolling
   expect(state.planeImage).toContain('floor-tile');
   expect(state.planeTransform).toMatch(/^matrix3d\(/);
   expect(state.cabinetWidth).toBeGreaterThanOrEqual(87);
-  expect(state.shelfWidth).toBeGreaterThanOrEqual(119);
+  expect(state.shelfWidth, 'collection shows its catalog while the table is hidden').toBe(0);
   await page.screenshot({ path: info.outputPath('library-hall-perspective-phone-390.png'), animations: 'disabled' });
   const table=await page.locator('.library-showcase-table').boundingBox();
   await page.locator('.sandbox-library-card').last().scrollIntoViewIfNeeded();
@@ -76,8 +78,8 @@ test('review: parquet repeats, shelf fits, toys stay still and catalog scrolling
     planeRepeat: getComputedStyle(document.querySelector('.library-hall-scene__floor')!, '::before').backgroundRepeat,
   }));
   expect(desktop.cabinet).toBeGreaterThanOrEqual(180);
-  expect(desktop.shelf).toBeGreaterThanOrEqual(240);
-  expect(desktop.plant).toBeGreaterThanOrEqual(169);
+  expect(desktop.shelf, 'desktop collection also hides the play table').toBe(0);
+  expect(desktop.plant, 'play starts only after choosing a toy').toBe(0);
   expect(desktop.planeRepeat).toBe('repeat');
   await page.screenshot({ path: info.outputPath('library-hall-perspective-desktop-1440.png'), animations: 'disabled' });
 });

@@ -9,7 +9,7 @@ const open = async (page: Page): Promise<void> => {
   expect(await page.evaluate(() => window.__squishyPhaserPlatform!.getSdkCounters()?.ready)).toBe(1);
 };
 
-const completeMix = async (page: Page): Promise<void> => {
+const tryAndContinue = async (page: Page): Promise<void> => {
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!box) throw new Error('Phaser platform candidate has no workbench');
   const x = box.x + box.width / 2;
@@ -18,19 +18,21 @@ const completeMix = async (page: Page): Promise<void> => {
   await page.mouse.down();
   for (let n = 0; n < 22; n += 1) await page.mouse.move(x + (n % 2 ? -65 : 65), y, { steps: 3 });
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
 };
 
 const saveOne = async (page: Page): Promise<void> => {
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-shape="heart"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
-  await completeMix(page);
-  await page.locator('[data-action="decor-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
+  await tryAndContinue(page);
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   await page.locator('[data-action="home"]').click();
@@ -41,7 +43,7 @@ test('M5: real bootstrap routes overlapping Yandex pauses and activity blockers 
   await open(page);
   expect(await page.evaluate(() => window.__squishyPhaserPlatform!.getSdkCounters()?.starts)).toBe(1);
   await page.locator('[data-library-new]').first().click();
-  await page.locator('[data-action="shape-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'paint');
   const canvas = page.locator('[data-sandbox-canvas]');
   await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');

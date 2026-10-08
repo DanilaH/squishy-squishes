@@ -126,7 +126,7 @@ for (const device of devices) {
       };
       await sample('shape');
       await page.locator('button[data-shape="paw"]').click();
-      await page.locator('[data-action="shape-continue"]').click();
+      await page.locator('[data-craft-section="paint"]').click();
       await sample('paint');
       const paint = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!paint) throw new Error('Missing paint surface');
@@ -135,26 +135,29 @@ for (const device of devices) {
       await page.mouse.down();
       await page.mouse.move(paint.x + paint.width * .5 + radius * .3, paint.y + paint.height * .5 + radius * .3, { steps: 5 });
       await page.mouse.up();
-      await page.locator('[data-action="paint-continue"]').click();
+      await page.locator('[data-craft-section="mixins"]').click();
       await sample('mixins');
-      await page.locator('[data-action="mixin-continue"]').click();
-      await sample('mix');
+      await page.locator('[data-action="try-on"]').click();
+      await sample('try-on', 'mixins');
       const mix = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!mix) throw new Error('Missing mix surface');
       const x = mix.x + mix.width / 2, y = mix.y + mix.height / 2;
       await page.mouse.move(x, y); await page.mouse.down();
       for (let i = 0; i < 36; i += 1) await page.mouse.move(x + (i % 2 ? -55 : 55), y, { steps: 2 });
       await page.mouse.up();
-      await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-      await page.locator('[data-action="mix-continue"]').click();
+      await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+      await page.locator('[data-action="try-return"]').click();
+      await page.locator('[data-craft-section="decor"]').click();
       await sample('decor');
       await page.locator('[data-decor-section="stickers"]').click();
       await sample('decor-stickers', 'decor');
       await page.locator('[data-decor-section="accessory"]').click();
       await sample('decor-accessory', 'decor');
       await page.locator('[data-decor-accessory="crown"]').click();
-      await page.locator('[data-action="decor-continue"]').click();
-      await sample('finish');
+      await page.locator('[data-craft-section="shape"]').click();
+      await page.locator('[data-base-tab="material"]').click();
+      await sample('material', 'shape');
+      await page.locator('[data-action="try-on"]').click();
       const finishSurface = await page.locator('[data-sandbox-canvas]').boundingBox();
       if (!finishSurface) throw new Error('Missing Finish squish surface');
       const readBodyOffsetX = async (): Promise<number> =>
@@ -180,6 +183,7 @@ for (const device of devices) {
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-finish-pulled.png`), animations: 'disabled' });
       await page.mouse.up();
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'false');
+      await page.locator('[data-action="try-return"]').click();
       const materialLabels = await page.locator('button[data-material] > span:last-child').evaluateAll((labels) =>
         labels.map((label) => {
           const range = document.createRange();
@@ -251,8 +255,9 @@ for (const device of devices) {
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-library-squeeze.png`) });
       await page.locator('[data-action="edit-saved"]').click();
       await sample('decor-reopened', 'decor');
-      await page.locator('[data-action="decor-continue"]').click();
-      await sample('finish-reopened', 'finish');
+      await page.locator('[data-craft-section="shape"]').click();
+      await page.locator('[data-base-tab="material"]').click();
+      await sample('material-reopened', 'shape');
       await page.locator('[data-action="save"]').click();
       await sample('squeeze-reopened', 'squeeze');
       expect(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3')!).library.length)).toBe(1);

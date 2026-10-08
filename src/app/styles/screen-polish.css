@@ -30,7 +30,7 @@
 @media (max-width: 760px) and (min-height: 521px) {
   #app[data-jelly-ui-ready] .room-library .room-editor { height: min(440px,60dvh); }
   #app[data-jelly-ui-ready] .room-library[data-room-editing='true'] .room-library-stage { margin-bottom: calc(min(440px,60dvh) + 8px); }
-  #app[data-jelly-ui-ready] .library-showcase .sandbox-library-card__footer strong { font-size: 11px; }
+  #app[data-jelly-ui-ready] .library-showcase .sandbox-library-card__footer strong { font-size: 12px; }
   #app[data-jelly-ui-ready] .sandbox-library-shell:not(.room-library) .sandbox-library-reward { padding: 4px 8px; }
 }
 @media (max-height: 520px) {

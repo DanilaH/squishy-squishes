@@ -21,11 +21,11 @@ test.describe('Russian maker localization', () => {
     await expect(page.locator('button[data-shape="paw"]')).toContainText('Лапка');
     await expect(page.locator('button[data-shape="paw"]')).not.toContainText('Paw');
 
-    await page.locator('[data-action="shape-continue"]').click();
+    await page.locator('[data-craft-section="paint"]').click();
     await expect(page.locator('[data-paint-color]').first()).toHaveAttribute('aria-label', 'Орхидея');
     await expect(page.locator('[data-paint-color]').last()).toHaveAttribute('aria-label', 'Коричневый');
     await expect(page.locator('[data-brush-size="18"]')).toHaveAttribute('aria-label', 'Маленькая кисть');
-    await page.locator('[data-action="paint-continue"]').click();
+    await page.locator('[data-craft-section="mixins"]').click();
     await expect(page.locator('[data-mixin="glitter"]')).toContainText('Блёстки');
     await expect(page.locator('[data-mixin="pearls"]')).toContainText('Жемчужины');
     await expect(page.locator('[data-mixin="confetti"]')).toContainText('Конфетти');
@@ -58,9 +58,9 @@ test('unsaved-exit dialog traps focus, closes on Escape and restores the trigger
 test('Decor uses keyboard-operable ARIA tabs', async ({ page }) => {
   await page.goto(PAGES_URL);
   await page.locator('[data-library-new]').first().click();
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
 
   const canvas = page.locator('[data-sandbox-canvas]');
   const box = await canvas.boundingBox();
@@ -73,8 +73,9 @@ test('Decor uses keyboard-operable ARIA tabs', async ({ page }) => {
     await page.mouse.move(cx + (n % 2 ? -58 : 58), cy, { steps: 2 });
   }
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
 
   const face = page.locator('button[role="tab"][data-decor-section="face"]');
   const stickers = page.locator('button[role="tab"][data-decor-section="stickers"]');
@@ -130,6 +131,7 @@ test('Library delete dialog traps focus, Escape restores the delete button', asy
   });
   await page.reload();
 
+  await page.locator('[data-room-manage]').click();
   const trigger = page.locator('[data-library-delete-id="a11y-toy"]');
   await trigger.click();
   const overlay = page.locator('[data-library-delete-overlay]');

@@ -7,7 +7,7 @@ const openLibrary = async (page: Page): Promise<void> => {
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
 };
 
-const completeMix = async (page: Page): Promise<void> => {
+const tryAndContinue = async (page: Page): Promise<void> => {
   const box = await page.locator('[data-sandbox-canvas]').boundingBox();
   if (!box) throw new Error('The original maker did not mount its Phaser canvas');
   const x = box.x + box.width / 2;
@@ -16,20 +16,22 @@ const completeMix = async (page: Page): Promise<void> => {
   await page.mouse.down();
   for (let n = 0; n < 22; n += 1) await page.mouse.move(x + (n % 2 ? -65 : 65), y, { steps: 3 });
   await page.mouse.up();
-  await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-  await page.locator('[data-action="mix-continue"]').click();
+  await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+  await page.locator('[data-action="try-return"]').click();
+  await page.locator('[data-craft-section="decor"]').click();
 };
 
 const makeSimpleToy = async (page: Page): Promise<void> => {
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-shape="heart"]').click();
-  await page.locator('[data-action="shape-continue"]').click();
-  await page.locator('[data-action="paint-continue"]').click();
-  await page.locator('[data-action="mixin-continue"]').click();
-  await completeMix(page);
-  await page.locator('[data-action="decor-continue"]').click();
-  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'finish');
+  await page.locator('[data-craft-section="paint"]').click();
+  await page.locator('[data-craft-section="mixins"]').click();
+  await page.locator('[data-action="try-on"]').click();
+  await tryAndContinue(page);
+  await page.locator('[data-craft-section="shape"]').click();
+  await page.locator('[data-base-tab="material"]').click();
+  await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
 };
 
 test('M5 preview: original Library and Ideas use the real Phaser maker, V3 save/reopen/delete without touching live storage', async ({ page }) => {
@@ -55,10 +57,12 @@ test('M5 preview: original Library and Ideas use the real Phaser maker, V3 save/
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-action="home"]').click();
+  if (await page.locator('[data-room-manage]').getAttribute('aria-pressed') !== 'true') await page.locator('[data-room-manage]').click();
   await page.locator('[data-library-delete-id]').click();
   await expect(page.locator('[data-library-delete-overlay]')).toBeVisible();
   await page.locator('[data-library-delete-cancel]').click();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
+  if (await page.locator('[data-room-manage]').getAttribute('aria-pressed') !== 'true') await page.locator('[data-room-manage]').click();
   await page.locator('[data-library-delete-id]').click();
   await page.locator('[data-library-delete-confirm]').click();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '0');
@@ -105,6 +109,8 @@ test('M5 preview: full eight-slot shelf requires deliberate replacement; a close
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-library-replace-overlay]')).toBeVisible();
   await page.locator(`[data-library-replace-id="${ids[0]}"]`).click();
+  await expect(page.locator('[data-library-replace-confirm]')).toBeEnabled();
+  await page.locator('[data-library-replace-confirm]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   const next = await page.evaluate(() => window.__squishyPhaserLibrary!.readSave());
   expect(next.library).toHaveLength(8);

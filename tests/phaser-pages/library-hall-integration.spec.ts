@@ -41,9 +41,9 @@ test('real saved toys share the shelf; selection and confirmed deletion stay int
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await page.locator('[data-shape="heart"]').click();
-    await page.locator('[data-action="shape-continue"]').click();
-    await page.locator('[data-action="paint-continue"]').click();
-    await page.locator('[data-action="mixin-continue"]').click();
+    await page.locator('[data-craft-section="paint"]').click();
+    await page.locator('[data-craft-section="mixins"]').click();
+    await page.locator('[data-action="try-on"]').click();
     const canvas = await page.locator('[data-sandbox-canvas]').boundingBox();
     if (!canvas) throw new Error('Missing real squishy');
     const x = canvas.x + canvas.width / 2;
@@ -52,9 +52,11 @@ test('real saved toys share the shelf; selection and confirmed deletion stay int
     await page.mouse.down();
     for (let i = 0; i < 22; i += 1) await page.mouse.move(x + (i % 2 ? -65 : 65), y, { steps: 3 });
     await page.mouse.up();
-    await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-    await page.locator('[data-action="mix-continue"]').click();
-    await page.locator('[data-action="decor-continue"]').click();
+    await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+    await page.locator('[data-action="try-return"]').click();
+    await page.locator('[data-craft-section="decor"]').click();
+    await page.locator('[data-craft-section="shape"]').click();
+    await page.locator('[data-base-tab="material"]').click();
     await page.locator('[data-action="save"]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     const saveKey = 'squishy.phaser-pages-preview.squishy.save.v3';
@@ -76,6 +78,7 @@ test('real saved toys share the shelf; selection and confirmed deletion stay int
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
+    if (await page.locator('[data-room-manage]').getAttribute('aria-pressed') !== 'true') await page.locator('[data-room-manage]').click();
     await page.locator('[data-library-delete-id="hall-fixture-third"]').click();
     await expect(page.locator('[data-library-delete-overlay]')).toBeVisible();
     await page.locator('[data-library-delete-confirm]').click();

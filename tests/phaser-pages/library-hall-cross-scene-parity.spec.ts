@@ -19,7 +19,7 @@ for (const specimen of specimens) {
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-volume', 'deformable');
     await page.locator(`button[data-shape="${specimen.shape}"]`).click();
-    await page.locator('[data-action="shape-continue"]').click();
+    await page.locator('[data-craft-section="paint"]').click();
     await page.locator('[data-paint-color]').nth(2).click();
     const paint = await page.locator('[data-sandbox-canvas]').boundingBox();
     if (!paint) throw new Error('No paint surface');
@@ -28,7 +28,7 @@ for (const specimen of specimens) {
     await page.mouse.down();
     await page.mouse.move(paint.x + paint.width * .5 + paintRadius * .4, paint.y + paint.height * .5 + paintRadius * .3, { steps: 12 });
     await page.mouse.up();
-    await page.locator('[data-action="paint-continue"]').click();
+    await page.locator('[data-craft-section="mixins"]').click();
     if (specimen.mixin !== 'none') {
       await page.locator(`[data-mixin="${specimen.mixin}"]`).click();
       const mixinSurface = await page.locator('[data-sandbox-canvas]').boundingBox();
@@ -38,7 +38,7 @@ for (const specimen of specimens) {
       await page.mouse.move(mixinSurface.x + mixinSurface.width * .5 + paintRadius * .4, mixinSurface.y + mixinSurface.height * .5 + paintRadius * .15, { steps: 6 });
       await page.mouse.up();
     }
-    await page.locator('[data-action="mixin-continue"]').click();
+    await page.locator('[data-action="try-on"]').click();
     const mix = await page.locator('[data-sandbox-canvas]').boundingBox();
     if (!mix) throw new Error('No mix surface');
     const x = mix.x + mix.width / 2;
@@ -47,15 +47,17 @@ for (const specimen of specimens) {
     await page.mouse.down();
     for (let i = 0; i < 22; i++) await page.mouse.move(x + (i % 2 ? -65 : 65), y, { steps: 3 });
     await page.mouse.up();
-    await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-    await page.locator('[data-action="mix-continue"]').click();
+    await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+    await page.locator('[data-action="try-return"]').click();
+    await page.locator('[data-craft-section="decor"]').click();
     await page.locator('[data-decor-eyes="dot"]').click();
     await page.locator('[data-decor-mouth="smile"]').click();
     if (specimen.accessory !== 'none') {
       await page.locator('[data-decor-section="accessory"]').click();
       await page.locator(`[data-decor-accessory="${specimen.accessory}"]`).click();
     }
-    await page.locator('[data-action="decor-continue"]').click();
+    await page.locator('[data-craft-section="shape"]').click();
+    await page.locator('[data-base-tab="material"]').click();
     await page.locator(`button[data-material="${specimen.material}"]`).click();
     const prefix = `library-hall-parity-${specimen.shape}-${specimen.material}`;
     await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath(`${prefix}-studio-idle.png`) });
@@ -71,7 +73,7 @@ for (const specimen of specimens) {
     expect(saved.library[0].materialId).toBe(specimen.material);
     expect(saved.library[0].appearance.strokes.length).toBeGreaterThan(0);
     if (specimen.mixin !== 'none') expect(saved.library[0].appearance.mixins.length).toBeGreaterThan(0);
-    if (specimen.accessory !== 'none') expect(saved.library[0].decor.a).toBe(specimen.accessory);
+    if (specimen.accessory !== 'none') expect(saved.library[0].decor.items.map((item: { a: string }) => item.a)).toEqual([specimen.accessory]);
     const squeeze = await page.locator('[data-sandbox-canvas]').boundingBox();
     if (!squeeze) throw new Error('No squeeze surface');
     const px = squeeze.x + squeeze.width * .5;

@@ -73,7 +73,7 @@ for (const layout of layouts) {
       await expect(shell).toHaveAttribute('data-stage', 'shape');
       await capture(page, testInfo, layout.name, 'shape');
       await page.locator('button[data-shape="heart"]').click();
-      await page.locator('[data-action="shape-continue"]').click();
+      await page.locator('[data-craft-section="paint"]').click();
       await expect(shell).toHaveAttribute('data-stage', 'paint');
       await expect(page.locator('[data-paint-color]'), 'expanded paint palette stays complete').toHaveCount(18);
       const palette = await page.locator('.sandbox-palette-grid').boundingBox();
@@ -84,11 +84,11 @@ for (const layout of layouts) {
         .toBeLessThanOrEqual(controls.x + controls.width + 1);
       await capture(page, testInfo, layout.name, 'paint');
 
-      await page.locator('[data-action="paint-continue"]').click();
+      await page.locator('[data-craft-section="mixins"]').click();
       await expect(shell).toHaveAttribute('data-stage', 'mixins');
       await capture(page, testInfo, layout.name, 'mixins');
-      await page.locator('[data-action="mixin-continue"]').click();
-      await expect(shell).toHaveAttribute('data-stage', 'mix');
+      await page.locator('[data-action="try-on"]').click();
+      await expect(shell).toHaveAttribute('data-stage', 'mixins');
       await capture(page, testInfo, layout.name, 'mix');
 
       const canvas = page.locator('[data-sandbox-canvas]');
@@ -102,16 +102,18 @@ for (const layout of layouts) {
         await page.mouse.move(x + (n % 2 ? -65 : 65), y, { steps: 3 });
       }
       await page.mouse.up();
-      await expect(page.locator('[data-action="mix-continue"]')).toBeEnabled();
-      await page.locator('[data-action="mix-continue"]').click();
+      await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
+      await page.locator('[data-action="try-return"]').click();
+      await page.locator('[data-craft-section="decor"]').click();
       await expect(shell).toHaveAttribute('data-stage', 'decor');
       await capture(page, testInfo, layout.name, 'decor-face');
       await page.locator('[data-decor-section="stickers"]').click();
       await capture(page, testInfo, layout.name, 'decor-stickers');
       await page.locator('[data-decor-section="accessory"]').click();
       await capture(page, testInfo, layout.name, 'decor-accessory');
-      await page.locator('[data-action="decor-continue"]').click();
-      await expect(shell).toHaveAttribute('data-stage', 'finish');
+      await page.locator('[data-craft-section="shape"]').click();
+      await page.locator('[data-base-tab="material"]').click();
+      await expect(shell).toHaveAttribute('data-stage', 'shape');
 
       // The longest English/Russian material label exposed the original overlap.
       const marshmallow = page.locator('button[data-material="marshmallow"]');
@@ -129,6 +131,7 @@ for (const layout of layouts) {
       await page.locator('[data-action="home"]').click();
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
       await capture(page, testInfo, layout.name, 'library-saved');
+      if (await page.locator('[data-room-manage]').getAttribute('aria-pressed') !== 'true') await page.locator('[data-room-manage]').click();
       await page.locator('[data-library-delete-id]').first().click();
       await expect(page.locator('[data-library-delete-overlay]')).toBeVisible();
       await capture(page, testInfo, layout.name, 'delete-dialog');
