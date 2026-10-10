@@ -89,12 +89,21 @@ test('actual face and catalog choices stay visible on short phone screens', asyn
         expect(rect!.x + rect!.width).toBeLessThanOrEqual(viewport.width + 1);
         expect(rect!.y + rect!.height).toBeLessThanOrEqual(viewport.height + 1);
         expect(await button.evaluate((el) => el.scrollWidth <= el.clientWidth + 2)).toBe(true);
+        expect(await button.evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width >= 44 && r.height >= 44 && [r.top + 2, r.bottom - 2].every(y =>
+            el.contains(document.elementFromPoint(r.x + r.width / 2, y)));
+        })).toBe(true);
       }
       const bounds = await panel.evaluate((el) => ({
         client: el.clientHeight, scroll: el.scrollHeight, rect: el.getBoundingClientRect().toJSON(),
         children: [...el.children].map((child) => ({ tag: child.tagName, rect: child.getBoundingClientRect().toJSON(), position: getComputedStyle(child).position })),
       }));
-      if(viewport.height>350)expect(bounds.scroll <= bounds.client + 1, JSON.stringify({ viewport, section, bounds })).toBe(true);
+      if (bounds.scroll > bounds.client + 1) {
+        expect(await panel.evaluate(el => getComputedStyle(el).overflowY)).toMatch(/auto|scroll/);
+      }
+      expect(await page.evaluate(() => scrollY === 0 && document.documentElement.scrollHeight <= innerHeight
+        && document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({ path: `migration-baseline-evidence/catalog-choices-${section}-${viewport.width}.png` });
     }
   }

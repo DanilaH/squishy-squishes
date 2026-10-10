@@ -2,12 +2,12 @@ import { isPointInsideShape, getShapeTopAtX, type ShapeDefinition, type ShapeId 
 import type { AccessoryId } from './decor';
 
 export const getAccessoryDepth = (id: AccessoryId): 'front' | 'rear' =>
-  id === 'cat-ears' || id === 'bunny-ears' || id === 'horns' || id === 'wings' ? 'rear' : 'front';
+  id === 'antennae' || id === 'halo' || id === 'cat-ears' || id === 'bunny-ears' || id === 'horns' || id === 'wings' ? 'rear' : 'front';
 
 // Heart gear rests in the cleft: its base must meet the root, rather than
 // using the deeper crown overlap suitable for broad convex tops.
 export const getAccessorySeatFactor = (shape: ShapeDefinition, id: AccessoryId): number =>
-  id === 'glasses' ? .58 : id === 'headphones' ? .73 : id === 'heart-patch' ? .64 : id === 'handbag' ? .72 : id === 'petal-flower' || id === 'butterfly' ? .64 : id === 'crown' ? (shape.id === 'heart' ? .92 : .80) : id === 'bow' ? .87 : .92;
+  id === 'eye-patch' ? .58 : id === 'bolt' ? .60 : id === 'glasses' ? .58 : id === 'headphones' ? .73 : id === 'heart-patch' ? .64 : id === 'handbag' ? .72 : id === 'petal-flower' || id === 'butterfly' ? .64 : id === 'crown' ? (shape.id === 'heart' ? .92 : .80) : id === 'bow' ? .87 : .92;
 
 /** Face and face-zone gear use the same body region for every canonical mold. */
 export const getFaceCenterY = (shape: ShapeDefinition, centerY: number, height: number): number =>
@@ -53,11 +53,14 @@ export const getAccessorySeats = (shape: ShapeDefinition, id: AccessoryId): read
     for (let n = 0; n < 100 && direction && !isPointInsideShape(shape, x, y); n++) x -= direction * .01;
     return [{u:(x+1)/2,v:(y+1)/2,angle:0,side:'whole'}];
   };
+  if (id === 'eye-patch') return bodySeat(0, bodyY + height * .085);
+  if (id === 'bolt') return bodySeat(width * .37, bodyY + height * .15);
   if (id === 'glasses') return bodySeat(0, bodyY + height * .085);
   if (id === 'headphones') return bodySeat(0, bodyY + height * .10);
   if (id === 'heart-patch') return bodySeat(width * .28, bodyY - height * .08);
   if (id === 'handbag') return bodySeat(width * .20, bodyY - height * .04);
   if (id === 'petal-flower' || id === 'butterfly') return [seat(profile.bow[0], profile.bow[1], 'whole')];
+  if (id === 'antennae' || id === 'halo' || id === 'mushroom-hat' || id === 'witch-hat') return [seat(0, 0, 'whole')];
   if (id === 'cream' || id === 'bucket-hat' || id === 'cherry') return [seat(id === 'cherry' ? .13 : 0, id === 'cherry' ? -.12 : 0, 'whole')];
   if (id === 'wings') {
     const y = bodyY - height * .08;

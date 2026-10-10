@@ -201,6 +201,7 @@
 #app [data-try-on='true'] .sandbox-controls { visibility: hidden; pointer-events: none; }
 @media (max-height: 500px) { #app .free-mixin-catalog { height: 128px; } #app .free-light-panel { height: 128px; } }
 #app .free-face-foreground { position: absolute; z-index: 9; pointer-events: none; }
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active .sandbox-accessory-layer[data-accessory-id='eye-patch'] { z-index: 10; }
 #app .free-face-foreground[hidden] { display: none; }
 
 /* Primary actions stay visible beside the global history. */
@@ -445,3 +446,22 @@
 /* A pressed object stays inside the horizontal tray. */
 #app .free-object-list { overflow-y: hidden; padding-block: 2px; touch-action: pan-x; }
 #app[data-jelly-ui-ready] .free-object-list button:active:not(:disabled) { transform: none; }
+
+/* Expanded faces and stickers keep full rows inside the fixed catalog tray. */
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='accessory'] > .sandbox-decor-grid { grid-auto-rows: minmax(64px, auto); }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] [data-decor-panel='accessory'] .sandbox-decor-choice { grid-template-rows: 28px max-content; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage] [data-decor-panel='accessory'] .sandbox-decor-choice small { min-height: 2.2em; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] :is([data-decor-panel='face'],[data-decor-panel='stickers']) {
+  height: 128px; overflow-y: auto; align-content: start;
+  overscroll-behavior: contain; touch-action: pan-y;
+}
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='face'] { grid-template-rows: max-content max-content; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-face-group { grid-template-rows: 14px max-content; }
+#app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='face'] .sandbox-decor-toggle { align-self: start; min-height: 44px; }
+@media (max-height: 350px) and (orientation: landscape) {
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] :is([data-decor-panel='face'],[data-decor-panel='stickers']) { height: 88px; }
+}
+@media (min-width: 901px) and (min-height: 640px) {
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] :is([data-decor-panel='face'],[data-decor-panel='stickers']) { height: var(--craft-catalog-height); }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='face'] .sandbox-decor-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}

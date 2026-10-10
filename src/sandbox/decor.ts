@@ -1,3 +1,4 @@
+import { drawExpandedEye, drawExpandedMouth, drawExpandedSticker } from './expandedDecorArt';
 import { drawCraftAccessory } from './craftAccessoryArt';
 import { drawFaceForeground } from './faceForeground';
 import { withFaceTransform, accessoryPlacements, composeAccessory, type AccessoryPlacement, type FaceTransform, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
@@ -8,10 +9,10 @@ import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
 
 export const MAX_DECOR_STICKERS = 128;
 
-export const EYE_STYLE_IDS = ['dot', 'happy', 'sleepy'] as const;
-export const MOUTH_STYLE_IDS = ['smile', 'o', 'cat'] as const;
-export const STICKER_IDS = ['heart', 'star', 'flower', 'sparkle'] as const;
-export const ACCESSORY_IDS = ['cat-ears', 'bunny-ears', 'horns', 'bow', 'crown', 'glasses', 'headphones', 'bucket-hat', 'petal-flower', 'leaves', 'butterfly', 'cream', 'cherry', 'heart-patch', 'handbag', 'wings'] as const;
+export const EYE_STYLE_IDS = ['dot', 'happy', 'sleepy', 'angry', 'sly', 'cross', 'sparkling'] as const;
+export const MOUTH_STYLE_IDS = ['smile', 'o', 'cat', 'tongue', 'fangs', 'flat', 'sewn'] as const;
+export const STICKER_IDS = ['heart', 'star', 'flower', 'sparkle', 'candy', 'donut', 'strawberry', 'lightning', 'flame', 'skull', 'planet', 'eye', 'ghost'] as const;
+export const ACCESSORY_IDS = ['cat-ears', 'bunny-ears', 'horns', 'bow', 'crown', 'glasses', 'headphones', 'bucket-hat', 'petal-flower', 'leaves', 'butterfly', 'cream', 'cherry', 'heart-patch', 'handbag', 'wings', 'antennae', 'mushroom-hat', 'witch-hat', 'halo', 'eye-patch', 'bolt'] as const;
 
 export type EyeStyleId = (typeof EYE_STYLE_IDS)[number];
 export type MouthStyleId = (typeof MOUTH_STYLE_IDS)[number];
@@ -360,6 +361,7 @@ const drawEye = (
   point: AppearancePoint,
 ): void => {
   const [x, y] = pointToCanvas(point);
+  if (drawExpandedEye(context, style, x, y, point.u < .5)) return;
   context.save();
   context.strokeStyle = '#49384f';
   context.fillStyle = '#49384f';
@@ -385,6 +387,7 @@ const drawMouth = (
   point: AppearancePoint,
 ): void => {
   const [x, y] = pointToCanvas(point);
+  if (drawExpandedMouth(context, style, x, y)) return;
   context.save();
   context.strokeStyle = '#5a3e52';
   context.fillStyle = '#5a3e52';
@@ -422,6 +425,7 @@ const drawStickerShape = (
   id: StickerId,
   size: number,
 ): void => {
+  if (drawExpandedSticker(context, id, size)) return;
   const radius = size * 0.5;
   context.lineJoin = 'round';
   if (id === 'heart') {
@@ -709,6 +713,7 @@ export const drawPlacedAccessories = (ctx: CanvasRenderingContext2D, shape: Shap
     return;
   }
   for (const placement of accessoryPlacements(decor, shape)) {
+    if (placement.a === 'eye-patch') continue;
     ctx.save();
     if (getAccessoryDepth(placement.a) === 'rear') ctx.globalCompositeOperation = 'destination-over';
     composeAccessory(ctx, shape, placement, project, width, height, drawAccessoryPiece);
@@ -718,5 +723,9 @@ export const drawPlacedAccessories = (ctx: CanvasRenderingContext2D, shape: Shap
     const face=document.createElement('canvas');face.width=face.height=256;
     renderSurfaceFace(face.getContext('2d')!,{...decor,blush:false},shape,reaction);
     drawFaceForeground(ctx,face,shape,(u,v)=>{const [x,y]=project(u,v);return{x,y};});
+  }
+  // A patch deliberately covers an eye; ordinary ornaments retain face priority.
+  for (const placement of accessoryPlacements(decor, shape)) {
+    if (placement.a === 'eye-patch') composeAccessory(ctx, shape, placement, project, width, height, drawAccessoryPiece);
   }
 };

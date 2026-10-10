@@ -1,3 +1,4 @@
+import { ACCESSORY_IDS } from '../../src/sandbox/decor';
 import { expect, test } from '@playwright/test';
 import { reachableControlIssues } from '../phaser-pages/helpers/reachableControls';
 
@@ -23,7 +24,7 @@ for (const locale of ['ru-RU', 'en-US']) for (const viewport of [
     await page.locator('[data-decor-mouth="smile"]').click();
     await page.locator('button[data-decor-section="accessory"]').click();
     const catalog=page.locator('[data-decor-panel="accessory"] > .sandbox-decor-grid');
-    await expect(catalog.locator('button')).toHaveCount(17);
+    await expect(catalog.locator('button')).toHaveCount(ACCESSORY_IDS.length + 1);
     const rail=page.locator('[data-decor-panel="accessory"] .craft-scroll-rail');
     await expect(rail).toBeVisible();await expect(rail).toHaveAttribute('data-at-end','false');
     const box=(await catalog.boundingBox())!;
@@ -38,12 +39,12 @@ for (const locale of ['ru-RU', 'en-US']) for (const viewport of [
     }
     await expect.poll(()=>catalog.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-decor-accessory','none');
-    await catalog.locator('[data-decor-accessory="wings"]').scrollIntoViewIfNeeded();
+    await catalog.locator('button[data-decor-accessory]').last().scrollIntoViewIfNeeded();
     await expect(rail).toHaveAttribute('data-at-end','true');
     await page.screenshot({path:info.outputPath('catalog-bottom.png')});
     expect(await reachableControlIssues(page)).toEqual([]);
     expect(await page.evaluate(()=>scrollY===0&&document.documentElement.scrollHeight<=innerHeight&&document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-    await catalog.locator('[data-decor-accessory="wings"]').click();
+    await catalog.locator('button[data-decor-accessory]').last().click();
     await expect(page.locator('[data-decor-panel="objects"]')).toBeVisible();
     expect([await canvas.boundingBox(),await scene.boundingBox(),await actions.boundingBox()]).toEqual(geometry);
     expect(await reachableControlIssues(page)).toEqual([]);expect(errors).toEqual([]);

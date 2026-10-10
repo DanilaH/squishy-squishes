@@ -32,7 +32,7 @@ export function mountCraftWorkspace(root: HTMLElement, ru: boolean): void {
   for (const row of root.querySelectorAll<HTMLElement>('.free-craft-footer, .sandbox-tool-row--actions, .sandbox-finish-actions')) {
     if (row.closest('[data-panel="paint"]')) {
       const clear = row.querySelector('[data-action="paint-clear"]');
-      if (clear) get('.sandbox-tools-dialog').insertBefore(clear, get('[data-action="tools-close"]'));
+      if (clear) get('.sandbox-tools-content').append(clear);
     }
     if (row.closest('[data-panel="mixins"]')) {
       const eraser = row.querySelector('[data-action="mixin-erase"]');
@@ -53,7 +53,7 @@ export function mountCraftWorkspace(root: HTMLElement, ru: boolean): void {
   const sizes = document.createElement('div'); sizes.className = 'craft-brush-sizes';
   sizes.setAttribute('aria-label', ru ? 'Размер кисти' : 'Brush size');
   for (const size of root.querySelectorAll('[data-brush-size]')) sizes.append(size);
-  get('.sandbox-tools-dialog').insertBefore(sizes, get('.sandbox-theme-choices'));
+  get('.sandbox-tools-content').insertBefore(sizes, get('.sandbox-theme-choices'));
   const settings = document.createElement('button'); settings.type = 'button'; settings.dataset.action = 'paint-settings';
   settings.textContent = ru ? 'Настройки' : 'Settings'; tools.append(settings);
   settings.setAttribute('aria-haspopup', 'dialog'); settings.setAttribute('aria-expanded', 'false');

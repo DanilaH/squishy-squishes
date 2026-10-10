@@ -1,3 +1,4 @@
+import { PAINT_PATTERNS, createPaintPattern } from './paintPatterns';
 import { drawFaceForeground } from './faceForeground';
 import { LIGHT_PRESETS, type CraftLight } from './craftLighting';
 import { DraftHistory } from './draftHistory';
@@ -277,17 +278,17 @@ interface DecorLabels {
 
 const DECOR_LABELS: Readonly<Record<SandboxLanguage, DecorLabels>> = {
   en: {
-    eyes: { dot: 'Dot', happy: 'Happy', sleepy: 'Sleepy' },
-    mouths: { smile: 'Smile', o: 'O', cat: 'Cat' },
-    stickers: { heart: 'Heart', star: 'Star', flower: 'Flower', sparkle: 'Sparkle' },
-    accessories: { 'cat-ears': 'Cat ears', 'bunny-ears': 'Bunny ears', horns: 'Horns', bow: 'Bow', crown: 'Crown', glasses:'Glasses', headphones:'Headphones', 'bucket-hat':'Bucket hat', 'petal-flower':'Flower', leaves:'Leaves', butterfly:'Butterfly', cream:'Cream', cherry:'Cherry', 'heart-patch':'Heart patch', handbag:'Bag', wings:'Wings' },
+    eyes: { dot: 'Dot', happy: 'Happy', sleepy: 'Sleepy', angry:'Angry', sly:'Sly', cross:'Crosses', sparkling:'Sparkling' },
+    mouths: { smile: 'Smile', o: 'O', cat: 'Cat', tongue:'Tongue', fangs:'Fangs', flat:'Straight', sewn:'Stitched' },
+    stickers: { heart: 'Heart', star: 'Star', flower: 'Flower', sparkle: 'Sparkle', candy:'Candy', donut:'Donut', strawberry:'Strawberry', lightning:'Lightning', flame:'Flame', skull:'Skull', planet:'Planet', eye:'Eye', ghost:'Ghost' },
+    accessories: { 'cat-ears': 'Cat ears', 'bunny-ears': 'Bunny ears', horns: 'Horns', bow: 'Bow', crown: 'Crown', glasses:'Glasses', headphones:'Headphones', 'bucket-hat':'Bucket hat', 'petal-flower':'Flower', leaves:'Leaves', butterfly:'Butterfly', cream:'Cream', cherry:'Cherry', 'heart-patch':'Heart patch', handbag:'Bag', wings:'Wings', antennae:'Antennae', 'mushroom-hat':'Mushroom hat', 'witch-hat':'Witch hat', halo:'Halo', 'eye-patch':'Eye patch', bolt:'Bolt' },
     stickerTip: 'Tap the squishy to place it.',
   },
   ru: {
-    eyes: { dot: 'Точки', happy: 'Весёлые', sleepy: 'Сонные' },
-    mouths: { smile: 'Улыбка', o: 'О', cat: 'Котик' },
-    stickers: { heart: 'Сердце', star: 'Звезда', flower: 'Цветок', sparkle: 'Искра' },
-    accessories: { 'cat-ears': 'Кошачьи', 'bunny-ears': 'Заячьи', horns: 'Рожки', bow: 'Бант', crown: 'Корона', glasses:'Очки', headphones:'Наушники', 'bucket-hat':'Панамка', 'petal-flower':'Цветок', leaves:'Листики', butterfly:'Бабочка', cream:'Сливки', cherry:'Вишенка', 'heart-patch':'Пластырь', handbag:'Сумочка', wings:'Крылышки' },
+    eyes: { dot: 'Точки', happy: 'Весёлые', sleepy: 'Сонные', angry:'Злые', sly:'Хитрые', cross:'Крестики', sparkling:'Сияющие' },
+    mouths: { smile: 'Улыбка', o: 'О', cat: 'Котик', tongue:'Язык', fangs:'Клыки', flat:'Прямой', sewn:'Зашитый' },
+    stickers: { heart: 'Сердце', star: 'Звезда', flower: 'Цветок', sparkle: 'Искра', candy:'Конфета', donut:'Пончик', strawberry:'Клубника', lightning:'Молния', flame:'Пламя', skull:'Череп', planet:'Планета', eye:'Глаз', ghost:'Призрак' },
+    accessories: { 'cat-ears': 'Кошачьи', 'bunny-ears': 'Заячьи', horns: 'Рожки', bow: 'Бант', crown: 'Корона', glasses:'Очки', headphones:'Наушники', 'bucket-hat':'Панамка', 'petal-flower':'Цветок', leaves:'Листики', butterfly:'Бабочка', cream:'Сливки', cherry:'Вишенка', 'heart-patch':'Пластырь', handbag:'Сумочка', wings:'Крылышки', antennae:'Антенны', 'mushroom-hat':'Грибная шляпа', 'witch-hat':'Шляпа ведьмы', halo:'Нимб', 'eye-patch':'Повязка', bolt:'Болт' },
     stickerTip: 'Тапни по сквишу, чтобы наклеить.',
   },
 };
@@ -510,9 +511,11 @@ export class SandboxApp {
     this.accessoryCanvas = this.requireElement<HTMLCanvasElement>('[data-sandbox-accessory]');
     this.accessoryCanvas.width = 180;
     this.accessoryCanvas.height = 120;
-    const accessoryContext = this.accessoryCanvas.getContext('2d');
+    // Tint and selection read pixels on each edit; keep rasterization stable from the first draw.
+    const accessoryContext = this.accessoryCanvas.getContext('2d', { willReadFrequently: true });
     if (!accessoryContext) throw new Error('Sandbox accessory overlay requires Canvas 2D.');
     this.accessorySecond.width = 180; this.accessorySecond.height = 120;
+    this.accessorySecond.getContext('2d', { willReadFrequently: true });
     this.accessorySecond.className = 'sandbox-accessory-layer';
     this.accessorySecond.setAttribute('aria-hidden', 'true');
     this.accessorySecond.dataset.accessoryPart = 'right'; this.accessorySecond.hidden = true;
@@ -812,11 +815,15 @@ export class SandboxApp {
         <div class="sandbox-status" data-sandbox-status aria-live="polite"></div>
         <div class="sandbox-tools-overlay" data-tools-overlay hidden>
           <section class="sandbox-tools-dialog" role="dialog" aria-modal="true" aria-labelledby="tools-title">
+            <div class="sandbox-tools-content">
             <strong id="tools-title">${this.options.language === 'ru' ? 'Краски и штампы' : 'Colors & stamps'}</strong>
             <div class="sandbox-theme-choices">${CREATIVE_PALETTES.map(theme => `<button type="button" data-paint-theme="${theme.id}" aria-pressed="false"><span>${theme.colors.map(c => `<i style="background:#${c.toString(16).padStart(6, '0')}"></i>`).join('')}</span>${theme[this.options.language]}</button>`).join('')}</div>
             <div class="sandbox-stamp-choices">
               <button type="button" data-paint-stamp="none" aria-pressed="true">${this.copy.brush}</button>
               ${PAINT_STAMPS.map(stamp => `<button type="button" data-paint-stamp="${stamp.id}" aria-pressed="false"><span aria-hidden="true">${stamp.icon}</span>${stamp[this.options.language]}</button>`).join('')}
+            </div>
+            <p class="sandbox-pattern-hint">${this.options.language === 'ru' ? 'Нанести узор текущим цветом. Отменяется одним шагом.' : 'Apply a pattern in your current color. Undo in one step.'}</p>
+            <div class="sandbox-pattern-choices sandbox-stamp-choices">${PAINT_PATTERNS.map(pattern => `<button type="button" data-paint-pattern="${pattern.id}"><span aria-hidden="true">${pattern.icon}</span>${pattern[this.options.language]}</button>`).join('')}</div>
             </div>
             <button class="sandbox-secondary" type="button" data-action="tools-close">${this.copy.done}</button>
           </section>
@@ -935,6 +942,15 @@ export class SandboxApp {
       this.updatePressed('[data-paint-theme]', 'paintTheme', theme.id);
       this.status.textContent = theme[this.options.language];
       this.setToolsOpen(false); return;
+    }
+    const pattern = PAINT_PATTERNS.find(p => p.id === target.dataset.paintPattern);
+    if (pattern) {
+      this.draftHistory.begin(this.draft);
+      this.draft = { ...this.draft, appearance: { ...this.draft.appearance, strokes: [...this.draft.appearance.strokes, ...createPaintPattern(pattern.id, this.paintColor)] } };
+      this.draftHistory.end(this.draft);
+      this.replayAndUpload(); this.setToolsOpen(false);
+      this.status.textContent = pattern[this.options.language];
+      return;
     }
     const stamp = target.dataset.paintStamp;
     if (stamp !== undefined && (stamp === 'none' || PAINT_STAMPS.some(s => s.id === stamp))) {
@@ -1909,6 +1925,7 @@ export class SandboxApp {
     if (index === 1) return this.accessorySecond;
     if (!this.extraAccessories[index - 2]) {
       const canvas = document.createElement('canvas'); canvas.width = 180; canvas.height = 120;
+      canvas.getContext('2d', { willReadFrequently: true });
       canvas.className = 'sandbox-accessory-layer'; canvas.setAttribute('aria-hidden', 'true');
       this.accessorySecond.after(canvas); this.extraAccessories[index - 2] = canvas;
     }
