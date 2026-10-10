@@ -72,13 +72,10 @@ test('exact upload-root index boots real Yandex adapter and Phaser; pause and bf
   await installSdk(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  const library = page.locator('[data-sandbox-library]');
-  await expect(library).toBeVisible();
-  await expect(library).toHaveClass(/is-library-hall/);
+  await expect(page.locator('[data-guide-hint="base"]')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
   expect(await page.evaluate(() => document.body.dataset.releasePlatform)).toBe('yandex');
   expect(await sdkControls(page)).toMatchObject({ init: 1, ready: 1, starts: 1 });
-  await page.locator('[data-library-new]').first().click();
   const canvas = page.locator('[data-sandbox-canvas]');
   await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
   await expect(canvas).toHaveAttribute('data-phaser-volume', 'deformable');
@@ -98,13 +95,11 @@ test('exact upload-root index boots real Yandex adapter and Phaser; pause and bf
   expect(await sdkControls(page)).toMatchObject({ ready: 1, starts: 3 });
 });
 
-test('same upload-root bundle writes isolated V3 with unchanged real Library flow', async ({ page }) => {
+test('same upload-root bundle writes isolated V3 with first creation and real Library flow', async ({ page }) => {
   await installSdk(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await expect(page.locator('[data-sandbox-library]')).toBeVisible();
-  await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
-  await page.locator('[data-library-new]').first().click();
+  await expect(page.locator('[data-guide-hint="base"]')).toBeVisible();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-volume', 'deformable');
   await page.locator('[data-shape="heart"]').click();

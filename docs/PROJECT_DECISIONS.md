@@ -1181,3 +1181,45 @@ content area and fixed close action, so the close button cannot cover tools.
 The existing full-flow audits now scroll Face/Stickers before checking every
 caption and hit target, and retain a fixed page/scene requirement. The short
 phone catalog audit additionally checks 44px targets and both vertical edges.
+
+## First creation guidance — 10 October 2026
+
+Owner approved first entry directly into free craft with an editable default
+body, then Save → Squeeze → furnished room. Fresh storage receives a dresser,
+picture and centered oval rug. Existing saves/settings/room choices remain
+returning-player evidence, including intentionally empty rooms; prior rooms are
+not repopulated. Explicit `roomReview=0` regression/preview entry retains its old
+flow. Migration and V3 content/capacity/rewards remain unchanged.
+
+Guidance is contextual EN/RU copy in a dedicated bottom hint strip, with
+highlighted targets and a 44px Skip button. It does not block tool sections,
+require painting/decorating, drive stage changes or add recipe gating. Actual
+paint/decor state and successful save/squeeze control the hints. Fillings has a
+one-time introduction; first return explains the room editor. Replay lives in a
+44px question-mark button next to Ideas, avoiding short-landscape header overlap.
+
+`squishy.onboarding.v1` stores skip/completion/seen state and the first/replay
+unsaved draft separately from V3. Draft decoding uses the existing V3 content
+validators. Committed changes checkpoint after UI actions, with a short debounce
+for remaining observed changes and exit/pagehide checkpointing. A successful
+V3 save clears the draft; leaving early retains it. Resetting to another craft
+ends the current guide. Existing players can replay without replacing a saved
+toy. Startup/renderer failure retains the normal room fallback with an explicit reload action (failed dynamic imports can remain cached by the browser).
+
+Existing-room QA explicitly seeds returning-player storage. Fresh-start QA uses
+unseeded storage and exercises the full flow, reload recovery, skip, replay,
+successful squeezing and untouched existing room/save data. Visual baseline
+changes are limited to the room's added replay button; tutorial screenshots are
+also inspected at narrow portrait, short landscape and desktop sizes.
+
+Local validation passed strict TypeScript, tooling/asset smoke, release web and
+Yandex builds plus the upload-root audit (63 files, 3,360,953 bytes), Pages staging
+and the isolated DRAFT audit (63 files, 3,361,462 bytes). Browser coverage includes
+10 onboarding scenarios, 33 room/customization regressions and 2 exact DRAFT
+root/adapter scenarios. The DRAFT adapter scenarios use a stub SDK and do not
+establish real hosted ads or tactile phone acceptance. Full suites remain PR
+gates; this feature has not been merged or deployed.
+All 30 interface snapshots passed across EN/RU at 320×568, 844×390 and
+1440×900. Only the two narrow-portrait Library baselines exceeded the unchanged
+pixel tolerance and were updated for the replay button; other 28 remained within
+existing tolerance. Fresh tutorial screenshots were inspected separately.

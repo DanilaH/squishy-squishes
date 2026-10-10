@@ -1,3 +1,4 @@
+import { createOnboardingRepository } from '../platform/onboarding';
 import { installReleaseSession } from '../platform/releaseSession';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../platform/runtime';
 import {
@@ -73,6 +74,21 @@ export const bootstrapSquishyApp = async (
     };
   }
 
+  // Inspect prior storage before migration creates a default V3 save.
+  const priorKeys = ['squishy.save.v3', 'squishy.save.v2', 'squishy.save.v1', 'squishy.vertical-slice.discovered.v2', 'squishy.settings.v1', 'squishy.room.v1'];
+  let freshPlayer = false;
+  try { freshPlayer = (await Promise.all(priorKeys.map(key => runtime.storage.getItem(key)))).every(value => value === null); }
+  catch (error) { reportError('first-run-read', error); }
+  const onboardingEnabled = new URLSearchParams(location.search).get('roomReview') !== '0';
+  const onboardingRepository = createOnboardingRepository(runtime.storage, freshPlayer);
+  const onboarding = onboardingEnabled ? await onboardingRepository.loadOrDefault(error => reportError('onboarding-load', error)) : undefined;
+  let onboardingWrites = Promise.resolve();
+  const persistOnboarding = (state: NonNullable<typeof onboarding>): void => {
+    onboardingWrites = onboardingWrites.then(async () => { await onboardingRepository.write(state); await onboardingRepository.flush(); })
+      .catch(error => reportError('onboarding-save', error));
+  };
+  if (onboarding) persistOnboarding(onboarding);
+
   const saveRepository = createSaveV3Repository(runtime.storage);
   const settingsRepository = createSettingsRepository(runtime.storage);
 
@@ -107,11 +123,16 @@ export const bootstrapSquishyApp = async (
   const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
   let createRoomEditor: ((blocked: () => boolean) => import('../sandbox/roomEditorReview').RoomEditorReview) | undefined;
   if (roomReview) {
-    const [{ createRoomSettingsRepository }, { preloadRoomItems }, { RoomEditorReview }] = await Promise.all([
+    const [{ createRoomSettingsRepository, starterRoomSettings }, { preloadRoomItems }, { RoomEditorReview }] = await Promise.all([
       import('../platform/roomSettings'), import('../sandbox/roomCatalog'), import('../sandbox/roomEditorReview'),
     ]);
     const roomRepository = createRoomSettingsRepository(runtime.storage);
-    const roomSettings = await roomRepository.loadOrDefault(error => reportError('room-settings-load', error));
+    let roomSettings = await roomRepository.loadOrDefault(error => reportError('room-settings-load', error));
+    if (freshPlayer) {
+      roomSettings = starterRoomSettings();
+      try { await roomRepository.write(roomSettings); await roomRepository.flush(); }
+      catch (error) { reportError('starter-room-save', error); }
+    }
     try { await preloadRoomItems(); } catch (error) { reportError('room-assets-load', error); }
     createRoomEditor = blocked => new RoomEditorReview(language, blocked, roomSettings, async state => {
       await roomRepository.write(state);
@@ -121,6 +142,7 @@ export const bootstrapSquishyApp = async (
 
   const app = new SandboxLibraryApp(root, {
     roomReview,
+    ...(onboarding ? { onboarding, onOnboardingChange: persistOnboarding } : {}),
     ...createRoomEditor ? { createRoomEditor } : {},
     ...options.makerRendererOptions ? { makerRendererOptions: options.makerRendererOptions } : {},
     ...options.loadMakerRendererOptions ? { loadMakerRendererOptions: options.loadMakerRendererOptions } : {},
@@ -223,6 +245,7 @@ export const bootstrapSquishyApp = async (
       releaseSession.dispose();
       removeDebugTools();
       app.dispose();
+      await onboardingWrites;
       await Promise.allSettled([saveRepository.flush(), settingsRepository.flush()]);
       runtime.destroy();
     },

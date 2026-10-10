@@ -7,6 +7,7 @@ export interface RoomSettings {
   readonly palette: number;
   readonly items: Readonly<Partial<Record<RoomSlot, string>>>;
 }
+export const starterRoomSettings = (): RoomSettings => ({ version: 1, palette: 0, items: { left: 'dresser', wall: 'picture', rug: 'rug-oval' } });
 export const defaultRoomSettings = (): RoomSettings => ({ version: 1, palette: 0, items: {} });
 export const decodeRoomSettings = (value: unknown): RoomSettings => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new TypeError('Invalid room settings');

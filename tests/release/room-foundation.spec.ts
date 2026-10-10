@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 import { createDefaultSaveV3 } from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
@@ -12,6 +13,7 @@ for (const locale of ['en-US', 'ru-RU']) {
       const context = await browser.newContext({ baseURL, locale, viewport, hasTouch: true, reducedMotion: 'reduce' });
       const page = await context.newPage();
       try {
+        await returningPlayer(page);
         await page.goto('/squishy-squishes/');
         await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view', 'room');
         await expect(page.locator('[data-room-step="1"]')).toBeDisabled();
