@@ -19,7 +19,7 @@ export class FirstCraftGuide {
     private getDraft:()=>SandboxDraft,private commit:(state:OnboardingState)=>void) {
     this.active=state.status==='active';
     this.observer=new MutationObserver(records=>{ if(records.some(record=>record.type==='childList'||record.oldValue!==(record.target as Element).getAttribute(record.attributeName!))) this.update(); });
-    this.observer.observe(root,{subtree:true,childList:true,attributes:true,attributeOldValue:true,attributeFilter:['data-stage','data-paint-strokes','data-save-complete','data-sandbox-squeezes','data-crafting','data-decor-section','data-try-on','hidden']});
+    this.observer.observe(root,{subtree:true,childList:true,attributes:true,attributeOldValue:true,attributeFilter:['data-stage','data-paint-strokes','data-save-complete','data-save-failed','data-sandbox-squeezes','data-crafting','data-decor-section','data-try-on','hidden']});
     root.addEventListener('click',event=>{
       if(this.root.querySelector('[data-sandbox-app]')?.getAttribute('aria-busy')==='true')return;
       const button=event.target instanceof Element?event.target.closest('button'):null;
@@ -80,6 +80,7 @@ export class FirstCraftGuide {
     }
     if(stage!=='mixins')this.fillingVisit=false;
     if(shell.dataset.tryOn!=='true'&&stage==='mixins'&&(!this.state.fillingsSeen||this.fillingVisit)){this.fillingVisit=true;step='fillings';message=this.text('Выбери наполнитель и проведи по сквишу. Размер и плотность — в настройках.','Choose a filling and draw on your squishy. Adjust size and density in Settings.');if(!this.state.fillingsSeen)this.change({fillingsSeen:true});}
+    if(message&&shell.dataset.saveFailed==='true'){step='save-error';target='.craft-actions [data-action="save"]';message=this.text('Не удалось сохранить. Черновик здесь — попробуй ещё раз.','Save failed. Your draft is here — try again.');}
     if(message){
       const hint=this.root.querySelector<HTMLElement>('[data-sandbox-hint]');
       if(hint&&message!==this.lastHint){if(hint.dataset.guideOriginal===undefined||hint.dataset.guideStage!==stage){hint.dataset.guideOriginal=hint.textContent??'';hint.dataset.guideStage=stage;}hint.textContent=message;hint.dataset.guideHint=step;shell.append(hint);this.lastHint=message;}

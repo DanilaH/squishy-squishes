@@ -1703,6 +1703,7 @@ export class SandboxApp {
 
   private async saveDraft(): Promise<void> {
     if (this.saving) return;
+    delete this.shell.dataset.saveFailed;
     this.saving = true;
     this.syncInteractivity();
     this.saveButton.disabled = true;
@@ -1725,6 +1726,7 @@ export class SandboxApp {
       if (this.disposed) return;
       console.error('[squishy:sandbox-save]', error);
       this.shell.dataset.saveComplete = 'false';
+      this.shell.dataset.saveFailed = 'true';
       this.status.textContent = this.copy.saveFailed;
     } finally {
       this.saving = false;

@@ -1213,9 +1213,9 @@ changes are limited to the room's added replay button; tutorial screenshots are
 also inspected at narrow portrait, short landscape and desktop sizes.
 
 Local validation passed strict TypeScript, tooling/asset smoke, release web and
-Yandex builds plus the upload-root audit (63 files, 3,360,953 bytes), Pages staging
+Yandex builds plus the upload-root audit (63 files, 3,361,305 bytes), Pages staging
 and the isolated DRAFT audit (63 files, 3,361,462 bytes). Browser coverage includes
-10 onboarding scenarios, 33 room/customization regressions and 2 exact DRAFT
+11 onboarding scenarios, 33 room/customization regressions and 2 exact DRAFT
 root/adapter scenarios. The DRAFT adapter scenarios use a stub SDK and do not
 establish real hosted ads or tactile phone acceptance. Full suites remain PR
 gates; this feature has not been merged or deployed.
@@ -1223,3 +1223,7 @@ All 30 interface snapshots passed across EN/RU at 320×568, 844×390 and
 1440×900. Only the two narrow-portrait Library baselines exceeded the unchanged
 pixel tolerance and were updated for the replay button; other 28 remained within
 existing tolerance. Fresh tutorial screenshots were inspected separately.
+A final error-path review found that guidance could obscure Save failure feedback.
+Save failures now take priority in the hint strip and retain the enabled retry
+action and draft; an injected quota-failure/retry scenario passed. The release
+build/audit and narrow first-craft flow were rerun after this scoped correction.

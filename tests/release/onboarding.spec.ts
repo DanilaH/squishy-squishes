@@ -83,3 +83,17 @@ test('first-entry renderer failure returns to a visible retryable room',async({p
   await page.unroute('**/assets/PhaserSquishSurface-*.js');
   await page.locator('[data-library-retry]').click();await expect(page.locator('[data-guide-hint="base"]')).toBeVisible();
 });
+
+test('first-craft save failure stays visible and can be retried',async({page})=>{
+  await page.goto('/squishy-squishes/');await expect(page.locator('[data-guide-hint="base"]')).toBeVisible();
+  await page.locator('[data-shape="heart"]').click();
+  await page.evaluate(()=>{const write=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='squishy.save.v3'&&!document.body.hasAttribute('data-allow-save'))throw new Error('Injected save quota failure');write.call(this,key,value);};});
+  await page.locator('.craft-actions [data-action="save"]').click();
+  await expect(page.locator('[data-guide-hint="save-error"]')).toBeVisible();
+  await expect(page.locator('.craft-actions [data-action="save"]')).toBeEnabled();
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!).library)).toEqual([]);
+  await page.evaluate(()=>document.body.setAttribute('data-allow-save',''));
+  await page.locator('.craft-actions [data-action="save"]').click();
+  await expect(page.locator('[data-guide-hint="squeeze"]')).toBeVisible();
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!).library[0].shapeId)).toBe('heart');
+});
