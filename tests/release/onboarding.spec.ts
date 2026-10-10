@@ -39,6 +39,15 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
       await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
       await page.locator('[data-craft-section="decor"]').click();await page.locator('[data-decor-section="accessory"]').click();await page.locator('[data-decor-accessory="bow"]').click();
       await expect(page.locator('[data-guide-hint="arrange"]')).toBeVisible();await expect(page.locator('[data-accessory-selection="0"]')).toBeVisible();await check();
+      if(viewport.height>520){
+        const tray=(await page.locator('.free-object-panel').boundingBox())!;
+        for(const control of await page.locator('.free-object-core :is(button,input)').all()){
+          const box=(await control.boundingBox())!;
+          expect(box.y).toBeGreaterThanOrEqual(tray.y);
+          expect(box.y+box.height).toBeLessThanOrEqual(tray.y+tray.height);
+        }
+      }
+      expect(await page.locator('.free-object-list [aria-pressed="true"]').evaluate(node=>parseFloat(getComputedStyle(node).outlineOffset))).toBeLessThan(0);
       await page.screenshot({path:info.outputPath('first-decor.png')});
       await page.locator('[data-guide-skip]').click();await expect(page.locator('[data-guide-skip]')).toHaveCount(0);
       await page.locator('[data-action="save"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');

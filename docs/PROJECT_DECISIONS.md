@@ -1227,3 +1227,29 @@ A final error-path review found that guidance could obscure Save failure feedbac
 Save failures now take priority in the hint strip and retain the enabled retry
 action and draft; an injected quota-failure/retry scenario passed. The release
 build/audit and narrow first-craft flow were rerun after this scoped correction.
+
+## Mobile craft tray follow-up — 10 October 2026
+
+Owner reported cramped portrait controls, clipped selected outlines and the
+Arrange action row protruding by a few pixels. The 132px tray held 136px of
+content before external rings. Portrait craft now uses a 168px detail tray with
+separated rows, labels above full-width sliders, 6px side gutters and a 48px
+primary action strip. The shared controls track reserves space for the entire
+tray rather than squeezing the final row. Selection/focus rings draw inward
+inside scrollable panels. On short portrait makers, the resting seat follows
+the available playfield across craft/try-on/squeeze; room furniture is unchanged.
+
+Onboarding QA now checks the actual bounds of every Arrange button and slider
+on portrait/desktop, plus the selected ring's inward offset. The catalog audits
+still visit every choice with their existing hit-target and scrolling checks;
+their time budget is 120 seconds for all 22 accessories/reloads and the expanded
+portrait/landscape catalog matrix, rather than truncating the tested choices.
+
+Validation passed strict TypeScript, tooling/asset smoke, release builds and
+the Yandex root audit (63 files, 3,362,908 bytes). All 32 distinct targeted
+behavior scenarios passed: onboarding/recovery, active-object selection, full
+catalog rendering, detail caps and stable editor/try-on geometry. All 30 UI
+snapshots passed; 14 craft baselines changed for portrait spacing and inward
+selection rings, while Library/Ideas were unchanged. Actual 320px and 390px
+portrait screenshots were inspected separately. Latest full CI remains the PR
+gate; no merge or production deployment was performed.
