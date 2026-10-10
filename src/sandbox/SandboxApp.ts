@@ -73,6 +73,8 @@ export interface SandboxAppOptions {
   readonly muted: boolean;
   readonly savedSquishy: SavedSquishy | null;
   readonly initialShapeId?: ShapeId;
+  readonly initialDraft?: SandboxDraft;
+  readonly preserveDraftOnExit?: boolean;
   readonly startSavedInSqueeze?: boolean;
   readonly onExitToLibrary?: () => void;
   readonly onResetCraftContext?: () => void;
@@ -465,6 +467,7 @@ export class SandboxApp {
   ) {
     this.copy = COPY[options.language];
     this.savedSquishy = options.savedSquishy;
+    if (!this.savedSquishy && options.initialDraft) this.draft = options.initialDraft;
     if (!this.savedSquishy && options.initialShapeId) {
       this.draft = { ...this.draft, shapeId: options.initialShapeId };
     }
@@ -635,6 +638,8 @@ export class SandboxApp {
     this.updateAppearanceDataset(); this.updateHistoryUi();
     this.freeEditor.refresh();
   }
+
+  public getDraftSnapshot(): SandboxDraft { return structuredClone(this.draft); }
 
   public setActivityBlocked(blocked: boolean): void {
     if (this.disposed) return;
@@ -831,7 +836,7 @@ export class SandboxApp {
         <div class="sandbox-exit-overlay" data-exit-overlay hidden>
           <section class="sandbox-exit-dialog" role="dialog" aria-modal="true" aria-labelledby="sandbox-exit-title">
             <strong id="sandbox-exit-title">${this.copy.exitTitle}</strong>
-            <p>${this.copy.exitHint}</p>
+            <p>${this.options.preserveDraftOnExit ? (this.options.language === 'ru' ? 'Черновик останется здесь. Сохрани сквиш, чтобы добавить его в коллекцию.' : 'Your draft will stay here. Save your squishy to add it to the collection.') : this.copy.exitHint}</p>
             <div>
               <button class="sandbox-secondary" type="button" data-action="exit-cancel">${this.copy.stay}</button>
               <button class="sandbox-exit-danger" type="button" data-action="exit-confirm">${this.copy.leave}</button>
@@ -1698,6 +1703,7 @@ export class SandboxApp {
 
   private async saveDraft(): Promise<void> {
     if (this.saving) return;
+    delete this.shell.dataset.saveFailed;
     this.saving = true;
     this.syncInteractivity();
     this.saveButton.disabled = true;
@@ -1720,6 +1726,7 @@ export class SandboxApp {
       if (this.disposed) return;
       console.error('[squishy:sandbox-save]', error);
       this.shell.dataset.saveComplete = 'false';
+      this.shell.dataset.saveFailed = 'true';
       this.status.textContent = this.copy.saveFailed;
     } finally {
       this.saving = false;

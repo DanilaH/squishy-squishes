@@ -41,7 +41,7 @@ free-craft atmosphere release does not establish completion of this new pass.
 
 The owner approved one freely navigable Workshop with Base, Paint, Fillings
 and Decor; no mandatory mixing or six-step Next chain. Global undo, try-on and
-save remain available, with contextual detail editing. Tutorial work is deferred.
+save remain available, with contextual detail editing. First-entry guidance and starter room were approved on 10 October 2026; current implementation is recorded in PROJECT_DECISIONS.
 The local implementation and validation are recorded in PROJECT_DECISIONS.
 Published checklist entries below describe the earlier released flow.
 
