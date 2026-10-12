@@ -118,6 +118,10 @@ for (const device of devices) {
           // The larger draw buffer preserves the responsive Workshop seat in pixels.
           expect(result.canvas.width * result.radiusRatio, `${device.name}: responsive resting size`).toBeCloseTo(result.landscapeRadius, 1);
           expect(result.canvas.width, `${device.name}: long pulls have drawing room`).toBeGreaterThanOrEqual(device.width);
+        } else if (device.name === 'compact-ru') {
+          const radius = result.canvas.width * result.radiusRatio;
+          expect(radius, 'short portrait fits its available playfield').toBeCloseTo(.34 * Math.min(device.width * .82, result.stageHeight * 1.2), 1);
+          expect(radius * 2, 'resting body fits vertically').toBeLessThanOrEqual(result.stageHeight);
         } else expect(result.radiusRatio, `${device.name}: every stage shares its resting projection`).toBeCloseTo(.14, 3);
         history.push({ stage: name, canvas: result.canvas, radius: result.canvas.width * result.radiusRatio, stageTop: result.stageTop,
           stageHeight: result.stageHeight, deskTop: result.deskTop, deskBottom: result.deskBottom, floorTop: result.floorTop });

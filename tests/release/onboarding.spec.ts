@@ -8,7 +8,7 @@ test('onboarding codec validates resumable draft without changing V3',()=>{
   expect(decodeOnboarding(state)).toEqual(state);
   expect(()=>decodeOnboarding({...state,draft:{shapeId:'bad'}})).toThrow();
 });
-for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:568},{width:568,height:320},{width:1440,height:900}]){
+for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:568},{width:360,height:640},{width:390,height:844},{width:568,height:320},{width:844,height:390},{width:1440,height:900}]){
   test(`first craft, recovery, skip and replay ${locale} ${viewport.width}`,async({browser,baseURL},info)=>{
     test.setTimeout(90000);
     const context=await browser.newContext({baseURL,locale,viewport,reducedMotion:'reduce'});
@@ -17,19 +17,29 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
       await page.goto('/squishy-squishes/');
       await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
       await expect(page.locator('[data-guide-hint="base"]')).toBeVisible();
-      const check=async()=>{
+      const check=async(tools=true)=>{
         expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight&&document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-        for(const selector of ['[data-guide-skip]','[data-craft-section="paint"]','.craft-actions [data-action="save"]']){
+        for(const selector of tools?['[data-guide-skip]','[data-craft-section="paint"]','.craft-actions [data-action="save"]']:['[data-guide-skip]','[data-action="try-return"]']){
           const box=(await page.locator(selector).boundingBox())!;expect(box.height).toBeGreaterThanOrEqual(44);expect(box.x).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(viewport.height);
           expect(await page.locator(selector).evaluate(button=>{const b=button.getBoundingClientRect();return document.elementFromPoint(b.x+b.width/2,b.y+b.height/2)?.closest('button')===button;})).toBe(true);
         }
         const hint=(await page.locator('[data-guide-hint]').boundingBox())!,actions=(await page.locator('.craft-actions').boundingBox())!;
-        expect(hint.y).toBeGreaterThanOrEqual(actions.y+actions.height);
+        if(tools)expect(hint.y).toBeGreaterThanOrEqual(actions.y+actions.height);
+        else {const back=(await page.locator('[data-action="try-return"]').boundingBox())!;expect(back.y+back.height+4).toBeLessThanOrEqual(hint.y);}
         expect(hint.y+hint.height).toBeLessThanOrEqual(viewport.height);
+        const text=await page.locator('[data-guide-hint]').evaluate(node=>{
+          const range=document.createRange();range.selectNodeContents(node);
+          const box=node.getBoundingClientRect(),rects=[...range.getClientRects()];
+          return {font:parseFloat(getComputedStyle(node).fontSize),fits:rects.every(r=>r.left>=box.left&&r.right<=box.right&&r.top>=box.top&&r.bottom<=box.bottom),lines:rects.length};
+        });
+        expect(text.font).toBeGreaterThanOrEqual(14);expect(text.fits).toBe(true);expect(text.lines).toBeLessThanOrEqual(2);
       };
       await check();await page.screenshot({path:info.outputPath('first-base.png')});
+      await page.locator('[data-craft-section="mixins"]').click();await expect(page.locator('[data-guide-hint="fillings"]')).toBeVisible();await check();
+      await page.locator('[data-action="try-on"]').click();await expect(page.locator('[data-guide-hint="try"]')).toBeVisible();await check(false);await page.screenshot({path:info.outputPath('guide-try.png')});await page.locator('[data-action="try-return"]').click();
+      await page.locator('[data-craft-section="shape"]').click();
       await page.locator('[data-shape="heart"]').click();
-      await page.locator('[data-craft-section="paint"]').click();
+      await page.locator('[data-craft-section="paint"]').click();await check();
       const canvas=(await page.locator('[data-sandbox-canvas]').boundingBox())!;
       await page.mouse.move(canvas.x+canvas.width*.48,canvas.y+canvas.height*.52);await page.mouse.down();await page.mouse.move(canvas.x+canvas.width*.56,canvas.y+canvas.height*.55,{steps:8});await page.mouse.up();
       await expect(page.locator('[data-guide-hint="undo"]')).toBeVisible();await check();
@@ -37,7 +47,7 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
       const prior=await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.onboarding.v1')!).draft);
       await page.reload();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-shape','heart');
       await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
-      await page.locator('[data-craft-section="decor"]').click();await page.locator('[data-decor-section="accessory"]').click();await page.locator('[data-decor-accessory="bow"]').click();
+      await page.locator('[data-craft-section="decor"]').click();await check();await page.locator('[data-decor-section="accessory"]').click();await page.locator('[data-decor-accessory="bow"]').click();
       await expect(page.locator('[data-guide-hint="arrange"]')).toBeVisible();await expect(page.locator('[data-accessory-selection="0"]')).toBeVisible();await check();
       if(viewport.height>520){
         const tray=(await page.locator('.free-object-panel').boundingBox())!;
@@ -49,17 +59,21 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
       }
       expect(await page.locator('.free-object-list [aria-pressed="true"]').evaluate(node=>parseFloat(getComputedStyle(node).outlineOffset))).toBeLessThan(0);
       await page.screenshot({path:info.outputPath('first-decor.png')});
-      await page.locator('[data-guide-skip]').click();await expect(page.locator('[data-guide-skip]')).toHaveCount(0);
+      await page.locator('[data-guide-skip]').click();await expect(page.locator('[data-guide-skip]')).toHaveCount(0);await expect(page.locator('[data-guide-hint]')).toHaveCount(0);
       await page.locator('[data-action="save"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');
       expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!).library[0].appearance.strokes)).toEqual(prior.appearance.strokes);
       await page.locator('[data-action="home"]').click();await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view','room');
       await expect(page.locator('[data-room-prop]')).toHaveCount(3);await page.screenshot({path:info.outputPath('starter-room.png')});
       await page.reload();await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view','room');
-      await page.locator('[data-library-help]').click();await expect(page.locator('[data-guide-hint="base"]')).toBeVisible();await page.locator('[data-action="save"]').click();
+      await page.locator('[data-library-help]').click();await expect(page.locator('[data-guide-hint="base"]')).toBeVisible();await check();await page.locator('[data-action="save"]').click();
       await expect(page.locator('[data-guide-hint="squeeze"]')).toBeVisible();
+      const guidedHeight=(await page.locator('.sandbox-stage').boundingBox())!.height;
       const squish=(await page.locator('[data-sandbox-canvas]').boundingBox())!;
       await page.mouse.move(squish.x+squish.width*.5,squish.y+squish.height*.5);await page.mouse.down();await page.mouse.move(squish.x+squish.width*.57,squish.y+squish.height*.5,{steps:12});await page.mouse.up();
-      await expect(page.locator('[data-guide-hint="room"]')).toBeVisible();
+      await expect(page.locator('[data-guide-hint]')).toHaveCount(0);
+      await expect(page.locator('[data-guide-skip]')).toHaveCount(0);
+      await expect(page.locator('[data-action="home"]')).toHaveAttribute('data-guide-target','');
+      expect((await page.locator('.sandbox-stage').boundingBox())!.height).toBeGreaterThan(guidedHeight);
       await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.onboarding.v1')!).status)).toBe('done');
       expect(errors).toEqual([]);
     }finally{await context.close();}

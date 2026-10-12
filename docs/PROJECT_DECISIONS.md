@@ -1253,3 +1253,26 @@ snapshots passed; 14 craft baselines changed for portrait spacing and inward
 selection rings, while Library/Ideas were unchanged. Actual 320px and 390px
 portrait screenshots were inspected separately. Latest full CI remains the PR
 gate; no merge or production deployment was performed.
+
+## Readable contextual guide — 12 October 2026
+
+Owner approved short bottom guidance with larger type and no permanent strip
+after the lesson. EN/RU copy is now one or two lines at 14px/18px. Actual saved
+squeezing completes the lesson, removes Skip and the hint strip, and releases
+its grid track; the room-return action remains highlighted. Skip also removes
+the strip immediately. Save failure retains priority and its retry action.
+
+A separate geometry audit found that the try-on return button intersected the
+old hint area. It now reserves an 8px gap above the hint, including short
+landscape. Tests check DOM text ranges, line count, button hit testing, panel
+bounds and released playfield height across RU/EN at 320×568, 360×640, 390×844,
+568×320, 844×390 and 1440×900. All 17 onboarding/recovery scenarios and the
+compact Pages workshop geometry scenario passed. The latter now checks the
+accepted responsive portrait seat and actual vertical fit, while retaining all
+existing across-stage center/radius/desk/floor continuity checks; its stale
+fixed .14 assertion had caused both previous Pages/Hall CI failures.
+
+Strict TypeScript, tooling/assets, release builds and upload-root audit passed
+(63 files, 3,362,067 bytes), as did Pages staging. No deployment performed.
+All 30 returning-player interface snapshots passed unchanged; the guide remains
+scoped to its contextual lesson. Full latest CI is still required before merge.

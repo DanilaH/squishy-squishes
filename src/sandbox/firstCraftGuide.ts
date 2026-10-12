@@ -57,33 +57,37 @@ export class FirstCraftGuide {
         const button=document.createElement('button');button.type='button';button.dataset.guideSkip='';button.className='first-craft-skip';button.textContent=this.text('Пропустить','Skip tutorial');
         this.root.querySelector('.sandbox-topbar')?.prepend(button);
       }
-      if(shell.dataset.tryOn==='true'){step='try';target='[data-action="try-return"]';message=this.text('Это примерка: помни сквиш и вернись к крафту, чтобы продолжить.','Try it out: squeeze your squishy, then return to craft to keep creating.');}
+      if(shell.dataset.tryOn==='true'){step='try';target='[data-action="try-return"]';message=this.text('Помни сквиш. Затем вернись к крафту.','Squeeze it, then return to craft.');}
       else if(this.saved&&stage==='squeeze'){
-        if(Number(shell.dataset.sandboxSqueezes)>this.savedSqueezes&&!this.squeezed){this.squeezed=true;this.change({status:'done'});}
-        step=this.squeezed?'room':'squeeze';target=this.squeezed?'[data-action="home"]':'[data-sandbox-canvas]';
-        message=this.squeezed?this.text('Готово! Вернись в комнату — твой сквиш уже на постаменте.','All done! Back to room — your squishy now lives there.'):this.text('Зажми и потяни сквиш, чтобы помять его. Он уже сохранён.','Press and pull your squishy to squeeze it. It is already saved.');
+        if(Number(shell.dataset.sandboxSqueezes)>this.savedSqueezes&&!this.squeezed){
+          this.squeezed=true;this.active=false;this.change({status:'done',fillingsSeen:true});this.clear();
+          this.root.querySelector('[data-action="home"]')?.setAttribute('data-guide-target','');
+        }else{
+          step='squeeze';target='[data-sandbox-canvas]';
+          message=this.text('Зажми и потяни сквиш — он уже сохранён.','Press and pull — your squishy is saved.');
+        }
       }else if(stage==='shape'){
-        step='base';target='[data-craft-section="paint"]';message=this.text('Это твой первый сквиш. Выбери форму или оставь эту, затем попробуй раскраску.','Your first squishy. Pick a shape or keep this one, then try Paint.');
+        step='base';target='[data-craft-section="paint"]';message=this.text('Выбери форму. Затем открой «Раскраска».','Pick a shape, then open Paint.');
       }else if(stage==='paint'){
         const painted=draft.appearance.strokes.length>0;
         if(painted&&!this.state.painted){this.change({painted:true});}
         step=painted?'undo':'paint';target=painted?'[data-craft-section="decor"]':'[data-sandbox-canvas]';
         const canUndo=!this.root.querySelector<HTMLButtonElement>('.craft-actions [data-action="draft-undo"]')?.disabled;
-        message=painted?(canUndo?this.text('Мазок можно отменить кнопкой ↶. Теперь попробуй украшения.','Undo a stroke with ↶. Next, try Decor.'):this.text('Твоя раскраска восстановлена. Можно добавить ещё цвета или попробовать украшения.','Your painting is restored. Add more color or try Decor.')):this.text('Выбери цвет и проведи пальцем по сквишу. Можно рисовать как угодно.','Pick a color and draw on your squishy. Make it your way.');
+        message=painted?(canUndo?this.text('↶ отменяет мазок. Попробуй украшения.','↶ undoes a stroke. Next, try Decor.'):this.text('Раскраска восстановлена. Попробуй украшения.','Painting restored. Next, try Decor.')):this.text('Выбери цвет и рисуй на сквише.','Pick a color and draw on your squishy.');
       }else if(stage==='decor'){
         const decorated=Boolean(draft.decor.eyes||draft.decor.mouth||draft.decor.accessories?.length||draft.decor.stickers.length||draft.decor.accessory);
         if(decorated&&!this.state.decorated){this.change({decorated:true});}
         const selected=this.root.querySelector<HTMLElement>('[data-accessory-selection]:not([hidden]),[data-sticker-selection]:not([hidden])');
         step=selected?'arrange':decorated?'save':'decor';target=decorated?'.craft-actions [data-action="save"]':'.sandbox-decor-tabs';
-        message=selected?this.text('Рамка — выбранная деталь. Тяни её; размер и поворот — ниже. Сохрани, когда готово.','The frame marks your detail. Drag it; size and rotation are below. Save when ready.'):decorated?this.text('Сохрани сквиш — он попадёт в коллекцию, и его можно будет помять.','Save your squishy to keep it in your collection and squeeze it.'):this.text('Добавь лицо, стикер или аксессуар. Разделы можно менять в любом порядке.','Add a face, sticker or accessory. You can switch sections in any order.');
+        message=selected?this.text('Тяни деталь в рамке. Размер и поворот — ниже.','Drag the framed detail. Resize or rotate below.'):decorated?this.text('Готово? Сохрани сквиш, чтобы помять его.','Save your squishy, then squeeze it.'):this.text('Добавь лицо, стикер или аксессуар.','Add a face, sticker or accessory.');
       }
     }
     if(stage!=='mixins')this.fillingVisit=false;
-    if(shell.dataset.tryOn!=='true'&&stage==='mixins'&&(!this.state.fillingsSeen||this.fillingVisit)){this.fillingVisit=true;step='fillings';message=this.text('Выбери наполнитель и проведи по сквишу. Размер и плотность — в настройках.','Choose a filling and draw on your squishy. Adjust size and density in Settings.');if(!this.state.fillingsSeen)this.change({fillingsSeen:true});}
-    if(message&&shell.dataset.saveFailed==='true'){step='save-error';target='.craft-actions [data-action="save"]';message=this.text('Не удалось сохранить. Черновик здесь — попробуй ещё раз.','Save failed. Your draft is here — try again.');}
+    if(shell.dataset.tryOn!=='true'&&stage==='mixins'&&(!this.state.fillingsSeen||this.fillingVisit)){this.fillingVisit=true;step='fillings';message=this.text('Выбери наполнитель и рисуй на сквише.','Pick a filling and draw on your squishy.');if(!this.state.fillingsSeen)this.change({fillingsSeen:true});}
+    if(message&&shell.dataset.saveFailed==='true'){step='save-error';target='.craft-actions [data-action="save"]';message=this.text('Не удалось сохранить. Попробуй ещё раз.','Save failed. Try again.');}
     if(message){
       const hint=this.root.querySelector<HTMLElement>('[data-sandbox-hint]');
-      if(hint&&message!==this.lastHint){if(hint.dataset.guideOriginal===undefined||hint.dataset.guideStage!==stage){hint.dataset.guideOriginal=hint.textContent??'';hint.dataset.guideStage=stage;}hint.textContent=message;hint.dataset.guideHint=step;shell.append(hint);this.lastHint=message;}
+      if(hint&&message!==this.lastHint){if(hint.dataset.guideOriginal===undefined||hint.dataset.guideStage!==stage){hint.dataset.guideOriginal=hint.textContent??'';hint.dataset.guideStage=stage;}hint.textContent=message;hint.dataset.guideHint=step;hint.setAttribute('aria-live','polite');shell.append(hint);this.lastHint=message;}
       for(const node of this.root.querySelectorAll('[data-guide-target]'))node.removeAttribute('data-guide-target');
       this.root.querySelector(target||'.sandbox-mixin-grid')?.setAttribute('data-guide-target','');
     }else if(this.lastHint){this.clear();}
