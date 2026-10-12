@@ -16,14 +16,14 @@ export class FirstCraftGuide {
   private fillingVisit=false;
   private active:boolean;
   constructor(private root:HTMLElement,private ru:boolean,private state:OnboardingState,
-    private getDraft:()=>SandboxDraft,private commit:(state:OnboardingState)=>void) {
+    private getDraft:()=>SandboxDraft,private commit:(state:OnboardingState)=>void, private onSavedLessonEnd:()=>void = () => undefined) {
     this.active=state.status==='active';
     this.observer=new MutationObserver(records=>{ if(records.some(record=>record.type==='childList'||record.oldValue!==(record.target as Element).getAttribute(record.attributeName!))) this.update(); });
     this.observer.observe(root,{subtree:true,childList:true,attributes:true,attributeOldValue:true,attributeFilter:['data-stage','data-paint-strokes','data-save-complete','data-save-failed','data-sandbox-squeezes','data-crafting','data-decor-section','data-try-on','hidden']});
     root.addEventListener('click',event=>{
       if(this.root.querySelector('[data-sandbox-app]')?.getAttribute('aria-busy')==='true')return;
       const button=event.target instanceof Element?event.target.closest('button'):null;
-      if(button?.hasAttribute('data-guide-skip')) {this.active=false;this.fillingVisit=false;this.change({status:this.state.status==='done'?'done':'skipped',fillingsSeen:true,roomSeen:true});this.clear();}
+      if(button?.hasAttribute('data-guide-skip')) {this.active=false;this.fillingVisit=false;this.change({status:this.state.status==='done'?'done':'skipped',fillingsSeen:true,roomSeen:true});this.clear();if(this.saved)queueMicrotask(()=>{if(!this.disposed)this.onSavedLessonEnd();});}
       queueMicrotask(()=>{this.update();this.checkpoint();});
     },{signal:this.abort.signal});
     root.addEventListener('pointerup',()=>queueMicrotask(()=>{this.update();this.checkpoint();}),{signal:this.abort.signal});
@@ -62,6 +62,7 @@ export class FirstCraftGuide {
         if(Number(shell.dataset.sandboxSqueezes)>this.savedSqueezes&&!this.squeezed){
           this.squeezed=true;this.active=false;this.change({status:'done',fillingsSeen:true});this.clear();
           this.root.querySelector('[data-action="home"]')?.setAttribute('data-guide-target','');
+          queueMicrotask(()=>{if(!this.disposed)this.onSavedLessonEnd();});
         }else{
           step='squeeze';target='[data-sandbox-canvas]';
           message=this.text('Зажми и потяни сквиш — он уже сохранён.','Press and pull — your squishy is saved.');

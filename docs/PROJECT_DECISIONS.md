@@ -1338,3 +1338,26 @@ renderer layout to settle, without relaxing the requirement. Strict TS,
 tooling/assets, both release builds and upload audit passed: 63 files /
 3,374,911 bytes. All 30 interface captures passed unchanged in six visual cases.
 Changes remain in PR #100, without merge or deployment.
+
+## Final guidance and release pass — 12 October 2026
+
+The owner approved sequential hints and a final release pass including merge
+and Pages deployment after passing gates. During active first-craft guidance,
+saving first offers Squeeze guidance; completing a saved squeeze or skipping
+that lesson offers the optional room-decoration card. A previously skipped
+lesson still offers the room card immediately after saving. Neither action is
+required; text/background/close dismiss the card. Completion callbacks run after
+the craft hint is cleared and do not survive disposed makers.
+
+The room card now reserves a 64px footer track, with 44px controls and readable
+text. It no longer overlaps the heading, scene or Squeeze controls, including
+short landscape. Dismissal releases the track. Save, room settings, collection
+capacity and physics are unchanged.
+
+The cancelled prior Release Check was traced to the traditional accessory
+regression: its old 90-second case grew from five to 22 full journeys after
+content expansion. Each shape/accessory journey now has an independent
+60-second budget and can be distributed across CI shards. All existing checks
+of attachment motion, saved library bytes and reload remain; fixture craft count
+now matches its real accessory count. This is a test partition correction,
+without increasing workflow time limits or omitting content.

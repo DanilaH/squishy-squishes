@@ -25,9 +25,11 @@ test('traditional molds retain legacy V3 shapes and a continuous touchable body'
   expect(isPointInsideShape(getShape('strawberry'), 0, -.75)).toBe(true);
 });
 
-for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) {
-  test(`${shapeId} retains every saved accessory through a real squeeze and reload`, async ({ page }) => {
-    test.setTimeout(90_000); // Five real Hall → Squeeze → reload journeys.
+// Each expanded-content journey has its own time budget and can be sharded.
+test.describe.configure({ mode: 'parallel' });
+for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) for (const accessory of ACCESSORY_IDS) {
+  test(`${shapeId} retains saved ${accessory} through a real squeeze and reload`, async ({ page }) => {
+    test.setTimeout(60_000);
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({ width: 390, height: 844 });
@@ -36,14 +38,14 @@ for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) {
       id: `${shapeId}-${accessory}`, createdAt: 1700000000000 + n, shapeId, materialId: 'soft',
       appearance: { v: 1, strokes: [], mixins: [] },
       decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory },
-    })), totalCrafts: 5 };
+    })), totalCrafts: ACCESSORY_IDS.length };
     decodeSaveStateV3(save);
     await page.goto('/squishy-squishes/?roomReview=0');
     await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), save);
     await page.reload();
     const beforeSave = await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library));
     await mkdir('migration-baseline-evidence', { recursive: true });
-    for (const accessory of ACCESSORY_IDS) {
+    {
       const hall = page.locator('[data-sandbox-library]');
       await expect(hall).toHaveAttribute('data-library-count', String(ACCESSORY_IDS.length));
       await expect(hall).toHaveAttribute('data-library-hall-mounted', 'true');

@@ -790,7 +790,7 @@ export class SandboxLibraryApp {
       if (!toy && !idea && this.onboarding && (this.onboarding.status === 'active' || this.onboarding.draft || (!this.library.length && this.onboarding.status === 'skipped'))) {
         const maker = this.currentMaker;
         this.guide = new FirstCraftGuide(host, this.options.language === 'ru', this.onboarding,
-          () => maker.getDraftSnapshot(), state => { this.onboarding = { ...state, roomSeen: this.onboarding?.roomSeen || state.roomSeen, roomDecorSeen: this.onboarding?.roomDecorSeen || state.roomDecorSeen }; this.options.onOnboardingChange?.(this.onboarding); });
+          () => maker.getDraftSnapshot(), state => { this.onboarding = { ...state, roomSeen: this.onboarding?.roomSeen || state.roomSeen, roomDecorSeen: this.onboarding?.roomDecorSeen || state.roomDecorSeen }; this.options.onOnboardingChange?.(this.onboarding); }, () => this.showRoomDecorHint());
       }
     } catch (error: unknown) {
       if (startToken !== this.makerStartToken) return;
@@ -833,7 +833,7 @@ export class SandboxLibraryApp {
   }
 
   private showRoomDecorHint(): void {
-    if (!this.options.roomReview || !this.roomEditor || !this.onboarding || this.onboarding.roomDecorSeen) return;
+    if (!this.options.roomReview || !this.roomEditor || !this.onboarding || this.onboarding.roomDecorSeen || this.onboarding.status === 'active') return;
     const shell = this.root.querySelector<HTMLElement>('[data-sandbox-app]');
     if (!shell) return;
     const ru = this.options.language === 'ru';
