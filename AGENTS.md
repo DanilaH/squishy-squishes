@@ -34,6 +34,12 @@ common compact shelves, one selected toy on the table using the existing maker,
 coherent furniture, responsive internal catalog scrolling and clear actions.
 Do not treat the published free-craft checklist as proof of this follow-up.
 
+On 12 October the owner approved an open collection showcase: large existing
+thumbnails, one creation entry, short shape labels and per-toy actions instead
+of the enclosing pink cabinet and repeated empty slots. Follow the current
+contract and validation in docs/PROJECT_DECISIONS.md; preserve capacity, confirmed
+replacement/deletion, catalog return position and the room podium geometry.
+
 ## Current polish invariants
 
 - Pinned Squeeze follows the pointer modestly; retain bounded whole-body travel and local tap/poke rebound. The owner paused the Unpin entry on 7 October 2026; retain its transient experimental code without restoring the player button.

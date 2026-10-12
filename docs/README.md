@@ -24,6 +24,11 @@ The independent full-screen UX review is in
 is recommended for freeze, and all four targeted follow-up fixes are implemented
 and verified locally. The follow-up now switches the room to the default entry.
 
+The owner-approved 12 October open collection showcase is recorded in
+[`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md), alongside first-entry guidance.
+It is currently prepared in PR #100; approval of the concept does not establish
+production deployment.
+
 The local 8 October screen polish (collection/play split, responsive room editor,
 Ideas and explicit replacement confirmation) is recorded in
 [`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md). It shipped in PR #97.

@@ -1276,3 +1276,36 @@ Strict TypeScript, tooling/assets, release builds and upload-root audit passed
 (63 files, 3,362,067 bytes), as did Pages staging. No deployment performed.
 All 30 returning-player interface snapshots passed unchanged; the guide remains
 scoped to its contextual lesson. Full latest CI is still required before merge.
+
+## Open collection showcase — 12 October 2026
+
+Owner approved the phone/desktop open-shelf concept: actual game thumbnails,
+short shape labels, a calm selected backplate/check and a single creation entry
+instead of all unoccupied slots. The default room's collection now drops the
+pink enclosing cabinet, uses larger previews and finishes partly occupied shelf
+rows without creating empty interactive cells. At capacity, creation moves to
+the fixed header so an extra shelf row is unnecessary; the existing replacement
+confirmation and 8-to-10 rewarded capacity contract are unchanged. The ad offer
+sits next to the collection capacity counter. Room view keeps its layout and
+uses the title My room / Моя комната. Explicit legacy Hall QA retains its old
+Manage/gallery presentation.
+
+Per-toy three-dot buttons open the existing modal/focus infrastructure with
+Edit, Delete and Close. Escape restores the originating control; Delete opens
+the existing confirmation and retains its original focus destination on cancel.
+Edit loads the existing maker and updates the same saved ID. Collection-to-
+Squeeze first remounts the room layout, preserving the podium geometry rather
+than inheriting the collection header/footer. Return restores catalog scrolling
+and selected focus. V3 content and physics remain unchanged.
+
+Captions and action controls have small translucent cream backplates so open
+shelves remain legible when they cross a dark floor. QA checks contrast against
+both floor and wall for all 16 room palettes, along with page/catalog horizontal
+overflow, 44px controls, modal hit testing, Escape/cancel focus, edit count/ID,
+confirmed deletion and 0/1/4/7/8/10-toy collections across RU/EN at 320×568,
+390×844, 568×320, 844×390 and 1440×900. All 19 targeted scenarios passed; the
+collection flows cover 60 count/locale/viewport configurations. All 30 interface captures
+passed; only four narrow/landscape Library baselines exceeded the existing pixel
+tolerance and changed for the room heading. Strict TypeScript, tooling/assets,
+release builds and Yandex root audit passed (63 files, 3,371,991 bytes). Full
+latest CI remains the merge gate; no production deployment performed.

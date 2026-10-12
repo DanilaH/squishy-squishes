@@ -79,7 +79,7 @@ for (const locale of ['en-US', 'ru-RU']) {
         expect(await grid.evaluate(el => el.scrollTop)).toBe(scroll);
         await expect(page.locator(`[data-library-play-id="${returnId}"]`)).toBeFocused();
         expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(original);
-        await page.locator('[data-room-manage]').click();
+        await page.locator(`[data-library-actions-id="${returnId}"]`).click();
         await page.locator(`[data-library-delete-id="${returnId}"]`).click();
         await expect(page.locator('[data-library-delete-overlay]')).toBeVisible();
         await page.locator('[data-library-delete-cancel]').click();

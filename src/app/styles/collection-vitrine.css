@@ -1,0 +1,67 @@
+/* The room's collection is an open shelf, not a second enclosed cabinet. */
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-heading { margin-block:4px 8px; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-heading__actions { display:none; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-heading > div:first-child { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-heading h1 { order:-1; margin:0; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-status { background:#fff6ed; border:1px solid #ddc5d2; border-radius:18px; padding:6px 10px; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .room-library-footer { display:none; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-collection {
+ width:min(100%,1120px);height:auto;max-height:100%;padding:0 4px;border:0;border-radius:0;background:none;box-shadow:none;align-self:start;
+}
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-collection__heading { padding:0 4px 8px; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-grid { height:auto;max-height:100%;gap:12px 0;padding:4px 4px 12px; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card,
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-slot { height:248px;overflow:visible;isolation:auto; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card::before,
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-slot::before { bottom:44px;height:12px; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card__play { height:204px;border-radius:20px;box-shadow:none;background:transparent;position:relative; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card__canvas { height:100%;width:100%;transform:translateY(12px); }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card.is-selected .sandbox-library-card__play { background:linear-gradient(#eadbea80,#eadbea30);box-shadow:none; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card.is-selected .sandbox-library-card__play::after { content:'✓';position:absolute;right:8px;top:8px;width:24px;height:24px;display:grid;place-items:center;background:#725184;color:white;border-radius:50%;font-size:14px; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card__footer { height:44px;padding:0 6px;gap:2px;justify-content:center; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card__footer strong { font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+#app .toy-actions-open { flex:none;width:44px;height:44px;border:0;background:transparent;color:#654c6a;font-size:24px;cursor:pointer;border-radius:12px;display:grid;place-items:center; }
+#app .toy-actions-open:focus-visible { outline:2px solid #84508f;outline-offset:-3px; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-slot { padding:12px 12px 44px;position:relative; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-slot > span { width:min(75%,150px);height:140px;border-radius:20px;font-size:44px; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-slot small { position:absolute;bottom:0;height:44px;display:flex;align-items:center;font-size:14px;font-weight:800; }
+#app .toy-actions-sheet { width:min(340px,calc(100vw - 24px));display:grid;gap:12px; }
+#app .toy-actions-sheet h2 { font-size:18px;text-align:center;margin:0 0 4px; }
+#app .toy-actions-sheet button { min-height:48px; }
+@media(max-width:760px){
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase { padding-inline:0; }
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card,
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-slot { height:176px; }
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card__play { height:132px; }
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card__canvas { transform:translateY(8px); }
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card__footer strong { font-size:12px; }
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-slot > span { height:108px; }
+}
+@media(max-height:520px){
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-heading { min-height:44px;margin:0; }
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-status { display:block;font-size:12px; }
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-heading h1 { font-size:20px; }
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card,
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-slot { height:184px; }
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card__play { height:140px; }
+}
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection][data-collection-full=true] .sandbox-library-heading__actions { display:flex; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-heading [data-library-new] { background:#725184;background-image:none;border:1px solid #60416f;border-radius:14px;color:white;text-shadow:none;-webkit-text-stroke:0;filter:none;min-height:44px; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-heading [data-library-new]::before { display:none; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-heading [data-library-expand-reward] { font-size:11px;padding-inline:8px; }
+#app .toy-actions-sheet button { border:1px solid #cda9bf;border-radius:14px;background:#fff8f0;color:#654c6a;font:inherit;font-weight:800;padding:8px 16px;cursor:pointer; }
+#app .toy-actions-sheet [data-library-edit-id] { background:#725184;color:#fff;border-color:#60416f; }
+#app .toy-actions-sheet [data-library-delete-id] { color:#9d3c58; }
+#app .toy-actions-sheet button:focus-visible { outline:2px solid #84508f;outline-offset:-3px; }
+/* Labels stay readable when lower shelves cross a darker room floor. */
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-card__footer strong { flex:0 1 auto;padding:4px 6px;border-radius:8px;background:#fff6ede8; }
+#app .toy-actions-open { background:#fff6edcc;border-radius:50%; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .library-showcase-slot small { padding:0 10px;border-radius:12px;background:#fff6ede8;color:#654c6a; }
+/* Finish a partly occupied shelf without adding empty interactive slots. */
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-grid > :last-child:nth-child(4n + 1)::before { width:400%; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-grid > :last-child:nth-child(4n + 2)::before { width:300%; }
+#app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-grid > :last-child:nth-child(4n + 3)::before { width:200%; }
+@media(max-width:760px){
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-grid > :last-child:nth-child(n)::before { width:100%; }
+ #app[data-jelly-ui-ready] .room-library[data-room-view=collection] .sandbox-library-grid > :last-child:nth-child(2n + 1)::before { width:200%; }
+}
