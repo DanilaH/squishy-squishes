@@ -38,3 +38,6 @@
 @media (max-height:520px) and (orientation:landscape) {
   #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]):has([data-room-decor-hint]) { grid-template-rows:44px 44px minmax(0,1fr) 64px; }
 }
+@media (max-height:520px) and (orientation:landscape) {
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage=squeeze] [data-panel=squeeze] [data-action=edit-saved] { padding-inline:4px; font-size:13px; }
+}

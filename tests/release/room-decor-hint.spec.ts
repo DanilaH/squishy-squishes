@@ -85,6 +85,9 @@ for(const locale of ['ru-RU','en-US']) for(const viewport of [{width:320,height:
   await expect(page.locator('[data-guide-hint]')).toHaveCount(0);await expect(page.locator('[data-room-decor-hint]')).toBeVisible();
   const hint=(await page.locator('[data-room-decor-hint]').boundingBox())!;
   for(const selector of ['.sandbox-topbar','.sandbox-copy','[data-panel="squeeze"]']) {const node=page.locator(selector);if(await node.isVisible()){const box=(await node.boundingBox())!;expect(box.y+box.height).toBeLessThanOrEqual(hint.y);}}
+  for(const button of await page.locator('[data-panel="squeeze"] button').all()) {
+   expect(await button.evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);const box=el.getBoundingClientRect();return [...range.getClientRects()].every(r=>r.left>=box.left&&r.right<=box.right&&r.top>=box.top&&r.bottom<=box.bottom);})).toBe(true);
+  }
   await page.locator('[data-action="edit-saved"]').click();
   await expect(page.locator('[data-room-decor-hint]')).toHaveCount(0);
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-crafting','true');

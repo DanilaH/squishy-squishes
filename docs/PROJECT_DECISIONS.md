@@ -1361,3 +1361,7 @@ content expansion. Each shape/accessory journey now has an independent
 of attachment motion, saved library bytes and reload remain; fixture craft count
 now matches its real accessory count. This is a test partition correction,
 without increasing workflow time limits or omitting content.
+
+Short landscape keeps the saved-edit button label fully visible with compact
+padding and type; touch targets remain at least 44px. Final checks include DOM
+text ranges as well as control/heading separation from the room hint.
