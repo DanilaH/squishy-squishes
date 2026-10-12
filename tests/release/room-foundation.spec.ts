@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 import { createDefaultSaveV3 } from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
@@ -12,6 +13,7 @@ for (const locale of ['en-US', 'ru-RU']) {
       const context = await browser.newContext({ baseURL, locale, viewport, hasTouch: true, reducedMotion: 'reduce' });
       const page = await context.newPage();
       try {
+        await returningPlayer(page);
         await page.goto('/squishy-squishes/');
         await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view', 'room');
         await expect(page.locator('[data-room-step="1"]')).toBeDisabled();
@@ -77,7 +79,7 @@ for (const locale of ['en-US', 'ru-RU']) {
         expect(await grid.evaluate(el => el.scrollTop)).toBe(scroll);
         await expect(page.locator(`[data-library-play-id="${returnId}"]`)).toBeFocused();
         expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(original);
-        await page.locator('[data-room-manage]').click();
+        await page.locator(`[data-library-actions-id="${returnId}"]`).click();
         await page.locator(`[data-library-delete-id="${returnId}"]`).click();
         await expect(page.locator('[data-library-delete-overlay]')).toBeVisible();
         await page.locator('[data-library-delete-cancel]').click();

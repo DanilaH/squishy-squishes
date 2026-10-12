@@ -1,4 +1,7 @@
+import { FirstCraftGuide } from './firstCraftGuide';
+import type { OnboardingState } from '../platform/onboarding';
 import '../app/styles/screen-polish.css';
+import '../app/styles/collection-vitrine.css';
 import { libraryCraftProps } from '../experiments/phaser/libraryCraftProps';
 import { libraryCraftCameraScale } from './libraryCraftFit';
 import { mountLibraryPersonality } from './libraryPersonality';
@@ -30,6 +33,8 @@ export interface SandboxLibraryCommitResult {
 export interface SandboxLibraryAppOptions {
   /** Owner review of the room foundation; published Library stays unchanged. */
   readonly roomReview?: boolean;
+  readonly onboarding?: OnboardingState;
+  readonly onOnboardingChange?: (state: OnboardingState) => void;
   readonly createRoomEditor?: (blocked: () => boolean) => RoomEditorReview;
   readonly language: SandboxLanguage;
   readonly muted: boolean;
@@ -244,12 +249,15 @@ export class SandboxLibraryApp {
   private disposed = false;
   private readonly personality: ReturnType<typeof mountLibraryPersonality>;
   private readonly roomEditor: RoomEditorReview | null;
+  private guide: FirstCraftGuide | null = null;
+  private onboarding: OnboardingState | undefined;
 
   public constructor(
     private readonly root: HTMLDivElement,
     private readonly options: SandboxLibraryAppOptions,
   ) {
     this.copy = COPY[options.language];
+    this.onboarding = options.onboarding;
     this.library = [...options.initialLibrary];
     this.completedRecipeIds = [...options.initialCompletedRecipeIds];
     this.libraryCapacity = options.libraryCapacity;
@@ -260,13 +268,17 @@ export class SandboxLibraryApp {
     window.addEventListener('resize', () => this.updateIdeaPages(), { signal: this.abortController.signal });
     this.personality = mountLibraryPersonality(root, id => this.library.find(toy => toy.id === id), () => this.activityBlocked);
     this.renderLibrary();
+    if (this.onboarding && (this.onboarding.status === 'active' || this.onboarding.draft) && !this.library.length) {
+      this.root.dataset.firstCraftLoading = this.copy.studioLoading;
+      void this.startMaker(null);
+    }
   }
 
   public setActivityBlocked(blocked: boolean): void {
     if (this.disposed) return;
     this.activityBlocked = blocked;
     if (!this.currentMaker) this.personality.schedule();
-    this.currentMaker?.setActivityBlocked(blocked || Boolean(this.root.querySelector('[data-library-delete-overlay], [data-library-replace-overlay]')));
+    this.currentMaker?.setActivityBlocked(blocked || Boolean(this.root.querySelector('[data-library-delete-overlay], [data-library-replace-overlay], [data-library-actions-overlay]')));
     this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]')?.classList.toggle('is-blocked', blocked);
   }
 
@@ -281,6 +293,7 @@ export class SandboxLibraryApp {
     this.pendingReplacement = null;
     this.presentationObserver?.disconnect();
     this.presentationObserver = null;
+    this.guide?.dispose(); this.guide = null;
     this.currentMaker?.dispose();
     this.currentMaker = null;
     releasePagesLibraryMaterialLighting();
@@ -295,6 +308,7 @@ export class SandboxLibraryApp {
     this.cancelPendingMakerStart();
     this.presentationObserver?.disconnect();
     this.presentationObserver = null;
+    this.guide?.dispose(); this.guide = null;
     this.currentMaker?.dispose();
     this.currentMaker = null;
     this.activeIdea = null;
@@ -380,17 +394,19 @@ export class SandboxLibraryApp {
     const position = this.library.findIndex(toy => toy.id === selected?.id);
     const collection = this.roomView === 'collection';
     const reward = count >= this.libraryCapacity && this.libraryCapacity < this.options.shelfExpansionTargetCapacity ? `<button class="room-library-button" type="button" data-library-expand-reward ${this.rewardInFlight ? 'disabled' : ''}>${ru ? 'Реклама · +2 места' : 'Ad · +2 slots'}</button>` : '<span aria-hidden="true"></span>';
+    const help = this.onboarding ? `<button class="room-library-button room-library-help" type="button" data-library-help aria-label="${ru ? 'Повторить обучение' : 'Replay tutorial'}" title="${ru ? 'Повторить обучение' : 'Replay tutorial'}">?</button>` : '';
     const footer = collection
-      ? `<span></span>${reward}`
-      : `<button class="room-library-button" type="button" data-library-ideas>${this.copy.ideas}</button><button class="room-library-button room-library-button--primary" type="button" data-room-collection>${ru ? 'Вся коллекция' : 'All squishies'}</button>${reward}`;
-    const slots = Array.from({ length: Math.max(0, this.libraryCapacity - count) }, (_, index) => `<button class="library-showcase-slot" type="button" data-library-new aria-label="${this.copy.newSquishy} · ${count + index + 1}"><span aria-hidden="true">+</span><small>${ru ? 'Свободное место' : 'New squishy'}</small></button>`).join('');
+      ? ''
+      : `<div class="room-library-shortcuts"><button class="room-library-button" type="button" data-library-ideas>${this.copy.ideas}</button>${help}</div><button class="room-library-button room-library-button--primary" type="button" data-room-collection>${ru ? 'Вся коллекция' : 'All squishies'}</button>${reward}`;
+    const slots = count >= this.libraryCapacity ? '' : `<button class="library-showcase-slot" type="button" data-library-new aria-label="${this.copy.newSquishy}"><span aria-hidden="true">+</span><small>${ru ? 'Создать' : 'Create'}</small></button>`;
+
     this.root.innerHTML = `
-      <main class="sandbox-library-shell is-library-hall room-library${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-library data-stage="library" data-room-view="${this.roomView}" data-room-managing="${this.collectionManaging}" data-library-count="${count}" data-library-capacity="${this.libraryCapacity}">
+      <main class="sandbox-library-shell is-library-hall room-library${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-library data-stage="library" data-room-view="${this.roomView}" data-room-managing="${this.collectionManaging}" data-collection-full="${count >= this.libraryCapacity}" data-library-count="${count}" data-library-capacity="${this.libraryCapacity}">
         <header class="sandbox-library-topbar"><strong>${this.copy.studio}</strong><button class="sandbox-sound" type="button" data-library-mute aria-pressed="${this.muted}">${this.muted ? this.copy.muted : this.copy.sound}</button></header>
-        <section class="sandbox-library-heading"><div><span class="sandbox-library-status">${count} / ${this.libraryCapacity}</span><h1>${collection ? (ru ? 'КОЛЛЕКЦИЯ' : 'COLLECTION') : this.copy.title}</h1></div><div class="sandbox-library-heading__actions"><button class="sandbox-library-new" type="button" data-library-new>${this.copy.newSquishy}</button></div></section>
+        <section class="sandbox-library-heading"><div><span class="sandbox-library-status">${count} / ${this.libraryCapacity}</span>${collection && count >= this.libraryCapacity ? reward : ''}<h1>${collection ? (ru ? 'КОЛЛЕКЦИЯ' : 'COLLECTION') : (ru ? 'МОЯ КОМНАТА' : 'MY ROOM')}</h1></div><div class="sandbox-library-heading__actions"><button class="sandbox-library-new" type="button" data-library-new>${this.copy.newSquishy}</button></div></section>
         <section class="library-showcase room-library-stage" data-library-hall-stage>
           <section class="library-showcase-collection" aria-label="${this.copy.title}">
-            <div class="library-showcase-collection__heading"><button class="room-library-button" type="button" data-room-back>${ru ? '← Комната' : '← Room'}</button><button class="room-library-button" type="button" data-room-manage aria-pressed="${this.collectionManaging}">${this.collectionManaging ? (ru ? 'Готово' : 'Done') : (ru ? 'Управлять' : 'Manage')}</button></div>
+            <div class="library-showcase-collection__heading"><button class="room-library-button" type="button" data-room-back>${ru ? '← Комната' : '← Room'}</button></div>
             <div class="sandbox-library-grid" tabindex="0" aria-label="${ru ? 'Коллекция сквишей' : 'Squishy collection'}">${this.library.map(toy => this.renderToyCard(toy)).join('')}${slots}</div>
           </section>
           <section class="library-showcase-workbench" aria-label="${ru ? 'Постамент сквиша' : 'Squishy pedestal'}">
@@ -420,6 +436,14 @@ export class SandboxLibraryApp {
     this.personality.schedule();
     const shell = this.root.querySelector<HTMLElement>('.room-library');
     if (shell) this.roomEditor?.mount(shell);
+    if (this.onboarding && !this.onboarding.roomSeen && (this.library.length || this.onboarding.status !== 'active')) {
+      const hint = this.root.querySelector<HTMLElement>('[data-library-maker-error]');
+      if (hint) { hint.hidden = false; hint.textContent = this.options.language === 'ru'
+        ? 'Комната твоя: меняй цвета и мебель кнопкой «Обустроить».'
+        : 'Your room: change colors and furniture with Style room.'; }
+      this.onboarding = { ...this.onboarding, roomSeen: true }; this.options.onOnboardingChange?.(this.onboarding);
+    }
+
   }
 
   private rememberCollectionScroll(): void {
@@ -445,6 +469,7 @@ export class SandboxLibraryApp {
     this.cancelPendingMakerStart();
     this.presentationObserver?.disconnect();
     this.presentationObserver = null;
+    this.guide?.dispose(); this.guide = null;
     this.currentMaker?.dispose();
     this.currentMaker = null;
     releasePagesLibraryMaterialLighting();
@@ -542,6 +567,10 @@ export class SandboxLibraryApp {
 
   private renderToyCard(toy: SavedSquishy): string {
     const label = this.toyLabel(toy);
+    if(this.options.roomReview){
+      const name=(this.options.language==='ru'?RU_SHAPES:EN_SHAPES)[toy.shapeId];
+      return `<article class="sandbox-library-card${toy.id===this.selectedToyId?' is-selected':''}" data-library-toy="${escapeAttribute(toy.id)}"><button class="sandbox-library-card__play" type="button" data-library-play-id="${escapeAttribute(toy.id)}" aria-label="${this.copy.squeeze}: ${label}" aria-pressed="${toy.id===this.selectedToyId}"><canvas class="sandbox-library-card__canvas" data-library-thumbnail="${escapeAttribute(toy.id)}" aria-hidden="true"></canvas></button><div class="sandbox-library-card__footer"><strong>${name}</strong><button class="toy-actions-open" type="button" data-library-actions-id="${escapeAttribute(toy.id)}" aria-label="${this.options.language==='ru'?'Действия':'Actions'}: ${name}"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button></div></article>`;
+    }
     return `
       <article class="sandbox-library-card${toy.id === this.selectedToyId ? ' is-selected' : ''}" data-library-toy="${escapeAttribute(toy.id)}">
         <button class="sandbox-library-card__play" type="button" data-library-play-id="${escapeAttribute(toy.id)}" aria-label="${this.copy.squeeze}: ${label}" aria-pressed="${toy.id === this.selectedToyId}">
@@ -554,6 +583,13 @@ export class SandboxLibraryApp {
         </div>
       </article>
     `;
+  }
+
+  private renderToyActions(toy:SavedSquishy):void {
+    const ru=this.options.language==='ru';
+    const overlay=document.createElement('section');overlay.className='sandbox-library-modal';overlay.dataset.libraryActionsOverlay='';
+    overlay.innerHTML=`<div class="sandbox-library-modal__sheet toy-actions-sheet" role="dialog" aria-modal="true" aria-labelledby="toy-actions-title"><h2 id="toy-actions-title">${this.toyLabel(toy)}</h2><button class="room-library-button" type="button" data-library-edit-id="${escapeAttribute(toy.id)}">${ru?'Редактировать':'Edit'}</button><button class="room-library-button" type="button" data-library-delete-id="${escapeAttribute(toy.id)}">${this.copy.delete}</button><button class="room-library-button" type="button" data-library-actions-close>${ru?'Закрыть':'Close'}</button></div>`;
+    this.openModal(overlay);
   }
 
   private renderVisibleThumbnails(scope: ParentNode = this.root): void {
@@ -590,6 +626,13 @@ export class SandboxLibraryApp {
 
   /** One existing Phaser maker on demand, seated inside the Library table. */
   private async selectLibraryToy(toy: SavedSquishy): Promise<void> {
+    const fromCollection = this.options.roomReview && this.roomView === 'collection';
+    if (fromCollection) {
+      this.rememberCollectionScroll();
+      this.selectedToyId = toy.id;
+      this.roomView = 'room';
+      this.renderLibrary();
+    }
     const shell = this.root.querySelector<HTMLElement>('[data-sandbox-library]');
     const display = shell?.querySelector<HTMLDivElement>('[data-library-display-host]');
     if (!shell || !display || this.disposed) return;
@@ -597,7 +640,7 @@ export class SandboxLibraryApp {
     this.rememberCollectionScroll();
     shell.dataset.libraryView = 'squeeze';
     if (this.options.roomReview) {
-      this.roomReturnView = this.roomView === 'collection' ? 'collection' : 'room';
+      this.roomReturnView = fromCollection ? 'collection' : 'room';
       this.roomView = 'squeeze';
       shell.dataset.roomView = 'squeeze';
     }
@@ -610,6 +653,7 @@ export class SandboxLibraryApp {
       const [renderer, { SandboxApp }] = await Promise.all([this.resolveMakerRendererOptions(), import('./SandboxApp')]);
       if (this.disposed || token !== this.makerStartToken || !shell.isConnected) return;
       this.presentationObserver?.disconnect();
+      this.guide?.dispose(); this.guide = null;
       this.currentMaker?.dispose();
       this.currentMaker = null;
       releasePagesLibraryMaterialLighting();
@@ -631,6 +675,7 @@ export class SandboxLibraryApp {
         savedSquishy: toy, startSavedInSqueeze: true,
         onExitToLibrary: () => this.returnFromRoomSqueeze(),
         onResetCraftContext: () => this.resetCraftContext(),
+        onCraftSaved: () => this.showRoomDecorHint(),
         onSaveSquishy: (draft, editingId) => this.handleSaveRequest(draft, editingId),
         onMutedChange: muted => this.setMuted(muted),
       });
@@ -706,6 +751,7 @@ export class SandboxLibraryApp {
     try {
       const [makerRendererOptions, { SandboxApp }] = await Promise.all([this.resolveMakerRendererOptions(), import('./SandboxApp')]);
       if (this.disposed || startToken !== this.makerStartToken || !currentShell?.isConnected) return;
+      this.guide?.dispose(); this.guide = null;
       this.currentMaker?.dispose();
       this.currentMaker = null;
       releasePagesLibraryMaterialLighting();
@@ -721,10 +767,13 @@ export class SandboxLibraryApp {
         language: this.options.language,
         muted: this.muted,
         savedSquishy: toy,
+        preserveDraftOnExit: toy === null && !idea && Boolean(this.onboarding && (this.onboarding.status === 'active' || this.onboarding.draft || (!this.library.length && this.onboarding.status === 'skipped'))),
+        ...(toy === null && !idea && this.onboarding?.draft ? { initialDraft: this.onboarding.draft } : {}),
         ...(toy === null && idea ? { initialShapeId: idea.shapeId } : {}),
         startSavedInSqueeze: toy !== null,
         onExitToLibrary: () => this.returnFromRoomSqueeze(),
         onResetCraftContext: () => this.resetCraftContext(),
+        onCraftSaved: () => this.showRoomDecorHint(),
         onSaveSquishy: (draft, editingId) => this.handleSaveRequest(draft, editingId),
         onMutedChange: (muted) => this.setMuted(muted),
       });
@@ -738,6 +787,11 @@ export class SandboxLibraryApp {
         if (guide && brand) brand.replaceWith(guide);
       }
       this.currentMaker.setActivityBlocked(this.activityBlocked);
+      if (!toy && !idea && this.onboarding && (this.onboarding.status === 'active' || this.onboarding.draft || (!this.library.length && this.onboarding.status === 'skipped'))) {
+        const maker = this.currentMaker;
+        this.guide = new FirstCraftGuide(host, this.options.language === 'ru', this.onboarding,
+          () => maker.getDraftSnapshot(), state => { this.onboarding = { ...state, roomSeen: this.onboarding?.roomSeen || state.roomSeen, roomDecorSeen: this.onboarding?.roomDecorSeen || state.roomDecorSeen }; this.options.onOnboardingChange?.(this.onboarding); }, () => this.showRoomDecorHint());
+      }
     } catch (error: unknown) {
       if (startToken !== this.makerStartToken) return;
       console.error('[squishy:maker-start]', error);
@@ -757,11 +811,16 @@ export class SandboxLibraryApp {
         message.textContent = this.copy.studioUnavailable;
         message.hidden = false;
         message.classList.add('is-error');
+        const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'room-library-button'; retry.dataset.libraryRetry = '';
+        retry.textContent = this.options.language === 'ru' ? 'Перезагрузить' : 'Reload'; message.append(' ', retry);
       }
+    } finally {
+      if (startToken === this.makerStartToken) delete this.root.dataset.firstCraftLoading;
     }
   }
 
   private cancelPendingMakerStart(): void {
+    delete this.root.dataset.firstCraftLoading;
     this.makerStartToken += 1;
     const shell = this.root.querySelector<HTMLElement>('[data-sandbox-library], [data-sandbox-ideas]');
     shell?.removeAttribute('aria-busy');
@@ -773,7 +832,40 @@ export class SandboxLibraryApp {
     }
   }
 
+  private showRoomDecorHint(): void {
+    if (!this.options.roomReview || !this.roomEditor || !this.onboarding || this.onboarding.roomDecorSeen || this.onboarding.status === 'active') return;
+    const shell = this.root.querySelector<HTMLElement>('[data-sandbox-app]');
+    if (!shell) return;
+    const ru = this.options.language === 'ru';
+    const hint = document.createElement('aside');
+    hint.dataset.roomDecorHint = '';
+    hint.className = 'first-room-decor-hint';
+    hint.setAttribute('aria-label', ru ? 'Оформление комнаты' : 'Room decoration');
+    hint.innerHTML = `<p role="status">${ru ? 'Комнату тоже можно украсить.' : 'You can decorate your room, too.'}</p><button type="button" data-style-first-room>${ru ? 'Обустроить' : 'Style room'}</button><button type="button" data-dismiss-room-hint aria-label="${ru ? 'Закрыть подсказку' : 'Dismiss hint'}">×</button>`;
+    const dismiss = () => {
+      if (this.activityBlocked) return false;
+      if (this.onboarding) { this.onboarding = { ...this.onboarding, roomSeen: true, roomDecorSeen: true }; this.options.onOnboardingChange?.(this.onboarding); }
+      hint.remove(); return true;
+    };
+    hint.addEventListener('click', event => {
+      if (event.target instanceof Element && event.target.closest('[data-style-first-room]')) return;
+      if (dismiss()) shell.querySelector<HTMLButtonElement>('[data-action="home"]')?.focus({preventScroll:true});
+    });
+    hint.querySelector('[data-style-first-room]')?.addEventListener('click', () => {
+      if (!dismiss()) return;
+      this.roomView = 'room'; this.renderLibrary();
+      this.root.querySelector<HTMLButtonElement>('[data-room-edit-open]')?.click();
+      this.root.querySelector<HTMLElement>('[data-room-editor] button')?.focus({preventScroll:true});
+    });
+    shell.append(hint);
+    this.onboarding = { ...this.onboarding, roomSeen: true, roomDecorSeen: true }; this.options.onOnboardingChange?.(this.onboarding);
+  }
+
   private resetCraftContext(): void {
+    if (this.guide) {
+      this.guide.dispose(); this.guide = null;
+      if (this.onboarding) { this.onboarding = { ...this.onboarding, status: this.onboarding.status === 'active' ? 'done' : this.onboarding.status, draft: null }; this.options.onOnboardingChange?.(this.onboarding); }
+    }
     this.activeIdea = null;
     this.root.querySelector('[data-idea-complete]')?.remove();
     const guide = this.root.querySelector('[data-idea-guide]');
@@ -869,12 +961,13 @@ export class SandboxLibraryApp {
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
     const guide = this.root.querySelector<HTMLDetailsElement>('[data-idea-guide][open]');
-    if (event.key === 'Escape' && guide && !this.root.querySelector('[data-library-replace-overlay], [data-library-delete-overlay], [data-exit-overlay]:not([hidden]), [data-tools-overlay]:not([hidden])')) {
+    if (event.key === 'Escape' && guide && !this.root.querySelector('[data-library-replace-overlay], [data-library-delete-overlay], [data-library-actions-overlay], [data-exit-overlay]:not([hidden]), [data-tools-overlay]:not([hidden])')) {
       guide.open = false; guide.querySelector<HTMLElement>('summary')?.focus(); event.preventDefault(); return;
     }
     const replace = this.root.querySelector<HTMLElement>('[data-library-replace-overlay]');
     const deleteOverlay = this.root.querySelector<HTMLElement>('[data-library-delete-overlay]');
-    const overlay = replace ?? deleteOverlay;
+    const actions = this.root.querySelector<HTMLElement>('[data-library-actions-overlay]');
+    const overlay = replace ?? deleteOverlay ?? actions;
     const dialog = overlay?.querySelector<HTMLElement>('[role="dialog"]') ?? null;
     if (!overlay || !dialog) return;
 
@@ -889,6 +982,7 @@ export class SandboxLibraryApp {
     if (event.key === 'Escape') {
       event.preventDefault();
       if (replace) this.cancelReplacement();
+      else if(actions)this.closeModal(true);
       else this.cancelDelete();
       return;
     }
@@ -896,7 +990,15 @@ export class SandboxLibraryApp {
   };
 
   private readonly handleClick = (event: MouseEvent): void => {
+    if (event.target instanceof Element && event.target.closest('[data-library-help]')) {
+      if (this.activityBlocked || !this.onboarding) return;
+      this.onboarding = { ...this.onboarding, status: 'active', painted: false, decorated: false };
+      this.options.onOnboardingChange?.(this.onboarding);
+      void this.startMaker(null); return;
+    }
+
     if (this.disposed || this.activityBlocked) return;
+    if (event.target instanceof Element && event.target.closest('[data-library-retry]')) { location.reload(); return; }
     const target = event.target instanceof Element ? event.target.closest<HTMLElement>('button') : null;
     if (!target) return;
     if (this.options.roomReview) {
@@ -915,6 +1017,14 @@ export class SandboxLibraryApp {
         this.root.querySelector<HTMLButtonElement>(this.roomView === 'collection' ? '[data-room-back]' : '[data-room-collection]')?.focus();
         return;
       }
+    }
+
+    if(target.hasAttribute('data-library-actions-close')){this.closeModal(true);return;}
+    if(target.dataset.libraryActionsId){const toy=this.library.find(t=>t.id===target.dataset.libraryActionsId);if(toy)this.renderToyActions(toy);return;}
+    if(target.dataset.libraryEditId){
+      const toy=this.library.find(t=>t.id===target.dataset.libraryEditId);if(!toy)return;
+      this.closeModal(true);this.rememberCollectionScroll();this.selectedToyId=toy.id;
+      void this.startMaker(toy).then(()=>{if(!this.disposed)this.root.querySelector<HTMLButtonElement>('[data-action="edit-saved"]')?.click();});return;
     }
 
     if (target.hasAttribute('data-room-manage')) {
@@ -1001,9 +1111,12 @@ export class SandboxLibraryApp {
     if (deleteId) {
       const toy = this.library.find((candidate) => candidate.id === deleteId);
       if (!toy) return;
+      const actionsFocus=this.root.querySelector('[data-library-actions-overlay]')?this.modalReturnFocus:null;
+      if(actionsFocus)this.closeModal(false);
       this.cancelPendingMakerStart();
       this.pendingDeleteId = deleteId;
       this.renderDeleteOverlay(toy);
+      if(actionsFocus)this.modalReturnFocus=actionsFocus;
     }
   };
 
@@ -1079,7 +1192,7 @@ export class SandboxLibraryApp {
   }
 
   private closeModal(restore: boolean): void {
-    this.root.querySelector('[data-library-replace-overlay], [data-library-delete-overlay]')?.remove();
+    this.root.querySelector('[data-library-replace-overlay], [data-library-delete-overlay], [data-library-actions-overlay]')?.remove();
     const returnFocus = this.modalReturnFocus;
     this.modalReturnFocus = null;
     this.currentMaker?.setActivityBlocked(this.activityBlocked);

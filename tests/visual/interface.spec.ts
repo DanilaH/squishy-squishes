@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 
@@ -7,6 +8,7 @@ for (const locale of ['ru-RU', 'en-US']) {
       const context = await browser.newContext({ baseURL, locale, viewport, reducedMotion: 'reduce', colorScheme: 'light', deviceScaleFactor: 1 });
       const page = await context.newPage();
       try {
+        await returningPlayer(page);
         await page.goto('/squishy-squishes/');
         await expect(page.locator('.is-library-hall')).toBeVisible();
         await expect(page.locator('#app')).toHaveAttribute('data-jelly-ui-ready', '');

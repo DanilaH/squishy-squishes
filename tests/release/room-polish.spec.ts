@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 
 for (const locale of ['ru-RU', 'en-US']) {
@@ -6,6 +7,7 @@ for (const locale of ['ru-RU', 'en-US']) {
       const context = await browser.newContext({ viewport, locale, baseURL });
       const page = await context.newPage();
       try {
+        await returningPlayer(page);
         await page.goto('/squishy-squishes/');
         await page.locator('[data-library-new]').first().click();
         await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
@@ -39,6 +41,7 @@ for (const locale of ['ru-RU', 'en-US']) {
 }
 
 test('room atmosphere respects reduced motion and never intercepts input', async ({ page }) => {
+  await returningPlayer(page);
   await page.goto('/squishy-squishes/');
   const scene = page.locator('.library-hall-scene');
   await expect(scene).toBeVisible();

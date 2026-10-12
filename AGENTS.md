@@ -4,7 +4,7 @@
 
 Squishy Squishes is a freeform, touch-first squishy maker. Production Phaser cutover was merged in PR #59 (`1346f19`); PR #60 (`8be5103`) added Squeeze, first-paint and Studio-preload polish. Normal web and Yandex entrypoints now install the accepted Hall/Studio profile through `src/main.ts`, `reviewVisualProfile.ts` and `reviewMakerLoader.ts`. Despite their historical `experiments/review/preview` names, these modules are production dependencies.
 
-Player path: `Library → New Squishy → one Workshop → Save → Squeeze`. The owner approved free navigation between Base (shape/material), Paint, Fillings and Decor on 7 October 2026; mixing is no longer a mandatory player step. Keep undo, try-on and save available in every section. Tutorial work is deferred. Do not restore recipe/XP gating.
+Player path: `Library → New Squishy → one Workshop → Save → Squeeze`. The owner approved free navigation between Base (shape/material), Paint, Fillings and Decor on 7 October 2026; mixing is no longer a mandatory player step. Keep undo, try-on and save available in every section. First-creation tutorial work was approved on 10 October 2026; follow the current contract in docs/PROJECT_DECISIONS.md. Do not restore recipe/XP gating.
 
 Phaser loads on maker intent, outside the initial Library JS path. It owns the visible WebGL2 renderer, frame loop and playfield input. Reuse `SquishSimulation`, original shape boundaries and the existing platform runtime; offscreen appearance baking and frame-coordinated 2D overlays remain. Preserve portrait-first responsive layout, transparent compositing and drop shadows. No forced rotation gate or second renderer.
 
@@ -33,6 +33,12 @@ previous atmosphere-only treatment. Follow
 common compact shelves, one selected toy on the table using the existing maker,
 coherent furniture, responsive internal catalog scrolling and clear actions.
 Do not treat the published free-craft checklist as proof of this follow-up.
+
+On 12 October the owner approved an open collection showcase: large existing
+thumbnails, one creation entry, short shape labels and per-toy actions instead
+of the enclosing pink cabinet and repeated empty slots. Follow the current
+contract and validation in docs/PROJECT_DECISIONS.md; preserve capacity, confirmed
+replacement/deletion, catalog return position and the room podium geometry.
 
 ## Current polish invariants
 

@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 import { createDefaultSaveV3, decodeSaveStateV3, encodeSaveStateV3 } from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
@@ -29,6 +30,7 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
     const context=await browser.newContext({baseURL,locale,viewport,reducedMotion:'reduce'});
     const page=await context.newPage();const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
     try{
+      await returningPlayer(page);
       await page.goto('/squishy-squishes/');
       const draft=createSandboxDraft();const toy={...draft,id:'expanded',createdAt:1700000000000,shapeId:index===4?'donut' as const:index===5?'heart' as const:'mochi' as const,
         decor:{...draft.decor,eyes:'dot' as const,mouth:'smile' as const,stickers:STICKER_IDS.map((id,i)=>({...createStickerPlacement(id,{u:.28+(i%4)*.145,v:.28+Math.floor(i/4)*.14},i),r:0,s:24}))}};

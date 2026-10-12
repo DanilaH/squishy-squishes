@@ -24,6 +24,11 @@ The independent full-screen UX review is in
 is recommended for freeze, and all four targeted follow-up fixes are implemented
 and verified locally. The follow-up now switches the room to the default entry.
 
+The owner-approved 12 October open collection showcase is recorded in
+[`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md), alongside first-entry guidance.
+It is currently prepared in PR #100; approval of the concept does not establish
+production deployment.
+
 The local 8 October screen polish (collection/play split, responsive room editor,
 Ideas and explicit replacement confirmation) is recorded in
 [`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md). It shipped in PR #97.
@@ -41,7 +46,7 @@ free-craft atmosphere release does not establish completion of this new pass.
 
 The owner approved one freely navigable Workshop with Base, Paint, Fillings
 and Decor; no mandatory mixing or six-step Next chain. Global undo, try-on and
-save remain available, with contextual detail editing. Tutorial work is deferred.
+save remain available, with contextual detail editing. First-entry guidance and starter room were approved on 10 October 2026; current implementation is recorded in PROJECT_DECISIONS.
 The local implementation and validation are recorded in PROJECT_DECISIONS.
 Published checklist entries below describe the earlier released flow.
 

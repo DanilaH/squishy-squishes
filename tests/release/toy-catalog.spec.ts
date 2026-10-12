@@ -6,7 +6,8 @@ import { ACCESSORY_IDS, EYE_STYLE_IDS, MOUTH_STYLE_IDS, createEmptyDecorDocument
 
 for (const locale of ['ru-RU', 'en-US']) {
   test(`existing decorated V3 collection renders the toy catalog in ${locale}`, async ({ browser, baseURL }) => {
-    test.setTimeout(90_000);
+    // The expanded catalog visits every decoded accessory and reloads each.
+    test.setTimeout(120_000);
     const context = await browser.newContext({ baseURL, locale, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     try {
@@ -62,6 +63,8 @@ test('all accessory formats failing keeps the existing collection usable', async
 });
 
 test('actual face and catalog choices stay visible on short phone screens', async ({ page }) => {
+  // Audit every expanded choice at both orientations, retaining all hit/clip checks.
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto('/squishy-squishes/?roomReview=0');
   await page.locator('[data-library-new]').first().click();

@@ -1181,3 +1181,196 @@ content area and fixed close action, so the close button cannot cover tools.
 The existing full-flow audits now scroll Face/Stickers before checking every
 caption and hit target, and retain a fixed page/scene requirement. The short
 phone catalog audit additionally checks 44px targets and both vertical edges.
+
+## First creation guidance — 10 October 2026
+
+Owner approved first entry directly into free craft with an editable default
+body, then Save → Squeeze → furnished room. Fresh storage receives a dresser,
+picture and centered oval rug. Existing saves/settings/room choices remain
+returning-player evidence, including intentionally empty rooms; prior rooms are
+not repopulated. Explicit `roomReview=0` regression/preview entry retains its old
+flow. Migration and V3 content/capacity/rewards remain unchanged.
+
+Guidance is contextual EN/RU copy in a dedicated bottom hint strip, with
+highlighted targets and a 44px Skip button. It does not block tool sections,
+require painting/decorating, drive stage changes or add recipe gating. Actual
+paint/decor state and successful save/squeeze control the hints. Fillings has a
+one-time introduction; first return explains the room editor. Replay lives in a
+44px question-mark button next to Ideas, avoiding short-landscape header overlap.
+
+`squishy.onboarding.v1` stores skip/completion/seen state and the first/replay
+unsaved draft separately from V3. Draft decoding uses the existing V3 content
+validators. Committed changes checkpoint after UI actions, with a short debounce
+for remaining observed changes and exit/pagehide checkpointing. A successful
+V3 save clears the draft; leaving early retains it. Resetting to another craft
+ends the current guide. Existing players can replay without replacing a saved
+toy. Startup/renderer failure retains the normal room fallback with an explicit reload action (failed dynamic imports can remain cached by the browser).
+
+Existing-room QA explicitly seeds returning-player storage. Fresh-start QA uses
+unseeded storage and exercises the full flow, reload recovery, skip, replay,
+successful squeezing and untouched existing room/save data. Visual baseline
+changes are limited to the room's added replay button; tutorial screenshots are
+also inspected at narrow portrait, short landscape and desktop sizes.
+
+Local validation passed strict TypeScript, tooling/asset smoke, release web and
+Yandex builds plus the upload-root audit (63 files, 3,361,305 bytes), Pages staging
+and the isolated DRAFT audit (63 files, 3,361,462 bytes). Browser coverage includes
+11 onboarding scenarios, 33 room/customization regressions and 2 exact DRAFT
+root/adapter scenarios. The DRAFT adapter scenarios use a stub SDK and do not
+establish real hosted ads or tactile phone acceptance. Full suites remain PR
+gates; this feature has not been merged or deployed.
+All 30 interface snapshots passed across EN/RU at 320×568, 844×390 and
+1440×900. Only the two narrow-portrait Library baselines exceeded the unchanged
+pixel tolerance and were updated for the replay button; other 28 remained within
+existing tolerance. Fresh tutorial screenshots were inspected separately.
+A final error-path review found that guidance could obscure Save failure feedback.
+Save failures now take priority in the hint strip and retain the enabled retry
+action and draft; an injected quota-failure/retry scenario passed. The release
+build/audit and narrow first-craft flow were rerun after this scoped correction.
+
+## Mobile craft tray follow-up — 10 October 2026
+
+Owner reported cramped portrait controls, clipped selected outlines and the
+Arrange action row protruding by a few pixels. The 132px tray held 136px of
+content before external rings. Portrait craft now uses a 168px detail tray with
+separated rows, labels above full-width sliders, 6px side gutters and a 48px
+primary action strip. The shared controls track reserves space for the entire
+tray rather than squeezing the final row. Selection/focus rings draw inward
+inside scrollable panels. On short portrait makers, the resting seat follows
+the available playfield across craft/try-on/squeeze; room furniture is unchanged.
+
+Onboarding QA now checks the actual bounds of every Arrange button and slider
+on portrait/desktop, plus the selected ring's inward offset. The catalog audits
+still visit every choice with their existing hit-target and scrolling checks;
+their time budget is 120 seconds for all 22 accessories/reloads and the expanded
+portrait/landscape catalog matrix, rather than truncating the tested choices.
+
+Validation passed strict TypeScript, tooling/asset smoke, release builds and
+the Yandex root audit (63 files, 3,362,908 bytes). All 32 distinct targeted
+behavior scenarios passed: onboarding/recovery, active-object selection, full
+catalog rendering, detail caps and stable editor/try-on geometry. All 30 UI
+snapshots passed; 14 craft baselines changed for portrait spacing and inward
+selection rings, while Library/Ideas were unchanged. Actual 320px and 390px
+portrait screenshots were inspected separately. Latest full CI remains the PR
+gate; no merge or production deployment was performed.
+
+## Readable contextual guide — 12 October 2026
+
+Owner approved short bottom guidance with larger type and no permanent strip
+after the lesson. EN/RU copy is now one or two lines at 14px/18px. Actual saved
+squeezing completes the lesson, removes Skip and the hint strip, and releases
+its grid track; the room-return action remains highlighted. Skip also removes
+the strip immediately. Save failure retains priority and its retry action.
+
+A separate geometry audit found that the try-on return button intersected the
+old hint area. It now reserves an 8px gap above the hint, including short
+landscape. Tests check DOM text ranges, line count, button hit testing, panel
+bounds and released playfield height across RU/EN at 320×568, 360×640, 390×844,
+568×320, 844×390 and 1440×900. All 17 onboarding/recovery scenarios and the
+compact Pages workshop geometry scenario passed. The latter now checks the
+accepted responsive portrait seat and actual vertical fit, while retaining all
+existing across-stage center/radius/desk/floor continuity checks; its stale
+fixed .14 assertion had caused both previous Pages/Hall CI failures.
+
+Strict TypeScript, tooling/assets, release builds and upload-root audit passed
+(63 files, 3,362,067 bytes), as did Pages staging. No deployment performed.
+All 30 returning-player interface snapshots passed unchanged; the guide remains
+scoped to its contextual lesson. Full latest CI is still required before merge.
+
+## Open collection showcase — 12 October 2026
+
+Owner approved the phone/desktop open-shelf concept: actual game thumbnails,
+short shape labels, a calm selected backplate/check and a single creation entry
+instead of all unoccupied slots. The default room's collection now drops the
+pink enclosing cabinet, uses larger previews and finishes partly occupied shelf
+rows without creating empty interactive cells. At capacity, creation moves to
+the fixed header so an extra shelf row is unnecessary; the existing replacement
+confirmation and 8-to-10 rewarded capacity contract are unchanged. The ad offer
+sits next to the collection capacity counter. Room view keeps its layout and
+uses the title My room / Моя комната. Explicit legacy Hall QA retains its old
+Manage/gallery presentation.
+
+Per-toy three-dot buttons open the existing modal/focus infrastructure with
+Edit, Delete and Close. Escape restores the originating control; Delete opens
+the existing confirmation and retains its original focus destination on cancel.
+Edit loads the existing maker and updates the same saved ID. Collection-to-
+Squeeze first remounts the room layout, preserving the podium geometry rather
+than inheriting the collection header/footer. Return restores catalog scrolling
+and selected focus. V3 content and physics remain unchanged.
+
+Captions and action controls have small translucent cream backplates so open
+shelves remain legible when they cross a dark floor. QA checks contrast against
+both floor and wall for all 16 room palettes, along with page/catalog horizontal
+overflow, 44px controls, modal hit testing, Escape/cancel focus, edit count/ID,
+confirmed deletion and 0/1/4/7/8/10-toy collections across RU/EN at 320×568,
+390×844, 568×320, 844×390 and 1440×900. All 19 targeted scenarios passed; the
+collection flows cover 60 count/locale/viewport configurations. All 30 interface captures
+passed; only four narrow/landscape Library baselines exceeded the existing pixel
+tolerance and changed for the room heading. Strict TypeScript, tooling/assets,
+release builds and Yandex root audit passed (63 files, 3,371,991 bytes). Full
+latest CI remains the merge gate; no production deployment performed.
+
+## Optional room decoration hint after first craft — 12 October 2026
+
+The owner approved a short room-decoration hint after successful first craft,
+and explicitly requested dismissal by tapping/clicking the hint. The hint does
+not block squeezing or require opening the editor. Text/background and the
+close button dismiss it; Style room opens the existing room editor directly.
+No stage advance, timer, animation or focus grab is introduced. Leaving Squeeze
+for editing removes the hint. Skipping the craft lesson does not suppress this
+separate room discovery hint.
+
+A separate roomDecorSeen flag in the existing onboarding record makes the hint
+one-time, including after reload/replay. Older records decode without changing
+V3; existing players who already saw room guidance do not get a repeat. Guide
+checkpoints preserve the newer flag rather than overwriting it with their older
+snapshot. Failed saves do not show the hint; updating an existing toy does not
+show it either. Room choices, V3 and reward/capacity rules remain unchanged.
+
+Validation: all 17 existing onboarding/recovery cases passed, plus nine new
+room-hint/migration/out-of-order cases (26 distinct cases in total). New checks
+cover RU/EN at 320×568, 568×320 and 1440×900; out-of-order checks at 390×844
+include tab changes, try-on reload, failed save/retry, text-tap dismissal,
+squeezing completion, no duplicate room message and skipped replay. Button
+geometry and real hit testing passed; phone and short-landscape game captures
+were inspected. The existing strict stage-height assertion now waits for the
+renderer layout to settle, without relaxing the requirement. Strict TS,
+tooling/assets, both release builds and upload audit passed: 63 files /
+3,374,911 bytes. All 30 interface captures passed unchanged in six visual cases.
+Changes remain in PR #100, without merge or deployment.
+
+## Final guidance and release pass — 12 October 2026
+
+The owner approved sequential hints and a final release pass including merge
+and Pages deployment after passing gates. During active first-craft guidance,
+saving first offers Squeeze guidance; completing a saved squeeze or skipping
+that lesson offers the optional room-decoration card. A previously skipped
+lesson still offers the room card immediately after saving. Neither action is
+required; text/background/close dismiss the card. Completion callbacks run after
+the craft hint is cleared and do not survive disposed makers.
+
+The room card now reserves a 64px footer track, with 44px controls and readable
+text. It no longer overlaps the heading, scene or Squeeze controls, including
+short landscape. Dismissal releases the track. Save, room settings, collection
+capacity and physics are unchanged.
+
+The cancelled prior Release Check was traced to the traditional accessory
+regression: its old 90-second case grew from five to 22 full journeys after
+content expansion. Each shape/accessory journey now has an independent
+60-second budget and can be distributed across CI shards. All existing checks
+of attachment motion, saved library bytes and reload remain; fixture craft count
+now matches its real accessory count. This is a test partition correction,
+without increasing workflow time limits or omitting content.
+
+Short landscape keeps the saved-edit button label fully visible with compact
+padding and type; touch targets remain at least 44px. Final checks include DOM
+text ranges as well as control/heading separation from the room hint.
+
+Final local validation passed across 79 distinct behavior cases: 66 collection,
+onboarding, other-screen, room-return and UX invariants; four saved-lesson skip
+cases; and nine individual accessory journeys across three shapes. The final
+caption assertions passed in RU/EN portrait and short landscape. All 30
+interface captures passed unchanged. Strict TS, tooling/assets, both builds and
+upload audit passed (63 files / 3,376,127 bytes). No new assets, save schema or
+physics changes were introduced in this final pass. Full PR gates and exact-byte
+hosted checks remain mandatory before declaring the release published.
