@@ -1365,3 +1365,12 @@ without increasing workflow time limits or omitting content.
 Short landscape keeps the saved-edit button label fully visible with compact
 padding and type; touch targets remain at least 44px. Final checks include DOM
 text ranges as well as control/heading separation from the room hint.
+
+Final local validation passed across 79 distinct behavior cases: 66 collection,
+onboarding, other-screen, room-return and UX invariants; four saved-lesson skip
+cases; and nine individual accessory journeys across three shapes. The final
+caption assertions passed in RU/EN portrait and short landscape. All 30
+interface captures passed unchanged. Strict TS, tooling/assets, both builds and
+upload audit passed (63 files / 3,376,127 bytes). No new assets, save schema or
+physics changes were introduced in this final pass. Full PR gates and exact-byte
+hosted checks remain mandatory before declaring the release published.
