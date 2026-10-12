@@ -73,7 +73,7 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
       await expect(page.locator('[data-guide-hint]')).toHaveCount(0);
       await expect(page.locator('[data-guide-skip]')).toHaveCount(0);
       await expect(page.locator('[data-action="home"]')).toHaveAttribute('data-guide-target','');
-      expect((await page.locator('.sandbox-stage').boundingBox())!.height).toBeGreaterThan(guidedHeight);
+      await expect.poll(async()=>(await page.locator('.sandbox-stage').boundingBox())!.height).toBeGreaterThan(guidedHeight);
       await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.onboarding.v1')!).status)).toBe('done');
       expect(errors).toEqual([]);
     }finally{await context.close();}

@@ -675,6 +675,7 @@ export class SandboxLibraryApp {
         savedSquishy: toy, startSavedInSqueeze: true,
         onExitToLibrary: () => this.returnFromRoomSqueeze(),
         onResetCraftContext: () => this.resetCraftContext(),
+        onCraftSaved: () => this.showRoomDecorHint(),
         onSaveSquishy: (draft, editingId) => this.handleSaveRequest(draft, editingId),
         onMutedChange: muted => this.setMuted(muted),
       });
@@ -772,6 +773,7 @@ export class SandboxLibraryApp {
         startSavedInSqueeze: toy !== null,
         onExitToLibrary: () => this.returnFromRoomSqueeze(),
         onResetCraftContext: () => this.resetCraftContext(),
+        onCraftSaved: () => this.showRoomDecorHint(),
         onSaveSquishy: (draft, editingId) => this.handleSaveRequest(draft, editingId),
         onMutedChange: (muted) => this.setMuted(muted),
       });
@@ -788,7 +790,7 @@ export class SandboxLibraryApp {
       if (!toy && !idea && this.onboarding && (this.onboarding.status === 'active' || this.onboarding.draft || (!this.library.length && this.onboarding.status === 'skipped'))) {
         const maker = this.currentMaker;
         this.guide = new FirstCraftGuide(host, this.options.language === 'ru', this.onboarding,
-          () => maker.getDraftSnapshot(), state => { this.onboarding = state; this.options.onOnboardingChange?.(state); });
+          () => maker.getDraftSnapshot(), state => { this.onboarding = { ...state, roomSeen: this.onboarding?.roomSeen || state.roomSeen, roomDecorSeen: this.onboarding?.roomDecorSeen || state.roomDecorSeen }; this.options.onOnboardingChange?.(this.onboarding); });
       }
     } catch (error: unknown) {
       if (startToken !== this.makerStartToken) return;
@@ -828,6 +830,35 @@ export class SandboxLibraryApp {
       message.hidden = true;
       message.classList.remove('is-error');
     }
+  }
+
+  private showRoomDecorHint(): void {
+    if (!this.options.roomReview || !this.roomEditor || !this.onboarding || this.onboarding.roomDecorSeen) return;
+    const shell = this.root.querySelector<HTMLElement>('[data-sandbox-app]');
+    if (!shell) return;
+    const ru = this.options.language === 'ru';
+    const hint = document.createElement('aside');
+    hint.dataset.roomDecorHint = '';
+    hint.className = 'first-room-decor-hint';
+    hint.setAttribute('aria-label', ru ? 'Оформление комнаты' : 'Room decoration');
+    hint.innerHTML = `<p role="status">${ru ? 'Комнату тоже можно украсить.' : 'You can decorate your room, too.'}</p><button type="button" data-style-first-room>${ru ? 'Обустроить' : 'Style room'}</button><button type="button" data-dismiss-room-hint aria-label="${ru ? 'Закрыть подсказку' : 'Dismiss hint'}">×</button>`;
+    const dismiss = () => {
+      if (this.activityBlocked) return false;
+      if (this.onboarding) { this.onboarding = { ...this.onboarding, roomSeen: true, roomDecorSeen: true }; this.options.onOnboardingChange?.(this.onboarding); }
+      hint.remove(); return true;
+    };
+    hint.addEventListener('click', event => {
+      if (event.target instanceof Element && event.target.closest('[data-style-first-room]')) return;
+      if (dismiss()) shell.querySelector<HTMLButtonElement>('[data-action="home"]')?.focus({preventScroll:true});
+    });
+    hint.querySelector('[data-style-first-room]')?.addEventListener('click', () => {
+      if (!dismiss()) return;
+      this.roomView = 'room'; this.renderLibrary();
+      this.root.querySelector<HTMLButtonElement>('[data-room-edit-open]')?.click();
+      this.root.querySelector<HTMLElement>('[data-room-editor] button')?.focus({preventScroll:true});
+    });
+    shell.append(hint);
+    this.onboarding = { ...this.onboarding, roomSeen: true, roomDecorSeen: true }; this.options.onOnboardingChange?.(this.onboarding);
   }
 
   private resetCraftContext(): void {

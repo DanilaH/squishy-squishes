@@ -85,6 +85,7 @@ export interface SandboxAppOptions {
     audio: SquishyAudio,
     callbacks: PhaserSandboxCallbacks,
   ) => PhaserSquishSurface;
+  readonly onCraftSaved?: () => void;
   readonly onSaveSquishy: (draft: SandboxDraft, editingId: string | null) => Promise<SavedSquishy | null>;
   readonly onMutedChange: (muted: boolean) => void | Promise<void>;
 }
@@ -1715,6 +1716,7 @@ export class SandboxApp {
         this.status.textContent = '';
         return;
       }
+      const newlyCrafted = !this.editingId;
       this.shell.dataset.saveKind = this.editingId ? 'edit' : 'craft';
       this.editingId = null;
       this.savedSquishy = saved;
@@ -1722,6 +1724,7 @@ export class SandboxApp {
       this.shell.dataset.saveComplete = 'true';
       this.loadSavedSquishy(saved);
       this.setStage('squeeze');
+      if (newlyCrafted) this.options.onCraftSaved?.();
     } catch (error: unknown) {
       if (this.disposed) return;
       console.error('[squishy:sandbox-save]', error);
@@ -2124,6 +2127,7 @@ export class SandboxApp {
   }
 
   private setStage(next: SandboxStage): void {
+    if (next !== 'squeeze') this.shell.querySelector('[data-room-decor-hint]')?.remove();
     this.clearPlacementFeedback();
     if (this.toolsOpen) this.setToolsOpen(false);
     this.releasedAt = -Infinity; this.gestureStrength = 0; this.gestureActive = false;

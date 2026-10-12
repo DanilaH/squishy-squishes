@@ -1309,3 +1309,32 @@ passed; only four narrow/landscape Library baselines exceeded the existing pixel
 tolerance and changed for the room heading. Strict TypeScript, tooling/assets,
 release builds and Yandex root audit passed (63 files, 3,371,991 bytes). Full
 latest CI remains the merge gate; no production deployment performed.
+
+## Optional room decoration hint after first craft — 12 October 2026
+
+The owner approved a short room-decoration hint after successful first craft,
+and explicitly requested dismissal by tapping/clicking the hint. The hint does
+not block squeezing or require opening the editor. Text/background and the
+close button dismiss it; Style room opens the existing room editor directly.
+No stage advance, timer, animation or focus grab is introduced. Leaving Squeeze
+for editing removes the hint. Skipping the craft lesson does not suppress this
+separate room discovery hint.
+
+A separate roomDecorSeen flag in the existing onboarding record makes the hint
+one-time, including after reload/replay. Older records decode without changing
+V3; existing players who already saw room guidance do not get a repeat. Guide
+checkpoints preserve the newer flag rather than overwriting it with their older
+snapshot. Failed saves do not show the hint; updating an existing toy does not
+show it either. Room choices, V3 and reward/capacity rules remain unchanged.
+
+Validation: all 17 existing onboarding/recovery cases passed, plus nine new
+room-hint/migration/out-of-order cases (26 distinct cases in total). New checks
+cover RU/EN at 320×568, 568×320 and 1440×900; out-of-order checks at 390×844
+include tab changes, try-on reload, failed save/retry, text-tap dismissal,
+squeezing completion, no duplicate room message and skipped replay. Button
+geometry and real hit testing passed; phone and short-landscape game captures
+were inspected. The existing strict stage-height assertion now waits for the
+renderer layout to settle, without relaxing the requirement. Strict TS,
+tooling/assets, both release builds and upload audit passed: 63 files /
+3,374,911 bytes. All 30 interface captures passed unchanged in six visual cases.
+Changes remain in PR #100, without merge or deployment.
