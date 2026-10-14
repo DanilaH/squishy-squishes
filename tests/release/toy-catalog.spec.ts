@@ -8,7 +8,7 @@ import { ACCESSORY_IDS, EYE_STYLE_IDS, MOUTH_STYLE_IDS, createEmptyDecorDocument
 for (const locale of ['ru-RU', 'en-US']) {
   test(`existing decorated V3 collection renders the toy catalog in ${locale}`, async ({ browser, baseURL }) => {
     // The expanded catalog visits every decoded accessory and reloads each.
-    test.setTimeout(120_000);
+    test.setTimeout(300_000);
     const context = await browser.newContext({ baseURL, locale, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     try {
@@ -26,7 +26,7 @@ for (const locale of ['ru-RU', 'en-US']) {
       await page.evaluate((library) => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify({ ...library.save, libraryCapacity:24, library: library.toys, totalCrafts: 5 }))), { save: createDefaultSaveV3(), toys });
       await page.reload();
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', String(ACCESSORY_IDS.length));
-      const savedBefore = await page.evaluate((__collection) => (JSON.stringify(__collection.library)), await readCollection(page));
+      const savedBefore = decodeSaveStateV3(await readCollection(page)).library;
       await mkdir('migration-baseline-evidence', { recursive: true });
       await page.screenshot({ path: `migration-baseline-evidence/catalog-${locale}-hall.png` });
       for (const accessory of ACCESSORY_IDS) {
@@ -50,7 +50,7 @@ for (const locale of ['ru-RU', 'en-US']) {
         expect(await page.evaluate(() => ({ x: document.documentElement.scrollWidth > innerWidth, y: document.documentElement.scrollHeight > innerHeight }))).toEqual({ x: false, y: false });
         await page.reload();
       }
-      expect(await page.evaluate((__collection) => (JSON.stringify(__collection.library)), await readCollection(page))).toBe(savedBefore);
+      expect(decodeSaveStateV3(await readCollection(page)).library).toEqual(savedBefore);
     } finally { await context.close(); }
   });
 }

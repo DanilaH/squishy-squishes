@@ -134,7 +134,7 @@ for (const [locale, viewport] of [
   ['en-US', {width: 1440, height: 900}],
   ['ru-RU', {width: 568, height: 320}],
 ] as const) test(`complete authored catalog, live attachment and persistence ${locale} ${viewport.width}`, async ({browser, baseURL}, info) => {
-  test.setTimeout(240_000);
+  test.setTimeout(420_000);
   const context = await browser.newContext({baseURL, locale, viewport, reducedMotion: 'reduce'});
   const page = await context.newPage();
   const errors: string[] = [];

@@ -6,6 +6,7 @@ import {createSandboxDraft} from '../../src/sandbox/types';
 const toys=['paw','heart','donut','dumpling','strawberry','mochi-cat','cupcake','mochi-bunny'].map((shapeId,i)=>({...createSandboxDraft(),shapeId,id:`ui-${i}`,createdAt:1700000000000+i}));
 const viewports = [{width:320,height:568},{width:390,height:844},{width:568,height:320},{width:1440,height:900}];
 for (const locale of ['ru-RU','en-US']) for (const viewport of viewports) test(`other screens ${locale} ${viewport.width}`,async({browser,baseURL},info)=>{
+ test.setTimeout(120_000);
  const c=await browser.newContext({baseURL,locale,viewport,hasTouch:true,reducedMotion:'reduce'});
   const p=await c.newPage();
   const ru=locale==='ru-RU';

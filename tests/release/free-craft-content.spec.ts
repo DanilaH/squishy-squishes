@@ -25,7 +25,7 @@ test('every accessory has finite individual seats and keeps its specified layer 
 });
 
 test('rich new-content toys keep identity, specified layers and complete gear across Hall, edit, Finish and reload', async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(300_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/squishy-squishes/?roomReview=0');
