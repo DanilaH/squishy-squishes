@@ -52,7 +52,10 @@ export class CatalogPreview {
         this.port.track('catalog_preview',key);this.render();
       }
     }
-    if(this.pending && ['save','draft-undo','draft-redo','paint-undo','decor-undo','mixin-undo'].includes(button.dataset.action??'')){
+    if(this.pending && ['draft-undo','draft-redo','paint-undo','decor-undo','mixin-undo'].includes(button.dataset.action??'')){
+      event.stopImmediatePropagation();event.preventDefault();this.restore();return;
+    }
+    if(this.pending && button.dataset.action === 'save'){
       event.stopImmediatePropagation();event.preventDefault();this.render();this.bar.querySelector<HTMLButtonElement>('[data-preview-open]')?.focus();
     }
     if(this.pending && ['new','edit-saved','exit-confirm','home'].includes(button.dataset.action??''))this.restore();
@@ -90,7 +93,7 @@ export class CatalogPreview {
       if(this.abort.signal.aborted)return;
       if(earned){this.port.track('catalog_unlock',key);this.pending=null;this.bar.hidden=true;this.mark();}
       else this.render(this.ru?'Реклама недоступна или закрыта. Примерка сохранена.':'Ad unavailable or closed. Your preview is still here.');
-    }catch{if(!this.abort.signal.aborted)this.render(this.ru?'Не удалось сохранить открытие. Нажми ещё раз для повтора.':'Could not save the unlock. Tap again to retry.');}
+    }catch{if(!this.abort.signal.aborted)this.render(this.ru?'Не удалось сохранить открытие. Если награда получена, повтор будет без новой рекламы.':'Could not save the unlock. An earned reward retries without another ad.');}
     finally{this.busy=false;if(this.pending&&!this.abort.signal.aborted)this.bar.querySelectorAll('button').forEach(button=>button.disabled=false);}
   }
   /** Never persist an unowned preview into the resumable tutorial draft. */

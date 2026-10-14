@@ -124,3 +124,7 @@ test('one unresolved preview keeps unrelated free choices and face bundle restor
  await page.locator('[data-craft-section=decor]').click();await page.locator('[data-decor-eyes=cross]').click();await page.locator('[data-decor-mouth=sewn]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-decor-eyes','cross');await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-decor-mouth','sewn');await page.locator('[data-preview-restore]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-decor-eyes','none');await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-decor-mouth','none');
  await page.keyboard.press('Control+z');expect((await readCollection(page)).unlockedRewardIds).toEqual([]);
 });
+
+test('visible Undo cancels the unpaid preview without invoking an advertisement',async({page})=>{
+ await page.goto('/squishy-squishes/');await expect(page.locator('[data-phaser-ready=true]')).toBeVisible();await page.locator('[data-guide-skip]').click();await page.locator('button[data-shape=mochi-cat]').click();await expect(page.locator('[data-catalog-preview]')).toBeVisible();await page.locator('.craft-actions [data-action=draft-undo]').click();await expect(page.locator('[data-catalog-preview]')).toBeHidden();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-shape','soft-square');expect((await readCollection(page)).unlockedRewardIds).toEqual([]);
+});
