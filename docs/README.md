@@ -13,6 +13,15 @@
 | Phaser preview / migration | [`PHASER_LANDSCAPE_MIGRATION_PLAN.md`](PHASER_LANDSCAPE_MIGRATION_PLAN.md), [`PHASER_BOOTSTRAP_ADOPTION.md`](PHASER_BOOTSTRAP_ADOPTION.md) | Migration plans are historical; production now uses Phaser. A landscape redesign remains a separate product decision. |
 | QA / release | [`../README.md`](../README.md), [build, browser QA and deployment](../.github/workflows/release-check.yml) | Browser CI is not real-phone or hosted Yandex DRAFT approval. |
 
+## Next release work
+
+The owner-requested monetization and scalable-collection roadmap is
+[`MONETIZATION_RELEASE_ROADMAP_2026-10-15.md`](MONETIZATION_RELEASE_ROADMAP_2026-10-15.md).
+It records the collection/storage prerequisites, four starting places plus one
+per rewarded expansion without a fixed gameplay count ceiling, preview/ownership
+flow and a proposed first-release catalog split. These are planned changes;
+current runtime policy is not proof of their implementation.
+
 ## Current Library follow-up
 
 The owner-approved 14 October artwork pass is recorded in

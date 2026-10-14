@@ -1,6 +1,8 @@
 # Squishy Squishes — Analytics & Monetization
 
-**Status:** PRE-DEVELOPMENT PROPOSAL
+**Status:** HISTORICAL PRE-DEVELOPMENT PROPOSAL
+
+Current forward plan: [15 October release monetization and scalable collection](MONETIZATION_RELEASE_ROADMAP_2026-10-15.md). This older proposal does not define the current ad cadence or item ownership.
 
 The game should not acquire an economy merely to create ad hooks. Monetization fits between completed tactile loops.
 
