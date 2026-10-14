@@ -1,4 +1,4 @@
-import { getAccessorySeatFactor, getAccessorySeats } from './accessorySeats';
+import { getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats } from './accessorySeats';
 import { getDecorFrame, type AccessoryId, type DecorDocumentV1 } from './decor';
 import type { ShapeDefinition } from '../game/shapes';
 
@@ -12,9 +12,15 @@ export interface AccessoryPlacement {
   readonly locked?: true;
   readonly color?: number;
   readonly mirrored?: true;
+  /** Omitted in older saves: use the accessory type's default layer. */
+  readonly depth?: 'front' | 'rear';
 }
 export interface FaceTransform { readonly x: number; readonly y: number; readonly s: number }
 export const MAX_ACCESSORY_PLACEMENTS = 128;
+export const accessoryMaxScale = (id: AccessoryId): number => id === 'headphones' ? 4 : 2.5;
+export const accessoryDepth = (placement: AccessoryPlacement): 'front' | 'rear' => placement.depth ?? getAccessoryDepth(placement.a);
+export const accessoryCoversFace = (placement: AccessoryPlacement): boolean =>
+  accessoryDepth(placement) === 'front';
 
 export const initialAccessoryPlacements = (shape: ShapeDefinition, a: AccessoryId): readonly AccessoryPlacement[] =>
   getAccessorySeats(shape, a).map(seat => ({ a, x: Math.round(seat.u * 255), y: Math.round(seat.v * 255),

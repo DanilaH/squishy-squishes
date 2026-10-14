@@ -73,8 +73,7 @@ test(`face-zone art refinement ${locale} ${viewport.width}`, async ({browser, ba
       await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
       const gearDepth = await page.locator(`[data-accessory-id="${id}"]`).evaluate(el => Number(getComputedStyle(el).zIndex));
       const faceDepth = await page.locator('.free-face-foreground').evaluate(el => Number(getComputedStyle(el).zIndex));
-      if (id === 'eye-patch') expect(gearDepth).toBeGreaterThan(faceDepth);
-      else expect(faceDepth).toBeGreaterThan(gearDepth);
+      expect(gearDepth).toBeGreaterThan(faceDepth);
       const box = (await canvas.boundingBox())!;
       await page.screenshot({path: info.outputPath(`${id}.png`)});
       await page.screenshot({path: info.outputPath(`crop-${id}.png`), clip: {

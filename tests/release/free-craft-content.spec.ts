@@ -23,7 +23,7 @@ test('every accessory has finite individual seats and keeps its specified layer 
   }
 });
 
-test('rich new-content toys keep identity, face priority and complete gear across Hall, edit, Finish and reload', async ({ page }) => {
+test('rich new-content toys keep identity, specified layers and complete gear across Hall, edit, Finish and reload', async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -49,8 +49,13 @@ test('rich new-content toys keep identity, face priority and complete gear acros
     await play.click(); await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await expect(page.locator('[data-accessory-index]')).toHaveCount(toy.decor.accessories.length);
     await expect(page.locator('.free-face-foreground')).toBeVisible();
-    const depths = await page.locator('[data-accessory-index]').evaluateAll(nodes => nodes.map(node => Number(getComputedStyle(node).zIndex)));
-    expect(Number(await page.locator('.free-face-foreground').evaluate(node => getComputedStyle(node).zIndex))).toBeGreaterThan(Math.max(...depths));
+    const depths = await page.locator('[data-accessory-index]').evaluateAll(nodes => nodes.map(node => ({depth:(node as HTMLElement).dataset.accessoryDepth,z:Number(getComputedStyle(node).zIndex)})));
+    const faceDepth=Number(await page.locator('.free-face-foreground').evaluate(node=>getComputedStyle(node).zIndex));
+    const bodyDepth=Number(await page.locator('[data-sandbox-canvas]').evaluate(node=>getComputedStyle(node).zIndex));
+    for(const piece of depths) {
+      if(piece.depth==='front')expect(piece.z).toBeGreaterThan(faceDepth);
+      else expect(piece.z).toBeLessThan(bodyDepth);
+    }
     await page.screenshot({ path: `migration-baseline-evidence/free-craft/${toy.shapeId}-squeeze.png` });
     await page.locator('[data-action="edit-saved"]').click();
     await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();

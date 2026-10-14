@@ -5,13 +5,13 @@ import { DraftHistory } from './draftHistory';
 import { FreeCraftEditor } from './freeCraftEditor';
 import { mountCraftWorkspace } from './craftWorkspace';
 import { mountCatalogScrollHints } from './catalogScrollHints';
-import { tintAccessory, accessoryPlacements, accessoryFrame, initialAccessoryPlacements, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
+import { tintAccessory, accessoryPlacements, accessoryDepth, accessoryCoversFace, accessoryFrame, initialAccessoryPlacements, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
 import { renderToyInclusions, renderToyInk, renderToyPigment } from './toySurfaceLayers';
 import { accessoryMotion } from './toyPersonality';
 import { contactFeedback } from './livingToy';
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp, type PaintStampId } from './creativeTools';
 import { REST_FACE, faceReaction, heldFaceStrength, type FaceReaction } from './toyReactions';
-import { getAccessoryDepth, getAccessorySeatFactor } from './accessorySeats';
+import { getAccessorySeatFactor } from './accessorySeats';
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
 import { drawToyMixIn } from './toyMixins';
@@ -1949,7 +1949,8 @@ export class SandboxApp {
     for (const [index, placement] of pieces.entries()) {
       const canvas = this.accessoryCanvasAt(index), ctx = canvas.getContext('2d')!;
       canvas.hidden = false; canvas.dataset.accessoryId = placement.a;
-      canvas.dataset.accessoryIndex = String(index); canvas.dataset.accessoryDepth = getAccessoryDepth(placement.a);
+      canvas.dataset.accessoryIndex = String(index); canvas.dataset.accessoryDepth = accessoryDepth(placement);
+      canvas.dataset.accessoryCoversFace = String(accessoryCoversFace(placement));
       drawAccessoryPiece(ctx, placement.a, 180, 120, placement.side, placement.mirrored);
       if (placement.color !== undefined) tintAccessory(ctx, 180, 120, placement.color);
       // Measure once when the art changes; transparent source margins are not part of the selection.
@@ -1978,6 +1979,10 @@ export class SandboxApp {
       return;
     }
     const shape = getShape(this.draft.shapeId), pieces = accessoryPlacements(this.draft.decor, shape);
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const stageRect = this.canvas.parentElement?.getBoundingClientRect();
+    const ratio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio')) || .34;
+    const radius = Math.min(canvasRect.width, canvasRect.height) * ratio;
     for (let piece = 0; piece < pieces.length; piece++) {
       const placement = pieces[piece]!, accessoryCanvas = this.accessoryCanvasAt(piece);
       const frame = this.draft.decor.accessories ? accessoryFrame(shape, placement) : getDecorFrame(shape, placement.a, placement.side);
@@ -2017,11 +2022,16 @@ export class SandboxApp {
       const b = sinAngle * rigidScale;
       const c = -sinAngle * rigidScale;
       const d = cosAngle * rigidScale;
-      const canvasRect = this.canvas.getBoundingClientRect();
-      const stageRect = this.canvas.parentElement?.getBoundingClientRect();
       if (stageRect) {
         const anchorX = canvasRect.left - stageRect.left + seat.x;
         const anchorY = canvasRect.top - stageRect.top + seat.y - motion.lift * canvasRect.height;
+        if (this.options.rendererBackend === 'phaser') {
+          // Match the shared 112×75 thumbnail frame at radius 102.4. The
+          // transparent input canvas can grow independently of the visible toy.
+          const width = `${radius * 112 / 102.4}px`, height = `${radius * 75 / 102.4}px`;
+          if (accessoryCanvas.style.width !== width) accessoryCanvas.style.width = width;
+          if (accessoryCanvas.style.height !== height) accessoryCanvas.style.height = height;
+        }
         const width = accessoryCanvas.offsetWidth || 160;
         const height = accessoryCanvas.offsetHeight || 107;
         // Pages' live overlay previously left the broad crown/bow visibly hovering

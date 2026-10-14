@@ -1397,3 +1397,19 @@ and V3 documents remain authoritative. See
 `ART_QUALITY_REVIEW_2026-10-14.md` for actual validation and release status.
 The owner authorized remote work in draft PR #101; merging and publishing are
 separate from the approved implementation scope.
+
+### 2026-10-14 — headphone size and accessory layer control
+
+Owner approved one front/behind toggle for each accessory, with type defaults,
+and asked to verify whole-toy headphone sizing. Implemented an optional validated
+per-placement `depth` value, resolved identically in live overlays and thumbnails.
+Omitted values retain existing type defaults; front overlays may cover the
+face, and rear also applies to eye patches. Default and manual layers have the
+same behavior. Lock, copy, reset, undo/redo and
+V3 persistence apply. Headphones allow size .25–4; others retain .25–2.5.
+The toggle stays in the settings heading on short screens; refresh retains
+the settings scroll position.
+Fixed the observed Studio fixed-size accessory frame to follow the same body
+radius as the room/collection. Source artwork, IDs and tactile constants stay
+unchanged. Follow-up remains on draft PR #101; no merge/deployment approval is
+implied by this implementation request.
