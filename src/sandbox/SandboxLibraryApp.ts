@@ -482,7 +482,8 @@ export class SandboxLibraryApp {
     this.pendingDeleteId = null;
     const completed = new Set(this.completedRecipeIds);
     const title = getSquishyTitle(this.completedRecipeIds.length, this.options.language);
-    const cards = SQUISHY_IDEAS.filter(idea => !this.options.monetization || [['shape',idea.shapeId],['material',idea.materialId]].every(([category,id]) => { const key=catalogKey(category!,id!); return !key || this.options.monetization!.owns(key); })).map((idea) => {
+    const availableIdeas = SQUISHY_IDEAS.filter(idea => !this.options.monetization || [['shape',idea.shapeId],['material',idea.materialId]].every(([category,id]) => { const key=catalogKey(category!,id!); return !key || this.options.monetization!.owns(key); }));
+    const cards = availableIdeas.map((idea) => {
       const done = completed.has(idea.id);
       const mixin = getIdeaMixinLabel(idea, this.options.language);
       return `
@@ -507,7 +508,7 @@ export class SandboxLibraryApp {
     }).join('');
 
     this.root.innerHTML = `
-      <main class="sandbox-library-shell sandbox-ideas-shell${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-ideas data-card-pages data-stage="ideas" data-ideas-count="${SQUISHY_IDEAS.length}" data-completed-count="${this.completedRecipeIds.length}">
+      <main class="sandbox-library-shell sandbox-ideas-shell${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-ideas data-card-pages data-stage="ideas" data-ideas-count="${availableIdeas.length}" data-completed-count="${this.completedRecipeIds.length}">
         <header class="sandbox-library-topbar">
           <strong>${this.copy.studio}</strong>
           <button class="sandbox-sound" type="button" data-library-mute aria-pressed="${this.muted}">${this.muted ? this.copy.muted : this.copy.sound}</button>

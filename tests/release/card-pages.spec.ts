@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { expect, test } from '@playwright/test';
 
@@ -6,6 +7,7 @@ for (const locale of ['ru-RU', 'en-US']) {
     test(`all ideas are reachable without scrolling in ${locale} at ${viewport.width}px`, async ({ browser, baseURL }) => {
       const context = await browser.newContext({ baseURL, locale, viewport });
       const page = await context.newPage();
+      await returningPlayer(page);
       try {
         await page.goto('/squishy-squishes/?roomReview=0');
         await page.locator('[data-library-ideas]').click();

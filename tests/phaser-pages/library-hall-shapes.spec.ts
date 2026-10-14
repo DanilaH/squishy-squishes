@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
@@ -31,16 +32,16 @@ test('chrome and holo volume follow all eight saved shape boundaries', async ({ 
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
 
   for (const material of ['chrome', 'holo'] as const) {
-    await page.evaluate(({ material, shapes }) => {
+    await page.evaluate(({__save,__input}) => {const { material, shapes }=__input;
       const key = 'squishy.phaser-pages-preview.squishy.save.v3';
-      const save = JSON.parse(localStorage.getItem(key) ?? 'null');
+      const save = __save;
       if (!save || !save.library.length) throw new Error('Expected a real saved toy');
       const original = save.library[0];
       save.library = shapes.map((shapeId) => ({
         ...original, shapeId, materialId: material, id: `shape-review-${material}-${shapeId}`,
       }));
-      localStorage.setItem(key, JSON.stringify(save));
-    }, { material, shapes: SHAPES });
+      (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)})));
+    }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:{ material, shapes: SHAPES }});
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', String(SHAPES.length));
     await expect(page.locator('[data-library-hall-stage]')).toBeVisible();

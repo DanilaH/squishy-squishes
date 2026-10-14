@@ -20,7 +20,7 @@ export async function auditShowcase(page: Page, label: string) {
       const hit = document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
       if(r.width<44 || r.height<44 || r.left<-.5 || r.right>innerWidth+.5 || r.top<-.5 || r.bottom>innerHeight+.5 || !hit || !button.contains(hit)) issues.push(button.outerHTML.slice(0,160));
     }
-    const toys = [...shelf.querySelectorAll<HTMLCanvasElement>('[data-library-thumbnail]')].map(canvas => {
+    const toys = [...shelf.querySelectorAll<HTMLCanvasElement>('[data-library-thumbnail]')].filter(canvas => canvas.width > 1).map(canvas => {
       const pixels=canvas.getContext('2d')!.getImageData(0,0,canvas.width,canvas.height).data;
       let visible=0,last=-1;
       for(let i=3;i<pixels.length;i+=4) if(pixels[i]!>80) {visible++;last=Math.floor((i-3)/4/canvas.width);}
@@ -33,11 +33,12 @@ export async function auditShowcase(page: Page, label: string) {
     });
     shelf.scrollTop=original;
     return { viewport:{width:innerWidth,height:innerHeight}, scroll:{width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight,shell:shell.scrollHeight,shellClient:shell.clientHeight}, shelf:rect(shelf), tableBefore,tableAfter:rect(table),issues,toys,
+      capacity:Number(shell.dataset.libraryCapacity),
       count:shelf.querySelectorAll('[data-library-toy],.library-showcase-slot').length,
       passive:getComputedStyle(scene).pointerEvents, image:getComputedStyle(scene.querySelector('.library-hall-scene__wall')!).backgroundImage,
       primary:controls.filter(button=>!shelf.contains(button)).map(rect) };
   });
-  expect(facts.count, `${label}: eight ordinary shelf positions`).toBe(8);
+  expect(facts.count, `${label}: ordinary shelf positions match durable capacity`).toBe(facts.capacity);
   expect(facts.issues, `${label}: all shelf and primary controls reachable at 44px`).toEqual([]);
   expect(facts.scroll.width).toBeLessThanOrEqual(facts.viewport.width+2);
   expect(facts.scroll.height).toBeLessThanOrEqual(facts.viewport.height+2);

@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
@@ -41,11 +42,11 @@ test('all face and sticker styles remain legible on six saved contours without c
   await page.locator('[data-material="pearl"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  const seed = await page.evaluate((key) => {
-    const save = JSON.parse(localStorage.getItem(key) ?? 'null');
+  const seed = await page.evaluate(({__save,__input}) => {const key=__input;
+    const save = __save;
     if (save?.version !== 3 || save.library.length !== 1) throw new Error('Missing genuine V3 toy');
     return save.library[0];
-  }, KEY);
+  }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
   const hashesByShape = new Map<string, Set<string>>();
   for (const look of LOOKS) {
     await page.evaluate(({ key, seed, look, shapes }) => {
@@ -56,14 +57,14 @@ test('all face and sticker styles remain legible on six saved contours without c
         decor: { v: 1, e: look.eyes, m: look.mouth, b: 1, a: 'bow',
           s: [[look.sticker, 65, 177, 32, 0], [look.sticker, 190, 176, 26, 30]] },
       }));
-      localStorage.setItem(key, JSON.stringify(save));
+      localStorage.setItem(key, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)}));
     }, { key: KEY, seed, look, shapes: SHAPES });
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
     // Hall thumbnails are eager again: audit all six native canvases directly.
     // Room navigation below remains presentation/paging coverage only.
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
-    const saved = await page.evaluate((key) => localStorage.getItem(key), KEY);
+    const saved = await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
     const hashes = new Set<string>();
     for (const shape of SHAPES) {
       const canvas = page.locator(`[data-library-thumbnail="catalog-${look.id}-${shape}"]`);
@@ -91,7 +92,7 @@ test('all face and sticker styles remain legible on six saved contours without c
       await page.locator('.sandbox-library-card').nth((room - 1) * 2).scrollIntoViewIfNeeded();
       await page.screenshot({ path: info.outputPath(`library-hall-catalog-${look.id}-room-${room}-320.png`), animations: 'disabled' });
     }
-    expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe(saved);
+    expect(await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY})).toBe(saved);
   }
   for (const shape of SHAPES) expect(hashesByShape.get(shape)?.size, `looks duplicated for ${shape}`).toBe(LOOKS.length);
   expect(errors).toEqual([]);

@@ -62,7 +62,7 @@ test('owner material stress matrix keeps authored colour legible across six mate
         materialId,
         appearance: { ...seed.appearance, strokes },
       }));
-      localStorage.setItem(storageKey, JSON.stringify(save));
+      localStorage.setItem(storageKey, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)}));
     }, { storageKey: key, id: scenario.id, strokes: scenario.strokes, materialIds: materials });
 
     await page.reload();

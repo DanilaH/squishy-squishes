@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { expect, test } from '@playwright/test';
 
 const key = 'squishy.phaser-pages-preview.squishy.save.v3';
@@ -35,17 +36,17 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
   await page.locator('[data-material="chrome"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  await page.evaluate((storageKey) => {
-    const save = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
+  await page.evaluate(({__save,__input}) => {const storageKey=__input;
+    const save = __save;
     if (!save?.library?.[0]) throw new Error('Missing genuine saved toy');
     save.library = ['soft', 'jelly', 'holo', 'marshmallow', 'pearl', 'chrome', 'jelly', 'chrome'].map((materialId, index) => ({
       ...save.library[0], id: `shader-audit-${index}`, materialId,
     }));
-    localStorage.setItem(storageKey, JSON.stringify(save));
-  }, key);
+    (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(storageKey, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)})));
+  }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:key});
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
-  const before = await page.evaluate((storageKey) => localStorage.getItem(storageKey), key);
+  const before = await page.evaluate(({__save,__input}) => {const storageKey=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:key});
   const firstRoomPixels = await page.locator('.sandbox-library-card:visible canvas').first()
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   const visible = page.locator('.sandbox-library-card canvas');
@@ -65,7 +66,7 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
   const firstRoomPixelsAgain = await page.locator('.sandbox-library-card:visible canvas').first()
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   expect(firstRoomPixelsAgain, 'shelf scroll must not mutate previously rendered Studio pixels').toBe(firstRoomPixels);
-  expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(before);
+  expect(await page.evaluate(({__save,__input}) => {const storageKey=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:key})).toBe(before);
 });
 
 test('missing WebGL2 uses Canvas2D without discarding a genuinely saved V3 toy', async ({ page }) => {
@@ -91,7 +92,7 @@ test('missing WebGL2 uses Canvas2D without discarding a genuinely saved V3 toy',
   await page.locator('[data-material="chrome"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  const before = await page.evaluate((storageKey) => localStorage.getItem(storageKey), key);
+  const before = await page.evaluate(({__save,__input}) => {const storageKey=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:key});
   expect(before).not.toBeNull();
   await page.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext;
@@ -103,5 +104,5 @@ test('missing WebGL2 uses Canvas2D without discarding a genuinely saved V3 toy',
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
   await expect(page.locator('[data-library-thumbnail]')).toHaveAttribute('data-library-renderer', 'canvas2d-fallback');
   expect(await page.locator('[data-library-thumbnail]').evaluate(canvas => (canvas as HTMLCanvasElement).width)).toBe(512);
-  expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBe(before);
+  expect(await page.evaluate(({__save,__input}) => {const storageKey=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:key})).toBe(before);
 });

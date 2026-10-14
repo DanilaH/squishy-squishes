@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
 import { completeRecipeIdea } from '../../src/platform/saveV3Ideas';
@@ -17,6 +18,7 @@ const resetPages = async (page: Page): Promise<void> => {
     localStorage.clear();
     sessionStorage.clear();
   });
+  await returningPlayer(page);
   await page.reload();
 };
 

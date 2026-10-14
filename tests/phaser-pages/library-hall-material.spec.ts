@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
@@ -33,9 +34,9 @@ test.beforeAll(async ({ browser, baseURL }, info) => {
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     // The real saved Studio toy supplies every material fixture: no fake skins.
     await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath('library-hall-studio-soft-canvas-390.png'), animations: 'disabled' });
-    await page.evaluate(() => {
+    await page.evaluate(({__save,__input}) => {
       const key = 'squishy.phaser-pages-preview.squishy.save.v3';
-      const save = JSON.parse(localStorage.getItem(key) ?? 'null');
+      const save = __save;
       if (!save || save.library.length !== 1) throw new Error('Expected a real saved toy');
       const toy = save.library[0];
       save.library = (['soft', 'jelly', 'marshmallow', 'chrome', 'holo', 'pearl'] as const).map((materialId) => ({
@@ -43,16 +44,16 @@ test.beforeAll(async ({ browser, baseURL }, info) => {
         id: `material-fixture-${materialId}`,
         materialId,
       }));
-      localStorage.setItem(key, JSON.stringify(save));
-    });
-    fixtureSave = await page.evaluate(() => localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3')!);
+      (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)})));
+    }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null});
+    fixtureSave = await page.evaluate(({__save,__input}) => {return ((__save === null ? null : JSON.stringify(__save))!);}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null});
   } finally { await context.close(); }
 });
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/phaser/?roomReview=0');
-  await page.evaluate(save => localStorage.setItem('squishy.phaser-pages-preview.squishy.save.v3', save), fixtureSave);
+  await page.evaluate(save => ((localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem('squishy.phaser-pages-preview.squishy.save.v3', save))), fixtureSave);
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');

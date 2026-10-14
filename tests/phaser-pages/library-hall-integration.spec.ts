@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { auditShowcase } from './helpers/showcaseAudit';
 import { expect, test, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
@@ -60,13 +61,13 @@ test('real saved toys share the shelf; selection and confirmed deletion stay int
     await page.locator('[data-action="save"]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     const saveKey = 'squishy.phaser-pages-preview.squishy.save.v3';
-    await page.evaluate((key) => {
-      const saved = JSON.parse(localStorage.getItem(key) ?? 'null');
+    await page.evaluate(({__save,__input}) => {const key=__input;
+      const saved = __save;
       if (!saved || saved.library.length !== 1) throw new Error('Real save fixture missing');
       const sample = saved.library[0];
       saved.library = [sample, { ...sample, id: 'hall-fixture-second' }, { ...sample, id: 'hall-fixture-third' }];
-      localStorage.setItem(key, JSON.stringify(saved));
-    }, saveKey);
+      (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify({...saved,legacyCatalogAccess:true,libraryCapacity:Math.max(8,saved.libraryCapacity,saved.library.length)})));
+    }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:saveKey});
     await page.reload();
     await verifyHall(page, 'saved-390');
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '3');

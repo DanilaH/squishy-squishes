@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 
@@ -37,7 +38,7 @@ const makeDecoratedPearl = async (page: Page): Promise<void> => {
   await page.locator('[data-material="pearl"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  const saved = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null'), SAVE_KEY);
+  const saved = await page.evaluate(({__save,__input}) => {const key=__input;return (__save);}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:SAVE_KEY});
   expect(saved?.version).toBe(3);
   expect(saved?.library).toHaveLength(1);
   expect(saved.library[0].materialId).toBe('pearl');
@@ -73,10 +74,10 @@ test('a real painted, faced and accessorized pearl survives Library and V3 reloa
     await page.screenshot({ path: info.outputPath('library-hall-audit-decor-pearl-room-390.png') });
     const thumbnail = await page.locator('[data-library-thumbnail]').first().evaluate((node) => (node as HTMLCanvasElement).toDataURL('image/png').split(',')[1]);
     await writeFile(info.outputPath('library-hall-audit-decor-pearl-native-256.png'), Buffer.from(thumbnail, 'base64'));
-    const before = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+    const before = await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:SAVE_KEY});
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
-    expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY)).toBe(before);
+    expect(await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:SAVE_KEY})).toBe(before);
     await page.locator('.sandbox-library-card:visible [data-library-play-id]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath('library-hall-audit-reopened-decor-pearl-390.png') });

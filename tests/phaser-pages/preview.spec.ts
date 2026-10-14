@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
 
 const openPreview = async (page: Page): Promise<void> => {
@@ -44,10 +45,10 @@ test('Pages saves persist under a separate key without changing existing web sav
   await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  const saved = await page.evaluate(() => ({
+  const saved = await page.evaluate(({__save,__input}) => {return ({
     original: localStorage.getItem('squishy.save.v3'),
-    preview: localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3'),
-  }));
+    preview: (__save === null ? null : JSON.stringify(__save)),
+  });}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null});
   expect(saved.original).toBe('existing-game-sentinel');
   expect(JSON.parse(saved.preview ?? 'null')).toMatchObject({ version: 3, library: [{ shapeId: 'heart' }] });
   await page.reload();

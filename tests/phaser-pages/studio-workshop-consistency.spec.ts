@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
@@ -16,6 +18,7 @@ for (const device of devices) {
       viewport: { width: device.width, height: device.height }, locale: device.locale, deviceScaleFactor: device.dpr,
     });
     const page = await context.newPage();
+    await returningPlayer(page,'squishy.phaser-pages-preview.');
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     const history: Array<{ stage: string; canvas: { x: number; y: number; width: number; height: number }; deskTop: number; deskBottom: number; floorTop: number; stageTop: number; stageHeight: number; radius: number }> = [];
@@ -232,13 +235,13 @@ for (const device of devices) {
       await page.locator('[data-action="home"]').click();
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
       await expect(page.locator('.sandbox-library-card:visible [data-library-material-profile]').first()).toHaveAttribute('data-library-material-profile', 'holo');
-      const savedMaterial = await page.evaluate(() => {
-        const raw = localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3');
+      const savedMaterial = await page.evaluate(({__save,__input}) => {
+        const raw = (__save === null ? null : JSON.stringify(__save));
         const save = raw ? JSON.parse(raw) : null;
         return save?.library?.[0]?.materialId ?? null;
-      });
+      }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null});
       expect(savedMaterial, `${device.name}: Finish material survives V3 save`).toBe('holo');
-      const savedBeforeReopen = await page.evaluate(() => localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3'));
+      const savedBeforeReopen = await page.evaluate(({__save,__input}) => {return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null});
       await expect(page.locator('.library-showcase-table')).toBeHidden();
       await page.locator('.sandbox-library-card:visible [data-library-play-id]').first().click();
       // Reopening now seats the same Phaser maker in Library, with its own
@@ -257,7 +260,7 @@ for (const device of devices) {
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-squish-active', 'true');
       await page.mouse.up();
       expect(await page.locator('.library-showcase-table').boundingBox()).toEqual(table);
-      expect(await page.evaluate(() => localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3'))).toBe(savedBeforeReopen);
+      expect(await page.evaluate(({__save,__input}) => {return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null})).toBe(savedBeforeReopen);
       await page.screenshot({ path: info.outputPath(`workshop-${device.name}-library-squeeze.png`) });
       await page.locator('[data-action="edit-saved"]').click();
       await sample('decor-reopened', 'decor');
@@ -266,7 +269,7 @@ for (const device of devices) {
       await sample('material-reopened', 'shape');
       await page.locator('[data-action="save"]').click();
       await sample('squeeze-reopened', 'squeeze');
-      expect(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3')!).library.length)).toBe(1);
+      expect(await page.evaluate(({__save,__input}) => {return (__save.library.length);}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null})).toBe(1);
       expect(errors).toEqual([]);
       await writeFile(info.outputPath(`workshop-${device.name}-geometry.json`), JSON.stringify(history, null, 2));
     } finally {

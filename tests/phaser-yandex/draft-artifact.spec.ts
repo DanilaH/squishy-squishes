@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
 
 type DraftCounters = { init: number; ready: number; starts: number; stops: number; rewarded: number };
@@ -111,10 +112,10 @@ test('same upload-root bundle writes isolated V3 with first creation and real Li
   await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  const persisted = await page.evaluate(() => {
-    const raw = localStorage.getItem('squishy.phaser-yandex-draft.squishy.save.v3');
+  const persisted = await page.evaluate(({__save,__input}) => {
+    const raw = (__save === null ? null : JSON.stringify(__save));
     return { state: raw ? JSON.parse(raw) as { version: number; library: { shapeId: string }[] } : null, original: localStorage.getItem('squishy.save.v3') };
-  });
+  }, {__save:await readCollection(page,"squishy.phaser-yandex-draft.","local"),__input:null});
   expect(persisted.original).toBeNull();
   expect(persisted.state?.version).toBe(3);
   expect(persisted.state?.library).toHaveLength(1);

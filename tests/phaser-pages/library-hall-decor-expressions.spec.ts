@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
@@ -35,11 +36,11 @@ test('all face and sticker styles remain visible and distinct on each saved cont
   await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  const original = await page.evaluate((key) => {
-    const save = JSON.parse(localStorage.getItem(key) ?? 'null');
+  const original = await page.evaluate(({__save,__input}) => {const key=__input;
+    const save = __save;
     if (save?.version !== 3 || save.library.length !== 1) throw new Error('Missing genuine Studio save');
     return save.library[0];
-  }, KEY);
+  }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
   const byShape = new Map<string, Set<string>>();
   for (const profile of PROFILES) {
     await page.evaluate(({ key, original, shapes, profile }) => {
@@ -49,11 +50,11 @@ test('all face and sticker styles remain visible and distinct on each saved cont
         ...original, id: `expression-${shapeId}-${profile.name}`, shapeId,
         decor: { v: 1, e: profile.eyes, m: profile.mouth, b: 1, s: profile.stickers },
       }));
-      localStorage.setItem(key, JSON.stringify(save));
+      localStorage.setItem(key, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)}));
     }, { key: KEY, original, shapes: SHAPES, profile });
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
-    const saved = await page.evaluate((key) => localStorage.getItem(key), KEY);
+    const saved = await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
     for (const shape of SHAPES) {
       const thumbnail = page.locator(`[data-library-thumbnail="expression-${shape}-${profile.name}"]`);
       await expect(thumbnail).toHaveAttribute('data-library-renderer', 'volume-mesh');
@@ -77,7 +78,7 @@ test('all face and sticker styles remain visible and distinct on each saved cont
       await page.locator('.sandbox-library-card').nth((room - 1) * 2).scrollIntoViewIfNeeded();
       await page.screenshot({ path: info.outputPath(`library-hall-expression-${profile.name}-room-${room}-320.png`), animations: 'disabled' });
     }
-    expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe(saved);
+    expect(await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY})).toBe(saved);
   }
   for (const shape of SHAPES) expect(byShape.get(shape)?.size, `unchanged face/stickers on ${shape}`).toBe(PROFILES.length);
   expect(errors).toEqual([]);

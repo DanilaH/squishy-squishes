@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { copyFile, mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
@@ -33,7 +34,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
     await maker.locator('[data-material="chrome"]').click();
     await maker.locator('[data-action="save"]').click();
     await expect(maker.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-    saved = await maker.evaluate((key) => localStorage.getItem(key) ?? '', KEY);
+    saved = await maker.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)) ?? '');}, {__save:await readCollection(maker,"squishy.phaser-pages-preview.","local"),__input:KEY});
     const parsed = JSON.parse(saved);
     if (parsed?.version !== 3 || parsed.library?.length !== 1) throw new Error('Invalid real V3 baseline');
     parsed.library.push({ ...parsed.library[0], id: 'video-holo', materialId: 'holo' });
@@ -90,7 +91,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
     await expect(page.locator('[data-library-toy]')).toHaveCount(3);
     await page.waitForTimeout(1400);
     expect(errors).toEqual([]);
-    const endState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null'), KEY);
+    const endState = await page.evaluate(({__save,__input}) => {const key=__input;return (__save);}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
     expect(endState.library).toHaveLength(3);
     expect(new Set(endState.library.map((toy: { shapeId: string }) => toy.shapeId)).size).toBeGreaterThan(1);
   } finally {

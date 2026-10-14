@@ -1,9 +1,12 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { expect, test } from '@playwright/test';
 
 test('free Workshop navigation retains creative work and resets for a new toy', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  await returningPlayer(page,'squishy.phaser-pages-preview.');
   await page.goto('/phaser/?roomReview=0');
   await page.evaluate(() => localStorage.setItem('squishy.save.v3', 'original-save-untouched'));
   await page.locator('[data-library-new]').first().click();
@@ -74,10 +77,10 @@ test('free Workshop navigation retains creative work and resets for a new toy', 
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
 
-  const saved = await page.evaluate(() => ({
+  const saved = await page.evaluate(({__save,__input}) => {return ({
     original: localStorage.getItem('squishy.save.v3'),
-    preview: localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3'),
-  }));
+    preview: (__save === null ? null : JSON.stringify(__save)),
+  });}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null});
   expect(saved.original).toBe('original-save-untouched');
   const parsed = JSON.parse(saved.preview ?? 'null');
   expect(parsed.library[0]).toMatchObject({ shapeId: 'heart', materialId: 'holo' });
