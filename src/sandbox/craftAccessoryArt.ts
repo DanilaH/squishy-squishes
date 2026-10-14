@@ -3,7 +3,7 @@ import { drawExpandedAccessory } from './expandedDecorArt';
 import type { AccessoryId } from './decor';
 
 const NEW_IDS = new Set<AccessoryId>(['glasses','headphones','bucket-hat','petal-flower','leaves','butterfly','cream','cherry','heart-patch','handbag','wings']);
-/** Code-native padded forms share one logical canvas and light, with no late asset requests. */
+/** Authored catalog art first, with the original procedural failure fallback. */
 export const drawCraftAccessory = (ctx:CanvasRenderingContext2D,id:AccessoryId,width:number,height:number,icon=false):boolean=>{
   if(drawQualityAccessory(ctx,id,width,height,icon))return true;
   if(drawExpandedAccessory(ctx,id,width,height,icon))return true;

@@ -1,0 +1,309 @@
+{
+  "date": "2026-10-14",
+  "styleApproved": true,
+  "tasks": [
+    {
+      "id": "glasses",
+      "category": "accessory",
+      "subject": "One pair of round lilac eyeglasses, front view, two OPEN transparent round lenses, thick softly beveled lavender frames, small bridge and short temple tips. No eyes or head, no opaque lens fills.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One pair of round lilac eyeglasses, front view, two OPEN transparent round lenses, thick softly beveled lavender frames, small bridge and short temple tips. No eyes or head, no opaque lens fills. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "bucket-hat",
+      "category": "accessory",
+      "subject": "One mint green bucket hat, front view with slightly visible top, wide soft curved brim, sculpted fabric-like seams, tiny blush flower badge.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One mint green bucket hat, front view with slightly visible top, wide soft curved brim, sculpted fabric-like seams, tiny blush flower badge. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "petal-flower",
+      "category": "accessory",
+      "subject": "One five-petal puffy pink flower charm with plump rounded petals and warm yellow pearl center. No stem.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One five-petal puffy pink flower charm with plump rounded petals and warm yellow pearl center. No stem. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "leaves",
+      "category": "accessory",
+      "subject": "A symmetrical pair of mint green puffy leaves growing upward and outward from two adjacent bottom stems, visibly separate leaves, soft raised center veins.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: A symmetrical pair of mint green puffy leaves growing upward and outward from two adjacent bottom stems, visibly separate leaves, soft raised center veins. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "cream",
+      "category": "accessory",
+      "subject": "One ivory whipped cream swirl, rounded spiral tiers, curled pointed tip, pale pink reflected edge, front view. No food underneath.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One ivory whipped cream swirl, rounded spiral tiers, curled pointed tip, pale pink reflected edge, front view. No food underneath. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "heart-patch",
+      "category": "accessory",
+      "subject": "One horizontal beige rounded adhesive bandage patch, softly beveled edges, subtle perforations and a raised small pink heart centered on it.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One horizontal beige rounded adhesive bandage patch, softly beveled edges, subtle perforations and a raised small pink heart centered on it. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "handbag",
+      "category": "accessory",
+      "subject": "One blush pink miniature shoulder handbag, front view, lilac long curved shoulder strap arching above, rounded flap and small gold round clasp.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One blush pink miniature shoulder handbag, front view, lilac long curved shoulder strap arching above, rounded flap and small gold round clasp. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "wings",
+      "category": "accessory",
+      "subject": "A symmetrical pair of pearl white angel wings, feather tips pointing upward and outward, separated by a narrow TRANSPARENT center gap. Left wing faces left and right wing faces right, each wing has its root at the lower inner end. No body, no connecting plate.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: A symmetrical pair of pearl white angel wings, feather tips pointing upward and outward, separated by a narrow TRANSPARENT center gap. Left wing faces left and right wing faces right, each wing has its root at the lower inner end. No body, no connecting plate. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "antennae",
+      "category": "accessory",
+      "subject": "A symmetrical pair of gently curved lilac antenna stalks with round pearl pink balls at top, stems terminate at two bottom roots, front view, transparent gap between stalks.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: A symmetrical pair of gently curved lilac antenna stalks with round pearl pink balls at top, stems terminate at two bottom roots, front view, transparent gap between stalks. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "mushroom-hat",
+      "category": "accessory",
+      "subject": "One wearable pink mushroom cap hat, broad gently domed cap with three ivory raised round spots, thin ivory underside visible along bottom edge. No stem.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One wearable pink mushroom cap hat, broad gently domed cap with three ivory raised round spots, thin ivory underside visible along bottom edge. No stem. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "witch-hat",
+      "category": "accessory",
+      "subject": "One lavender witch hat, curved floppy pointed cone, wide elliptical brim, warm gold ribbon and small buckle, front view.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One lavender witch hat, curved floppy pointed cone, wide elliptical brim, warm gold ribbon and small buckle, front view. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "halo",
+      "category": "accessory",
+      "subject": "One floating gold halo ring viewed at shallow angle as a horizontal ellipse, open TRANSPARENT center, rounded shiny warm gold tubing. No glow, supports or head.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One floating gold halo ring viewed at shallow angle as a horizontal ellipse, open TRANSPARENT center, rounded shiny warm gold tubing. No glow, supports or head. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "eye-patch",
+      "category": "accessory",
+      "subject": "One lilac pirate eyepatch, rounded padded shield shape, thin lavender strap extending diagonally upper left to lower right behind it. No eye or face.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One lilac pirate eyepatch, rounded padded shield shape, thin lavender strap extending diagonally upper left to lower right behind it. No eye or face. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "bolt",
+      "category": "accessory",
+      "subject": "One short toy metal side bolt, horizontal lavender silver shaft with a large hexagonal slotted head at the right, shallow molded bevels, front-side view.",
+      "canvas": 512,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One short toy metal side bolt, horizontal lavender silver shaft with a large hexagonal slotted head at the right, shallow molded bevels, front-side view. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-heart",
+      "category": "sticker",
+      "subject": "One plump pink heart, rounded lobes, subtle sculpted central crease. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One plump pink heart, rounded lobes, subtle sculpted central crease. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-star",
+      "category": "sticker",
+      "subject": "One warm yellow five-pointed star, plump rounded points and raised center. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One warm yellow five-pointed star, plump rounded points and raised center. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-flower",
+      "category": "sticker",
+      "subject": "One six-petal pink daisy with round butter yellow center. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One six-petal pink daisy with round butter yellow center. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-sparkle",
+      "category": "sticker",
+      "subject": "One four-pointed lavender sparkle diamond, long vertical points and shorter horizontal points, rounded beveled inflated surface. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One four-pointed lavender sparkle diamond, long vertical points and shorter horizontal points, rounded beveled inflated surface. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-candy",
+      "category": "sticker",
+      "subject": "One wrapped pink candy, plump oval candy center with two lilac twisted wrapper ends. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One wrapped pink candy, plump oval candy center with two lilac twisted wrapper ends. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-donut",
+      "category": "sticker",
+      "subject": "One pink iced donut with an OPEN TRANSPARENT circular center hole, golden baked dough edge and a few cream sugar sprinkles. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One pink iced donut with an OPEN TRANSPARENT circular center hole, golden baked dough edge and a few cream sugar sprinkles. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-lightning",
+      "category": "sticker",
+      "subject": "One golden yellow lightning bolt, clear recognizable zigzag, smooth thick rounded bevel. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One golden yellow lightning bolt, clear recognizable zigzag, smooth thick rounded bevel. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-flame",
+      "category": "sticker",
+      "subject": "One stylized orange flame with warm yellow inner flame, three rounded flame tips, no smoke. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One stylized orange flame with warm yellow inner flame, three rounded flame tips, no smoke. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-skull",
+      "category": "sticker",
+      "subject": "One friendly ivory skull charm, two dark recessed round eye sockets, small triangular nose and three rounded teeth, no gore, no crossbones. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One friendly ivory skull charm, two dark recessed round eye sockets, small triangular nose and three rounded teeth, no gore, no crossbones. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-eye",
+      "category": "sticker",
+      "subject": "One almond-shaped ivory eye charm, mint iris, dark pupil and one small highlight, rounded lavender rim. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One almond-shaped ivory eye charm, mint iris, dark pupil and one small highlight, rounded lavender rim. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "sticker-ghost",
+      "category": "sticker",
+      "subject": "One little pearl white ghost charm, rounded dome, three wavy lower tips, two dark oval eyes and small oval mouth, no arms. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette.",
+      "canvas": 384,
+      "padding": 24,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: One little pearl white ghost charm, rounded dome, three wavy lower tips, two dark oval eyes and small oval mouth, no arms. A single puffy die-cut sticker with a very thin pale cream backing edge contained inside its silhouette. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-glitter",
+      "category": "filler",
+      "subject": "ONE tiny warm gold diamond-shaped foil glitter chip, four unequal crisp faceted faces, compact silhouette, no extra sparkles. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE tiny warm gold diamond-shaped foil glitter chip, four unequal crisp faceted faces, compact silhouette, no extra sparkles. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-stars",
+      "category": "filler",
+      "subject": "ONE small five-pointed pearlescent star bead, rounded inflated points, champagne gold with pale lilac iridescence. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE small five-pointed pearlescent star bead, rounded inflated points, champagne gold with pale lilac iridescence. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-foam",
+      "category": "filler",
+      "subject": "ONE small airy ivory blush foam bead, matte soft round ball, gently porous surface, subtle smooth shadow, no hole. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE small airy ivory blush foam bead, matte soft round ball, gently porous surface, subtle smooth shadow, no hole. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-pearls",
+      "category": "filler",
+      "subject": "ONE round pearl bead, lustrous ivory with lilac reflected lower edge and restrained bright upper left highlight, no hole. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE round pearl bead, lustrous ivory with lilac reflected lower edge and restrained bright upper left highlight, no hole. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-confetti",
+      "category": "filler",
+      "subject": "ONE small rectangular mint confetti sprinkle, short thick rounded bar, pale pink reflected end, slightly angled front view. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE small rectangular mint confetti sprinkle, short thick rounded bar, pale pink reflected end, slightly angled front view. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-crescents",
+      "category": "filler",
+      "subject": "ONE small ivory-lilac crescent moon bead, rounded plump tips, smooth pearlescent surface. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE small ivory-lilac crescent moon bead, rounded plump tips, smooth pearlescent surface. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-bubbles",
+      "category": "filler",
+      "subject": "ONE small translucent soap bubble, round sphere, very transparent center, delicate pink mint lavender iridescent rim and tiny reflected glint, preserve actual alpha translucency. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE small translucent soap bubble, round sphere, very transparent center, delicate pink mint lavender iridescent rim and tiny reflected glint, preserve actual alpha translucency. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-strawberry-slices",
+      "category": "filler",
+      "subject": "ONE small cross section slice of a strawberry, heart-like shape, pale pink flesh, darker rose edge, seven tiny cream seeds, no green leaves. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE small cross section slice of a strawberry, heart-like shape, pale pink flesh, darker rose edge, seven tiny cream seeds, no green leaves. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-lemon-slices",
+      "category": "filler",
+      "subject": "ONE small circular lemon cross section slice, buttery yellow translucent wedges separated by thin ivory membranes, golden rind. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE small circular lemon cross section slice, buttery yellow translucent wedges separated by thin ivory membranes, golden rind. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-kiwi-slices",
+      "category": "filler",
+      "subject": "ONE small circular kiwi cross section slice, pale green flesh, mint rind, small ivory center and a ring of dark tiny seeds. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE small circular kiwi cross section slice, pale green flesh, mint rind, small ivory center and a ring of dark tiny seeds. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-flowers",
+      "category": "filler",
+      "subject": "ONE miniature five-petal pearl pink flower bead, soft rounded petals, tiny butter yellow center. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE miniature five-petal pearl pink flower bead, soft rounded petals, tiny butter yellow center. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    },
+    {
+      "id": "filler-flakes",
+      "category": "filler",
+      "subject": "ONE small irregular polygonal iridescent foil flake, thin faceted chip, pale mint lilac pink reflective planes, no other objects. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline.",
+      "canvas": 128,
+      "padding": 12,
+      "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE small irregular polygonal iridescent foil flake, thin faceted chip, pale mint lilac pink reflective planes, no other objects. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles."
+    }
+  ],
+  "refinements": [
+    {
+      "assetId": "headphones",
+      "source": "headphones-v2.png",
+      "prompt": "Use case: precise-object-edit. Edit target is the headphones image. Keep the same polished lavender headband, pink cushioned earcups, small gold joints, upper-left toy lighting, sculpted soft silicone volume and transparent alpha. Change ONLY the geometry for use as wearable game art: make the headphones MUCH WIDER and LOWER, approximately 2:1 total width to height, with a gently flattened rounded headband arch. Put the two slightly narrower earcups at the far left and far right, with their outer sides nearly vertical. The empty transparent opening between the inner edges of the earcups must be at least 60% of the whole object's width so a toy's two eyes remain visible between the cups. No toy, face or eyes. Keep a straight-on front view, full complete object with padding. Absolutely no opaque panel, background, floor, glow, labels or cast shadow outside the silhouette."
+    }
+  ]
+}

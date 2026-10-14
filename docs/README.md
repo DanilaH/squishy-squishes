@@ -1,6 +1,6 @@
 # Documentation map — Squishy Squishes
 
-**Updated 2026-10-08.** Start with [`../AGENTS.md`](../AGENTS.md) and current code/tests. A filename containing `PLAN`, `REVIEW` or `PASS` does **not** imply current scope or approval.
+**Updated 2026-10-14.** Start with [`../AGENTS.md`](../AGENTS.md) and current code/tests. A filename containing `PLAN`, `REVIEW` or `PASS` does **not** imply current scope or approval.
 
 ## Working on the current game
 
@@ -15,6 +15,12 @@
 
 ## Current Library follow-up
 
+The owner-approved 14 October artwork pass is recorded in
+[`ART_QUALITY_REVIEW_2026-10-14.md`](ART_QUALITY_REVIEW_2026-10-14.md).
+The first integrated sample was accepted and the remaining catalog authorized;
+PR #101 retains source masters, exact prompts, runtime crops and validation.
+This art pass has not been merged or published.
+
 [`ROOM_FOUNDATION_2026-10-06.md`](ROOM_FOUNDATION_2026-10-06.md) records the new
 owner-approved empty customizable room foundation and exhibit/catalog flow.
 PR #95 published 16 palettes and 22 room items in seven fixed slots with
@@ -26,8 +32,8 @@ and verified locally. The follow-up now switches the room to the default entry.
 
 The owner-approved 12 October open collection showcase is recorded in
 [`PROJECT_DECISIONS.md`](PROJECT_DECISIONS.md), alongside first-entry guidance.
-It is currently prepared in PR #100; approval of the concept does not establish
-production deployment.
+It shipped in PR #100 at main commit `32dc0be`; Pages publication and live
+save/reload checks were verified on 12 October.
 
 The local 8 October screen polish (collection/play split, responsive room editor,
 Ideas and explicit replacement confirmation) is recorded in

@@ -1,56 +1,69 @@
-# Art-quality first review — 14 October 2026
+# Complete catalog artwork — 14 October 2026
 
 The owner reported silhouette issues in cupcake/watermelon and a quality gap
 between the original five authored accessories and seventeen code-drawn ones.
-They approved improving all accessories, stickers, fillings and reviewing all
-mold contours, with a small integrated sample shown before repeating the style
-across the whole set. This document records the first sample, not completion of
-the entire quality pass or permission to publish it.
+They accepted the first integrated sample and explicitly authorized completing
+the remaining catalog in the same molded, glossy 2.5D style on 14 October.
 
-## Integrated review batch
+## Implemented scope
 
-- Three authored accessories: headphones, butterfly and cherry.
-- Two puffy die-cut stickers: strawberry and ringed planet.
-- One pearlescent heart filling.
-- Original five accessories, remaining designs, saved IDs, palettes and tactile
-  constants are retained. The procedural designs remain working error fallbacks.
-- Source PNGs, prompts and runtime-preparation records live in
-  `assets-src/art-quality-sample`.
+| Catalog | Authored runtime sprites | First sample | Completed continuation |
+| --- | ---: | ---: | ---: |
+| Expanded accessories | 17 | 3 | 14 |
+| Stickers | 13 | 2 | 11 |
+| Fillings | 13 | 1 | 12 |
 
-## Mold corrections
+The original five authored accessories remain unchanged. The body, physical
+deformation, face animation, save IDs and V3 schema retain their existing roles.
+Procedural art remains a working failure fallback rather than the normal path.
 
-Cupcake now has a single smoothly joined upper dome, a wrapper that follows the
-body and paired highlights/shadows on its flutes. Watermelon has a straight cut
-and a continuous rind reaching both corners. Their relief shares the same
-normalization as the body outline, including SVG choice icons.
+Six initial masters live in `assets-src/art-quality-sample`; the remaining 37
+and a subsequent headphone refinement live in `assets-src/art-quality-full`.
+Pristine PNGs, exact prompts, source hashes and conversion settings are retained
+outside the shipped directory. All 43 runtime IDs have a canonical WebP and an
+explicitly measured, smaller AVIF companion. They are decoded inside the
+existing required-art boundary before catalog/room access. Their combined WebP
+and AVIF bytes are included in the unchanged 5 MiB upload-root audit.
 
-The review also found that flatter forms floated above the room stand. Room
-preview/live positions now compensate from the actual lower contour using one
-shared normalized baseline. The stand, body scale and physics are unchanged;
-there are no per-resolution furniture/body offsets.
+Classic sticker palette variations and per-particle color/depth variations are
+preserved. The unchanged accessory editor still handles color, mirroring,
+placement, scale, rotation, selection and persistence.
 
-## Acceptance
+## Composition corrections
 
-Inspect catalog scale, placed details, resizing, squeeze attachment, WebP and
-AVIF, failed loading and saved-toy reload in EN/RU on phone and desktop. Review
-all fifteen live mold silhouettes. Run the existing room-geometry and visual
-regressions. Style approval remains a review checkpoint before generating the
-remaining fourteen accessories and expanding the sticker/filling work.
+- Cupcake has a smooth upper dome and a wrapper following the same normalized
+  body boundary. Watermelon has a straight cut and continuous matching rind.
+  Their relief and SVG icons use the same body normalization.
+- Flatter room exhibits compensate from their lower contour using one shared
+  baseline; the stand, body scale and tactile constants are unchanged.
+- Leaves and wings retain measured left-piece roots, reconstructing the existing
+  180×120 logical frame before its shared seat renderer splits/mirrors the pair.
+- In-game review found the sample headphones touching the eyes. The retained
+  style now has a wider opening between earcups (`headphones-v2.png`). No saved
+  placement or scale is rewritten. The eyepatch uses the shared logical frame's
+  left focal offset and eye row so its shield covers an eye instead of the nose.
+- All sprite proportions and focal offsets belong to the asset's shared logical
+  frame; there are no per-resolution sprite corrections.
 
-## Local evidence
+## Local evidence and release boundary
 
-- `npm run release:check` passed: strict TypeScript, asset/tooling checks,
-  web and Yandex builds; Yandex upload root is 75 files / 3,625,996 bytes.
-- All seven art-quality scenarios passed across the focused runs, including
-  explicit WebP, saved-toy reload and a failed-asset fallback. All fifteen live
-  mold screenshots were inspected individually.
-- All eight existing room-foundation scenarios passed (EN/RU, desktop,
-  portrait phones and short landscape).
-- All six visual interface scenarios passed against existing baselines,
-  covering thirty screenshots. No baseline updates were needed.
-- The broader 468-case browser suite was started and interrupted; this sample
-  does not claim a complete release regression or approval to merge/deploy.
-- Code and source masters are committed. Automatic approval review initially
-  rejected the remote upload; the owner explicitly authorized uploading this
-  sample to GitHub and creating a draft PR on 14 October. This authorization
-  does not include merging or publishing the sample.
+The complete catalog passed 85 accessory/mold regressions and 21 focused
+catalog, squeeze, alpha, save/reload and room scenarios, plus six interface
+visual cases (thirty unchanged-baseline screenshots). Individual live crops of
+all seventeen expanded accessories and the complete sticker/filling sets were
+inspected. Fillings were checked on a dark body and stickers on lavender.
+
+The eye-zone refinements additionally passed nine runtime-alpha, phone/desktop
+and headphone/eyepatch squeeze/reload cases on three molds. The final alignment
+and live-layer fix passed twelve cases, including the existing EN/RU expanded
+customization journeys and three-mold checks. The room's eyepatch now shares
+Studio's deliberate above-face layer; ordinary accessories retain face priority.
+The final release check passed: 149 upload-root files / 4,592,182 bytes under
+the unchanged 5 MiB cap. All six final visual cases passed against unchanged
+baselines. Current remote gate status belongs to draft PR #101.
+
+The owner explicitly authorized remote work in PR #101. The original six-image
+sample passed all five PR workflows; that result does not establish the final
+expanded head's CI status. The full runtime/asset change must pass the current
+PR gates before merging. This work does not claim native-phone feel acceptance,
+hosted Yandex SDK/ads verification, a merge or a production deployment.

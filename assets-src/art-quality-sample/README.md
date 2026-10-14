@@ -1,7 +1,8 @@
 # Art-quality sample — 14 October 2026
 
-First review batch for the owner's approved quality pass. Style acceptance is
-pending; the remaining accessories, stickers and fillings are subsequent work.
+First review batch for the owner's approved quality pass. The owner accepted
+this style on 14 October 2026 and authorized the full catalog pass. Its further
+masters and prompt set are in `assets-src/art-quality-full`.
 
 The six pristine PNGs were generated specifically for this project with the
 built-in OpenAI image_gen tool. The existing project bow and crown were supplied

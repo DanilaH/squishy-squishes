@@ -9,7 +9,7 @@
   "role": "Style references only; original existing game assets retained",
   "assetId": "butterfly",
   "background": "transparent alpha",
-  "intendedUse": "Squishy Squishes art-quality sample; not yet style-approved",
+  "intendedUse": "Squishy Squishes authored catalog; sample style approved 2026-10-14",
   "prompt": "Use case: stylized-concept. Asset type: production transparent accessory sprite for Squishy Squishes. Input images are STYLE REFERENCES only: match their clean polished toy-like 2.5D volume, sculpted soft edges, restrained glossy highlights and dimensional shading. Create a new asset: A single butterfly-shaped puffy charm, front view, symmetrical lilac and blush wings with rounded inflated lobes and subtle wing veins, a small pearl pink body, two short curved antennae. No face, no eyes, no text. Centered isolated object, almost orthographic straight-on view, fills 80% of a square with clean transparent padding. Light from upper left, soft darker lower-right edges, internal contact shadows, smooth high quality molded silicone/vinyl, readable at 32 pixels and when enlarged to 160 pixels. Crisp saturated pastel colors, tangible thickness, refined controlled highlights like the reference bow. Background fully transparent alpha. No floor, no cast shadow outside silhouette, no backdrop, no glow, no white outline, no labels, no UI, no added sparkles.",
   "sourceSha256": "a1d74ca0bc41fdc60aca9d359a1ec44e787382b1e9e794e4eda4ec2e82b5c5b8",
   "runtimeCanvas": 512,

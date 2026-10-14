@@ -42,6 +42,14 @@ replacement/deletion, catalog return position and the room podium geometry.
 
 ## Current polish invariants
 
+The owner approved the authored puffy art sample and the full catalog pass on
+14 October 2026. See `docs/ART_QUALITY_REVIEW_2026-10-14.md` and the masters in
+`assets-src/art-quality-sample` / `assets-src/art-quality-full`. Expanded
+accessories, stickers and fillings use the shared `qualityArt` manifest and
+preload boundary; procedural drawings remain error fallbacks. Preserve existing
+IDs, color variants, per-piece attachment roots and the deformable body renderer.
+Style approval is separate from merging or publishing the artwork.
+
 - Pinned Squeeze follows the pointer modestly; retain bounded whole-body travel and local tap/poke rebound. The owner paused the Unpin entry on 7 October 2026; retain its transient experimental code without restoring the player button.
 - Draw volume sidewall backing before the front surface to avoid stretch stripes.
 - Composite eyes/mouth/blush after body material lighting.

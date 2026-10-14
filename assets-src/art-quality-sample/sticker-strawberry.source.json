@@ -9,7 +9,7 @@
   "role": "Style references only; original existing game assets retained",
   "assetId": "sticker-strawberry",
   "background": "transparent alpha",
-  "intendedUse": "Squishy Squishes art-quality sample; not yet style-approved",
+  "intendedUse": "Squishy Squishes authored catalog; sample style approved 2026-10-14",
   "prompt": "Use case: stylized-concept. Asset type: production transparent game sprite. Reference images define polished molded toy quality, 2.5D soft sculpted volume and clean highlights. Create: A single puffy die-cut strawberry sticker: heart-shaped rosy-red berry, small sculpted green leaf cap and a few neatly spaced golden seeds. Gentle inflated vinyl volume, thin clean cream-white die-cut rim, no separate backing rectangle. No face. Object centered with transparent padding, fills 78% of square, front-facing, isolated, clean silhouette. Soft studio light upper-left, attractive pastel color with good contrast at 24 pixels. Smooth high-quality finish with dimension comparable to reference bow. Entire background genuinely transparent. No floor, no drop shadow outside silhouette, no glow, no text, no mockup, no surrounding objects.",
   "sourceSha256": "ac620689ec79ef7d567009ab901b97a3c8f9e27be10d0a09ec3b95d949a0c5cf",
   "runtimeCanvas": 384,

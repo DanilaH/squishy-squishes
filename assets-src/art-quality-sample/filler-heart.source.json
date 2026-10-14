@@ -9,7 +9,7 @@
   "role": "Style references only; original existing game assets retained",
   "assetId": "filler-heart",
   "background": "transparent alpha",
-  "intendedUse": "Squishy Squishes art-quality sample; not yet style-approved",
+  "intendedUse": "Squishy Squishes authored catalog; sample style approved 2026-10-14",
   "prompt": "Use case: stylized-concept. Asset type: production transparent game sprite. Reference images define polished molded toy quality, 2.5D soft sculpted volume and clean highlights. Create: One small symmetrical pink pearl heart bead used as a slime filling. Frontal near-orthographic view, recognizable generous heart lobes and a soft lower point. Tangible rounded thickness, luminous pearlescent pink surface, subtle dimensional lower edge, one controlled white highlight upper left. No holes, no string, no border, no face, no decoration. Object centered with transparent padding, fills 78% of square, front-facing, isolated, clean silhouette. Soft studio light upper-left, attractive pastel color with good contrast at 24 pixels. Smooth high-quality finish with dimension comparable to reference bow. Entire background genuinely transparent. No floor, no drop shadow outside silhouette, no glow, no text, no mockup, no surrounding objects.",
   "sourceSha256": "fb91766669b7bb690ff9353562a942e181d43f9221d42384817ffe54e940129a",
   "runtimeCanvas": 128,

@@ -1,42 +1,32 @@
 {
-  "cherry": {
-    "file": "cherry",
+  "antennae": {
+    "file": "antennae",
     "hasAvif": true,
     "crop": [
-      49,
       24,
-      415,
-      464
+      73,
+      464,
+      367
     ]
   },
-  "filler-heart": {
-    "file": "filler-heart",
+  "bolt": {
+    "file": "bolt",
     "hasAvif": true,
     "crop": [
-      12,
-      25,
-      104,
-      78
+      24,
+      124,
+      464,
+      265
     ]
   },
-  "sticker-planet": {
-    "file": "sticker-planet",
+  "bucket-hat": {
+    "file": "bucket-hat",
     "hasAvif": true,
     "crop": [
       24,
-      80,
-      336,
-      225
-    ]
-  },
-  "sticker-strawberry": {
-    "file": "sticker-strawberry",
-    "hasAvif": true,
-    "crop": [
-      24,
-      24,
-      336,
-      336
+      103,
+      464,
+      307
     ]
   },
   "butterfly": {
@@ -49,14 +39,414 @@
       317
     ]
   },
+  "cherry": {
+    "file": "cherry",
+    "hasAvif": true,
+    "crop": [
+      49,
+      24,
+      415,
+      464
+    ]
+  },
+  "cream": {
+    "file": "cream",
+    "hasAvif": true,
+    "crop": [
+      24,
+      33,
+      464,
+      446
+    ]
+  },
+  "eye-patch": {
+    "file": "eye-patch",
+    "hasAvif": true,
+    "crop": [
+      24,
+      99,
+      464,
+      314
+    ]
+  },
+  "filler-bubbles": {
+    "file": "filler-bubbles",
+    "hasAvif": true,
+    "crop": [
+      12,
+      14,
+      104,
+      101
+    ]
+  },
+  "filler-confetti": {
+    "file": "filler-confetti",
+    "hasAvif": true,
+    "crop": [
+      12,
+      27,
+      104,
+      74
+    ]
+  },
+  "filler-crescents": {
+    "file": "filler-crescents",
+    "hasAvif": true,
+    "crop": [
+      14,
+      12,
+      101,
+      104
+    ]
+  },
+  "filler-flakes": {
+    "file": "filler-flakes",
+    "hasAvif": true,
+    "crop": [
+      23,
+      12,
+      82,
+      104
+    ]
+  },
+  "filler-flowers": {
+    "file": "filler-flowers",
+    "hasAvif": true,
+    "crop": [
+      12,
+      17,
+      104,
+      95
+    ]
+  },
+  "filler-foam": {
+    "file": "filler-foam",
+    "hasAvif": true,
+    "crop": [
+      12,
+      13,
+      104,
+      102
+    ]
+  },
+  "filler-glitter": {
+    "file": "filler-glitter",
+    "hasAvif": true,
+    "crop": [
+      21,
+      12,
+      87,
+      104
+    ]
+  },
+  "filler-heart": {
+    "file": "filler-heart",
+    "hasAvif": true,
+    "crop": [
+      12,
+      25,
+      104,
+      78
+    ]
+  },
+  "filler-kiwi-slices": {
+    "file": "filler-kiwi-slices",
+    "hasAvif": true,
+    "crop": [
+      12,
+      13,
+      104,
+      103
+    ]
+  },
+  "filler-lemon-slices": {
+    "file": "filler-lemon-slices",
+    "hasAvif": true,
+    "crop": [
+      13,
+      12,
+      103,
+      104
+    ]
+  },
+  "filler-pearls": {
+    "file": "filler-pearls",
+    "hasAvif": true,
+    "crop": [
+      12,
+      13,
+      104,
+      103
+    ]
+  },
+  "filler-stars": {
+    "file": "filler-stars",
+    "hasAvif": true,
+    "crop": [
+      12,
+      17,
+      104,
+      94
+    ]
+  },
+  "filler-strawberry-slices": {
+    "file": "filler-strawberry-slices",
+    "hasAvif": true,
+    "crop": [
+      12,
+      21,
+      104,
+      87
+    ]
+  },
+  "glasses": {
+    "file": "glasses",
+    "hasAvif": true,
+    "crop": [
+      24,
+      160,
+      464,
+      192
+    ]
+  },
+  "halo": {
+    "file": "halo",
+    "hasAvif": true,
+    "crop": [
+      24,
+      153,
+      464,
+      206
+    ]
+  },
+  "handbag": {
+    "file": "handbag",
+    "hasAvif": true,
+    "crop": [
+      34,
+      24,
+      444,
+      464
+    ]
+  },
   "headphones": {
     "file": "headphones",
     "hasAvif": true,
     "crop": [
       24,
-      57,
+      156,
       464,
-      398
+      201
+    ]
+  },
+  "heart-patch": {
+    "file": "heart-patch",
+    "hasAvif": true,
+    "crop": [
+      24,
+      164,
+      464,
+      184
+    ]
+  },
+  "leaves": {
+    "file": "leaves",
+    "hasAvif": true,
+    "crop": [
+      24,
+      102,
+      464,
+      309
+    ],
+    "leftCrop": [
+      24,
+      102,
+      232,
+      309
+    ],
+    "leftRoot": [
+      0.91764,
+      1
+    ]
+  },
+  "mushroom-hat": {
+    "file": "mushroom-hat",
+    "hasAvif": true,
+    "crop": [
+      24,
+      115,
+      464,
+      282
+    ]
+  },
+  "petal-flower": {
+    "file": "petal-flower",
+    "hasAvif": true,
+    "crop": [
+      24,
+      42,
+      464,
+      429
+    ]
+  },
+  "sticker-candy": {
+    "file": "sticker-candy",
+    "hasAvif": true,
+    "crop": [
+      24,
+      109,
+      336,
+      166
+    ]
+  },
+  "sticker-donut": {
+    "file": "sticker-donut",
+    "hasAvif": true,
+    "crop": [
+      24,
+      34,
+      336,
+      316
+    ]
+  },
+  "sticker-eye": {
+    "file": "sticker-eye",
+    "hasAvif": true,
+    "crop": [
+      24,
+      80,
+      336,
+      225
+    ]
+  },
+  "sticker-flame": {
+    "file": "sticker-flame",
+    "hasAvif": true,
+    "crop": [
+      33,
+      24,
+      319,
+      336
+    ]
+  },
+  "sticker-flower": {
+    "file": "sticker-flower",
+    "hasAvif": true,
+    "crop": [
+      27,
+      24,
+      330,
+      336
+    ]
+  },
+  "sticker-ghost": {
+    "file": "sticker-ghost",
+    "hasAvif": true,
+    "crop": [
+      24,
+      37,
+      336,
+      311
+    ]
+  },
+  "sticker-heart": {
+    "file": "sticker-heart",
+    "hasAvif": true,
+    "crop": [
+      24,
+      75,
+      336,
+      235
+    ]
+  },
+  "sticker-lightning": {
+    "file": "sticker-lightning",
+    "hasAvif": true,
+    "crop": [
+      76,
+      24,
+      233,
+      336
+    ]
+  },
+  "sticker-planet": {
+    "file": "sticker-planet",
+    "hasAvif": true,
+    "crop": [
+      24,
+      80,
+      336,
+      225
+    ]
+  },
+  "sticker-skull": {
+    "file": "sticker-skull",
+    "hasAvif": true,
+    "crop": [
+      24,
+      26,
+      336,
+      333
+    ]
+  },
+  "sticker-sparkle": {
+    "file": "sticker-sparkle",
+    "hasAvif": true,
+    "crop": [
+      39,
+      24,
+      306,
+      336
+    ]
+  },
+  "sticker-star": {
+    "file": "sticker-star",
+    "hasAvif": true,
+    "crop": [
+      24,
+      39,
+      336,
+      306
+    ]
+  },
+  "sticker-strawberry": {
+    "file": "sticker-strawberry",
+    "hasAvif": true,
+    "crop": [
+      24,
+      24,
+      336,
+      336
+    ]
+  },
+  "wings": {
+    "file": "wings",
+    "hasAvif": true,
+    "crop": [
+      24,
+      110,
+      464,
+      293
+    ],
+    "leftCrop": [
+      24,
+      110,
+      224,
+      293
+    ],
+    "leftRoot": [
+      0.74636,
+      1
+    ]
+  },
+  "witch-hat": {
+    "file": "witch-hat",
+    "hasAvif": true,
+    "crop": [
+      24,
+      69,
+      464,
+      374
     ]
   }
 }

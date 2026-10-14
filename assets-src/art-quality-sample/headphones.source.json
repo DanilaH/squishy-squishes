@@ -9,7 +9,7 @@
   "role": "Style references only; original existing game assets retained",
   "assetId": "headphones",
   "background": "transparent alpha",
-  "intendedUse": "Squishy Squishes art-quality sample; not yet style-approved",
+  "intendedUse": "Squishy Squishes authored catalog; sample style approved 2026-10-14",
   "prompt": "Use case: stylized-concept. Asset type: production transparent accessory sprite for Squishy Squishes. Input images are STYLE REFERENCES only: match their clean polished toy-like 2.5D volume, sculpted soft edges, restrained glossy highlights and dimensional shading. Create a new asset: A single pair of over-ear headphones, front view, symmetrical rounded arch, thick padded lavender headband, plump pink ear cushions, polished purple outer cups with tiny metallic gold joins. Clear open space between cups. No cables, no face, no character. Centered isolated object, almost orthographic straight-on view, fills 80% of a square with clean transparent padding. Light from upper left, soft darker lower-right edges, internal contact shadows, smooth high quality molded silicone/vinyl, readable at 32 pixels and when enlarged to 160 pixels. Crisp saturated pastel colors, tangible thickness, refined controlled highlights like the reference bow. Background fully transparent alpha. No floor, no cast shadow outside silhouette, no backdrop, no glow, no white outline, no labels, no UI, no added sparkles.",
   "sourceSha256": "6b606965dac815365d72b4e30405e538c6f7cb40c4967c03c4388e8e24ff3c7f",
   "runtimeCanvas": 512,
