@@ -919,7 +919,7 @@ export class SandboxLibraryApp {
         <span class="sandbox-library-modal__eyebrow">${this.library.length} / ${this.libraryCapacity}</span>
         <h2 id="library-replace-title">${this.copy.replaceTitle}</h2>
         <p>${this.copy.replaceHint}</p>
-        <div class="replacement-new"><canvas data-replacement-new aria-hidden="true"></canvas><strong>${this.options.language === 'ru' ? 'Сохраняем новый сквиш' : 'Saving your new squishy'}</strong></div>
+        <div class="replacement-new"><canvas data-replacement-new aria-hidden="true"></canvas>${this.options.monetization && this.libraryCapacity < this.options.shelfExpansionTargetCapacity ? `<button class="replacement-expand" type="button" data-replacement-expand title="${this.options.language === 'ru' ? 'Добавить постоянное место и сохранить новый сквиш' : 'Add a permanent place and save this squishy'}">${REWARD_VIDEO_ICON} ${this.options.language === 'ru' ? '+1 место за рекламу' : '+1 slot for an ad'}</button>` : `<strong>${this.options.language === 'ru' ? 'Сохраняем новый сквиш' : 'Saving your new squishy'}</strong>`}</div>
         <div class="sandbox-library-replace-grid">
           ${this.library.map((toy) => `
             <button class="sandbox-library-replace-card" type="button" data-card-page-item data-library-replace-id="${escapeAttribute(toy.id)}" aria-pressed="false">
@@ -1005,7 +1005,7 @@ export class SandboxLibraryApp {
     if (this.disposed || this.activityBlocked) return;
     if (event.target instanceof Element && event.target.closest('[data-library-retry]')) { location.reload(); return; }
     const target = event.target instanceof Element ? event.target.closest<HTMLElement>('button') : null;
-    if (!target) return;
+    if (!target || target.hasAttribute('disabled')) return;
     if (this.options.roomReview) {
       if (target.hasAttribute('data-room-step')) {
         if (!this.library.length || target.hasAttribute('disabled')) return;
@@ -1051,6 +1051,10 @@ export class SandboxLibraryApp {
       const chosen = this.library.find(toy => toy.id === replacementId);
       const label = overlay?.querySelector('[data-replacement-selected]');
       if (label && chosen) label.textContent = `${this.options.language === 'ru' ? 'Будет заменён' : 'Will be replaced'}: ${this.toyLabel(chosen)}`;
+      return;
+    }
+    if (target.hasAttribute('data-replacement-expand')) {
+      void this.expandForPendingDraft();
       return;
     }
     if (target.hasAttribute('data-library-replace-confirm')) {
@@ -1148,6 +1152,51 @@ export class SandboxLibraryApp {
       this.setModalBusy(overlay, false);
       const message = overlay.querySelector<HTMLElement>('[data-library-modal-error]');
       if (message) message.textContent = this.copy.saveFailed;
+    }
+  }
+
+  /** Keep the pending creation in place while the player optionally adds a slot. */
+  private async expandForPendingDraft(): Promise<void> {
+    const pending = this.pendingReplacement;
+    const overlay = this.root.querySelector<HTMLElement>('[data-library-replace-overlay]');
+    if (!pending || !overlay || this.rewardInFlight || overlay.getAttribute('aria-busy') === 'true') return;
+    this.rewardInFlight = true;
+    this.setModalBusy(overlay, true);
+    const message = overlay.querySelector<HTMLElement>('[data-library-modal-error]');
+    if (message) message.textContent = '';
+    try {
+      if (this.library.length >= this.libraryCapacity) {
+        const result = await this.options.onUnlockShelfExpansion();
+        if (this.disposed || this.pendingReplacement !== pending) return;
+        if (!result.granted) {
+          if (message) message.textContent = this.copy.rewardUnavailable;
+          return;
+        }
+        this.libraryCapacity = Math.max(this.libraryCapacity, result.libraryCapacity);
+      }
+      if (this.library.length >= this.libraryCapacity) throw new Error('The earned place is not available yet.');
+      // A successful expansion is durable even if the subsequent toy write fails.
+      // Retrying this button then saves into that place without requesting an ad.
+      const button = overlay.querySelector<HTMLButtonElement>('[data-replacement-expand]');
+      if (button) button.textContent = this.options.language === 'ru' ? 'Сохранить новый сквиш' : 'Save new squishy';
+      const count = overlay.querySelector<HTMLElement>('.sandbox-library-modal__eyebrow');
+      if (count) count.textContent = `${this.library.length} / ${this.libraryCapacity}`;
+      const result = await this.options.onAppendSquishy(pending.draft, pending.ideaId);
+      if (this.disposed || this.pendingReplacement !== pending || !overlay.isConnected) return;
+      const previousCompleted = this.completedRecipeIds;
+      this.library = [...result.library];
+      this.selectedToyId = result.savedSquishy.id;
+      this.completedRecipeIds = [...result.completedRecipeIds];
+      this.pendingReplacement = null;
+      this.closeModal(false);
+      if (pending.ideaId) this.renderIdeaCompletion(pending.ideaId, previousCompleted);
+      pending.resolve(result.savedSquishy);
+    } catch (error) {
+      console.error('[squishy:expand-and-save]', error);
+      if (message && !this.disposed) message.textContent = this.copy.saveFailed;
+    } finally {
+      this.rewardInFlight = false;
+      if (!this.disposed && overlay.isConnected) this.setModalBusy(overlay, false);
     }
   }
 

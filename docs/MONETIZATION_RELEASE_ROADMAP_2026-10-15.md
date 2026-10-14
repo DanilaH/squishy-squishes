@@ -207,3 +207,8 @@ full-suite attempts are not full passes. Collection stress covers 1000 records,
 failed migration/commit, a crash staging journal, repeated callbacks, quota before
 an ad and replay of an earned reward without another ad. Hosted acceptance remains
 separate from SDK stubs and headless Chromium.
+
+A full collection offers the explicitly labeled +1 rewarded place directly in
+the pending-save dialog, beside the free replacement route. Earning a place
+automatically saves the pending draft. If that toy write fails, the place remains
+earned and the same button becomes an ordinary Save retry without another ad.

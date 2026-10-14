@@ -17,3 +17,5 @@
 #app .catalog-badge { position:absolute;top:3px;right:3px;margin:0;padding:2px;border-radius:5px;background:#fff8fc;pointer-events:none; }
 #app .catalog-badge>span { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
 @media(min-width:901px) and (min-height:640px) { #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting=true] .sandbox-controls:has(.catalog-preview:not([hidden])) { grid-template-rows:auto minmax(0,1fr) 52px; } }
+#app[data-jelly-ui-ready] .replacement-expand { display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;max-width:calc(100% - 44px);padding:6px 10px;border:1px solid #9675ac;border-radius:10px;background:#fff8fc;color:#60416f;white-space:normal;font:inherit;font-size:12px;font-weight:800; }
+#app .replacement-expand svg { width:20px;height:18px;flex:none; }
