@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { expect, test } from '@playwright/test';
 
@@ -84,3 +85,6 @@ test('review: parquet repeats, shelf fits, toys stay still and catalog scrolling
   expect(desktop.planeRepeat).toBe('repeat');
   await page.screenshot({ path: info.outputPath('library-hall-perspective-desktop-1440.png'), animations: 'disabled' });
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

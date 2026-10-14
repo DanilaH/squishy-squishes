@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
@@ -51,6 +52,7 @@ test('Russian and English Hall expose the actual document and navigation languag
   for (const [locale, expected] of [['ru-RU', 'Полка сквишей'], ['en-US', 'Squishy shelf']] as const) {
     const context = await browser.newContext({ locale, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
     try {
       await page.goto('/phaser/?roomReview=0');
       await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
@@ -65,6 +67,7 @@ test('Russian and English Hall expose the actual document and navigation languag
 test('a real painted, faced and accessorized pearl survives Library and V3 reload', async ({ browser }, info) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   try {
     await page.goto('/phaser/?roomReview=0');
     await makeDecoratedPearl(page);
@@ -89,6 +92,7 @@ test('a real painted, faced and accessorized pearl survives Library and V3 reloa
 test('mobile Hall controls provide 44px touch targets and readable labels', async ({ browser }, info) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   try {
     await page.goto('/phaser/?roomReview=0');
     await makeDecoratedPearl(page);
@@ -111,3 +115,6 @@ test('mobile Hall controls provide 44px touch targets and readable labels', asyn
     await context.close();
   }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

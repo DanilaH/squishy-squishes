@@ -277,3 +277,6 @@ for (const device of devices) {
     }
   });
 }
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
@@ -130,3 +131,6 @@ for (const specimen of specimens) {
     expect(errors).toEqual([]);
   });
 }
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

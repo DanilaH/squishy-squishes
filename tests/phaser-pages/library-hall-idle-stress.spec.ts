@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
@@ -99,3 +100,6 @@ test('30-second idle and repeated shelf scrolling retain one GPU context, stable
   expect(errors).toEqual([]);
   await writeFile(info.outputPath('library-hall-idle-and-30-turns-metrics.json'), JSON.stringify({ idle, after, observedPageErrors: errors }, null, 2));
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

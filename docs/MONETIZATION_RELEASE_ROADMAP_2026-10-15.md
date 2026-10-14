@@ -187,7 +187,9 @@ Implementation contract:
   a locked choice. Resumable onboarding drafts exclude unowned previews.
 - Capacity grants use an idempotent target capacity, without adding unbounded
   reward IDs to the old 64-ID list. A pending earned-reward journal replays failed
-  commits before another ad. Before showing an ad, reserve 128 KiB of storage;
+  commits before another ad. If even the first journal write is refused, keep the
+  earned callback in the active page for a free retry; reload recovery requires
+  the journal to have been written. Before showing an ad, reserve 128 KiB of storage;
   release it for the journal/manifest on earning. This checks current writable
   headroom, not a guarantee that arbitrary future artwork fits.
 - Interstitial eligibility uses explicit return after a save or at least 15 seconds

@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { auditShowcase } from './helpers/showcaseAudit';
 import { expect, test, type Page } from '@playwright/test';
@@ -56,6 +57,7 @@ async function createRealSavedHeart(page: Page): Promise<void> {
 test('independent responsive visual geometry: empty room and two real saved toys', async ({ browser }, info) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   try {
@@ -79,3 +81,6 @@ test('independent responsive visual geometry: empty room and two real saved toys
     await context.close();
   }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

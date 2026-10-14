@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { expect, test } from '@playwright/test';
 
@@ -6,6 +7,7 @@ const SAVE_KEY = 'squishy.phaser-pages-preview.squishy.save.v3';
 test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or inaccessible controls', async ({ browser }, info) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
@@ -79,3 +81,6 @@ test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or
     await context.close();
   }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

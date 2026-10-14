@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
@@ -8,6 +9,7 @@ let fixtureSave: string;
 test.beforeAll(async ({ browser, baseURL }, info) => {
   const context = await browser.newContext({ baseURL });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   try {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/phaser/?roomReview=0');
@@ -65,6 +67,9 @@ const captures = (page: Page, info: TestInfo) => {
   const captureThumbnail = async (material: string): Promise<void> => {
     // Element screenshots can crop a transformed/overflow-hidden canvas or
     // capture the wrong viewport offset. Save its actual native 256px pixels.
+    const thumbnail=page.locator(`[data-library-play-id="material-fixture-${material}"] canvas`);
+    await thumbnail.scrollIntoViewIfNeeded();
+    await expect.poll(() => thumbnail.evaluate(node => (node as HTMLCanvasElement).width)).toBe(512);
     const pngBase64 = await page.locator(`[data-library-play-id="material-fixture-${material}"] canvas`)
       .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL('image/png').split(',')[1]);
     if (!pngBase64) throw new Error(`Empty ${material} thumbnail`);
@@ -84,8 +89,12 @@ const captures = (page: Page, info: TestInfo) => {
 
 test('real saved materials retain their optical comparisons and phone captures', async ({ page }, info) => {
   const { visibleProfiles, captureThumbnail, captureStudio } = captures(page, info);
-  const materialStats = await page.locator('.sandbox-library-card [data-library-material-profile]').evaluateAll((canvases) =>
-    canvases.map((node) => {
+  const materialStats=[];
+  for(const material of ['soft','jelly','marshmallow','chrome','holo','pearl']) {
+    const thumbnail=page.locator(`[data-library-play-id="material-fixture-${material}"] canvas`);
+    await thumbnail.scrollIntoViewIfNeeded();
+    await expect.poll(() => thumbnail.evaluate(node => (node as HTMLCanvasElement).width)).toBe(512);
+    materialStats.push(await thumbnail.evaluate((node) => {
       const canvas = node as HTMLCanvasElement;
       const context = canvas.getContext('2d');
       if (!context) throw new Error('No thumbnail context');
@@ -121,8 +130,8 @@ test('real saved materials retain their optical comparisons and phone captures',
           + Math.max(0, gb2 / samples - gbMean * gbMean)
         ),
       };
-    }),
-  );
+    }));
+  }
   const stats = Object.fromEntries(materialStats.map((entry) => [entry.material, entry]));
   expect(Object.keys(stats).sort()).toEqual(['chrome', 'holo', 'jelly', 'marshmallow', 'pearl', 'soft']);
   for (const entry of materialStats) expect(entry.count, `${entry.material} has a visible material body`).toBeGreaterThan(2_000);
@@ -160,3 +169,6 @@ for (const room of [
   await page.screenshot({ path: info.outputPath(`library-hall-material-${room.image}-1440.png`), animations: 'disabled' });
   for (const material of room.materials) { await captureThumbnail(material); await captureStudio(material); }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

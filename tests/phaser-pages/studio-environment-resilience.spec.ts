@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { reachableControlIssues } from './helpers/reachableControls';
 import { expect, test, type Page } from '@playwright/test';
 
@@ -41,6 +42,7 @@ const expectSettledLayout = async (page: Page, name: string): Promise<void> => {
 test('Studio degrades to the original interactive UI if one PNG cannot decode', async ({ browser }) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 320, height: 700 } });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   const warnings: string[] = [];
   const errors: string[] = [];
   page.on('console', (message) => { if (message.type() === 'warning') warnings.push(message.text()); });
@@ -73,6 +75,7 @@ test('Studio degrades to the original interactive UI if one PNG cannot decode', 
 test('Studio reflows through live portrait, desktop and landscape resizes on Shape and Paint', async ({ browser }, info) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
@@ -114,3 +117,6 @@ test('Studio reflows through live portrait, desktop and landscape resizes on Sha
     await context.close();
   }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

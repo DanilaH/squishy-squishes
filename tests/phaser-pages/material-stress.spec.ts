@@ -1,3 +1,5 @@
+import { readCollection } from '../collection';
+import { returningPlayer } from '../returning-player';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { createAppearanceStroke, createBodyFillStroke } from '../../src/sandbox/appearance';
@@ -52,8 +54,8 @@ test('owner material stress matrix keeps authored colour legible across six mate
   const key = 'squishy.phaser-pages-preview.squishy.save.v3';
 
   for (const scenario of scenarios) {
-    await page.evaluate(({ storageKey, id, strokes, materialIds }) => {
-      const save = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
+    await page.evaluate(({__save,__input}) => {const { storageKey, id, strokes, materialIds }=__input;
+      const save = __save;
       if (!save || save.library.length < 1) throw new Error('Missing real saved seed toy');
       const seed = save.library[0];
       save.library = materialIds.map((materialId: string) => ({
@@ -62,13 +64,16 @@ test('owner material stress matrix keeps authored colour legible across six mate
         materialId,
         appearance: { ...seed.appearance, strokes },
       }));
-      localStorage.setItem(storageKey, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)}));
-    }, { storageKey: key, id: scenario.id, strokes: scenario.strokes, materialIds: materials });
+      (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(storageKey, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)})));
+    }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:{ storageKey: key, id: scenario.id, strokes: scenario.strokes, materialIds: materials }});
 
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
 
     for (const material of materials) {
+      const thumbnail = page.locator(`[data-library-play-id="material-stress-${scenario.id}-${material}"] canvas`);
+      await thumbnail.scrollIntoViewIfNeeded();
+      await expect.poll(() => thumbnail.evaluate(node => (node as HTMLCanvasElement).width)).toBe(512);
       const pngBase64 = await page.locator(`[data-library-play-id="material-stress-${scenario.id}-${material}"] canvas`)
         .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL('image/png').split(',')[1]);
       if (!pngBase64) throw new Error(`Empty stress thumbnail: ${scenario.id}/${material}`);
@@ -91,3 +96,6 @@ test('owner material stress matrix keeps authored colour legible across six mate
     }
   }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
@@ -85,25 +86,27 @@ test('all six contours and all five existing accessory IDs render distinct authe
   }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
   const variants = new Map<string, Set<string>>();
   for (const accessory of ACCESSORIES) {
-    await page.evaluate(({ key, shapes, accessory, original }) => {
-      const save = JSON.parse(localStorage.getItem(key) ?? 'null');
+    await page.evaluate(({__save,__input}) => {const { key, shapes, accessory, original }=__input;
+      const save = __save;
       if (save?.version !== 3 || !Array.isArray(save.library)) throw new Error('Missing genuine V3 save');
       save.library = shapes.map((shapeId: string) => ({
         ...original, id: `art-${shapeId}-${accessory}`, shapeId,
         decor: { ...original.decor, a: accessory, e: 'dot', m: 'smile', b: 1,
           s: [[0, 67, 175, 28, 0], [1, 190, 173, 26, 35]] },
       }));
-      localStorage.setItem(key, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)}));
-    }, { key: KEY, shapes: SHAPES, accessory, original });
+      (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)})));
+    }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:{ key: KEY, shapes: SHAPES, accessory, original }});
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
-    // Hall thumbnails are eager again: audit all six native canvases directly.
+    // Scroll each native canvas into the bounded preview window before auditing its pixels.
     // Room navigation below remains presentation/paging coverage only.
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
     const saved = await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
     const seen = new Set<string>();
     for (const shape of SHAPES) {
       const thumbnail = page.locator(`[data-library-thumbnail="art-${shape}-${accessory}"]`);
+      await thumbnail.scrollIntoViewIfNeeded();
+      await expect.poll(() => thumbnail.evaluate(node => (node as HTMLCanvasElement).width)).toBe(512);
       await expect(thumbnail).toHaveAttribute('data-library-renderer', 'volume-mesh');
       await expect(thumbnail).toHaveAttribute('data-library-projection', 'front');
       const pixels = await thumbnail.evaluate((node) => {
@@ -138,3 +141,6 @@ test('all six contours and all five existing accessory IDs render distinct authe
   for (const shape of SHAPES) expect(variants.get(shape)?.size, `accessory not distinct for ${shape}`).toBe(ACCESSORIES.length);
   expect(errors).toEqual([]);
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

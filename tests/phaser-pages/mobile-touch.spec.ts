@@ -184,3 +184,6 @@ test('DPR 3 phone keeps the tactile Phaser framebuffer in CSS pixels', async ({ 
     await context.close();
   }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

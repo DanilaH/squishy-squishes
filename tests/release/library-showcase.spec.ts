@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
@@ -12,6 +13,7 @@ for (const locale of ['en-US','ru-RU']) {
     test(`showcase collection, shared squeeze and editor at ${viewport.width} ${locale}`, async ({browser, baseURL}, info) => {
       const context = await browser.newContext({baseURL, locale, viewport, hasTouch:true, reducedMotion:'reduce'});
       const page = await context.newPage();
+      await returningPlayer(page);
       try {
         await page.goto('/squishy-squishes/?roomReview=0');
         await expect(page.locator('.library-showcase-slot')).toHaveCount(8);

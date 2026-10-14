@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
 
@@ -230,3 +231,6 @@ test('stalled Studio art keeps maker hidden until the full environment is ready'
   await expect(page.locator('[data-sandbox-app]')).toHaveClass(/studio-env-active/, { timeout: 5_000 });
 });
 
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

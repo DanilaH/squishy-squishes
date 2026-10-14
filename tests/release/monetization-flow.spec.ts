@@ -128,3 +128,20 @@ test('one unresolved preview keeps unrelated free choices and face bundle restor
 test('visible Undo cancels the unpaid preview without invoking an advertisement',async({page})=>{
  await page.goto('/squishy-squishes/');await expect(page.locator('[data-phaser-ready=true]')).toBeVisible();await page.locator('[data-guide-skip]').click();await page.locator('button[data-shape=mochi-cat]').click();await expect(page.locator('[data-catalog-preview]')).toBeVisible();await page.locator('.craft-actions [data-action=draft-undo]').click();await expect(page.locator('[data-catalog-preview]')).toBeHidden();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-shape','soft-square');expect((await readCollection(page)).unlockedRewardIds).toEqual([]);
 });
+
+test('an earned callback is retained for a free retry when even the reward journal cannot write',async()=>{
+ const m=memory();let state=createDefaultSaveV3(),ads=0;const grants=new RewardGrants(m.storage,()=>state,async next=>{state=next;});m.setFail(REWARD_JOURNAL_KEY);
+ await expect(grants.request('shape:mochi-cat',async reward=>{ads++;await reward();})).rejects.toThrow();expect(state.unlockedRewardIds).toEqual([]);
+ m.setFail('');expect(await grants.request('shape:mochi-cat',async()=>{ads++;})).toBe(true);expect(ads).toBe(1);expect(state.unlockedRewardIds).toEqual(['shape:mochi-cat']);
+});
+
+test('collection saves still work when randomUUID is unavailable',async()=>{
+ const descriptor=Object.getOwnPropertyDescriptor(crypto,'randomUUID');Object.defineProperty(crypto,'randomUUID',{value:undefined,configurable:true});
+ try{const m=memory(),repo=new CollectionRepository(m.storage),state={...createDefaultSaveV3(),library:[toy(1),toy(2)]};await repo.write(state);expect((await new CollectionRepository(m.storage).load()).library).toEqual(state.library);}
+ finally{if(descriptor)Object.defineProperty(crypto,'randomUUID',descriptor);else Reflect.deleteProperty(crypto,'randomUUID');}
+});
+
+test('earned SDK reward retries without another advertisement after its journal write is refused',async({page})=>{
+ await installRewardStub(page);await page.goto('/yandex/');await expect(page.locator('[data-phaser-ready=true]')).toBeVisible();await page.locator('[data-guide-skip]').click();await page.locator('button[data-shape=mochi-cat]').click();await page.evaluate(()=>{(window as any).rewardQA.failJournal=true;});await page.locator('[data-preview-open]').click();await expect(page.locator('[data-preview-open]')).toBeEnabled();expect(await page.evaluate(()=>(window as any).rewardQA.requests)).toBe(1);
+ await page.evaluate(()=>{(window as any).rewardQA.failJournal=false;});await page.locator('[data-preview-open]').click();await expect(page.locator('[data-catalog-preview]')).toBeHidden();expect(await page.evaluate(()=>(window as any).rewardQA.requests)).toBe(1);expect((await readCollection(page)).unlockedRewardIds).toContain('shape:mochi-cat');
+});

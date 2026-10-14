@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 const layouts = [
@@ -57,6 +58,7 @@ for (const layout of layouts) {
       viewport: { width: layout.width, height: layout.height },
     });
     const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
@@ -146,3 +148,6 @@ for (const layout of layouts) {
     }
   });
 }
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

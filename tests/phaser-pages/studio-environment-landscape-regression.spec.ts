@@ -1,8 +1,10 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 
 test('Studio v8 keeps the real heading visible and desk hidden in short landscape', async ({ browser }) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 844, height: 390 } });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   try {
     await page.goto('/phaser/?roomReview=0');
     await expect(page.locator('#app')).not.toHaveAttribute('data-studio-env-ready', '');
@@ -35,3 +37,6 @@ test('Studio v8 keeps the real heading visible and desk hidden in short landscap
     await context.close();
   }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

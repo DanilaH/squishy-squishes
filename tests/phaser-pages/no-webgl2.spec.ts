@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 
 test('Pages preview without WebGL2 keeps Library usable and preserves existing saves', async ({ page }) => {
@@ -73,3 +74,6 @@ test('a transient WebGL2 probe failure does not poison later maker entry', async
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
 });
 
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

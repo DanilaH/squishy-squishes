@@ -100,3 +100,6 @@ test('free Workshop navigation retains creative work and resets for a new toy', 
   await expect(page.locator('[data-action="save"]')).toBeEnabled();
   expect(errors).toEqual([]);
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

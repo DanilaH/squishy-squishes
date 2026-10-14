@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 
 const PAGES_URL = '/phaser/?roomReview=0';
@@ -125,7 +126,7 @@ test('Library delete dialog traps focus, Escape restores the delete button', asy
   };
 
   await page.goto(PAGES_URL);
-  await page.evaluate(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), {
+  await page.evaluate(({ key, value }) => ((localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify(value)))), {
     key: PREVIEW_SAVE_KEY,
     value: save,
   });
@@ -203,3 +204,6 @@ test.describe('reduced motion', () => {
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
   });
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

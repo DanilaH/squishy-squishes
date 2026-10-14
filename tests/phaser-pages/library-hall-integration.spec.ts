@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { auditShowcase } from './helpers/showcaseAudit';
 import { expect, test, type Page } from '@playwright/test';
@@ -17,6 +18,7 @@ for (const view of views) {
   test(`Library Hall real empty screen ${view.name}`, async ({ browser }, info) => {
     const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: view.width, height: view.height } });
     const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
@@ -36,6 +38,7 @@ for (const view of views) {
 test('real saved toys share the shelf; selection and confirmed deletion stay interactive', async ({ browser }, info) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   try {
     await page.goto('/phaser/?roomReview=0');
     await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
@@ -97,3 +100,6 @@ test('one missing Library WebP preserves the original playable grid', async ({ p
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

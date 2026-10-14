@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { copyFile, mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
@@ -11,6 +12,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
   test.setTimeout(120_000);
   const setup = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'ru-RU' });
   const maker = await setup.newPage();
+    await returningPlayer(maker, 'squishy.phaser-pages-preview.');
   let saved = '';
   try {
     await maker.goto('/phaser/?roomReview=0');
@@ -51,6 +53,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
     storageState: { cookies: [], origins: [{ origin: ORIGIN, localStorage: [{ name: KEY, value: saved }] }] },
   });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
@@ -101,3 +104,6 @@ test('record genuine browser Hall idle → new save → settle → page and retu
   if (!video) throw new Error('Real browser video missing');
   await copyFile(await video.path(), info.outputPath('library-hall-real-browser-arrival-page-390.webm'));
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

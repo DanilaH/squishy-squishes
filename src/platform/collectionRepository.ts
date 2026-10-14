@@ -5,6 +5,7 @@ export const COLLECTION_KEY = 'squishy.collection.v1';
 interface Manifest { version: 1; state: Omit<SaveStateV3, 'library'>; records: string[] }
 const PREFIX = 'squishy.toy.';
 const PENDING_KEY = 'squishy.collection.pending';
+const recordId = (): string => globalThis.crypto?.randomUUID?.() ?? `toy-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
 async function pack(value: unknown): Promise<string> {
   const raw = JSON.stringify(value);
@@ -65,7 +66,7 @@ export class CollectionRepository {
   }
   private async commit(state: SaveStateV3): Promise<void> {
     const previous = new Map(this.state?.library.map((toy, i) => [toy.id, { toy, key: this.records[i]! }]) ?? []);
-    const records = state.library.map(toy => previous.get(toy.id)?.toy === toy ? previous.get(toy.id)!.key : `${PREFIX}${crypto.randomUUID()}`);
+    const records = state.library.map(toy => previous.get(toy.id)?.toy === toy ? previous.get(toy.id)!.key : `${PREFIX}${recordId()}`);
     const oldKeys = new Set(this.records);
     const staged = records.filter(key => !oldKeys.has(key));
     const retained = new Set(records);

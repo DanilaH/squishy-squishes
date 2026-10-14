@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { expect, test } from '@playwright/test';
 
@@ -47,6 +48,7 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
   const before = await page.evaluate(({__save,__input}) => {const storageKey=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:key});
+  await expect.poll(() => page.locator('.sandbox-library-card:visible canvas').first().evaluate(node => (node as HTMLCanvasElement).width)).toBe(512);
   const firstRoomPixels = await page.locator('.sandbox-library-card:visible canvas').first()
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   const visible = page.locator('.sandbox-library-card canvas');
@@ -54,7 +56,7 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
   for (let index = 0; index < 8; index++) {
     await page.locator('.sandbox-library-card').nth(index).scrollIntoViewIfNeeded();
     await expect(visible.nth(index)).toHaveAttribute('data-library-renderer', 'volume-mesh');
-    expect(await visible.nth(index).evaluate(canvas=>[(canvas as HTMLCanvasElement).width,(canvas as HTMLCanvasElement).height])).toEqual([512,512]);
+    await expect.poll(() => visible.nth(index).evaluate(canvas=>[(canvas as HTMLCanvasElement).width,(canvas as HTMLCanvasElement).height])).toEqual([512,512]);
   }
   const stats = await page.evaluate(() => ({
     contexts: (window as unknown as { __libraryCreatedWebGL: number }).__libraryCreatedWebGL,
@@ -63,6 +65,7 @@ test('one reusable GPU context renders saved Studio material pixels; V3 data sur
   expect(stats.contexts, 'one shared WebGL2 context across all saved exhibits').toBe(1);
   expect(stats.canvases).toBeGreaterThan(0);
   await page.locator('.sandbox-library-card').first().scrollIntoViewIfNeeded();
+  await expect.poll(() => page.locator('.sandbox-library-card:visible canvas').first().evaluate(node => (node as HTMLCanvasElement).width)).toBe(512);
   const firstRoomPixelsAgain = await page.locator('.sandbox-library-card:visible canvas').first()
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   expect(firstRoomPixelsAgain, 'shelf scroll must not mutate previously rendered Studio pixels').toBe(firstRoomPixels);
@@ -106,3 +109,6 @@ test('missing WebGL2 uses Canvas2D without discarding a genuinely saved V3 toy',
   expect(await page.locator('[data-library-thumbnail]').evaluate(canvas => (canvas as HTMLCanvasElement).width)).toBe(512);
   expect(await page.evaluate(({__save,__input}) => {const storageKey=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:key})).toBe(before);
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

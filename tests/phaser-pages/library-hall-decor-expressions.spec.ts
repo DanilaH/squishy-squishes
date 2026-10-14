@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
@@ -43,20 +44,22 @@ test('all face and sticker styles remain visible and distinct on each saved cont
   }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
   const byShape = new Map<string, Set<string>>();
   for (const profile of PROFILES) {
-    await page.evaluate(({ key, original, shapes, profile }) => {
-      const save = JSON.parse(localStorage.getItem(key) ?? 'null');
+    await page.evaluate(({__save,__input}) => {const { key, original, shapes, profile }=__input;
+      const save = __save;
       if (save?.version !== 3) throw new Error('Lost compact V3 save');
       save.library = shapes.map((shapeId: string) => ({
         ...original, id: `expression-${shapeId}-${profile.name}`, shapeId,
         decor: { v: 1, e: profile.eyes, m: profile.mouth, b: 1, s: profile.stickers },
       }));
-      localStorage.setItem(key, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)}));
-    }, { key: KEY, original, shapes: SHAPES, profile });
+      (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)})));
+    }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:{ key: KEY, original, shapes: SHAPES, profile }});
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
     const saved = await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
     for (const shape of SHAPES) {
       const thumbnail = page.locator(`[data-library-thumbnail="expression-${shape}-${profile.name}"]`);
+      await thumbnail.scrollIntoViewIfNeeded();
+      await expect.poll(() => thumbnail.evaluate(node => (node as HTMLCanvasElement).width)).toBe(512);
       await expect(thumbnail).toHaveAttribute('data-library-renderer', 'volume-mesh');
       const result = await thumbnail.evaluate((node) => {
         const canvas = node as HTMLCanvasElement;
@@ -83,3 +86,6 @@ test('all face and sticker styles remain visible and distinct on each saved cont
   for (const shape of SHAPES) expect(byShape.get(shape)?.size, `unchanged face/stickers on ${shape}`).toBe(PROFILES.length);
   expect(errors).toEqual([]);
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));
