@@ -1,5 +1,6 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
-import { createDefaultSaveV3, decodeSaveStateV3, type SaveStateV3 } from '../../src/platform/saveV3';
+import {decodeSaveStateV3,type SaveStateV3} from '../../src/platform/saveV3';
 import {
   S5_SHELF_EXPANSION_CAPACITY,
   S5_SHELF_EXPANSION_REWARD_ID,
@@ -35,13 +36,13 @@ const seedSave = async (page: Page, save: SaveStateV3, url = PAGES_URL): Promise
   await page.evaluate((value) => {
     localStorage.clear();
     sessionStorage.clear();
-    localStorage.setItem('squishy.save.v3', JSON.stringify(value));
+    (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value)));
   }, save);
   await page.reload();
 };
 
 const readSave = async (page: Page): Promise<SaveStateV3> => {
-  const raw = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as unknown);
+  const raw = await page.evaluate((__collection) => (__collection as unknown), await readCollection(page));
   return decodeSaveStateV3(raw);
 };
 
@@ -159,7 +160,7 @@ test('S5 rewarded offer appears only on a full free shelf and free creation rema
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
 });
 
-test('S5 mock rewarded click durably expands 8 slots to 10 exactly once and survives reload', async ({ page }) => {
+test('S5 mock rewarded click durably expands 8 slots to 9 and survives reload', async ({ page }) => {
   await seedSave(page, makeFullSave());
   const rewardButton = page.locator('[data-library-expand-reward]');
   await expect(rewardButton).toBeVisible();
@@ -167,33 +168,33 @@ test('S5 mock rewarded click durably expands 8 slots to 10 exactly once and surv
 
   const library = page.locator('[data-sandbox-library]');
   await expect(library).toHaveAttribute('data-library-count', '8');
-  await expect(library).toHaveAttribute('data-library-capacity', '10');
-  await expect(page.locator('[data-library-reward-message]')).toContainText(/10/);
+  await expect(library).toHaveAttribute('data-library-capacity', '9');
+  await expect(page.locator('[data-library-reward-message]')).toContainText(/One|одно/);
   await expect(page.locator('[data-library-expand-reward]')).toHaveCount(0);
-  // Rewarded expansion adds two real creation places to the common shelf.
+  // Rewarded expansion adds one real creation place to the common shelf.
   await expect(page.locator('[data-library-new]').first()).toBeVisible();
-  await expect(page.locator('.library-showcase-slot')).toHaveCount(2);
+  await expect(page.locator('.library-showcase-slot')).toHaveCount(1);
 
   const saved = await readSave(page);
-  expect(saved.libraryCapacity).toBe(10);
-  expect(saved.unlockedRewardIds.filter((id) => id === S5_SHELF_EXPANSION_REWARD_ID)).toHaveLength(1);
+  expect(saved.libraryCapacity).toBe(9);
+  expect(saved.unlockedRewardIds).toEqual([]);
 
   await page.reload();
-  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '10');
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '9');
   await expect(page.locator('[data-library-expand-reward]')).toHaveCount(0);
   const reloaded = await readSave(page);
-  expect(reloaded.libraryCapacity).toBe(10);
-  expect(reloaded.unlockedRewardIds.filter((id) => id === S5_SHELF_EXPANSION_REWARD_ID)).toHaveLength(1);
+  expect(reloaded.libraryCapacity).toBe(9);
+  expect(reloaded.unlockedRewardIds).toEqual([]);
 });
 
 test('S5 Yandex rewarded path requests one ad, grants once despite duplicate callback and restores gameplay activity', async ({ page }) => {
   await installYandexStub(page);
   await seedSave(page, makeFullSave(), YANDEX_URL);
-  await expect(page.locator('[data-library-expand-reward]')).toContainText('РЕКЛАМА');
+  await expect(page.locator('[data-library-expand-reward]')).toContainText(/реклам/i);
 
   const before = await readYandexState(page);
   await page.locator('[data-library-expand-reward]').click();
-  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '10');
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '9');
 
   const after = await readYandexState(page);
   expect(after.rewardedRequests - before.rewardedRequests).toBe(1);
@@ -201,8 +202,8 @@ test('S5 Yandex rewarded path requests one ad, grants once despite duplicate cal
   expect(after.gameplayStart).toBeGreaterThan(before.gameplayStart);
 
   const saved = await readSave(page);
-  expect(saved.libraryCapacity).toBe(10);
-  expect(saved.unlockedRewardIds.filter((id) => id === S5_SHELF_EXPANSION_REWARD_ID)).toHaveLength(1);
+  expect(saved.libraryCapacity).toBe(9);
+  expect(saved.unlockedRewardIds).toEqual([]);
 });
 
 for (const viewport of [

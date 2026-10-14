@@ -1,3 +1,5 @@
+import { RewardGrants } from '../platform/rewardGrants';
+import { ownsCatalogItem, draftLockedKeys } from '../platform/catalogOwnership';
 import { createOnboardingRepository } from '../platform/onboarding';
 import { installReleaseSession } from '../platform/releaseSession';
 import { createSquishyPlatformRuntime, type SquishyPlatformRuntime } from '../platform/runtime';
@@ -15,7 +17,6 @@ import { createDefaultSettings, createSettingsRepository } from '../platform/set
 import { completeRecipeIdea } from '../platform/saveV3Ideas';
 import {
   S5_SHELF_EXPANSION_CAPACITY,
-  S5_SHELF_EXPANSION_REWARD_ID,
   grantS5ShelfExpansion,
   hasS5ShelfExpansion,
 } from '../platform/saveV3Rewards';
@@ -75,7 +76,7 @@ export const bootstrapSquishyApp = async (
   }
 
   // Inspect prior storage before migration creates a default V3 save.
-  const priorKeys = ['squishy.save.v3', 'squishy.save.v2', 'squishy.save.v1', 'squishy.vertical-slice.discovered.v2', 'squishy.settings.v1', 'squishy.room.v1'];
+  const priorKeys = ['squishy.collection.v1', 'squishy.save.v3', 'squishy.save.v2', 'squishy.save.v1', 'squishy.vertical-slice.discovered.v2', 'squishy.settings.v1', 'squishy.room.v1'];
   let freshPlayer = false;
   try { freshPlayer = (await Promise.all(priorKeys.map(key => runtime.storage.getItem(key)))).every(value => value === null); }
   catch (error) { reportError('first-run-read', error); }
@@ -111,6 +112,30 @@ export const bootstrapSquishyApp = async (
   if (hasS5ShelfExpansion(saveState) && saveState.libraryCapacity < S5_SHELF_EXPANSION_CAPACITY) {
     await persistSave(grantS5ShelfExpansion(saveState));
   }
+
+  const grants = new RewardGrants(runtime.storage, () => saveState, persistSave);
+  try { await grants.recover(); } catch (error) { reportError('reward-recovery', error); }
+  const requestReward = async (key: string): Promise<boolean> => {
+    root.dataset.lastRewardAt = String(performance.now());
+    runtime.analytics.track('reward_offer_click', { item: key });
+    runtime.activity.setBlocked('reward-transaction', true);
+    try {
+      const earned = await grants.request(key, onReward => runtime.ads.showRewarded({ rewardId: key, onReward }));
+      runtime.analytics.track('reward_result', { item: key, earned });
+      return earned;
+    } catch(error) {
+      runtime.analytics.track('reward_result', { item: key, earned: false, status: 'storage-or-sdk-error' });
+      throw error;
+    } finally { root.dataset.lastRewardAt = String(performance.now()); runtime.activity.setBlocked('reward-transaction', false); }
+  };
+  const monetization = {
+    owns: (key: string) => ownsCatalogItem(saveState, key),
+    unlock: requestReward,
+    track: (event: string, key: string) => runtime.analytics.track(event, { item: key }),
+  };
+  const assertOwned = (draft: Parameters<typeof createSavedSquishy>[0]): void => {
+    if (draftLockedKeys(draft).some(key => !monetization.owns(key))) throw new Error('Resolve the free preview before saving.');
+  };
 
   const completeMatchingIdea = (state: typeof saveState, draft: Parameters<typeof createSavedSquishy>[0], ideaId: string | null): typeof saveState => {
     if (!ideaId) return state;
@@ -151,29 +176,14 @@ export const bootstrapSquishyApp = async (
     initialLibrary: saveState.library,
     initialCompletedRecipeIds: saveState.completedRecipeIds,
     libraryCapacity: saveState.libraryCapacity,
-    shelfExpansionTargetCapacity: S5_SHELF_EXPANSION_CAPACITY,
+    monetization,
+    shelfExpansionTargetCapacity: Number.MAX_SAFE_INTEGER,
     onUnlockShelfExpansion: async () => {
-      runtime.analytics.track('shelf_reward_offer_click', {
-        count: saveState.library.length,
-        capacity: saveState.libraryCapacity,
-      });
-      let grantedCapacity = saveState.libraryCapacity;
-      const result = await runtime.ads.showRewarded({
-        rewardId: S5_SHELF_EXPANSION_REWARD_ID,
-        onReward: async () => {
-          const nextState = grantS5ShelfExpansion(saveState);
-          await persistSave(nextState);
-          grantedCapacity = nextState.libraryCapacity;
-          runtime.analytics.track('shelf_reward_granted', { capacity: nextState.libraryCapacity });
-        },
-      });
-      return {
-        granted: result.rewardEarned,
-        libraryCapacity: grantedCapacity,
-        status: result.status,
-      };
+      const granted = await requestReward('capacity');
+      return { granted, libraryCapacity: saveState.libraryCapacity, status: 'closed' as const };
     },
     onAppendSquishy: async (draft, ideaId) => {
+      assertOwned(draft);
       const savedSquishy = createSavedSquishy(draft);
       let nextState = appendSavedSquishy(saveState, savedSquishy);
       nextState = completeMatchingIdea(nextState, draft, ideaId);
@@ -181,6 +191,7 @@ export const bootstrapSquishyApp = async (
       return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
     },
     onReplaceSquishy: async (targetId, draft, ideaId) => {
+      assertOwned(draft);
       const savedSquishy = createSavedSquishy(draft);
       let nextState = replaceSavedSquishy(saveState, targetId, savedSquishy);
       nextState = completeMatchingIdea(nextState, draft, ideaId);
@@ -188,6 +199,7 @@ export const bootstrapSquishyApp = async (
       return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
     },
     onUpdateSquishy: async (targetId, draft) => {
+      assertOwned(draft);
       const nextState = updateSavedSquishy(saveState, targetId, draft);
       await persistSave(nextState);
       const savedSquishy = nextState.library.find(toy => toy.id === targetId)!;

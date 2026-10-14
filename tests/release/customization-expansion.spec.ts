@@ -1,6 +1,7 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3, decodeSaveStateV3, encodeSaveStateV3 } from '../../src/platform/saveV3';
+import {decodeSaveStateV3,encodeSaveStateV3} from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
 import { ACCESSORY_IDS, EYE_STYLE_IDS, MOUTH_STYLE_IDS, STICKER_IDS, createStickerPlacement, encodeDecorDocument } from '../../src/sandbox/decor';
 import { createPaintPattern, PAINT_PATTERNS } from '../../src/sandbox/paintPatterns';
@@ -34,7 +35,7 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
       await page.goto('/squishy-squishes/');
       const draft=createSandboxDraft();const toy={...draft,id:'expanded',createdAt:1700000000000,shapeId:index===4?'donut' as const:index===5?'heart' as const:'mochi' as const,
         decor:{...draft.decor,eyes:'dot' as const,mouth:'smile' as const,stickers:STICKER_IDS.map((id,i)=>({...createStickerPlacement(id,{u:.28+(i%4)*.145,v:.28+Math.floor(i/4)*.14},i),r:0,s:24}))}};
-      await page.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),library:[toy],totalCrafts:1});
+      await page.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),{...createDefaultSaveV3(),library:[toy],totalCrafts:1});
       await page.reload();await page.locator('[data-library-select-id]').click();await page.locator('[data-action="edit-saved"]').click();
       await expect(page.locator('[data-accessory-icon]')).toHaveCount(22);
       await expect(page.locator('[data-decor-sticker]')).toHaveCount(13);
@@ -68,12 +69,12 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
         if(pattern.id!=='seams')await page.locator('.craft-actions [data-action="draft-undo"]').click();
       }
       await page.locator('[data-action="save"]').click();await expect(shell).toHaveAttribute('data-stage','squeeze');
-      const save=decodeSaveStateV3(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!)));
+      const save=decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page)));
       expect(save.library[0]!.decor.eyes).toBe(eyes[index%4]);expect(save.library[0]!.decor.mouth).toBe(mouths[index%4]);
       expect(save.library[0]!.decor.accessories?.[0]?.a).toBe(accessories[index]);expect(save.library[0]!.decor.stickers.map(s=>s.t)).toEqual(STICKER_IDS.map((_,i)=>i));
       await page.screenshot({path:info.outputPath('expanded-squishy.png')});
       await page.locator('[data-action="home"]').click();await page.reload();await page.locator('[data-library-select-id]').click();
-      expect(decodeSaveStateV3(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!)))).toEqual(save);
+      expect(decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page)))).toEqual(save);
       expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight&&document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
     }finally{await context.close();}
   });

@@ -1,6 +1,7 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3, decodeSaveStateV3 } from '../../src/platform/saveV3';
+import {decodeSaveStateV3} from '../../src/platform/saveV3';
 import { createBodyFillStroke, createMixInPlacement, type MixInId } from '../../src/sandbox/appearance';
 import { ACCESSORY_IDS, EYE_STYLE_IDS, MOUTH_STYLE_IDS, createEmptyDecorDocument } from '../../src/sandbox/decor';
 
@@ -22,10 +23,10 @@ for (const locale of ['ru-RU', 'en-US']) {
       // Validate fixtures through the production codec before browser injection.
       decodeSaveStateV3({ ...createDefaultSaveV3(), libraryCapacity:24, library: toys, totalCrafts: 5 });
       await page.goto('/squishy-squishes/?roomReview=0');
-      await page.evaluate((library) => localStorage.setItem('squishy.save.v3', JSON.stringify({ ...library.save, libraryCapacity:24, library: library.toys, totalCrafts: 5 })), { save: createDefaultSaveV3(), toys });
+      await page.evaluate((library) => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify({ ...library.save, libraryCapacity:24, library: library.toys, totalCrafts: 5 }))), { save: createDefaultSaveV3(), toys });
       await page.reload();
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', String(ACCESSORY_IDS.length));
-      const savedBefore = await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library));
+      const savedBefore = await page.evaluate((__collection) => (JSON.stringify(__collection.library)), await readCollection(page));
       await mkdir('migration-baseline-evidence', { recursive: true });
       await page.screenshot({ path: `migration-baseline-evidence/catalog-${locale}-hall.png` });
       for (const accessory of ACCESSORY_IDS) {
@@ -49,7 +50,7 @@ for (const locale of ['ru-RU', 'en-US']) {
         expect(await page.evaluate(() => ({ x: document.documentElement.scrollWidth > innerWidth, y: document.documentElement.scrollHeight > innerHeight }))).toEqual({ x: false, y: false });
         await page.reload();
       }
-      expect(await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library))).toBe(savedBefore);
+      expect(await page.evaluate((__collection) => (JSON.stringify(__collection.library)), await readCollection(page))).toBe(savedBefore);
     } finally { await context.close(); }
   });
 }

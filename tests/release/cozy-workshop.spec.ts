@@ -1,6 +1,8 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { reachableControlIssues } from '../phaser-pages/helpers/reachableControls';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
 
@@ -71,14 +73,14 @@ for (const materialId of ['soft', 'jelly', 'holo', 'marshmallow', 'pearl', 'chro
         { t: 1, x: 88, y: 139, s: 23, r: 0 }, { t: 1, x: 164, y: 151, s: 21, r: 24 },
       ] },
       decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory: 'bow' } };
-    await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)),
+    await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))),
       { ...createDefaultSaveV3(), library: [toy], totalCrafts: 1 });
     await page.reload();
     await page.locator('[data-library-play-id="cozy-material"]').click();
     const shell = page.locator('[data-sandbox-app]'), canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
     await expect(shell).toHaveAttribute('data-material', materialId);
-    const saved = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+    const saved = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
     await page.screenshot({ path: info.outputPath(`cozy-${materialId}-rest.png`) });
     const b = (await canvas.boundingBox())!;
     await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
@@ -91,6 +93,6 @@ for (const materialId of ['soft', 'jelly', 'holo', 'marshmallow', 'pearl', 'chro
     await page.screenshot({ path: info.outputPath(`cozy-${materialId}-stretch.png`) });
     await page.mouse.up();
     await expect(shell).toHaveAttribute('data-squish-active', 'false');
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(saved);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(saved);
   });
 }

@@ -1,5 +1,6 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect,test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createSandboxDraft } from '../../src/sandbox/types';
 import { decodeOnboarding,onboardingState } from '../../src/platform/onboarding';
 
@@ -61,7 +62,7 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
       await page.screenshot({path:info.outputPath('first-decor.png')});
       await page.locator('[data-guide-skip]').click();await expect(page.locator('[data-guide-skip]')).toHaveCount(0);await expect(page.locator('[data-guide-hint]')).toHaveCount(0);
       await page.locator('[data-action="save"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');
-      expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!).library[0].appearance.strokes)).toEqual(prior.appearance.strokes);
+      expect(await page.evaluate((__collection) => (__collection.library[0].appearance.strokes), await readCollection(page))).toEqual(prior.appearance.strokes);
       await page.locator('[data-action="home"]').click();await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view','room');
       await expect(page.locator('[data-room-prop]')).toHaveCount(3);await page.screenshot({path:info.outputPath('starter-room.png')});
       await page.reload();await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view','room');
@@ -82,10 +83,10 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
 }
 test('existing empty or decorated rooms retain their entry, save and room choices',async({page})=>{
   const save=createDefaultSaveV3(),room={version:1,palette:12,items:{right:'plant'}};
-  await page.addInitScript(({save,room})=>{localStorage.setItem('squishy.save.v3',JSON.stringify(save));localStorage.setItem('squishy.room.v1',JSON.stringify(room));},{save,room});
+  await page.addInitScript(({save,room})=>{(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save)));localStorage.setItem('squishy.room.v1',JSON.stringify(room));},{save,room});
   await page.goto('/squishy-squishes/');await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view','room');
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.room.v1')!))).toEqual(room);
-  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!))).toEqual(save);
+  expect(await page.evaluate((__collection) => (__collection), await readCollection(page))).toEqual(save);
   await expect(page.locator('[data-guide-skip]')).toHaveCount(0);
 });
 test('leaving the first craft keeps the draft and fillings hint is one-time',async({page})=>{
@@ -111,13 +112,13 @@ test('first-entry renderer failure returns to a visible retryable room',async({p
 test('first-craft save failure stays visible and can be retried',async({page})=>{
   await page.goto('/squishy-squishes/');await expect(page.locator('[data-guide-hint="base"]')).toBeVisible();
   await page.locator('[data-shape="heart"]').click();
-  await page.evaluate(()=>{const write=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='squishy.save.v3'&&!document.body.hasAttribute('data-allow-save'))throw new Error('Injected save quota failure');write.call(this,key,value);};});
+  await page.evaluate(()=>{const write=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='squishy.collection.v1'&&!document.body.hasAttribute('data-allow-save'))throw new Error('Injected save quota failure');write.call(this,key,value);};});
   await page.locator('.craft-actions [data-action="save"]').click();
   await expect(page.locator('[data-guide-hint="save-error"]')).toBeVisible();
   await expect(page.locator('.craft-actions [data-action="save"]')).toBeEnabled();
-  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!).library)).toEqual([]);
+  expect(await page.evaluate((__collection) => (__collection.library), await readCollection(page))).toEqual([]);
   await page.evaluate(()=>document.body.setAttribute('data-allow-save',''));
   await page.locator('.craft-actions [data-action="save"]').click();
   await expect(page.locator('[data-guide-hint="squeeze"]')).toBeVisible();
-  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!).library[0].shapeId)).toBe('heart');
+  expect(await page.evaluate((__collection) => (__collection.library[0].shapeId), await readCollection(page))).toBe('heart');
 });

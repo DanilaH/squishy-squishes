@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { createDefaultSaveV3 } from '../src/platform/saveV3';
+import { createLegacySaveV3 as createDefaultSaveV3 } from './collection';
 /** Existing-room regression suites start as returning players; onboarding has its own fresh-storage suite. */
 export async function returningPlayer(page:Page):Promise<void>{
   await page.addInitScript(save=>{

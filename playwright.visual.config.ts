@@ -23,7 +23,7 @@ export default defineConfig({
     colorScheme: 'light',
     deviceScaleFactor: 1,
     trace: 'retain-on-failure',
-    launchOptions: { args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
+    launchOptions: { ...(process.env.QA_CHROMIUM_PATH ? { executablePath: process.env.QA_CHROMIUM_PATH } : {}), args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
   },
   webServer: {
     command: 'node scripts/serve-release-qa.mjs',

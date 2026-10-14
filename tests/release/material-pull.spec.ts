@@ -1,8 +1,10 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
 import { SHAPES, getShape } from '../../src/game/shapes';
 import { SquishSimulation } from '../../src/squish/SquishSimulation';
 import { uncontainClipAxis, uncontainGestureAxis } from '../../src/squish/projection';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
 const pull = (material: 'soft' | 'jelly' | 'chrome', distance: number) => {
@@ -63,14 +65,14 @@ test(`captured Jelly follows outside the canvas and releases cleanly ${stage} ${
   const page = await context.newPage();
   try {
     await page.goto('/squishy-squishes/?roomReview=0');
-    await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
+    await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), {
       ...createDefaultSaveV3(), totalCrafts:1, library:[{id:'long',createdAt:1,shapeId:'mochi',materialId:'jelly',appearance:{v:1,strokes:[],mixins:[]},decor:{...createEmptyDecorDocument(),eyes:'dot',mouth:'smile',blush:true}}]
     });
     await page.reload(); await page.locator('[data-library-play-id="long"]').click();
     const canvas=page.locator('[data-sandbox-canvas]'), shell=page.locator('[data-sandbox-app]');
     await expect(canvas).toHaveAttribute('data-phaser-ready','true');
     if(stage==='preview'){await page.locator('[data-action="edit-saved"]').click();await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click(); await page.locator('[data-action="try-on"]').click();}
-    const before=await page.evaluate(()=>localStorage.getItem('squishy.save.v3'));
+    const before=await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
     const box=(await canvas.boundingBox())!, radius=await canvas.evaluate(el=>el.clientWidth*parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
     const start={x:box.x+box.width/2+radius*.5,y:box.y+box.height/2};
     const far={x:width-8,y:Math.max(12,Math.min(height-12,start.y))};
@@ -95,7 +97,7 @@ test(`captured Jelly follows outside the canvas and releases cleanly ${stage} ${
     await expect(shell).toHaveAttribute('data-squish-active','false');
     await expect(shell).toHaveAttribute('data-sandbox-squeezes','1');
     await expect.poll(async()=>Number(await shell.getAttribute('data-squish-max-displacement')), {timeout:12000}).toBeLessThan(.025);
-    expect(await page.evaluate(()=>localStorage.getItem('squishy.save.v3'))).toBe(before);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(before);
     // An interrupted outside gesture returns without crediting a release.
     if(touch)await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...start,id:1}]});else{await page.mouse.move(start.x,start.y);await page.mouse.down();}
     await expect(shell).toHaveAttribute('data-squish-active','true');

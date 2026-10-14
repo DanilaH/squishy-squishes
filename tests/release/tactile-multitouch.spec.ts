@@ -1,6 +1,8 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
 
@@ -11,7 +13,7 @@ for (const [locale, width, height, shapeId] of [
   const page = await context.newPage();
   try {
     await page.goto('/squishy-squishes/?roomReview=0');
-    await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
+    await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), {
       ...createDefaultSaveV3(), totalCrafts: 1,
       library: [{ id: 'multi', createdAt: 1700000000000, shapeId, materialId: 'jelly',
         appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [] },
@@ -20,7 +22,7 @@ for (const [locale, width, height, shapeId] of [
     await page.reload(); await page.locator('[data-library-play-id="multi"]').click();
     const shell = page.locator('[data-sandbox-app]'), canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
-    const saved = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+    const saved = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
     const box = (await canvas.boundingBox())!;
     const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     const points = (gap: number) => [{ ...center, x: center.x - box.width * gap, id: 1 }, { ...center, x: center.x + box.width * gap, id: 2 }];
@@ -52,7 +54,7 @@ for (const [locale, width, height, shapeId] of [
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
     await expect(shell).toHaveAttribute('data-squish-active', 'false');
     await expect(shell).toHaveAttribute('data-sandbox-squeezes', '1');
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(saved);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(saved);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
   } finally { await context.close(); }
 });
@@ -62,7 +64,7 @@ test('desktop touch stroking and sparse idle blink preserve the saved toy', asyn
   const page = await context.newPage();
   try {
     await page.goto('/squishy-squishes/?roomReview=0');
-    await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
+    await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), {
       ...createDefaultSaveV3(), totalCrafts: 1,
       library: [{ id: 'stroke', createdAt: 1700000000000, shapeId: 'dumpling', materialId: 'marshmallow',
         appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [] },
@@ -71,7 +73,7 @@ test('desktop touch stroking and sparse idle blink preserve the saved toy', asyn
     await page.reload(); await page.locator('[data-library-play-id="stroke"]').click();
     const shell = page.locator('[data-sandbox-app]'), canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
-    const saved = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+    const saved = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
     const box = (await canvas.boundingBox())!, cdp = await context.newCDPSession(page);
     const radiusRatio = await canvas.evaluate(el => Number.parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
     const radius = Math.min(box.width, box.height) * radiusRatio;
@@ -118,6 +120,6 @@ test('desktop touch stroking and sparse idle blink preserve the saved toy', asyn
     });
     await expect.poll(async () => JSON.parse(await shell.getAttribute('data-idle-reactions') ?? '[]').some((value: string) => value.includes(':b') && Number(value.split(':')[0]) === 0 && Number(value.split(':')[1]) === 0)).toBe(true);
     await expect(shell).toHaveAttribute('data-face-reaction', '0:0');
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(saved);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(saved);
   } finally { await context.close(); }
 });

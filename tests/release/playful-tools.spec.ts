@@ -1,9 +1,10 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp } from '../../src/sandbox/creativeTools';
 import { decodeAppearanceDocument, decodeAppearancePoints } from '../../src/sandbox/appearance';
 import { REST_FACE, idleBlink, accessorySway, faceReaction, heldFaceStrength } from '../../src/sandbox/toyReactions';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
 test('stamps use the existing V1 document and reactions have bounded finite lifetimes', () => {
@@ -97,10 +98,10 @@ for (const reduced of [false, true]) test(`saved face reacts and returns to rest
   const toy = { id: 'reaction', createdAt: 1700000000000, shapeId: 'paw', materialId: 'jelly',
     appearance: { v: 1, strokes: PAINT_STAMPS.map((s, i) => createPaintStamp(s.id, 0xff79a8, 40, { u: .3 + i * .13, v: .4 })), mixins: [] },
     decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory: 'cat-ears' } };
-  await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), { ...createDefaultSaveV3(), library: [toy], totalCrafts: 1 });
+  await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), { ...createDefaultSaveV3(), library: [toy], totalCrafts: 1 });
   await page.reload();
   await page.locator('[data-library-play-id="reaction"]').click();
-  const before = await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library));
+  const before = await page.evaluate((__collection) => (JSON.stringify(__collection.library)), await readCollection(page));
   const shell = page.locator('[data-sandbox-app]'), body = page.locator('[data-sandbox-canvas]');
   const box = (await body.boundingBox())!;
   const x = box.x + box.width / 2, y = box.y + box.height / 2;
@@ -128,7 +129,7 @@ for (const reduced of [false, true]) test(`saved face reacts and returns to rest
   await expect.poll(async () => Number(await page.locator('[data-sandbox-accessory]').getAttribute('data-accessory-sway'))).toBe(0);
   if (!reduced) await expect(shell).toHaveAttribute('data-face-reaction', '0:0');
   else expect(await shell.getAttribute('data-face-reaction')).toBeNull();
-  expect(await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library))).toBe(before);
+  expect(await page.evaluate((__collection) => (JSON.stringify(__collection.library)), await readCollection(page))).toBe(before);
   await page.reload();
   await page.locator('[data-library-play-id="reaction"]').click();
   await expect(shell).toHaveAttribute('data-paint-strokes', '4');

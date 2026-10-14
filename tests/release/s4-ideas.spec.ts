@@ -1,6 +1,7 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
 import { completeRecipeIdea } from '../../src/platform/saveV3Ideas';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { SQUISHY_IDEAS, matchSquishyIdea } from '../../src/sandbox/ideas';
 import { getSquishyTitle } from '../../src/sandbox/titles';
 import { createAppearanceStroke } from '../../src/sandbox/appearance';
@@ -23,7 +24,7 @@ const seedCompleted = async (page: Page, ids: readonly string[]): Promise<void> 
   await page.goto(PAGES_URL);
   await page.evaluate((completedRecipeIds) => {
     localStorage.clear();
-    localStorage.setItem('squishy.save.v3', JSON.stringify({
+    (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify({
       version: 3,
       library: [],
       libraryCapacity: 8,
@@ -31,7 +32,7 @@ const seedCompleted = async (page: Page, ids: readonly string[]): Promise<void> 
       unlockedRewardIds: [],
       totalCrafts: 0,
       updatedAt: 1,
-    }));
+    })));
   }, ids);
   await page.reload();
 };
@@ -150,10 +151,10 @@ test('S4 Idea mode never gates the maker: player can choose a different shape an
   await expect(shell).toHaveAttribute('data-shape', 'heart');
   await finishAndSave(page);
 
-  const save = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as {
+  const save = await page.evaluate((__collection) => (__collection as {
     library: unknown[];
     completedRecipeIds: string[];
-  });
+  }), await readCollection(page));
   expect(save.library).toHaveLength(1);
   expect(save.completedRecipeIds).not.toContain(TARGET_ID);
   await expect(page.locator('[data-idea-complete]')).toHaveCount(0);
@@ -163,16 +164,16 @@ test('S4 matching Idea completes only after successful save and survives reload'
   await resetPages(page);
   await startTargetIdea(page);
 
-  let beforeSave = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as {
+  let beforeSave = await page.evaluate((__collection) => (__collection as {
     completedRecipeIds: string[];
-  });
+  }), await readCollection(page));
   expect(beforeSave.completedRecipeIds).not.toContain(TARGET_ID);
 
   await finishAndSave(page);
   await expect(page.locator('[data-idea-complete]')).toBeVisible();
-  const afterSave = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as {
+  const afterSave = await page.evaluate((__collection) => (__collection as {
     completedRecipeIds: string[];
-  });
+  }), await readCollection(page));
   expect(afterSave.completedRecipeIds.filter((id) => id === TARGET_ID)).toHaveLength(1);
 
   await page.reload();
@@ -186,9 +187,9 @@ test('S4 repeating an already completed Idea never duplicates completion', async
   await seedCompleted(page, [TARGET_ID]);
   await startTargetIdea(page);
   await finishAndSave(page);
-  const save = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as {
+  const save = await page.evaluate((__collection) => (__collection as {
     completedRecipeIds: string[];
-  });
+  }), await readCollection(page));
   expect(save.completedRecipeIds.filter((id) => id === TARGET_ID)).toHaveLength(1);
   await expect(page.locator('[data-idea-complete]')).toHaveCount(0);
 });

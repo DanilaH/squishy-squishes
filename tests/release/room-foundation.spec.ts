@@ -1,6 +1,8 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createSandboxDraft } from '../../src/sandbox/types';
 
 const library = ['paw', 'heart', 'donut', 'dumpling', 'strawberry', 'mochi-cat', 'cupcake', 'mochi-bunny'].map((shapeId, i) => ({
@@ -30,10 +32,10 @@ for (const locale of ['en-US', 'ru-RU']) {
         };
         await checkControls();
         await page.screenshot({ path: info.outputPath(`room-empty-${viewport.width}.png`) });
-        await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), { ...createDefaultSaveV3(), library, totalCrafts: 8 });
+        await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), { ...createDefaultSaveV3(), library, totalCrafts: 8 });
         await page.reload();
         await expect(page.locator('[data-library-count]')).toHaveAttribute('data-library-count', '8');
-        const original = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+        const original = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
         expect(await page.evaluate(() => performance.getEntriesByType('resource').some(entry => entry.name.includes('PhaserSquishSurface')))).toBe(false);
         await expect(page.locator('[data-library-select-id]')).toHaveAttribute('data-library-select-id', 'room-7');
         await expect(page.locator('[data-library-table-ready]')).toHaveAttribute('data-library-table-ready', 'true');
@@ -78,12 +80,12 @@ for (const locale of ['en-US', 'ru-RU']) {
         await expect(page.locator('.room-library')).toHaveClass(/is-library-hall/);
         expect(await grid.evaluate(el => el.scrollTop)).toBe(scroll);
         await expect(page.locator(`[data-library-play-id="${returnId}"]`)).toBeFocused();
-        expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(original);
+        expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(original);
         await page.locator(`[data-library-actions-id="${returnId}"]`).click();
         await page.locator(`[data-library-delete-id="${returnId}"]`).click();
         await expect(page.locator('[data-library-delete-overlay]')).toBeVisible();
         await page.locator('[data-library-delete-cancel]').click();
-        expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(original);
+        expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(original);
         await page.screenshot({ path: info.outputPath(`room-collection-${viewport.width}.png`) });
         expect(await page.evaluate(() => [document.documentElement.scrollWidth > innerWidth, document.documentElement.scrollHeight > innerHeight])).toEqual([false, false]);
         await page.locator('[data-room-back]').first().click();
@@ -99,7 +101,7 @@ for (const locale of ['en-US', 'ru-RU']) {
         await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view', 'room');
         await expect(page.locator('[data-library-table-ready]')).toHaveAttribute('data-library-table-ready', 'true');
         expect(await page.locator('.library-showcase-table').boundingBox()).toEqual(table);
-        expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(original);
+        expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(original);
       } finally { await context.close(); }
     });
   }

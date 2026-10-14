@@ -1,5 +1,6 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import {test,expect} from '@playwright/test';
-import {createDefaultSaveV3} from '../../src/platform/saveV3';
+
 import {createSandboxDraft} from '../../src/sandbox/types';
 const toys=['paw','heart','donut','dumpling','strawberry','mochi-cat','cupcake','mochi-bunny'].map((shapeId,i)=>({...createSandboxDraft(),shapeId,id:`ui-${i}`,createdAt:1700000000000+i}));
 const viewports = [{width:320,height:568},{width:390,height:844},{width:568,height:320},{width:1440,height:900}];
@@ -13,7 +14,7 @@ for (const locale of ['ru-RU','en-US']) for (const viewport of viewports) test(`
   expect(await p.evaluate(()=>[document.documentElement.scrollWidth>innerWidth,document.documentElement.scrollHeight>innerHeight])).toEqual([false,false]);};
  try{
  await p.goto('/squishy-squishes/?roomReview=0');
-  await p.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),library:toys,totalCrafts:8});
+  await p.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),{...createDefaultSaveV3(),library:toys,totalCrafts:8});
   await p.reload();
   await expect(p.locator('[data-library-toy]')).toHaveCount(8);
  await expect(p.locator('[data-library-delete-id]').first()).toBeHidden();
@@ -47,13 +48,13 @@ for (const locale of ['ru-RU','en-US']) for (const viewport of viewports) test(`
  await p.locator('[data-action="save"]').click();
   const overlay=p.locator('[data-library-replace-overlay]');
   await expect(overlay).toBeVisible();
-  const original=await p.evaluate(()=>localStorage.getItem('squishy.save.v3'));
+  const original=await p.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(p));
   await expect(p.locator('[data-library-replace-confirm]')).toBeDisabled();
  await p.locator('[data-library-replace-id="ui-0"]').click();
-  expect(await p.evaluate(()=>localStorage.getItem('squishy.save.v3'))).toBe(original);
+  expect(await p.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(p))).toBe(original);
   await shot('replacement');
   await p.locator('[data-library-replace-cancel]').click();
-  expect(await p.evaluate(()=>localStorage.getItem('squishy.save.v3'))).toBe(original);
+  expect(await p.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(p))).toBe(original);
  await p.locator('[data-action="save"]').click();
   await p.locator('[data-library-replace-id="ui-0"]').click();
   await p.locator('[data-library-replace-confirm]').click();
@@ -100,32 +101,32 @@ test('desktop Ideas preserve the page anchor across phone resizing', async ({ pa
 
 test('failed replacement preserves the draft, selection and save until a successful retry', async ({ page }) => {
   await page.goto('/squishy-squishes/?roomReview=0');
-  await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
+  await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), {
     ...createDefaultSaveV3(), library: toys, totalCrafts: 8,
   });
   await page.reload();
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-phaser-ready]')).toHaveAttribute('data-phaser-ready', 'true');
   await page.locator('[data-action="save"]').click();
-  const before = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+  const before = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
   await page.locator('[data-library-replace-id="ui-0"]').click();
   await page.evaluate(() => {
     const write = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key, value) {
-      if (key === 'squishy.save.v3' && !document.body.hasAttribute('data-allow-toy-save')) throw new Error('Injected save failure');
+      if (key === 'squishy.collection.v1' && !document.body.hasAttribute('data-allow-toy-save')) throw new Error('Injected save failure');
       write.call(this, key, value);
     };
   });
   await page.locator('[data-library-replace-confirm]').click();
   await expect(page.locator('[data-library-modal-error]')).not.toBeEmpty();
-  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(before);
+  expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(before);
   await expect(page.locator('[data-library-replace-id="ui-0"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('[data-card-page-step="-1"]')).toBeDisabled();
   await expect(page.locator('[data-library-replace-confirm]')).toBeEnabled();
   await page.evaluate(() => document.body.setAttribute('data-allow-toy-save', ''));
   await page.locator('[data-library-replace-confirm]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  const ids = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!).library.map((toy: {id:string}) => toy.id));
+  const ids = await page.evaluate((__collection) => (__collection.library.map((toy: {id:string}) => toy.id)), await readCollection(page));
   expect(ids).toHaveLength(8);
   expect(ids.slice(1)).toEqual(toys.slice(1).map(toy => toy.id));
   expect(ids[0]).not.toBe('ui-0');
@@ -139,7 +140,7 @@ test('a newly saved toy is selected when returning to the collection', async ({ 
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   await expect(page.locator('[data-action="home"]')).toHaveText('Back to collection');
-  const id = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!).library[0].id);
+  const id = await page.evaluate((__collection) => (__collection.library[0].id), await readCollection(page));
   await page.locator('[data-action="home"]').click();
   await expect(page.locator(`[data-library-toy="${id}"]`)).toHaveClass(/is-selected/);
 });

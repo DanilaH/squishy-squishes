@@ -1,5 +1,7 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createSandboxDraft } from '../../src/sandbox/types';
 
 const toys = ['paw','heart','donut','dumpling','strawberry','mochi-cat','cupcake','mochi-bunny'].map((shapeId, i) => ({
@@ -14,11 +16,11 @@ for (const locale of ['en-US','ru-RU']) {
         await page.goto('/squishy-squishes/?roomReview=0');
         await expect(page.locator('.library-showcase-slot')).toHaveCount(8);
         await expect(page.locator('.library-showcase-welcome')).toBeVisible();
-        await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {...createDefaultSaveV3(), library:toys,totalCrafts:8});
+        await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), {...createDefaultSaveV3(), library:toys,totalCrafts:8});
         await page.reload();
         const shelf = page.locator('.sandbox-library-grid');
         await expect(page.locator('[data-library-toy]')).toHaveCount(8);
-        const original = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+        const original = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
         expect(await page.evaluate(() => performance.getEntriesByType('resource').some(entry=>entry.name.includes('PhaserSquishSurface')))).toBe(false);
         await expect(page.locator('.library-showcase-collection')).toBeVisible();
         let table: Awaited<ReturnType<typeof shelf.boundingBox>> = null;
@@ -43,7 +45,7 @@ for (const locale of ['en-US','ru-RU']) {
         await expect(page.locator('[data-library-delete-overlay]')).toBeVisible();
         await page.locator('[data-library-delete-cancel]').click();
         await expect(page.locator('[data-library-delete-overlay]')).toHaveCount(0);
-        expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(original);
+        expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(original);
         const geometry = await shelf.evaluate(element=>({scroll:element.scrollHeight,client:element.clientHeight}));
         if(viewport.width===1440) expect(geometry.scroll).toBeLessThanOrEqual(geometry.client+1);
         else expect(geometry.scroll).toBeGreaterThan(geometry.client);
@@ -58,7 +60,7 @@ for (const locale of ['en-US','ru-RU']) {
         await page.locator('[data-action="exit-craft"]').click();
         await expect(page.locator('[data-exit-overlay]')).toHaveCount(0); // Unchanged saved draft exits directly.
         await expect(page.locator('[data-library-toy]')).toHaveCount(8);
-        expect(await page.evaluate(()=>localStorage.getItem('squishy.save.v3'))).toBe(original);
+        expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(original);
       } finally { await context.close(); }
     });
   }

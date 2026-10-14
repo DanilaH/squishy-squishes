@@ -1,8 +1,10 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
 import { getShape, isPointInsideShape } from '../../src/game/shapes';
 import { ToyPersonality } from '../../src/sandbox/toyPersonality';
 import { SquishSimulation } from '../../src/squish/SquishSimulation';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
 
@@ -78,11 +80,11 @@ for (const [width, height] of [[390, 844], [1440, 900]] as const) test(`berry pr
     const save = { ...createDefaultSaveV3(), totalCrafts: 1, library: [{ id: 'berry', createdAt: 1, shapeId: 'strawberry', materialId: 'jelly',
       appearance: { v: 1, strokes: [createBodyFillStroke(0x8acfe0)], mixins: [] },
       decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory: 'bow' } }] };
-    await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), save);
+    await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))), save);
     await page.reload(); await page.locator('[data-library-play-id="berry"]').click();
     const shell = page.locator('[data-sandbox-app]'), canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
-    const before = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+    const before = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
     const box = (await canvas.boundingBox())!, radius = await canvas.evaluate(el => el.clientWidth * parseFloat(getComputedStyle(el).getPropertyValue('--squish-radius-ratio')));
     for (const side of [-1, 1]) {
       const x = box.x + box.width / 2 + radius * .45 * side, y = box.y + box.height / 2;
@@ -94,7 +96,7 @@ for (const [width, height] of [[390, 844], [1440, 900]] as const) test(`berry pr
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.mouse.move(box.x + box.width / 2 + radius * .45, box.y + box.height / 2); await page.mouse.down();
     await expect(shell).toHaveAttribute('data-face-reaction', '0:0'); await page.mouse.up();
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(before);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(before);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
   } finally { await context.close(); }
 });

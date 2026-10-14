@@ -1,6 +1,7 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3, decodeSaveStateV3 } from '../../src/platform/saveV3';
+import {decodeSaveStateV3} from '../../src/platform/saveV3';
 import { createBodyFillStroke, createMixInPlacement } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
@@ -22,12 +23,12 @@ for (const locale of ['ru-RU', 'en-US']) {
     const page = await context.newPage();
     try {
       await page.goto('/squishy-squishes/?roomReview=0');
-      await page.evaluate((toy) => localStorage.setItem('squishy.save.v3', JSON.stringify({
+      await page.evaluate((toy) => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify({
         ...toy.save, library: [toy.sample], totalCrafts: 1,
-      })), { sample, save: createDefaultSaveV3() });
+      }))), { sample, save: createDefaultSaveV3() });
       await page.reload();
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
-      const savedBefore = await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library));
+      const savedBefore = await page.evaluate((__collection) => (JSON.stringify(__collection.library)), await readCollection(page));
       await mkdir('migration-baseline-evidence', { recursive: true });
       await page.screenshot({ path: `migration-baseline-evidence/toy-sample-${locale}-hall.png` });
       await page.locator('[data-library-play-id="jelly-pearl-bow-sample"]').click();
@@ -49,7 +50,7 @@ for (const locale of ['ru-RU', 'en-US']) {
       await page.screenshot({ path: `migration-baseline-evidence/toy-sample-${locale}-pull.png` });
       await page.mouse.up();
       expect(await page.evaluate(() => ({ x: document.documentElement.scrollWidth > innerWidth, y: document.documentElement.scrollHeight > innerHeight }))).toEqual({ x: false, y: false });
-      expect(await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library))).toBe(savedBefore);
+      expect(await page.evaluate((__collection) => (JSON.stringify(__collection.library)), await readCollection(page))).toBe(savedBefore);
       await page.reload();
       await page.locator('[data-library-play-id="jelly-pearl-bow-sample"]').click();
       await expect(bow).toHaveAttribute('data-accessory-id', 'bow');
@@ -101,7 +102,7 @@ test('real creation saves pearl stars and bow, with reduced motion and WebP fall
   await page.screenshot({ path: 'migration-baseline-evidence/toy-sample-created-320.png' });
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  const raw = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!));
+  const raw = await page.evaluate((__collection) => (__collection), await readCollection(page));
   const saved = decodeSaveStateV3(raw).library[0]!;
   expect(saved.materialId).toBe('jelly');
   expect(saved.appearance.mixins).toHaveLength(3);

@@ -55,7 +55,7 @@ Style approval is separate from merging or publishing the artwork.
 - Composite eyes/mouth/blush after body material lighting.
 - The first Paint stroke must render before pointer-up, including live uncommitted appearance content.
 - Normal Studio entry waits for decoded furniture. Genuine asset failure retains a usable fallback.
-- Hall thumbnails are eager. Do not restore the obsolete `data-library-rendered` marker.
+- Collection previews retain only visible/adjacent raster buffers; initial nearby cards render first. Do not restore eager rendering of the complete collection or the obsolete `data-library-rendered` marker.
 
 Start with `docs/README.md` and current code/tests. Historical migration plans describe the path to cutover, not an outstanding migration. `docs/IMPLEMENTATION_ROADMAP.md` and old recipe/dark-lab art documents are historical. Keep new fixes scoped to observed behavior; advanced appendage grabbing and source-art margin cleanup are deferred ideas, not release blockers.
 
@@ -63,7 +63,7 @@ Start with `docs/README.md` and current code/tests. Historical migration plans d
 
 - Strict TypeScript, Vite, one deformable WebGL2 renderer, a single parameterized shader and generic deformation; do not introduce React, per-shape physics or a second on-screen WebGL game. Production uses the lazy Phaser maker; the raw `SquishSurface` remains for diagnostic/legacy paths. Do not revert production to it.
 - `src/game/shapes.ts` owns the canonical boundary used by hit testing, field, UV rendering and previews. Content remains free to create; optional Ideas never gate it.
-- SaveState V3 and existing IDs/migration are durable. Library has 8 free slots and one optional rewarded expansion to 10. Do not alter save, reward or ad cadence for an infrastructure/asset task.
+- Existing V3 IDs, artwork and migration remain durable. The owner approved release monetization on 15 October: four fresh places, repeatable permanent +1 rewarded places, free previews and permanent optional catalog openings. Imported old capacity and full catalog access are retained. Follow docs/MONETIZATION_RELEASE_ROADMAP_2026-10-15.md; publication requires separate validation. The manifest/individual records now persist V3 domain data; do not revive monolithic writes.
 - `PlatformRuntime.activity` remains the sole source of aggregated blockers. New audio/input/loading code must respect it.
 - Preserve the reviewed tactile constants and Finish-only disabled-canvas pointer passthrough; global `.sandbox-canvas.is-disabled { pointer-events: none }` breaks Paint/Decor.
 

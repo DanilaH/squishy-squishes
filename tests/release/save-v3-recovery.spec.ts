@@ -1,12 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { StorageAdapter } from '@danilah/mini-games-kit/platform';
-import {
-  SAVE_V3_RECOVERY_STORAGE_KEY,
-  SAVE_V3_STORAGE_KEY,
-  createDefaultSaveV3,
-  createSaveV3Repository,
-  loadSaveV3WithMigration,
-} from '../../src/platform/saveV3';
+import {createDefaultSaveV3,SAVE_V3_RECOVERY_STORAGE_KEY,SAVE_V3_STORAGE_KEY,createSaveV3Repository,loadSaveV3WithMigration} from '../../src/platform/saveV3';
 import { SAVE_STORAGE_KEY as SAVE_V2_STORAGE_KEY } from '../../src/platform/save';
 
 const createMemoryStorage = (initial: Readonly<Record<string, string>>): {
@@ -49,7 +43,7 @@ test('corrupt V3 is preserved and a still-valid V2 save is recovered', async () 
   expect(state.totalCrafts).toBe(3);
   expect(values.get(SAVE_V3_RECOVERY_STORAGE_KEY)).toBe(corrupt);
   expect(values.has(SAVE_V2_STORAGE_KEY)).toBe(false);
-  expect(JSON.parse(values.get(SAVE_V3_STORAGE_KEY) ?? 'null')).toMatchObject({
+  expect(await createSaveV3Repository(storage).load()).toMatchObject({
     version: 3,
     totalCrafts: 3,
   });
@@ -69,7 +63,7 @@ test('corrupt V3 without a legacy source falls back safely without discarding re
 
   expect(state).toEqual(createDefaultSaveV3());
   expect(values.get(SAVE_V3_RECOVERY_STORAGE_KEY)).toBe(corrupt);
-  expect(JSON.parse(values.get(SAVE_V3_STORAGE_KEY) ?? 'null')).toEqual(createDefaultSaveV3());
+  expect(await createSaveV3Repository(storage).load()).toEqual(createDefaultSaveV3());
   expect(errors).toHaveLength(1);
 
   const secondErrors: unknown[] = [];

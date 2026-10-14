@@ -1,6 +1,7 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import {test, expect} from '@playwright/test';
 import {createSandboxDraft} from '../../src/sandbox/types';
-import {createDefaultSaveV3, decodeSaveStateV3} from '../../src/platform/saveV3';
+import {decodeSaveStateV3} from '../../src/platform/saveV3';
 import {ACCESSORY_IDS, decodeDecorDocument, encodeDecorDocument} from '../../src/sandbox/decor';
 import {accessoryDepth, initialAccessoryPlacements} from '../../src/sandbox/freeCraft';
 import {getShape, SHAPES} from '../../src/game/shapes';
@@ -31,7 +32,7 @@ test(`accessory layer, size, undo and reload ${locale} ${viewport.width}`,async(
   test.setTimeout(90000);
   const context=await browser.newContext({baseURL,locale,viewport,reducedMotion:'reduce'});const page=await context.newPage();
   try{
-    await page.addInitScript(state=>{if(!localStorage.getItem('squishy.save.v3'))localStorage.setItem('squishy.save.v3',JSON.stringify(state));},state);
+    await page.addInitScript(state=>{if(!localStorage.getItem('squishy.save.v3'))(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(state)));},state);
     await page.goto('/squishy-squishes/');await page.locator('[data-room-collection]').click();
     await page.locator('[data-library-play-id="depth-proof"]').click();
     await page.locator('[data-action="edit-saved"]').click();await page.locator('[data-craft-section="decor"]').click();
@@ -69,7 +70,7 @@ test(`accessory layer, size, undo and reload ${locale} ${viewport.width}`,async(
     await page.locator('[data-object-action="close-more"]').click();await page.locator('[data-object-action="lock"]').click();
     await page.locator('[data-object-action="more"]').click();await depth.click();
     await page.locator('[data-action="save"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');
-    const saved=decodeSaveStateV3(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!)));
+    const saved=decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page)));
     expect(saved.library[0]!.decor.accessories![0]!.depth).toBe('rear');
     expect(saved.library[0]!.decor.accessories![0]!.s).toBe(4);
     await page.reload();await page.locator('[data-room-collection]').click();await page.locator('[data-library-play-id="depth-proof"]').click();
@@ -91,7 +92,7 @@ test('rear defaults, pair copies and reset keep independent layers',async({page}
   await page.setViewportSize({width:390,height:844});
   const rearState={...state,library:[{...state.library[0]!,decor:{...draft.decor,
     accessories:initialAccessoryPlacements(getShape('mochi'),'cat-ears')}}]};
-  await page.addInitScript(state=>localStorage.setItem('squishy.save.v3',JSON.stringify(state)),rearState);
+  await page.addInitScript(state=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(state))),rearState);
   await page.goto('/squishy-squishes/');await page.locator('[data-room-collection]').click();
   await page.locator('[data-library-play-id="depth-proof"]').click();await page.locator('[data-action="edit-saved"]').click();
   await page.locator('[data-craft-section="decor"]').click();await page.locator('[data-decor-section="objects"]').click();
@@ -110,7 +111,7 @@ test('headphones can surround every mold in the room',async({page},info)=>{
   test.setTimeout(180000);await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
   const library=SHAPES.map((shape,i)=>({...draft,id:shape.id,shapeId:shape.id,createdAt:i+1,
     decor:{...draft.decor,eyes:'dot' as const,mouth:'smile' as const,accessories:initialAccessoryPlacements(shape,'headphones').map(item=>({...item,s:4}))}}));
-  await page.addInitScript(state=>localStorage.setItem('squishy.save.v3',JSON.stringify(state)),{...createDefaultSaveV3(),libraryCapacity:24,totalCrafts:library.length,library});
+  await page.addInitScript(state=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(state))),{...createDefaultSaveV3(),libraryCapacity:24,totalCrafts:library.length,library});
   await page.goto('/squishy-squishes/');await page.locator('[data-room-collection]').click();
   for(const shape of SHAPES){
     const play=page.locator(`[data-library-play-id="${shape.id}"]`);await play.scrollIntoViewIfNeeded();await play.click();

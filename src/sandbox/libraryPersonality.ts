@@ -30,7 +30,7 @@ export const mountLibraryPersonality = (root: HTMLElement, findToy: (id: string)
       timer = 0;
       const shell = root.querySelector<HTMLElement>('[data-sandbox-library]');
       if (!allowed() || !shell || shell.classList.contains('is-blocked') || shell.classList.contains('library-hall-interacting') || root.querySelector('[role="dialog"]')) { schedule(); return; }
-      const cards = [...shell.querySelectorAll<HTMLElement>('[data-library-toy]')].filter(card => !card.hidden && card.getBoundingClientRect().width > 0);
+      const cards = [...shell.querySelectorAll<HTMLElement>('[data-library-toy]')].filter(card => !card.hidden && card.querySelector<HTMLElement>('[data-preview-visible=true]') !== null);
       const turn = cursor++, card = cards[turn % Math.max(1, cards.length)], canvas = card?.querySelector<HTMLCanvasElement>('[data-library-thumbnail]');
       const toy = canvas ? findToy(canvas.dataset.libraryThumbnail ?? '') : undefined;
       if (!canvas || !toy || !card) { schedule(); return; }
@@ -38,14 +38,14 @@ export const mountLibraryPersonality = (root: HTMLElement, findToy: (id: string)
       original.getContext('2d')?.drawImage(canvas, 0, 0);
       const inline = canvas.style.transform, base = getComputedStyle(canvas).transform;
       restore = () => {
-        if (canvas.isConnected) { const ctx = canvas.getContext('2d'); ctx?.setTransform(1, 0, 0, 1, 0, 0); ctx?.clearRect(0, 0, canvas.width, canvas.height); ctx?.drawImage(original, 0, 0); canvas.style.transform = inline; }
+        if (canvas.isConnected && canvas.dataset.previewVisible === 'true') { const ctx = canvas.getContext('2d'); ctx?.setTransform(1, 0, 0, 1, 0, 0); ctx?.clearRect(0, 0, canvas.width, canvas.height); ctx?.drawImage(original, 0, 0); canvas.style.transform = inline; }
         canvas.dataset.libraryReaction = 'rest';
       };
       const starts = [5000, 12000, 20500, 28000], durations = [180, 1100, 850, 1250];
       const mode = turn % 4, started = performance.now(); let faceKey = '';
       const animate = (now: number): void => {
         frame = 0;
-        if (!allowed() || !canvas.isConnected || card.hidden || shell.classList.contains('library-hall-interacting') || root.querySelector('[role="dialog"]')) { schedule(); return; }
+        if (!allowed() || !canvas.isConnected || canvas.dataset.previewVisible !== 'true' || card.hidden || shell.classList.contains('library-hall-interacting') || root.querySelector('[role="dialog"]')) { schedule(); return; }
         const elapsed = now - started;
         if (elapsed >= durations[mode]!) { restore?.(); restore = null; schedule(); return; }
         const pose = idleToyPose(starts[mode]! + elapsed), nextKey = `${pose.blink}:${pose.delight}:${pose.squeeze}`;

@@ -1,8 +1,10 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
 import type { MaterialId } from '../../src/game/content';
 import { SHAPES, getShape } from '../../src/game/shapes';
 import { SquishSimulation } from '../../src/squish/SquishSimulation';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
 const materials: MaterialId[] = ['soft', 'jelly', 'marshmallow', 'pearl', 'holo', 'chrome'];
@@ -128,11 +130,11 @@ test('all six saved materials share tactile preview in Finish and Squeeze', asyn
   await page.goto('/squishy-squishes/?roomReview=0');
   for (const material of materials) {
     const save={...createDefaultSaveV3(),totalCrafts:1,library:[{id:'material',createdAt:1,shapeId:'mochi',materialId:material,appearance:{v:1,strokes:[],mixins:[]},decor:createEmptyDecorDocument()}]};
-    await page.evaluate(value=>localStorage.setItem('squishy.save.v3',JSON.stringify(value)),save);
+    await page.evaluate(value=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(value))),save);
     await page.reload(); await page.locator('[data-library-play-id="material"]').click();
     const canvas=page.locator('[data-sandbox-canvas]'),shell=page.locator('[data-sandbox-app]');
     await expect(canvas).toHaveAttribute('data-phaser-ready','true');
-    const before=await page.evaluate(()=>localStorage.getItem('squishy.save.v3'));
+    const before=await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
     for (const stage of ['squeeze','preview']) {
       if(stage==='preview'){await page.locator('[data-action="edit-saved"]').click();await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click(); await page.locator('[data-action="try-on"]').click();}
       await expect(shell).toHaveAttribute('data-stage',stage==='preview'?'shape':stage); await expect(shell).toHaveAttribute('data-material',material);
@@ -143,6 +145,6 @@ test('all six saved materials share tactile preview in Finish and Squeeze', asyn
       await expect.poll(async()=>Number(await shell.getAttribute('data-squish-max-displacement'))).toBeGreaterThan(.025);
       await page.mouse.up();await expect(shell).toHaveAttribute('data-squish-active','false');
     }
-    expect(await page.evaluate(()=>localStorage.getItem('squishy.save.v3'))).toBe(before);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(before);
   }
 });

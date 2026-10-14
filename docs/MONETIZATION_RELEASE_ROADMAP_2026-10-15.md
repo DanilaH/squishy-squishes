@@ -151,3 +151,48 @@ Official references checked on 14 October:
 - https://yandex.ru/dev/games/doc/ru/sdk/sdk-player
 
 No implementation, merge, hosted SDK acceptance or publication is claimed here.
+
+## Authorized implementation — 15 October
+
+The owner approved the complete described flow, including explicit video symbols
+and localized text naming both the advertisement and the exact reward. Work is
+on `feat/release-monetization`, based on the unmerged artwork branch / PR #101.
+This section supersedes the proposed-only status above for implementation scope;
+it does not establish publication or hosted acceptance.
+
+Face bundles reuse existing art: Love (`sparkling` eyes, existing free smile),
+Sly Kitty (`sly` eyes, existing free cat mouth), Vampire (existing free eyes,
+`fangs` mouth), Zombie (`cross` eyes and `sewn` mouth). One completion opens the
+bundle's exclusive components permanently. Free/owned components are never
+charged again. Ordinary, happy, sleepy, angry and surprised expressions remain
+free. These four bundles join the 18 optional catalog items above.
+
+Implementation contract:
+- Four free places for fresh saves; imported pre-update V3/V2 retain capacity and
+  the entire previously free catalog. Missing legacy entitlement flags in old V3
+  mean full legacy catalog access, while freshly created saves explicitly opt out.
+- `squishy.collection.v1` is the atomic manifest; copy-on-write `squishy.toy.*`
+  records contain version-tagged gzip/base64 or smaller plain JSON. The original
+  V3 bytes remain a recovery copy and are not updated on every edit. Saving one
+  toy serializes that toy and the small manifest, without serializing other art.
+- Manifest commits last; failed writes discard staged records and preserve the
+  previous manifest. A failed migration leaves old V3 usable. Invalid committed
+  manifests are reported instead of silently resetting the collection.
+- Only nearby card canvases retain their 512px raster; rendering is scheduled one
+  card per frame. Far cards release buffers, including idle-reaction eligibility.
+- A single unresolved catalog preview has visible Open/Remove controls. Ordinary
+  Save does not trigger ads, and cannot commit an unowned preview. Removing it
+  preserves unrelated paint/detail work and rebases undo/redo to avoid resurrecting
+  a locked choice. Resumable onboarding drafts exclude unowned previews.
+- Capacity grants use an idempotent target capacity, without adding unbounded
+  reward IDs to the old 64-ID list. A pending earned-reward journal replays failed
+  commits before another ad. Before showing an ad, reserve 128 KiB of storage;
+  release it for the journal/manifest on earning. This checks current writable
+  headroom, not a guarantee that arbitrary future artwork fits.
+- Interstitial eligibility uses explicit return after a save or at least 15 seconds
+  in Squeeze; initial grace 120s and interval 150s remain tuning defaults. Any
+  rewarded attempt suppresses interstitials for the following 150 seconds.
+- API-controlled banners are opt-in via `VITE_STICKY_BANNER_CONTROL=1`, only after
+  the Console's API visibility setting is verified. When enabled, the existing
+  adapter hides banners in craft and requests them in Library/Squeeze. The actual
+  Console configuration and genuine hosted banner fit remain release acceptance.

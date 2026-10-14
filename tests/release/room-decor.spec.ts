@@ -1,18 +1,20 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createSandboxDraft } from '../../src/sandbox/types';
 
 test('room choices persist, cancel rolls back and toy saves stay unchanged', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await returningPlayer(page);
   await page.goto('/squishy-squishes/');
-  await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
+  await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), {
     ...createDefaultSaveV3(), library: [{ ...createSandboxDraft(), id: 'room-decor', shapeId: 'paw', createdAt: 1700000000000 }], totalCrafts: 1,
   });
   await page.reload();
   await expect(page.locator('[data-library-table-ready]')).toHaveAttribute('data-library-table-ready', 'true');
-  const toySave = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+  const toySave = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
   await page.locator('[data-room-edit-open]').click();
   await page.locator('[data-room-theme="12"]').click();
   await page.locator('[data-room-editor-tab="decor"]').click();
@@ -34,7 +36,7 @@ test('room choices persist, cancel rolls back and toy saves stay unchanged', asy
   await page.locator('[data-room-edit-cancel]').click();
   await expect(page.locator('[data-room-prop]')).toHaveCount(2);
   expect(await page.evaluate(() => localStorage.getItem('squishy.room.v1'))).toBe(savedRoom);
-  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(toySave);
+  expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(toySave);
 });
 
 test('failed item loading leaves a usable room and retries before selection', async ({ page }) => {

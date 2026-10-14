@@ -1,6 +1,7 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { test, expect } from '@playwright/test';
 import { createEmptyDecorDocument, decodeDecorDocument, encodeDecorDocument } from '../../src/sandbox/decor';
-import { createDefaultSaveV3, decodeSaveStateV3, encodeSaveStateV3 } from '../../src/platform/saveV3';
+import {decodeSaveStateV3,encodeSaveStateV3} from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
 import { DraftHistory } from '../../src/sandbox/draftHistory';
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
@@ -32,7 +33,7 @@ for(const viewport of [{width:390,height:844},{width:568,height:320}]) test(`mul
   await page.setViewportSize(viewport);await page.emulateMedia({reducedMotion:'reduce'});
   await page.goto('/squishy-squishes/?roomReview=0');
   const state={...createDefaultSaveV3(),library:[{...createSandboxDraft(),id:'edit-rich',createdAt:1700000000000,decor:{...createEmptyDecorDocument(),eyes:'dot',mouth:'smile',accessory:'bow'}}],totalCrafts:1};
-  await page.evaluate(value=>localStorage.setItem('squishy.save.v3',JSON.stringify(value)),state);await page.reload();
+  await page.evaluate(value=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(value))),state);await page.reload();
   await page.locator('[data-library-play-id="edit-rich"]').click();await page.locator('[data-action="edit-saved"]').click();
   await page.locator('button[data-decor-section="accessory"]').click(); await page.locator('[data-decor-accessory="crown"]').click();
   await expect(page.locator('[data-accessory-index="1"]')).toBeVisible();
@@ -48,7 +49,7 @@ for(const viewport of [{width:390,height:844},{width:568,height:320}]) test(`mul
   await page.locator('[data-object="face"]').click();await page.locator('[data-object-control="scale"]').fill('0.75');await page.locator('[data-object-control="scale"]').dispatchEvent('change');
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');
-  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!).library[0]);
+  const saved=await page.evaluate((__collection) => (__collection.library[0]), await readCollection(page));
   const decoded=decodeSaveStateV3({...createDefaultSaveV3(),library:[saved],totalCrafts:1});
   expect(decoded.library[0]!.decor.accessories).toHaveLength(3);expect(decoded.library[0]!.decor.face?.s).toBe(.75);
   await page.reload();await page.locator('[data-library-play-id="edit-rich"]').click();await expect(page.locator('[data-accessory-index="2"]')).toBeVisible();
@@ -62,7 +63,7 @@ test('accessory colours retain soft alpha, and mirrored pieces preserve the refl
   const toy = { ...createSandboxDraft(), id: 'colour-proof', createdAt: 1700000000000,
     appearance: { v: 1, strokes: [createBodyFillStroke(0x88bbcc)], mixins: [] },
     decor: { ...createEmptyDecorDocument(), accessory: 'handbag' } };
-  await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)),
+  await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))),
     { ...createDefaultSaveV3(), library: [toy], totalCrafts: 1 });
   await page.reload(); await page.locator('[data-library-play-id="colour-proof"]').click();
   await page.locator('[data-action="edit-saved"]').click();
@@ -94,7 +95,7 @@ test('accessory colours retain soft alpha, and mirrored pieces preserve the refl
   expect(difference / (180 * 120)).toBeLessThan(2);
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  const saved = decodeSaveStateV3(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!))).library[0]!;
+  const saved = decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library[0]!;
   expect(saved.decor.accessories?.[1]?.mirrored).toBe(true);
   expect(saved.decor.accessories?.[1]?.color).toBe(0xffcea8);
 });

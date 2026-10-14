@@ -29,7 +29,7 @@ export const installReleaseSession = (
     {
       initialGraceMs: 120_000,
       minIntervalMs: 150_000,
-      minActionsBetweenRequests: 3,
+      minActionsBetweenRequests: 1,
     },
   );
   gate.markReady();
@@ -47,6 +47,7 @@ export const installReleaseSession = (
 
   let disposed = false;
   let previousStage = currentStage();
+  let previousStageAt = performance.now();
   let collectionOpen = legacyCollection ? !legacyCollection.hidden : false;
   let completedCrafts = 0;
   let pendingCompletedSaveActions = 0;
@@ -70,6 +71,7 @@ export const installReleaseSession = (
       || runtime.kind !== 'yandex'
       || adInFlight
       || !isNaturalBreak()
+      || performance.now() - Number(root.dataset.lastRewardAt ?? -Infinity) < 150_000
       || eligibleActions < 1
     ) return;
 
@@ -99,7 +101,23 @@ export const installReleaseSession = (
     }
   };
 
+  // Enable only after the Console's API-controlled banner option is verified.
+  let bannerDesired: boolean | null = null;
+  let bannerQueue = Promise.resolve();
+  const syncBanner = (): void => {
+    if (runtime.kind !== 'yandex' || import.meta.env.VITE_STICKY_BANNER_CONTROL !== '1') return;
+    const visible = ['library', 'squeeze'].includes(currentStage());
+    if (bannerDesired === visible) return;
+    bannerDesired = visible;
+    bannerQueue = bannerQueue.then(async () => {
+      if (disposed || bannerDesired !== visible) return;
+      const result = await runtime.ads.setStickyBannerVisible(visible);
+      runtime.analytics.track('banner_visibility_result', { requested: visible, showing: result.isShowing });
+    }).catch(error => console.error('[squishy:banner]', error));
+  };
+  syncBanner();
   const handleStageChange = (): void => {
+    syncBanner();
     const stage = currentStage();
     if (stage === previousStage) return;
 
@@ -118,9 +136,11 @@ export const installReleaseSession = (
       }
 
       const enteredLibrary = stage === 'library' && previousStage !== 'library';
-      const eligibleActions = enteredLibrary ? pendingCompletedSaveActions : 0;
+      const meaningfulSqueeze = previousStage === 'squeeze' && performance.now() - previousStageAt > 15_000;
+      const eligibleActions = enteredLibrary && (pendingCompletedSaveActions > 0 || meaningfulSqueeze) ? 1 : 0;
       if (enteredLibrary) pendingCompletedSaveActions = 0;
       previousStage = stage;
+      previousStageAt = performance.now();
       if (eligibleActions > 0) void showInterstitialIfEligible(eligibleActions);
       return;
     }

@@ -1,7 +1,8 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
 import { createAppearanceStroke, createMixInPlacement, decodeAppearancePoints, estimateAppearanceBytes } from '../../src/sandbox/appearance';
 import { createStickerPlacement, MAX_DECOR_STICKERS } from '../../src/sandbox/decor';
-import { createDefaultSaveV3, decodeSaveStateV3, encodeSaveStateV3 } from '../../src/platform/saveV3';
+import {decodeSaveStateV3,encodeSaveStateV3} from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
 
 const points = Array.from({ length: 800 }, (_, i) => ({ u: .4 + (i % 2) * .2, v: .5 }));
@@ -33,7 +34,7 @@ for (const locale of ['ru-RU', 'en-US']) test.describe(locale, () => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/squishy-squishes/?roomReview=0');
-    await page.evaluate(state => localStorage.setItem('squishy.save.v3', JSON.stringify(state)), encodeSaveStateV3({ ...createDefaultSaveV3(), library: [richToy] }));
+    await page.evaluate(state => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(state))), encodeSaveStateV3({ ...createDefaultSaveV3(), library: [richToy] }));
     await page.reload();
     await page.locator('[data-library-play-id="rich-toy"]').click();
     await page.locator('[data-action="edit-saved"]').click();
@@ -69,7 +70,7 @@ for (const locale of ['ru-RU', 'en-US']) test.describe(locale, () => {
     await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
     await page.locator('[data-action="save"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'squeeze');
-    const after = decodeSaveStateV3(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!)));
+    const after = decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page)));
     expect(after.library[0]!.appearance.strokes).toHaveLength(1002);
     expect(decodeAppearancePoints(after.library[0]!.appearance.strokes.at(-1)!.p).length).toBeGreaterThan(320);
     expect(after.library[0]!.decor.stickers).toHaveLength(128);

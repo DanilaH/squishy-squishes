@@ -1,9 +1,10 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import {expect, test} from '@playwright/test';
 import manifest from '../../src/sandbox/qualityArtManifest.json' with {type: 'json'};
 import {ACCESSORY_IDS, STICKER_IDS, createStickerPlacement} from '../../src/sandbox/decor';
 import {MIXIN_IDS, createMixInPlacement, createBodyFillStroke} from '../../src/sandbox/appearance';
 import {createSandboxDraft} from '../../src/sandbox/types';
-import {createDefaultSaveV3, decodeSaveStateV3} from '../../src/platform/saveV3';
+import {decodeSaveStateV3} from '../../src/platform/saveV3';
 import {getShape} from '../../src/game/shapes';
 import {initialAccessoryPlacements} from '../../src/sandbox/freeCraft';
 import sharp from 'sharp';
@@ -64,7 +65,7 @@ test(`face-zone art refinement ${locale} ${viewport.width}`, async ({browser, ba
   const context = await browser.newContext({baseURL, locale, viewport, reducedMotion: 'reduce'});
   const page = await context.newPage();
   try {
-    await page.addInitScript(state => localStorage.setItem('squishy.save.v3', JSON.stringify(state)), state);
+    await page.addInitScript(state => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(state))), state);
     await page.goto(`/squishy-squishes/${locale === 'en-US' ? '?artFormat=webp' : ''}`);
     await page.locator('[data-room-collection]').click();
     for (const id of ['headphones', 'eye-patch']) {
@@ -104,7 +105,7 @@ test(`face-zone art refinement ${locale} ${viewport.width}`, async ({browser, ba
 test('new paired art selection tracks scale and rotation and retains the edit after reload', async ({page}, info) => {
   await page.setViewportSize({width: 390, height: 844});
   await page.emulateMedia({reducedMotion: 'reduce'});
-  await page.addInitScript(state => {if (!localStorage.getItem('squishy.save.v3')) localStorage.setItem('squishy.save.v3', JSON.stringify(state));}, state);
+  await page.addInitScript(state => {if (!localStorage.getItem('squishy.save.v3')) (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(state)));}, state);
   await page.goto('/squishy-squishes/'); await page.locator('[data-room-collection]').click();
   const play = page.locator('[data-library-play-id="wings"]'); await play.scrollIntoViewIfNeeded(); await play.click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
@@ -121,7 +122,7 @@ test('new paired art selection tracks scale and rotation and retains the edit af
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   await page.reload();
-  const saved = decodeSaveStateV3(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!)));
+  const saved = decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page)));
   const wings = saved.library.find(toy => toy.id === 'wings')!.decor.accessories!;
   expect(wings).toHaveLength(2); expect(wings[0]!.s).toBe(1.25);
   expect(wings[0]!.r).toBeCloseTo(65 / 180 * Math.PI, 6);
@@ -140,7 +141,7 @@ for (const [locale, viewport] of [
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => {if (message.text().includes('[squishy:quality-art]')) errors.push(message.text());});
   try {
-    await page.addInitScript(state => {if (!localStorage.getItem('squishy.save.v3')) localStorage.setItem('squishy.save.v3', JSON.stringify(state));}, state);
+    await page.addInitScript(state => {if (!localStorage.getItem('squishy.save.v3')) (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(state)));}, state);
     await page.goto(`/squishy-squishes/${locale === 'en-US' ? '?artFormat=webp' : ''}`);
     await expect(page.locator('[data-library-table-ready]')).toHaveAttribute('data-library-table-ready', 'true');
     const requests = await page.evaluate(() => performance.getEntriesByType('resource').map(entry => entry.name));
@@ -191,7 +192,7 @@ for (const [locale, viewport] of [
       await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view', 'collection');
     }
     await page.reload();
-    expect(decodeSaveStateV3(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!))).library).toEqual(decodeSaveStateV3(state).library);
+    expect(decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library).toEqual(decodeSaveStateV3(state).library);
     expect(errors).toEqual([]);
   } finally {await context.close();}
 });

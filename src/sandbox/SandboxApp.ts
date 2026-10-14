@@ -1,3 +1,5 @@
+import { CatalogPreview } from './catalogPreview';
+import type { CatalogPort } from '../platform/catalogOwnership';
 import { PAINT_PATTERNS, createPaintPattern } from './paintPatterns';
 import { drawFaceForeground } from './faceForeground';
 import { LIGHT_PRESETS, type CraftLight } from './craftLighting';
@@ -69,6 +71,7 @@ type PaintTool = 'paint' | 'erase' | 'fill';
 type DecorSection = 'face' | 'stickers' | 'accessory' | 'objects';
 
 export interface SandboxAppOptions {
+  readonly monetization?: CatalogPort | undefined;
   readonly language: SandboxLanguage;
   readonly muted: boolean;
   readonly savedSquishy: SavedSquishy | null;
@@ -630,6 +633,11 @@ export class SandboxApp {
       begin: () => this.draftHistory.begin(this.draft),
       end: () => { this.draftHistory.end(this.draft); this.updateHistoryUi(); },
     });
+    if(options.monetization) this.catalogPreview = new CatalogPreview(this.root, options.monetization, options.language === 'ru', () => this.draft, draft => {
+      this.draftHistory.restoring = true; this.draft = draft; this.draftHistory.restoring = false;
+      this.applyDraftToRenderer(); this.replayAndUpload(); this.updateDecorUi(); this.freeEditor.refresh();
+      this.updatePressed('[data-shape]', 'shape', draft.shapeId); this.updatePressed('[data-material]', 'material', draft.materialId);this.updateHistoryUi();
+    }, this.draftHistory, () => this.activityBlocked || this.saving);
     this.bindEvents();
     if (this.savedSquishy) this.loadSavedSquishy(this.savedSquishy);
     else this.applyDraftToRenderer();
@@ -640,7 +648,8 @@ export class SandboxApp {
     this.freeEditor.refresh();
   }
 
-  public getDraftSnapshot(): SandboxDraft { return structuredClone(this.draft); }
+  private catalogPreview?: CatalogPreview;
+  public getDraftSnapshot(): SandboxDraft { return structuredClone(this.catalogPreview?.snapshot() ?? this.draft); }
 
   public setActivityBlocked(blocked: boolean): void {
     if (this.disposed) return;
@@ -658,6 +667,7 @@ export class SandboxApp {
     if (this.disposed) return;
     this.previewStickerAt(null); this.roomReaction?.cancel(); this.roomLight?.cancel();
     this.disposed = true;
+    this.catalogPreview?.dispose();
     if (this.uploadFrame !== 0) cancelAnimationFrame(this.uploadFrame);
     if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);
     if (this.rigidMixinFrame !== 0) cancelAnimationFrame(this.rigidMixinFrame);
@@ -1703,7 +1713,7 @@ export class SandboxApp {
   }
 
   private async saveDraft(): Promise<void> {
-    if (this.saving) return;
+    if (this.saving || this.catalogPreview?.hasPending) return;
     delete this.shell.dataset.saveFailed;
     this.saving = true;
     this.syncInteractivity();
@@ -2317,6 +2327,7 @@ export class SandboxApp {
     for (const button of this.root.querySelectorAll<HTMLButtonElement>('[data-action="draft-redo"]')) button.disabled = !this.draftHistory.canRedo;
   }
   private restoreDraftHistory(redo: boolean): void {
+    if(this.catalogPreview?.hasPending) { this.catalogPreview.cancel(); return; }
     this.freeEditor.end(); this.draftHistory.end(this.draft);
     const draft = redo ? this.draftHistory.redo(this.draft) : this.draftHistory.undo(this.draft);
     if (!draft) return;

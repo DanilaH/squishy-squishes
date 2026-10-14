@@ -1,5 +1,6 @@
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
 test('material release tones differ, stay quiet and respect mute', async ({ page }) => {
@@ -35,7 +36,7 @@ test('material release tones differ, stay quiet and respect mute', async ({ page
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/squishy-squishes/?roomReview=0');
-  await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
+  await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), {
     ...createDefaultSaveV3(), totalCrafts: 3,
     library: ['marshmallow', 'jelly', 'pearl'].map((materialId, i) => ({
       id: materialId, createdAt: 1700000000000 + i, shapeId: 'mochi', materialId,

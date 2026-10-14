@@ -1,5 +1,6 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import {expect,test} from '@playwright/test';
-import {createDefaultSaveV3,decodeSaveStateV3} from '../../src/platform/saveV3';
+import {decodeSaveStateV3} from '../../src/platform/saveV3';
 import {createSandboxDraft} from '../../src/sandbox/types';
 import {createStickerPlacement} from '../../src/sandbox/decor';
 import {SHAPES,isPointInsideShape,getShape,getShapeReliefTransform} from '../../src/game/shapes';
@@ -32,7 +33,7 @@ test('all canonical molds stay finite, centered and touchable; corrected details
 for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:390,height:844},{width:1440,height:900}])test(`quality art in catalog, scene, squeeze and reload ${locale} ${viewport.width}`,async({browser,baseURL},info)=>{
  test.setTimeout(120000);const context=await browser.newContext({baseURL,locale,viewport,reducedMotion:'reduce'});const page=await context.newPage();const errors:string[]=[],warnings:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.text().includes('[squishy:quality-art]'))warnings.push(m.text());});
  try{
-  await page.addInitScript(save=>{if(!localStorage.getItem('squishy.save.v3'))localStorage.setItem('squishy.save.v3',JSON.stringify(save));},save);
+  await page.addInitScript(save=>{if(!localStorage.getItem('squishy.save.v3'))(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save)));},save);
   await page.goto(locale==='en-US'?'/squishy-squishes/?artFormat=webp':'/squishy-squishes/');await expect(page.locator('[data-library-table-ready]')).toHaveAttribute('data-library-table-ready','true');
   await page.locator('[data-room-collection]').click();await page.screenshot({path:info.outputPath('collection.png')});
   for(const id of ['cupcake','watermelon','headphones','butterfly','cherry','details']){
@@ -54,24 +55,24 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:390,height:8
    }
    await page.locator('[data-action="home"]').click();await expect(page.locator('[data-room-view]')).toHaveAttribute('data-room-view','collection');
   }
-  await page.reload();expect(decodeSaveStateV3(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!))).library).toEqual(decodeSaveStateV3(save).library);
+  await page.reload();expect(decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library).toEqual(decodeSaveStateV3(save).library);
   expect(errors).toEqual([]);expect(warnings).toEqual([]);
  }finally{await context.close();}
 });
 
 test('new art failure retains usable procedural accessories and saved toy data',async({page})=>{
- await page.addInitScript(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),save);
+ await page.addInitScript(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),save);
  await page.route('**/assets/art-quality/*',r=>r.abort());await page.goto('/squishy-squishes/');await page.locator('[data-room-collection]').click();await page.locator('[data-library-play-id="headphones"]').click();
  await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');await expect(page.locator('[data-sandbox-accessory]')).toHaveAttribute('data-accessory-id','headphones');
  expect(await page.locator('[data-sandbox-accessory]').evaluate(el=>{const c=el as HTMLCanvasElement;return c.getContext('2d')!.getImageData(0,0,c.width,c.height).data.some((n,i)=>i%4===3&&n>100);})).toBe(true);
- expect(decodeSaveStateV3(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!))).library).toEqual(decodeSaveStateV3(save).library);
+ expect(decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library).toEqual(decodeSaveStateV3(save).library);
 });
 
 test('review all fifteen live mold silhouettes',async({page},info)=>{
  test.setTimeout(150000);await page.setViewportSize({width:1440,height:900});await page.emulateMedia({reducedMotion:'reduce'});
  const library=SHAPES.map((shape,i)=>({...draft,shapeId:shape.id,id:shape.id,createdAt:1700000000000+i}));
  const state={...createDefaultSaveV3(),libraryCapacity:24,library,totalCrafts:library.length};decodeSaveStateV3(state);
- await page.addInitScript(state=>localStorage.setItem('squishy.save.v3',JSON.stringify(state)),state);
+ await page.addInitScript(state=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(state))),state);
  await page.goto('/squishy-squishes/');await page.locator('[data-room-collection]').click();
  for(const shape of SHAPES){
   const play=page.locator(`[data-library-play-id="${shape.id}"]`);await play.scrollIntoViewIfNeeded();await play.click();await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
