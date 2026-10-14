@@ -1,3 +1,4 @@
+import { drawQualityArt } from './qualityArt';
 /** Code-native details use the same canvas, light and deformation as existing decor. */
 const TAU = Math.PI * 2;
 const INK = '#503e50';
@@ -37,6 +38,7 @@ export const drawExpandedMouth = (ctx: CanvasRenderingContext2D,id:string,x:numb
   ctx.restore();return true;
 };
 export const drawExpandedSticker = (ctx:CanvasRenderingContext2D,id:string,size:number):boolean => {
+  if ((id==='strawberry'||id==='planet') && drawQualityArt(ctx,id==='planet'?'sticker-planet':'sticker-strawberry',-size*.45,-size*.45,size*.9,size*.9)) return true;
   if(!['candy','donut','strawberry','lightning','flame','skull','planet','eye','ghost'].includes(id))return false;
   ctx.save();ctx.scale(size/40,size/40);ctx.lineWidth=1.6;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle='#715571';
   const fill=(color:string)=>{ctx.fillStyle=color;ctx.fill();ctx.stroke();};

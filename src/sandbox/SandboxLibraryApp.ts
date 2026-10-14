@@ -3,7 +3,7 @@ import type { OnboardingState } from '../platform/onboarding';
 import '../app/styles/screen-polish.css';
 import '../app/styles/collection-vitrine.css';
 import { libraryCraftProps } from '../experiments/phaser/libraryCraftProps';
-import { libraryCraftCameraScale } from './libraryCraftFit';
+import { libraryCraftCameraScale, libraryCraftSeatOffset } from './libraryCraftFit';
 import { mountLibraryPersonality } from './libraryPersonality';
 import type { RoomEditorReview } from './roomEditorReview';
 import { cardPagerMarkup, showCardPage } from './cardPages';
@@ -401,7 +401,7 @@ export class SandboxLibraryApp {
     const slots = count >= this.libraryCapacity ? '' : `<button class="library-showcase-slot" type="button" data-library-new aria-label="${this.copy.newSquishy}"><span aria-hidden="true">+</span><small>${ru ? 'Создать' : 'Create'}</small></button>`;
 
     this.root.innerHTML = `
-      <main class="sandbox-library-shell is-library-hall room-library${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-library data-stage="library" data-room-view="${this.roomView}" data-room-managing="${this.collectionManaging}" data-collection-full="${count >= this.libraryCapacity}" data-library-count="${count}" data-library-capacity="${this.libraryCapacity}">
+      <main class="sandbox-library-shell is-library-hall room-library${this.activityBlocked ? ' is-blocked' : ''}" data-sandbox-library data-stage="library" data-room-view="${this.roomView}" data-room-managing="${this.collectionManaging}" data-collection-full="${count >= this.libraryCapacity}" style="--library-shape-seat:${selected ? libraryCraftSeatOffset(getShape(selected.shapeId)) : 0}" data-library-count="${count}" data-library-capacity="${this.libraryCapacity}">
         <header class="sandbox-library-topbar"><strong>${this.copy.studio}</strong><button class="sandbox-sound" type="button" data-library-mute aria-pressed="${this.muted}">${this.muted ? this.copy.muted : this.copy.sound}</button></header>
         <section class="sandbox-library-heading"><div><span class="sandbox-library-status">${count} / ${this.libraryCapacity}</span>${collection && count >= this.libraryCapacity ? reward : ''}<h1>${collection ? (ru ? 'КОЛЛЕКЦИЯ' : 'COLLECTION') : (ru ? 'МОЯ КОМНАТА' : 'MY ROOM')}</h1></div><div class="sandbox-library-heading__actions"><button class="sandbox-library-new" type="button" data-library-new>${this.copy.newSquishy}</button></div></section>
         <section class="library-showcase room-library-stage" data-library-hall-stage>

@@ -1,0 +1,62 @@
+{
+  "cherry": {
+    "file": "cherry",
+    "hasAvif": true,
+    "crop": [
+      49,
+      24,
+      415,
+      464
+    ]
+  },
+  "filler-heart": {
+    "file": "filler-heart",
+    "hasAvif": true,
+    "crop": [
+      12,
+      25,
+      104,
+      78
+    ]
+  },
+  "sticker-planet": {
+    "file": "sticker-planet",
+    "hasAvif": true,
+    "crop": [
+      24,
+      80,
+      336,
+      225
+    ]
+  },
+  "sticker-strawberry": {
+    "file": "sticker-strawberry",
+    "hasAvif": true,
+    "crop": [
+      24,
+      24,
+      336,
+      336
+    ]
+  },
+  "butterfly": {
+    "file": "butterfly",
+    "hasAvif": true,
+    "crop": [
+      24,
+      98,
+      464,
+      317
+    ]
+  },
+  "headphones": {
+    "file": "headphones",
+    "hasAvif": true,
+    "crop": [
+      24,
+      57,
+      464,
+      398
+    ]
+  }
+}

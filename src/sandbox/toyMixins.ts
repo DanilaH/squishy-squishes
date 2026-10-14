@@ -1,7 +1,9 @@
+import { drawQualityArt } from './qualityArt';
 import type { MixInId } from './appearance';
 import { drawPearlStar } from './pearlStars';
 
 const TAU = Math.PI * 2;
+const DEFAULT_HEART_COLORS: readonly [string, string, string] = ['#ffe5e7', '#fda3c8', '#d660a0'];
 const heart = (ctx: CanvasRenderingContext2D, r: number): void => {
   ctx.beginPath(); ctx.moveTo(0, r * .82);
   ctx.bezierCurveTo(-r * 1.2, r * .1, -r * .85, -r * .92, 0, -r * .28);
@@ -19,9 +21,10 @@ const sphere = (ctx: CanvasRenderingContext2D, r: number, foam: boolean): void =
 };
 
 /** Same small material drawing in the tray, UV bake and transient placement cue. */
-export const drawToyMixIn = (ctx: CanvasRenderingContext2D, id: MixInId, r: number, variation = 0, depth = 0, heartColors: readonly [string, string, string] = ['#ffe5e7', '#fda3c8', '#d660a0']): void => {
+export const drawToyMixIn = (ctx: CanvasRenderingContext2D, id: MixInId, r: number, variation = 0, depth = 0, heartColors: readonly [string, string, string] = DEFAULT_HEART_COLORS): void => {
   if (id === 'stars') { drawPearlStar(ctx, r, depth); return; }
   ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.globalAlpha *= 1 - depth * .25;
+  if (id === 'hearts' && heartColors === DEFAULT_HEART_COLORS && drawQualityArt(ctx, 'filler-heart', -r, -r, r*2, r*2)) { ctx.restore(); return; }
   if (id === 'pearls' || id === 'foam') sphere(ctx, r, id === 'foam');
   else if (id === 'hearts') {
     ctx.translate(0, r * .1); heart(ctx, r); ctx.fillStyle = heartColors[2]; ctx.fill(); ctx.translate(0, -r * .1);

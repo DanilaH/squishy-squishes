@@ -158,12 +158,14 @@ const createPawBoundary = (): readonly ShapePoint[] => {
 };
 
 type CubicSegment = readonly [ShapePoint, ShapePoint, ShapePoint, ShapePoint];
-const sampleCubicBoundary = (segments: readonly CubicSegment[]): readonly ShapePoint[] =>
-  normalizeBoundary(segments.flatMap(([a, b, c, d]) => Array.from({ length: 20 }, (_, index) => {
+const sampleCubicPoints = (segments: readonly CubicSegment[]): readonly ShapePoint[] =>
+  segments.flatMap(([a, b, c, d]) => Array.from({ length: 20 }, (_, index) => {
     const t = index / 20, s = 1 - t;
     return { x: s ** 3 * a.x + 3 * s * s * t * b.x + 3 * s * t * t * c.x + t ** 3 * d.x,
       y: s ** 3 * a.y + 3 * s * s * t * b.y + 3 * s * t * t * c.y + t ** 3 * d.y };
-  })));
+  }));
+const sampleCubicBoundary = (segments: readonly CubicSegment[]): readonly ShapePoint[] =>
+  normalizeBoundary(sampleCubicPoints(segments));
 
 const createDumplingBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
   [{ x: -.12, y: .69 }, { x: -.26, y: .84 }, { x: -.15, y: .98 }, { x: 0, y: .98 }],
@@ -205,21 +207,36 @@ const createIceCreamBoundary = (): readonly ShapePoint[] => sampleCubicBoundary(
   [{x:-.58,y:.08},{x:-.72,y:-.03},{x:-1,y:.06},{x:-.87,y:.26}],
   [{x:-.87,y:.26},{x:-.93,y:.72},{x:-.55,y:1.02},{x:0,y:.93}],
 ]);
-const createCupcakeBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
-  [{x:0,y:.92},{x:.30,y:.99},{x:.58,y:.81},{x:.59,y:.61}],
-  [{x:.59,y:.61},{x:.89,y:.65},{x:1,y:.22},{x:.83,y:.09}],
-  [{x:.83,y:.09},{x:.79,y:-.14},{x:.66,y:-.64},{x:.55,y:-.75}],
-  [{x:.55,y:-.75},{x:.39,y:-.84},{x:-.39,y:-.84},{x:-.55,y:-.75}],
-  [{x:-.55,y:-.75},{x:-.66,y:-.64},{x:-.79,y:-.14},{x:-.83,y:.09}],
-  [{x:-.83,y:.09},{x:-1,y:.22},{x:-.89,y:.65},{x:-.59,y:.61}],
-  [{x:-.59,y:.61},{x:-.58,y:.81},{x:-.30,y:.99},{x:0,y:.92}],
+// Mold artwork uses these same pre-normalized coordinates (see relief transform).
+const cupcakePoints = sampleCubicPoints([
+  [{x:0,y:.94},{x:.36,y:.94},{x:.58,y:.79},{x:.62,y:.48}],
+  [{x:.62,y:.48},{x:.90,y:.52},{x:1,y:.26},{x:.89,y:.14}],
+  [{x:.89,y:.14},{x:.91,y:.03},{x:.84,y:-.03},{x:.77,y:-.02}],
+  [{x:.77,y:-.02},{x:.72,y:-.30},{x:.65,y:-.65},{x:.55,y:-.76}],
+  [{x:.55,y:-.76},{x:.34,y:-.84},{x:-.34,y:-.84},{x:-.55,y:-.76}],
+  [{x:-.55,y:-.76},{x:-.65,y:-.65},{x:-.72,y:-.30},{x:-.77,y:-.02}],
+  [{x:-.77,y:-.02},{x:-.84,y:-.03},{x:-.91,y:.03},{x:-.89,y:.14}],
+  [{x:-.89,y:.14},{x:-1,y:.26},{x:-.90,y:.52},{x:-.62,y:.48}],
+  [{x:-.62,y:.48},{x:-.58,y:.79},{x:-.36,y:.94},{x:0,y:.94}],
 ]);
-const createWatermelonBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
-  [{x:-.88,y:.54},{x:-.99,y:.54},{x:-.99,y:.39},{x:-.90,y:.10}],
-  [{x:-.90,y:.10},{x:-.65,y:-.80},{x:.65,y:-.80},{x:.90,y:.10}],
-  [{x:.90,y:.10},{x:.99,y:.39},{x:.99,y:.54},{x:.88,y:.54}],
-  [{x:.88,y:.54},{x:.45,y:.58},{x:-.45,y:.58},{x:-.88,y:.54}],
+const watermelonPoints = sampleCubicPoints([
+  [{x:-.90,y:.45},{x:-.925,y:.45},{x:-.94,y:.435},{x:-.94,y:.41}],
+  [{x:-.94,y:.41},{x:-.92,y:-.08},{x:-.51,y:-.49},{x:0,y:-.49}],
+  [{x:0,y:-.49},{x:.51,y:-.49},{x:.92,y:-.08},{x:.94,y:.41}],
+  [{x:.94,y:.41},{x:.94,y:.435},{x:.925,y:.45},{x:.90,y:.45}],
+  [{x:.90,y:.45},{x:.30,y:.45},{x:-.30,y:.45},{x:-.90,y:.45}],
 ]);
+const createCupcakeBoundary = (): readonly ShapePoint[] => normalizeBoundary(cupcakePoints);
+const createWatermelonBoundary = (): readonly ShapePoint[] => normalizeBoundary(watermelonPoints);
+
+/** Keep mold relief in the same normalized coordinates as the deformable skin. */
+export const getShapeReliefTransform = (id: ShapeId): { x: number; y: number; scale: number } => {
+  const points = id === 'cupcake' ? cupcakePoints : id === 'watermelon' ? watermelonPoints : null;
+  if (!points) return { x: 0, y: 0, scale: 1 };
+  const xs = points.map(p => p.x), ys = points.map(p => p.y);
+  const left = Math.min(...xs), right = Math.max(...xs), bottom = Math.min(...ys), top = Math.max(...ys);
+  return { x: (left + right) / 2, y: (bottom + top) / 2, scale: 1.88 / Math.max(right-left, top-bottom) };
+};
 const createMochiAnimalBoundary = (bunny: boolean): readonly ShapePoint[] => sampleCubicBoundary([
   [{x:-.77,y:.18},{x:-.83,y:.49},{x:-.69,y:bunny ? 1.18 : .79},{x:-.49,y:bunny ? 1.18 : .72}],
   [{x:-.49,y:bunny ? 1.18 : .72},{x:-.31,y:bunny ? 1.18 : .75},{x:-.25,y:.66},{x:-.23,y:.50}],
