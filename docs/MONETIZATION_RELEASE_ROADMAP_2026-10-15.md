@@ -1,9 +1,9 @@
 # Release monetization and scalable collection — 15 October 2026
 
-Status: roadmap recorded at the owner's request. No runtime implementation or
-release is established by this document. The collection work and monetization
-direction were agreed in chat; the exact catalog split below is the recommendation
-presented for review, not an already approved content restriction.
+Status: implementation on `feat/release-monetization`, draft PR #102. The owner
+approved the complete creation/preview/unlock flow on 15 October. Runtime changes
+are implemented; local regression and CI verification are in progress. Publication
+and genuine hosted Yandex banner acceptance are separate outstanding steps.
 
 This is the current forward roadmap. Older recipe/economy and S5 documents are
 historical evidence, not the current release contract.
@@ -26,7 +26,7 @@ historical evidence, not the current release contract.
   Keep a first-session grace period and cooldown; exact cadence remains a tuning
   parameter. A timer alone never interrupts active craft or squeeze input.
 
-## Recommended first-release catalog
+## First-release catalog
 
 One rewarded completion unlocks **one named catalog item forever**, reusable on
 all subsequent toys. A paired accessory unlocks both pieces together. Copies,
@@ -37,11 +37,12 @@ recoloring, rotation, mirroring and later reuse do not cost more views.
 | Shapes | `soft-square`, `heart`, `mochi`, `peach`, `paw`, `dumpling`, `bun`, `donut` | `mushroom`, `strawberry`, `ice-cream`, `cupcake`, `watermelon`, `mochi-cat`, `mochi-bunny` |
 | Materials | `soft`, `jelly`, `marshmallow` | `holo`, `pearl`, `chrome` |
 | Accessories | `cat-ears`, `bunny-ears`, `horns`, `bow`, `crown`, `glasses`, `petal-flower`, `leaves`, `butterfly`, `cherry`, `heart-patch`, `antennae`, `eye-patch`, `bolt` | `headphones`, `bucket-hat`, `cream`, `handbag`, `wings`, `mushroom-hat`, `witch-hat`, `halo` |
-| Faces, stickers, fillings | All existing items | None in this pass |
+| Faces | `dot`, `happy`, `sleepy`, `angry` eyes; `smile`, `o`, `cat`, `tongue`, `flat` mouths | Love (`sparkling`), Sly Kitty (`sly`), Vampire (`fangs`), Zombie (`cross` + `sewn`) bundles |
+| Stickers and fillings | All existing items | None |
 | Paint, colors, stamps, lighting and editing tools | All existing functions | None |
 | Room items and palettes | All existing room content | None in this pass |
 
-This provides 18 distinct optional openings from existing content, without a new
+This provides 22 distinct optional openings from existing content, without a new
 asset-production task. Strong silhouette, surface and outfit changes are the
 reward hypothesis; conversion is not yet measured. Saved old toys must remain
 renderable/editable with their contents. Define and test legacy ownership before
@@ -97,8 +98,8 @@ reward, unavailable ads and full storage. Test the existing free replacement pat
 
 ## R4 — Content previews and permanent ownership
 
-- Add a shared ownership seam for category/item IDs, initially apply only to the
-  reviewed shapes/materials/accessories. Existing content IDs stay stable.
+- Add a shared ownership seam for category/item IDs, apply to the
+  reviewed shapes/materials/accessories and face bundles. Existing content IDs stay stable.
 - Mark optional items before selection. Preview on the player's real draft;
   confirm opening or restore the prior committed draft without touching history
   or saved ownership incorrectly.
@@ -150,7 +151,7 @@ Official references checked on 14 October:
 - https://yandex.ru/dev/games/doc/ru/concepts/requirements (rewarded §4.5)
 - https://yandex.ru/dev/games/doc/ru/sdk/sdk-player
 
-No implementation, merge, hosted SDK acceptance or publication is claimed here.
+No merge, genuine hosted SDK acceptance or publication is claimed here. See the implementation record below.
 
 ## Authorized implementation — 15 October
 
@@ -165,7 +166,7 @@ Sly Kitty (`sly` eyes, existing free cat mouth), Vampire (existing free eyes,
 `fangs` mouth), Zombie (`cross` eyes and `sewn` mouth). One completion opens the
 bundle's exclusive components permanently. Free/owned components are never
 charged again. Ordinary, happy, sleepy, angry and surprised expressions remain
-free. These four bundles join the 18 optional catalog items above.
+free. These four bundles join the 18 optional shape/material/accessory items above.
 
 Implementation contract:
 - Four free places for fresh saves; imported pre-update V3/V2 retain capacity and
@@ -196,3 +197,11 @@ Implementation contract:
   the Console's API visibility setting is verified. When enabled, the existing
   adapter hides banners in craft and requests them in Library/Squeeze. The actual
   Console configuration and genuine hosted banner fit remain release acceptance.
+
+Validation tracking: initial 25 reward/storage/UI scenarios, six visual comparison
+cases, two exact Yandex-DRAFT bundle cases and eight candidate durability/runtime
+cases passed locally. Broader regressions are still being checked; interrupted
+full-suite attempts are not full passes. Collection stress covers 1000 records,
+failed migration/commit, a crash staging journal, repeated callbacks, quota before
+an ad and replay of an earned reward without another ad. Hosted acceptance remains
+separate from SDK stubs and headless Chromium.

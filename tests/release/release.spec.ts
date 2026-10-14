@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { SHAPES } from '../../src/game/shapes';
 import { expect, test, type Locator, type Page } from '@playwright/test';
@@ -124,6 +125,7 @@ const clearStorageAndReload = async (page: Page): Promise<void> => {
     localStorage.clear();
     sessionStorage.clear();
   });
+  await returningPlayer(page);
   await page.reload();
 };
 
@@ -279,7 +281,7 @@ const createFixtureSave = (count: number, rich = false): SaveStateV3 => ({
   updatedAt: 12_345,
 });
 
-test('Pages production build boots into an empty personal Library and all eight maker shapes remain open', async ({ page }) => {
+test('Returning-player production build keeps the empty Library and full maker catalog open', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(PAGES_URL);

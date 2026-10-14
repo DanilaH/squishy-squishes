@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { test, expect } from '@playwright/test';
 import { decodeSaveStateV3 } from '../../src/platform/saveV3';
@@ -9,6 +10,7 @@ for (const [locale, width, height] of [
   test.setTimeout(90_000);
   const context = await browser.newContext({baseURL,locale,viewport:{width,height},hasTouch:true,reducedMotion:'reduce'});
   const page = await context.newPage();
+  await returningPlayer(page);
   try {
     await page.goto('/squishy-squishes/?roomReview=0'); await page.locator('[data-library-new]').first().click();
     const shell=page.locator('[data-sandbox-app]');

@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
 
@@ -6,6 +7,7 @@ const PAGES_URL = '/squishy-squishes/?roomReview=0';
 const freshMaker = async (page: Page): Promise<ReturnType<Page['locator']>> => {
   await page.goto(PAGES_URL);
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  await returningPlayer(page);
   await page.reload();
   await page.locator('[data-library-new]').first().click();
   const shell = page.locator('[data-sandbox-app]');

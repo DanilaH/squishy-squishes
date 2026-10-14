@@ -19,8 +19,8 @@ The owner-requested monetization and scalable-collection roadmap is
 [`MONETIZATION_RELEASE_ROADMAP_2026-10-15.md`](MONETIZATION_RELEASE_ROADMAP_2026-10-15.md).
 It records the collection/storage prerequisites, four starting places plus one
 per rewarded expansion without a fixed gameplay count ceiling, preview/ownership
-flow and a proposed first-release catalog split. These are planned changes;
-current runtime policy is not proof of their implementation.
+flow and a proposed first-release catalog split. Implementation is in draft PR #102 on `feat/release-monetization`;
+regression/CI verification and hosted acceptance are tracked separately from publication.
 
 ## Current Library follow-up
 

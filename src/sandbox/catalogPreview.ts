@@ -56,7 +56,7 @@ export class CatalogPreview {
       event.stopImmediatePropagation();event.preventDefault();this.restore();return;
     }
     if(this.pending && button.dataset.action === 'save'){
-      event.stopImmediatePropagation();event.preventDefault();this.render();this.bar.querySelector<HTMLButtonElement>('[data-preview-open]')?.focus();
+      event.stopImmediatePropagation();event.preventDefault();this.render(this.ru?'Перед сохранением открой предмет или убери примерку.':'Unlock the item or remove the preview before saving.');this.bar.querySelector<HTMLButtonElement>('[data-preview-open]')?.focus();
     }
     if(this.pending && ['new','edit-saved','exit-confirm','home'].includes(button.dataset.action??''))this.restore();
   };
@@ -81,7 +81,7 @@ export class CatalogPreview {
   private render(message?:string):void{
     if(!this.pending)return;this.bar.hidden=false;this.bar.replaceChildren();
     const label=document.createElement('strong');label.textContent=`${this.ru?'Примерка':'Preview'} · ${this.pending.label}`;this.bar.append(label);
-    const hint=document.createElement('small');hint.textContent=message??(this.ru?'Навсегда, для всех сквишей. Сначала открой или убери примерку.':'Forever, for every squishy. Unlock or remove this preview before saving.');this.bar.append(hint);
+    const hint=document.createElement('small');hint.textContent=message??(this.ru?'Навсегда для всех сквишей.':'Permanent unlock for every squishy.');this.bar.append(hint);
     const open=document.createElement('button');open.type='button';open.dataset.previewOpen='';open.innerHTML=`${ICON}<span>${this.ru?'Открыть за рекламу':'Unlock for an ad'}</span>`;open.disabled=this.busy;
     const restore=document.createElement('button');restore.type='button';restore.dataset.previewRestore='';restore.textContent=this.ru?'Убрать примерку':'Remove preview';restore.disabled=this.busy;
     this.bar.append(open,restore);

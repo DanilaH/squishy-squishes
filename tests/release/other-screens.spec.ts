@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import {test,expect} from '@playwright/test';
 
@@ -84,6 +85,7 @@ for (const locale of ['ru-RU','en-US']) for (const viewport of viewports) test(`
 });
 
 test('desktop Ideas preserve the page anchor across phone resizing', async ({ page }) => {
+  await returningPlayer(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/squishy-squishes/?roomReview=0');
   await page.locator('[data-library-ideas]').click();
