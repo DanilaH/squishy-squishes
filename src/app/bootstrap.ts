@@ -104,9 +104,14 @@ export const bootstrapSquishyApp = async (
   markStartup('saveReady');
 
   const persistSave = async (nextState: typeof saveState): Promise<void> => {
-    await saveRepository.write(nextState);
-    await saveRepository.flush();
-    saveState = nextState;
+    try {
+      await saveRepository.write(nextState);
+      await saveRepository.flush();
+      saveState = nextState;
+    } catch(error) {
+      runtime.analytics.track('collection_write_failed', { count: nextState.library.length, capacity: nextState.libraryCapacity });
+      throw error;
+    }
   };
 
   if (hasS5ShelfExpansion(saveState) && saveState.libraryCapacity < S5_SHELF_EXPANSION_CAPACITY) {
@@ -121,7 +126,7 @@ export const bootstrapSquishyApp = async (
     runtime.activity.setBlocked('reward-transaction', true);
     try {
       const earned = await grants.request(key, onReward => runtime.ads.showRewarded({ rewardId: key, onReward }));
-      runtime.analytics.track('reward_result', { item: key, earned });
+      runtime.analytics.track('reward_result', { item: key, earned, capacity: saveState.libraryCapacity });
       return earned;
     } catch(error) {
       runtime.analytics.track('reward_result', { item: key, earned: false, status: 'storage-or-sdk-error' });
@@ -132,6 +137,9 @@ export const bootstrapSquishyApp = async (
     owns: (key: string) => ownsCatalogItem(saveState, key),
     unlock: requestReward,
     track: (event: string, key: string) => runtime.analytics.track(event, { item: key }),
+  };
+  const trackCatalogUse = (draft: Parameters<typeof createSavedSquishy>[0], mode: string): void => {
+    for (const item of draftLockedKeys(draft)) runtime.analytics.track('catalog_use', { item, mode, legacy: saveState.legacyCatalogAccess === true });
   };
   const assertOwned = (draft: Parameters<typeof createSavedSquishy>[0]): void => {
     if (draftLockedKeys(draft).some(key => !monetization.owns(key))) throw new Error('Resolve the free preview before saving.');
@@ -188,6 +196,7 @@ export const bootstrapSquishyApp = async (
       let nextState = appendSavedSquishy(saveState, savedSquishy);
       nextState = completeMatchingIdea(nextState, draft, ideaId);
       await persistSave(nextState);
+      trackCatalogUse(draft, 'create');
       return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
     },
     onReplaceSquishy: async (targetId, draft, ideaId) => {
@@ -196,12 +205,14 @@ export const bootstrapSquishyApp = async (
       let nextState = replaceSavedSquishy(saveState, targetId, savedSquishy);
       nextState = completeMatchingIdea(nextState, draft, ideaId);
       await persistSave(nextState);
+      trackCatalogUse(draft, 'create');
       return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
     },
     onUpdateSquishy: async (targetId, draft) => {
       assertOwned(draft);
       const nextState = updateSavedSquishy(saveState, targetId, draft);
       await persistSave(nextState);
+      trackCatalogUse(draft, 'edit');
       const savedSquishy = nextState.library.find(toy => toy.id === targetId)!;
       return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
     },
