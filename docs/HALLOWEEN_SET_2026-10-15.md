@@ -20,10 +20,12 @@ Nine runtime WebP files total 110,264 bytes; no AVIF companions. Original master
 
 ## Validation
 
-Clean `npm run release:check` passed: strict TypeScript, CI contract tests, shared image pipeline tests, both production builds and unchanged 5 MiB upload audit. Yandex output: 159 files, 4,731,571 bytes. Repeated local builds exposed obsolete hashed JS files in the output root; `emptyOutDir: true` now makes build cleanup explicit. The upload budget is unchanged.
+Clean `npm run release:check` passed: strict TypeScript, CI contract tests, shared image pipeline tests, both production builds and unchanged 5 MiB upload audit. Yandex output: 159 files, 4,731,509 bytes. Repeated local builds exposed obsolete hashed JS files in the output root; `emptyOutDir: true` now makes build cleanup explicit. The upload budget is unchanged.
 
 `tests/release/halloween.spec.ts` covers stable old codes, contour/attachment validity, runtime alpha/matte checks, EN/RU at 320×568, 568×320 and 1440×900, save/edit/reload and an explicit rewarded opening for a returning player. Local Chromium uses a temporary longer readiness expectation because this environment starts software WebGL slowly; committed readiness assertions remain unchanged. The new multi-toy scenario has a five-minute overall budget after the first desktop EN run exhausted three minutes. A returning-player reward test exposed a legacy-entitlement shortcut in RewardGrants; it now calls the same ownership predicate as the editor, with idempotent opening coverage for all four seasonal rewards.
 
 The required release browser matrix retains every test. Both authored-art files now run in the existing dedicated art group; all other tests remain in eight ordinary shards. Test discovery confirms a disjoint split of 16 art tests and 530 ordinary tests. No tests were removed or skipped for this set.
 
 Real-phone tactile acceptance and hosted Yandex advertisement acceptance are separate from browser regression evidence.
+
+Desktop face choices now use ten columns: all ten eye choices and nine mouth choices fit without a clipped partial row, retaining at least 44 px hit areas. The two changed desktop Decor baselines were regenerated from the actual application and visually reviewed; other baselines remain unchanged. The new desktop content journey explicitly checks panel bounds and hit areas.

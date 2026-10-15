@@ -507,5 +507,5 @@
 }
 @media (min-width: 901px) and (min-height: 640px) {
   #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] :is([data-decor-panel='face'],[data-decor-panel='stickers']) { height: var(--craft-catalog-height); }
-  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='face'] .sandbox-decor-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] [data-decor-panel='face'] .sandbox-decor-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); }
 }

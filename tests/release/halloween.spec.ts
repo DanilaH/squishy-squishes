@@ -67,6 +67,8 @@ test(`Halloween room and saved molds retain all new content ${locale} ${viewport
       await page.screenshot({path:info.outputPath(`${id}-squeeze.png`)});await page.locator('[data-action="home"]').click();
     }
     await page.locator('[data-library-play-id="halloween-ghost"]').click();await page.locator('[data-action="edit-saved"]').click();await page.locator('[data-craft-section="decor"]').click();await page.locator('button[data-decor-section="face"]').click();
+    if(viewport.width>=901){const panel=page.locator('[data-decor-panel="face"]');expect(await panel.evaluate(el=>el.scrollHeight<=el.clientHeight+1)).toBe(true);for(const choice of await panel.locator('.sandbox-decor-choice').all()){const box=(await choice.boundingBox())!;expect(box.width).toBeGreaterThanOrEqual(44);expect(box.height).toBeGreaterThanOrEqual(44);}}
+
     await page.locator('[data-decor-eyes="stitched-eye"]').click();await page.locator('[data-action="save"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');
     await page.reload();const loaded=decodeSaveStateV3(await readCollection(page));expect(loaded.library[0]!.decor.eyes).toBe('stitched-eye');expect(loaded.library[0]!.appearance).toEqual(library[0]!.appearance);expect(loaded.library[0]!.decor.accessories).toEqual(library[0]!.decor.accessories);expect(loaded.library.slice(1)).toEqual(library.slice(1));expect(errors).toEqual([]);
   }finally{await context.close();}
