@@ -1,8 +1,10 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 // Unpin was paused by the owner: browser free-flight cases remain dormant; unit physics stays covered.
 import type { MaterialId } from '../../src/game/content';
 import { getShape } from '../../src/game/shapes';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createSandboxDraft } from '../../src/sandbox/types';
 import { SquishSimulation } from '../../src/squish/SquishSimulation';
 import { FreeSquishBody } from '../../src/sandbox/freeSquishBody';
@@ -25,12 +27,12 @@ for (const viewport of [{width:390,height:844},{width:1440,height:900},{width:56
 test.skip(`free carry, release, return and storage at ${viewport.width}`, async ({page}, info) => {
   await page.setViewportSize(viewport);
   await page.goto('/squishy-squishes/?roomReview=1');
-  await page.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)), {...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'free',createdAt:1,shapeId:'mochi',materialId:'jelly'}]});
+  await page.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))), {...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'free',createdAt:1,shapeId:'mochi',materialId:'jelly'}]});
   await page.reload();
   await page.locator('[data-library-select-id="free"]').click();
   const canvas=page.locator('[data-sandbox-canvas]'), shell=page.locator('[data-sandbox-app]');
   await expect(canvas).toHaveAttribute('data-phaser-ready','true');
-  const before=await page.evaluate(()=>localStorage.getItem('squishy.save.v3'));
+  const before=await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
   const box=(await canvas.boundingBox())!;
   const center={x:box.x+box.width/2,y:box.y+box.height/2};
   await page.locator('[data-action="free-squeeze"]').click();
@@ -51,7 +53,7 @@ test.skip(`free carry, release, return and storage at ${viewport.width}`, async 
   const restored=(await canvas.boundingBox())!;
   expect(restored.width).toBeCloseTo(box.width); expect(restored.height).toBeCloseTo(box.height);
   expect(restored.x).toBeCloseTo(box.x); expect(restored.y).toBeCloseTo(box.y);
-  expect(await page.evaluate(()=>localStorage.getItem('squishy.save.v3'))).toBe(before);
+  expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(before);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.documentElement.scrollHeight<=innerHeight)).toBe(true);
 });
 
@@ -60,7 +62,7 @@ test.skip('touch carry keeps a second stretch, attachments and cancellation cohe
   const page=await context.newPage();
   try {
     await page.goto('/squishy-squishes/?roomReview=1');
-    await page.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'touch',createdAt:1,shapeId:'mochi',materialId:'jelly',decor:{v:1,eyes:'dot',mouth:'smile',blush:true,accessory:'bow',stickers:[]}}]});
+    await page.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'touch',createdAt:1,shapeId:'mochi',materialId:'jelly',decor:{v:1,eyes:'dot',mouth:'smile',blush:true,accessory:'bow',stickers:[]}}]});
     await page.reload(); await page.locator('[data-library-select-id="touch"]').click();
     const canvas=page.locator('[data-sandbox-canvas]'),shell=page.locator('[data-sandbox-app]');
     await expect(canvas).toHaveAttribute('data-phaser-ready','true');
@@ -92,7 +94,7 @@ test.skip('touch carry keeps a second stretch, attachments and cancellation cohe
 test.skip('saved Studio squeeze keeps its desk anchored when unpinned', async ({page}) => {
   await page.setViewportSize({width:390,height:844});
   await page.goto('/squishy-squishes/?roomReview=0');
-  await page.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'studio',createdAt:1}]});
+  await page.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'studio',createdAt:1}]});
   await page.reload(); await page.locator('[data-library-play-id="studio"]').click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
   await page.locator('[data-action="edit-saved"]').click();

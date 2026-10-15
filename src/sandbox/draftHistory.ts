@@ -29,5 +29,8 @@ export class DraftHistory {
     if (next) this.past.push(current);
     return next ?? null;
   }
+  public rebase(transform: (draft: SandboxDraft) => SandboxDraft): void {
+    this.past = this.past.map(transform); this.future = this.future.map(transform); if(this.start) this.start = transform(this.start);
+  }
   public clear(): void { this.past = []; this.future = []; this.start = null; }
 }

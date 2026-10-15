@@ -1,3 +1,4 @@
+import { readCollection } from '../collection';
 import { expect, test } from '@playwright/test';
 
 test('a finger scrolls only the craft catalog without painting or squeezing the toy', async ({ browser, baseURL }) => {
@@ -42,14 +43,14 @@ test('overlapping objects remain reachable with a native horizontal swipe', asyn
   const page = await context.newPage();
   try {
     await page.goto('/squishy-squishes/?roomReview=0');
-    await page.evaluate(() => localStorage.setItem('squishy.save.v3', JSON.stringify({ version: 3, libraryCapacity: 8,
+    await page.evaluate(() => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify({ version: 3, libraryCapacity: 8,
       totalCrafts: 1, updatedAt: 1700000000000, completedRecipeIds: [], unlockedRewardIds: [], library: [{ id: 'objects', createdAt: 1700000000000,
         shapeId: 'mochi', materialId: 'soft', appearance: { v: 1, strokes: [], mixins: [] },
         decor: { v: 1, eyes: 'dot', mouth: 'smile', blush: false, accessory: null, stickers: [],
-          accessories: Array.from({ length: 12 }, (_, i) => ({ a: 'bow', x: 70 + i * 8, y: 180, s: .7, r: 0, side: 'whole' })) } }] })));
+          accessories: Array.from({ length: 12 }, (_, i) => ({ a: 'bow', x: 70 + i * 8, y: 180, s: .7, r: 0, side: 'whole' })) } }] }))));
     await page.reload(); await page.locator('[data-library-play-id="objects"]').click();
     await page.locator('[data-action="edit-saved"]').click(); await page.locator('button[data-decor-section="objects"]').click();
-    const saved = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+    const saved = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
     const list = page.locator('.free-object-list'), rect = (await list.boundingBox())!;
     const cdp = await context.newCDPSession(page), start = { x: rect.x + rect.width - 15, y: rect.y + rect.height / 2, id: 1 };
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
@@ -60,7 +61,7 @@ test('overlapping objects remain reachable with a native horizontal swipe', asyn
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect.poll(() => list.evaluate(node => node.scrollLeft)).toBeGreaterThan(80);
     await expect(page.locator('.craft-actions [data-action="draft-undo"]')).toBeDisabled();
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(saved);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(saved);
     await page.locator('[data-object="accessory:11"]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-selected-object', 'accessory:11');
     expect(await list.evaluate(node => node.scrollLeft)).toBeGreaterThan(80);

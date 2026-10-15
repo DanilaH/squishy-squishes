@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { SHAPES } from '../../src/game/shapes';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
@@ -13,12 +15,7 @@ import {
   type DecorDocumentV1,
 } from '../../src/sandbox/decor';
 import type { SavedSquishy } from '../../src/sandbox/types';
-import {
-  createDefaultSaveV3,
-  decodeSaveStateV3,
-  estimateSaveStateV3Bytes,
-  type SaveStateV3,
-} from '../../src/platform/saveV3';
+import {decodeSaveStateV3,estimateSaveStateV3Bytes,type SaveStateV3} from '../../src/platform/saveV3';
 
 const PAGES_URL = '/squishy-squishes/?roomReview=0';
 const YANDEX_URL = '/yandex/?roomReview=0';
@@ -128,6 +125,7 @@ const clearStorageAndReload = async (page: Page): Promise<void> => {
     localStorage.clear();
     sessionStorage.clear();
   });
+  await returningPlayer(page);
   await page.reload();
 };
 
@@ -135,13 +133,13 @@ const seedSaveV3 = async (page: Page, save: SaveStateV3, url = PAGES_URL): Promi
   await page.goto(url);
   await page.evaluate((value) => {
     localStorage.clear();
-    localStorage.setItem('squishy.save.v3', JSON.stringify(value));
+    (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value)));
   }, save);
   await page.reload();
 };
 
 const readBrowserSave = async (page: Page): Promise<SaveStateV3> => {
-  const raw = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as unknown);
+  const raw = await page.evaluate((__collection) => (__collection as unknown), await readCollection(page));
   return decodeSaveStateV3(raw);
 };
 
@@ -283,7 +281,7 @@ const createFixtureSave = (count: number, rich = false): SaveStateV3 => ({
   updatedAt: 12_345,
 });
 
-test('Pages production build boots into an empty personal Library and all eight maker shapes remain open', async ({ page }) => {
+test('Returning-player production build keeps the empty Library and full maker catalog open', async ({ page }) => {
   const fatalErrors = watchFatalBrowserErrors(page);
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(PAGES_URL);
@@ -347,10 +345,10 @@ test('SaveStateV2 migrates to V3 and boots the empty Library without fabricating
   await page.goto(PAGES_URL);
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-stage', 'library');
 
-  const result = await page.evaluate(() => ({
-    v3: JSON.parse(localStorage.getItem('squishy.save.v3') ?? 'null') as Record<string, unknown>,
+  const result = await page.evaluate((__collection) => ({
+    v3: __collection as Record<string, unknown>,
     v2: localStorage.getItem('squishy.save.v2'),
-  }));
+  }), await readCollection(page));
   expect(result.v3).toMatchObject({
     version: 3,
     library: [],
@@ -378,7 +376,7 @@ test('an S2-era V3 toy without decor normalizes to empty decor without losing au
   await page.goto(PAGES_URL);
   await page.evaluate((value) => {
     localStorage.clear();
-    localStorage.setItem('squishy.save.v3', JSON.stringify(value));
+    (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value)));
   }, legacy);
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
@@ -466,14 +464,14 @@ test('delete is explicit, removes a middle toy only after confirmation, and pers
 
   await page.locator('[data-room-manage]').click();
   const middleId = seeded.library[1]!.id;
-  const beforeRaw = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+  const beforeRaw = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
   await page.locator(`[data-library-delete-id="${middleId}"]`).click();
   await expect(page.locator('[data-library-delete-overlay]')).toBeVisible();
-  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
+  expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(beforeRaw);
 
   await page.locator('[data-library-delete-cancel]').click();
   await expect(page.locator('[data-library-delete-overlay]')).toHaveCount(0);
-  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
+  expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(beforeRaw);
 
   await page.locator(`[data-library-delete-id="${middleId}"]`).click();
   await page.locator('[data-library-delete-confirm]').click();
@@ -496,7 +494,7 @@ test('full 8-slot Library allows creation, mutates nothing before replacement, s
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
   await expect(page.locator('[data-library-new]').first()).toBeVisible();
 
-  const beforeRaw = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+  const beforeRaw = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
   await page.locator('[data-library-new]').first().click();
   const shell = page.locator('[data-sandbox-app]');
   await page.locator('.sandbox-shape[data-shape="paw"]').click();
@@ -510,18 +508,18 @@ test('full 8-slot Library allows creation, mutates nothing before replacement, s
   await page.locator('[data-action="save"]').click();
 
   await expect(page.locator('[data-library-replace-overlay]')).toBeVisible();
-  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
+  expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(beforeRaw);
   await page.locator('[data-library-replace-cancel]').click();
   await expect(page.locator('[data-library-replace-overlay]')).toHaveCount(0);
   await expect(shell).toHaveAttribute('data-stage', 'shape');
-  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
+  expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(beforeRaw);
 
   const targetIndex = 2;
   const targetId = seeded.library[targetIndex]!.id;
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-library-replace-overlay]')).toBeVisible();
   await page.locator(`[data-library-replace-id="${targetId}"]`).click();
-  expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(beforeRaw);
+  expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(beforeRaw);
   await page.locator('[data-library-replace-confirm]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
   await expect(shell).toHaveAttribute('data-shape', 'paw');
@@ -648,6 +646,8 @@ test('S3 Decor authors identity through real UI, preserves paint/mix-ins, saves,
   await page.locator('[data-action="home"]').click();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
   const decoratedThumb = page.locator(`[data-library-thumbnail="${first.id}"]`).first();
+  await decoratedThumb.scrollIntoViewIfNeeded();
+  await expect(decoratedThumb).toHaveJSProperty('width', 512);
   const decoratedThumbData = await decoratedThumb.evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   expect(decoratedThumbData.length).toBeGreaterThan(200);
 

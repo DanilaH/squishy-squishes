@@ -1,7 +1,7 @@
 import { drawExpandedEye, drawExpandedMouth, drawExpandedSticker } from './expandedDecorArt';
 import { drawCraftAccessory } from './craftAccessoryArt';
 import { drawFaceForeground } from './faceForeground';
-import { withFaceTransform, accessoryPlacements, composeAccessory, type AccessoryPlacement, type FaceTransform, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
+import { withFaceTransform, accessoryPlacements, accessoryDepth, accessoryCoversFace, accessoryMaxScale, composeAccessory, type AccessoryPlacement, type FaceTransform, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
 import { REST_FACE, type FaceReaction } from './toyReactions';
 import { getFaceCenterY, getAccessoryDepth, getAccessorySeatFactor, getAccessorySeats, type AccessorySeat } from './accessorySeats';
 import { getShapeTopAtX, type ShapeDefinition, type ShapeId } from '../game/shapes';
@@ -695,14 +695,15 @@ const readAccessoryPlacements = (value: unknown): readonly AccessoryPlacement[] 
   return value.map(item => {
     if (!isRecord(item) || !['whole', 'left', 'right'].includes(String(item.side))
       || (item.locked !== undefined && item.locked !== true)
+      || (item.depth !== undefined && item.depth !== 'front' && item.depth !== 'rear')
       || (item.mirrored !== undefined && item.mirrored !== true)) throw new TypeError('Decor accessory placement is invalid.');
     const a = readNullableKnownId<AccessoryId>(item.a, accessoryIdSet, 'accessory');
     if (!a) throw new TypeError('Placed accessory must have a type.');
     const color = item.color === undefined ? undefined : readNumber(item.color, 0, 0xffffff, 'accessory color');
     if (color !== undefined && !Number.isInteger(color)) throw new TypeError('Decor color must be an integer.');
     return { a, x: readByte(item.x, 'accessory x'), y: readByte(item.y, 'accessory y'),
-      s: readNumber(item.s, .25, 2.5, 'accessory scale'), r: readNumber(item.r, -Math.PI * 2, Math.PI * 2, 'accessory rotation'),
-      side: item.side as AccessoryPlacement['side'], ...(item.locked ? { locked: true as const } : {}), ...(item.mirrored ? { mirrored: true as const } : {}), ...(color === undefined ? {} : { color }) };
+      s: readNumber(item.s, .25, accessoryMaxScale(a), 'accessory scale'), r: readNumber(item.r, -Math.PI * 2, Math.PI * 2, 'accessory rotation'),
+      side: item.side as AccessoryPlacement['side'], ...(item.depth === undefined ? {} : {depth: item.depth as 'front' | 'rear'}), ...(item.locked ? { locked: true as const } : {}), ...(item.mirrored ? { mirrored: true as const } : {}), ...(color === undefined ? {} : { color }) };
   });
 };
 
@@ -712,10 +713,12 @@ export const drawPlacedAccessories = (ctx: CanvasRenderingContext2D, shape: Shap
     if (decor.accessory) drawSeatedAccessories(ctx, shape, decor.accessory, project, width, height);
     return;
   }
-  for (const placement of accessoryPlacements(decor, shape)) {
-    if (placement.a === 'eye-patch') continue;
+  const placements = accessoryPlacements(decor, shape);
+  // destination-over prepends pixels, so visit rear pieces back to front.
+  for (const placement of [...placements].reverse()) {
+    if (accessoryDepth(placement) !== 'rear') continue;
     ctx.save();
-    if (getAccessoryDepth(placement.a) === 'rear') ctx.globalCompositeOperation = 'destination-over';
+    ctx.globalCompositeOperation = 'destination-over';
     composeAccessory(ctx, shape, placement, project, width, height, drawAccessoryPiece);
     ctx.restore();
   }
@@ -724,8 +727,8 @@ export const drawPlacedAccessories = (ctx: CanvasRenderingContext2D, shape: Shap
     renderSurfaceFace(face.getContext('2d')!,{...decor,blush:false},shape,reaction);
     drawFaceForeground(ctx,face,shape,(u,v)=>{const [x,y]=project(u,v);return{x,y};});
   }
-  // A patch deliberately covers an eye; ordinary ornaments retain face priority.
-  for (const placement of accessoryPlacements(decor, shape)) {
-    if (placement.a === 'eye-patch') composeAccessory(ctx, shape, placement, project, width, height, drawAccessoryPiece);
+  // Front means above the complete toy, including its face, for defaults too.
+  for (const placement of placements) {
+    if (accessoryCoversFace(placement)) composeAccessory(ctx, shape, placement, project, width, height, drawAccessoryPiece);
   }
 };

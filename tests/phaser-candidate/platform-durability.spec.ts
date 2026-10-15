@@ -33,9 +33,9 @@ const seedFullShelf = async (page: Page): Promise<void> => {
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
   await page.locator('[data-action="home"]').click();
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     const control = window.__squishyPhaserPlatform!;
-    const state = JSON.parse(sessionStorage.getItem(control.storageKey())!) as {
+    const state = await control.readSave() as {
       library: { id: string; createdAt: number }[];
       libraryCapacity: number;
       totalCrafts: number;
@@ -48,6 +48,7 @@ const seedFullShelf = async (page: Page): Promise<void> => {
     state.libraryCapacity = 8;
     state.totalCrafts = 8;
     state.updatedAt = Date.now();
+    sessionStorage.removeItem(control.storageKey().replace('squishy.save.v3','squishy.collection.v1'));
     sessionStorage.setItem(control.storageKey(), JSON.stringify(state));
   });
   await page.reload();
@@ -81,25 +82,27 @@ test('M5: failed reward persistence cannot unlock slots; ad close cannot resume 
   await page.locator('[data-library-expand-reward]').click();
   await expect(page.locator('[data-library-reward-message]')).toBeVisible();
   expect((await page.evaluate(() => window.__squishyPhaserPlatform!.readSave())).libraryCapacity).toBe(8);
-  expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).filter((event) => event.startsWith('analytics:shelf_reward_granted:'))).toHaveLength(0);
+  expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).filter((event) => event.startsWith('analytics:reward_result:') && event.includes('true'))).toHaveLength(0);
 
-  await page.evaluate(() => {
-    const control = window.__squishyPhaserPlatform!;
-    control.setSaveWriteFailure(false);
-    control.setRewardMode('pending');
-  });
+  await page.evaluate(() => window.__squishyPhaserPlatform!.setSaveWriteFailure(false));
+  await page.locator('[data-library-expand-reward]').click();
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity','9');
+  expect(await page.evaluate(() => window.__squishyPhaserPlatform!.getSdkCounters()?.rewarded)).toBe(1);
+  // A separately requested ad still obeys overlapping platform pauses.
+  await seedFullShelf(page);
+  await page.evaluate(() => window.__squishyPhaserPlatform!.setRewardMode('pending'));
   await page.locator('[data-library-expand-reward]').click();
   await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-blocked/);
   await page.evaluate(() => window.__squishyPhaserPlatform!.pause());
   await page.evaluate(() => window.__squishyPhaserPlatform!.finishPendingReward(true));
-  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '10');
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '9');
   await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-blocked/);
   await page.evaluate(() => window.__squishyPhaserPlatform!.resume());
   await expect(page.locator('[data-sandbox-library]')).not.toHaveClass(/is-blocked/);
   const state = await page.evaluate(() => window.__squishyPhaserPlatform!.readSave());
-  expect(state.libraryCapacity).toBe(10);
-  expect(state.unlockedRewardIds).toHaveLength(1);
-  expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).filter((event) => event.startsWith('analytics:shelf_reward_granted:'))).toHaveLength(1);
+  expect(state.libraryCapacity).toBe(9);
+  expect(state.unlockedRewardIds).toHaveLength(0);
+  expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).filter((event) => event.startsWith('analytics:reward_result:') && event.includes('true'))).toHaveLength(1);
 });
 
 
@@ -157,7 +160,8 @@ test('rich free-craft edit survives blocked input and refused persistence withou
       ] } };
   await page.evaluate(async value => {
     const control = window.__squishyPhaserPlatform!, save = await control.readSave();
-    sessionStorage.setItem(control.storageKey(), JSON.stringify({ ...save, library: [value], totalCrafts: 1 }));
+    sessionStorage.removeItem(control.storageKey().replace('squishy.save.v3','squishy.collection.v1'));
+    sessionStorage.setItem(control.storageKey(), JSON.stringify({ ...save, legacyCatalogAccess:true, library: [value], totalCrafts: 1 }));
   }, toy);
   await page.reload(); await page.locator('[data-library-play-id="rich-durable"]').click();
   await page.locator('[data-action="edit-saved"]').click();

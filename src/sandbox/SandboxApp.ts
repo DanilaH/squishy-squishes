@@ -1,3 +1,5 @@
+import { CatalogPreview } from './catalogPreview';
+import type { CatalogPort } from '../platform/catalogOwnership';
 import { PAINT_PATTERNS, createPaintPattern } from './paintPatterns';
 import { drawFaceForeground } from './faceForeground';
 import { LIGHT_PRESETS, type CraftLight } from './craftLighting';
@@ -5,13 +7,13 @@ import { DraftHistory } from './draftHistory';
 import { FreeCraftEditor } from './freeCraftEditor';
 import { mountCraftWorkspace } from './craftWorkspace';
 import { mountCatalogScrollHints } from './catalogScrollHints';
-import { tintAccessory, accessoryPlacements, accessoryFrame, initialAccessoryPlacements, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
+import { tintAccessory, accessoryPlacements, accessoryDepth, accessoryCoversFace, accessoryFrame, initialAccessoryPlacements, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
 import { renderToyInclusions, renderToyInk, renderToyPigment } from './toySurfaceLayers';
 import { accessoryMotion } from './toyPersonality';
 import { contactFeedback } from './livingToy';
 import { CREATIVE_PALETTES, PAINT_STAMPS, createPaintStamp, type PaintStampId } from './creativeTools';
 import { REST_FACE, faceReaction, heldFaceStrength, type FaceReaction } from './toyReactions';
-import { getAccessoryDepth, getAccessorySeatFactor } from './accessorySeats';
+import { getAccessorySeatFactor } from './accessorySeats';
 import { drawToyAccessory } from './toyArt';
 import { drawPagesFaceChoice, drawPagesStickerChoice } from './pagesDecorArt';
 import { drawToyMixIn } from './toyMixins';
@@ -69,6 +71,7 @@ type PaintTool = 'paint' | 'erase' | 'fill';
 type DecorSection = 'face' | 'stickers' | 'accessory' | 'objects';
 
 export interface SandboxAppOptions {
+  readonly monetization?: CatalogPort | undefined;
   readonly language: SandboxLanguage;
   readonly muted: boolean;
   readonly savedSquishy: SavedSquishy | null;
@@ -630,6 +633,11 @@ export class SandboxApp {
       begin: () => this.draftHistory.begin(this.draft),
       end: () => { this.draftHistory.end(this.draft); this.updateHistoryUi(); },
     });
+    if(options.monetization) this.catalogPreview = new CatalogPreview(this.root, options.monetization, options.language === 'ru', () => this.draft, draft => {
+      this.draftHistory.restoring = true; this.draft = draft; this.draftHistory.restoring = false;
+      this.applyDraftToRenderer(); this.replayAndUpload(); this.updateDecorUi(); this.freeEditor.refresh();
+      this.updatePressed('[data-shape]', 'shape', draft.shapeId); this.updatePressed('[data-material]', 'material', draft.materialId);this.updateHistoryUi();
+    }, this.draftHistory, () => this.activityBlocked || this.saving);
     this.bindEvents();
     if (this.savedSquishy) this.loadSavedSquishy(this.savedSquishy);
     else this.applyDraftToRenderer();
@@ -640,7 +648,8 @@ export class SandboxApp {
     this.freeEditor.refresh();
   }
 
-  public getDraftSnapshot(): SandboxDraft { return structuredClone(this.draft); }
+  private catalogPreview?: CatalogPreview;
+  public getDraftSnapshot(): SandboxDraft { return structuredClone(this.catalogPreview?.snapshot() ?? this.draft); }
 
   public setActivityBlocked(blocked: boolean): void {
     if (this.disposed) return;
@@ -658,6 +667,7 @@ export class SandboxApp {
     if (this.disposed) return;
     this.previewStickerAt(null); this.roomReaction?.cancel(); this.roomLight?.cancel();
     this.disposed = true;
+    this.catalogPreview?.dispose();
     if (this.uploadFrame !== 0) cancelAnimationFrame(this.uploadFrame);
     if (this.accessoryFrame !== 0) cancelAnimationFrame(this.accessoryFrame);
     if (this.rigidMixinFrame !== 0) cancelAnimationFrame(this.rigidMixinFrame);
@@ -1703,7 +1713,7 @@ export class SandboxApp {
   }
 
   private async saveDraft(): Promise<void> {
-    if (this.saving) return;
+    if (this.saving || this.catalogPreview?.hasPending) return;
     delete this.shell.dataset.saveFailed;
     this.saving = true;
     this.syncInteractivity();
@@ -1949,7 +1959,8 @@ export class SandboxApp {
     for (const [index, placement] of pieces.entries()) {
       const canvas = this.accessoryCanvasAt(index), ctx = canvas.getContext('2d')!;
       canvas.hidden = false; canvas.dataset.accessoryId = placement.a;
-      canvas.dataset.accessoryIndex = String(index); canvas.dataset.accessoryDepth = getAccessoryDepth(placement.a);
+      canvas.dataset.accessoryIndex = String(index); canvas.dataset.accessoryDepth = accessoryDepth(placement);
+      canvas.dataset.accessoryCoversFace = String(accessoryCoversFace(placement));
       drawAccessoryPiece(ctx, placement.a, 180, 120, placement.side, placement.mirrored);
       if (placement.color !== undefined) tintAccessory(ctx, 180, 120, placement.color);
       // Measure once when the art changes; transparent source margins are not part of the selection.
@@ -1978,6 +1989,10 @@ export class SandboxApp {
       return;
     }
     const shape = getShape(this.draft.shapeId), pieces = accessoryPlacements(this.draft.decor, shape);
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const stageRect = this.canvas.parentElement?.getBoundingClientRect();
+    const ratio = Number.parseFloat(getComputedStyle(this.canvas).getPropertyValue('--squish-radius-ratio')) || .34;
+    const radius = Math.min(canvasRect.width, canvasRect.height) * ratio;
     for (let piece = 0; piece < pieces.length; piece++) {
       const placement = pieces[piece]!, accessoryCanvas = this.accessoryCanvasAt(piece);
       const frame = this.draft.decor.accessories ? accessoryFrame(shape, placement) : getDecorFrame(shape, placement.a, placement.side);
@@ -2017,11 +2032,16 @@ export class SandboxApp {
       const b = sinAngle * rigidScale;
       const c = -sinAngle * rigidScale;
       const d = cosAngle * rigidScale;
-      const canvasRect = this.canvas.getBoundingClientRect();
-      const stageRect = this.canvas.parentElement?.getBoundingClientRect();
       if (stageRect) {
         const anchorX = canvasRect.left - stageRect.left + seat.x;
         const anchorY = canvasRect.top - stageRect.top + seat.y - motion.lift * canvasRect.height;
+        if (this.options.rendererBackend === 'phaser') {
+          // Match the shared 112×75 thumbnail frame at radius 102.4. The
+          // transparent input canvas can grow independently of the visible toy.
+          const width = `${radius * 112 / 102.4}px`, height = `${radius * 75 / 102.4}px`;
+          if (accessoryCanvas.style.width !== width) accessoryCanvas.style.width = width;
+          if (accessoryCanvas.style.height !== height) accessoryCanvas.style.height = height;
+        }
         const width = accessoryCanvas.offsetWidth || 160;
         const height = accessoryCanvas.offsetHeight || 107;
         // Pages' live overlay previously left the broad crown/bow visibly hovering
@@ -2307,6 +2327,7 @@ export class SandboxApp {
     for (const button of this.root.querySelectorAll<HTMLButtonElement>('[data-action="draft-redo"]')) button.disabled = !this.draftHistory.canRedo;
   }
   private restoreDraftHistory(redo: boolean): void {
+    if(this.catalogPreview?.hasPending) { this.catalogPreview.cancel(); return; }
     this.freeEditor.end(); this.draftHistory.end(this.draft);
     const draft = redo ? this.draftHistory.redo(this.draft) : this.draftHistory.undo(this.draft);
     if (!draft) return;

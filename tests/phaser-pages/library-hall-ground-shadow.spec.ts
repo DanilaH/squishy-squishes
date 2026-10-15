@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 
 test('shelf contact shading and table remain passive behind eight creation places', async ({ page }) => {
@@ -21,3 +22,6 @@ test('broken owner shadow keeps original usable library grid', async ({ page }) 
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

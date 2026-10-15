@@ -51,8 +51,8 @@ for(const locale of ['ru-RU','en-US']) test(`out-of-order guide and dismissible 
   }
   await page.locator('[data-action="try-on"]').click();await expect(page.locator('[data-guide-hint="try"]')).toBeVisible();
   await page.reload();await expect(page.locator('[data-guide-hint="base"]')).toBeVisible();
-  await page.locator('[data-shape="mochi-cat"]').click();
-  await page.evaluate(()=>{const write=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='squishy.save.v3'&&!document.body.hasAttribute('data-retry-save'))throw new Error('Injected save failure');write.call(this,key,value);};});
+  await page.locator('[data-shape="heart"]').click();
+  await page.evaluate(()=>{const write=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='squishy.collection.v1'&&!document.body.hasAttribute('data-retry-save'))throw new Error('Injected save failure');write.call(this,key,value);};});
   await page.locator('[data-action="save"]').click();await expect(page.locator('[data-guide-hint="save-error"]')).toBeVisible();
   await expect(page.locator('[data-room-decor-hint]')).toHaveCount(0);
   await page.evaluate(()=>document.body.setAttribute('data-retry-save',''));

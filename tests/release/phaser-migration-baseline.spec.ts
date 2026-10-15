@@ -1,3 +1,4 @@
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
 
 import { MATERIALS } from '../../src/game/content';
@@ -5,13 +6,7 @@ import { SHAPES, createShapeField } from '../../src/game/shapes';
 import { createAppearanceStroke, createMixInPlacement } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument, createStickerPlacement } from '../../src/sandbox/decor';
 import type { SavedSquishy } from '../../src/sandbox/types';
-import {
-  SAVE_V3_STORAGE_KEY,
-  createDefaultSaveV3,
-  decodeSaveStateV3,
-  encodeSaveStateV3,
-  type SaveStateV3,
-} from '../../src/platform/saveV3';
+import {SAVE_V3_STORAGE_KEY,decodeSaveStateV3,encodeSaveStateV3,type SaveStateV3} from '../../src/platform/saveV3';
 import {
   S5_SHELF_EXPANSION_REWARD_ID,
   grantS5ShelfExpansion,

@@ -1,6 +1,7 @@
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createSandboxDraft } from '../../src/sandbox/types';
 import { createStickerPlacement } from '../../src/sandbox/decor';
 
@@ -17,7 +18,7 @@ for (const locale of ['ru-RU', 'en-US']) for (const viewport of [
     const toy = { ...draft, id: 'sticker-feedback', createdAt: 1700000000000,
       decor: { ...draft.decor, accessory: null, stickers: Array.from({ length: 13 }, (_, i) =>
         createStickerPlacement(i === 11 ? 'flower' : 'heart', { u: .35 + i % 4 * .1, v: .35 + Math.floor(i / 4) * .1 }, i)) } };
-    await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), { ...createDefaultSaveV3(), library: [toy], totalCrafts: 1 });
+    await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), { ...createDefaultSaveV3(), library: [toy], totalCrafts: 1 });
     await page.reload();
     await page.locator('[data-library-select-id]').click();
     await page.locator('[data-action="edit-saved"]').click();

@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 
 test('Jelly buttons decode before the Library is playable and keep Shape functional', async ({ page }, testInfo) => {
@@ -157,3 +158,6 @@ test('a transient Library jelly-art failure recovers in-place without delaying p
   expect(requests).toBeGreaterThanOrEqual(2);
   await expect(page.locator('[data-library-new]').first()).toHaveCSS('background-image', /honey-wide.*webp/);
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

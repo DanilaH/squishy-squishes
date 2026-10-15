@@ -1,4 +1,4 @@
-import type { ShapeId } from '../game/shapes';
+import { getShapeReliefTransform, type ShapeId } from '../game/shapes';
 
 interface ReliefPart { readonly path: string; readonly fill?: string; readonly stroke?: string; readonly width?: number }
 const ellipse = (x: number, y: number, rx: number, ry: number, angle = 0): string => {
@@ -18,14 +18,18 @@ const parts: Partial<Record<ShapeId, readonly ReliefPart[]>> = {
     {path:'M -.76 .24 Q -.63 .13 -.44 .20 Q -.20 .05 0 .15 Q .23 .02 .43 .17 Q .62 .10 .76 .22',stroke:'rgba(197,153,174,.26)',width:.025},
   ],
   cupcake: [
-    {path:'M -.75 .10 Q 0 -.03 .75 .10 L .52 -.76 Q 0 -.87 -.52 -.76 Z',fill:'rgba(232,191,220,.62)',stroke:'rgba(149,104,146,.23)',width:.018},
-    ...[-.50,-.25,0,.25,.50].map(x=>({path:`M ${x} -.07 L ${x*.74} -.73`,stroke:'rgba(161,116,155,.29)',width:.022})),
-    {path:'M -.46 .57 Q 0 .44 .46 .57',stroke:'rgba(192,159,171,.23)',width:.025},
+    {path:'M -.75 -.01 Q 0 -.13 .75 -.01 L .50 -.72 Q 0 -.82 -.50 -.72 Z',fill:'rgba(218,161,205,.78)',stroke:'rgba(149,104,146,.26)',width:.014},
+    ...[-.50,-.25,0,.25,.50].flatMap(x=>[
+      {path:`M ${x} -.12 L ${x*.74} -.70`,stroke:'rgba(135,90,140,.31)',width:.024},
+      {path:`M ${x+.02} -.12 L ${x*.74+.02} -.70`,stroke:'rgba(255,236,250,.65)',width:.012},
+    ]),
+    {path:'M -.49 .22 Q 0 .07 .49 .22',stroke:'rgba(192,159,171,.23)',width:.024},
+    {path:'M -.47 .23 Q 0 .10 .47 .23',stroke:'rgba(255,250,238,.55)',width:.012},
   ],
   watermelon: [
-    {path:'M -.88 .01 C -.65 -.95 .65 -.95 .88 .01 L .72 .04 C .46 -.66 -.46 -.66 -.72 .04 Z',fill:'rgba(134,186,131,.75)'},
-    {path:'M -.76 .03 C -.51 -.75 .51 -.75 .76 .03',stroke:'rgba(237,246,182,.8)',width:.055},
-    ...[[-.5,.08],[.5,.08],[-.29,-.25],[.29,-.25],[0,-.43]].map(([x,y])=>({path:ellipse(x!,y!,.022,.038,x!*.5),fill:'rgba(111,85,98,.68)'})),
+    {path:'M -.90 .41 C -.87 -.08 -.48 -.45 0 -.45 C .48 -.45 .87 -.08 .90 .41 L .78 .41 C .76 0 .40 -.33 0 -.33 C -.40 -.33 -.76 0 -.78 .41 Z',fill:'rgba(125,177,111,.88)'},
+    {path:'M -.80 .41 C -.78 -.02 -.42 -.35 0 -.35 C .42 -.35 .78 -.02 .80 .41',stroke:'rgba(237,246,182,.94)',width:.045},
+    ...[[-.5,.20],[.5,.20],[-.29,-.06],[.29,-.06],[0,-.21]].map(([x,y])=>({path:ellipse(x!,y!,.022,.038,x!*.5),fill:'rgba(111,85,98,.68)'})),
   ],
   'mochi-cat': [
     {path:'M -.67 .41 Q -.63 .63 -.53 .70 Q -.41 .51 -.43 .39 Z',fill:'rgba(245,180,204,.72)'},
@@ -79,6 +83,8 @@ export const drawShapeRelief = (context: CanvasRenderingContext2D, id: ShapeId, 
   context.save();
   context.translate(size / 2, size / 2);
   context.scale(size / 2, -size / 2);
+  const frame = getShapeReliefTransform(id);
+  context.scale(frame.scale, frame.scale); context.translate(-frame.x, -frame.y);
   context.lineCap = 'round'; context.lineJoin = 'round';
   for (const part of parts[id] ?? []) {
     const path = new Path2D(part.path);
@@ -87,5 +93,8 @@ export const drawShapeRelief = (context: CanvasRenderingContext2D, id: ShapeId, 
   }
   context.restore();
 };
-export const shapeReliefSvg = (id: ShapeId): string => `<g transform="translate(50 50) scale(42 -42)">${(parts[id] ?? []).map((part) =>
+export const shapeReliefSvg = (id: ShapeId): string => {
+  const frame = getShapeReliefTransform(id);
+  return `<g transform="translate(50 50) scale(42 -42) scale(${frame.scale}) translate(${-frame.x} ${-frame.y})">${(parts[id] ?? []).map((part) =>
   `<path d="${part.path}" fill="${part.fill ?? 'none'}" stroke="${part.stroke ?? 'none'}" stroke-width="${part.width ?? .015}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</g>`;
+};

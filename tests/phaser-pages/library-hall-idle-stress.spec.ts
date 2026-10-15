@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
@@ -26,13 +28,13 @@ test('30-second idle and repeated shelf scrolling retain one GPU context, stable
   await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  await page.evaluate((key) => {
-    const saved = JSON.parse(localStorage.getItem(key) ?? 'null');
+  await page.evaluate(({__save,__input}) => {const key=__input;
+    const saved = __save;
     if (saved?.library?.length !== 1) throw new Error('Real V3 baseline is missing');
     saved.library = ['soft', 'jelly', 'holo', 'marshmallow', 'pearl', 'chrome', 'soft', 'holo']
       .map((materialId, index) => ({ ...saved.library[0], id: `idle-${index}`, materialId }));
-    localStorage.setItem(key, JSON.stringify(saved));
-  }, KEY);
+    (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify({...saved,legacyCatalogAccess:true,libraryCapacity:Math.max(8,saved.libraryCapacity??0,saved.library?.length??0)})));
+  }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
   await page.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext;
     let count = 0;
@@ -45,7 +47,7 @@ test('30-second idle and repeated shelf scrolling retain one GPU context, stable
   });
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
-  const before = await page.evaluate((key) => localStorage.getItem(key), KEY);
+  const before = await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
   const baseline = await page.locator('[data-library-thumbnail="idle-0"]').evaluate((element) => (element as HTMLCanvasElement).toDataURL());
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -94,7 +96,10 @@ test('30-second idle and repeated shelf scrolling retain one GPU context, stable
   }));
   expect(after).toEqual({ cards: 8, canvases: 8, scene: 1, rooms: 1, gpuContexts: 1 });
   expect(await page.locator('[data-library-thumbnail="idle-0"]').evaluate((element) => (element as HTMLCanvasElement).toDataURL())).toBe(baseline);
-  expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe(before);
+  expect(await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY})).toBe(before);
   expect(errors).toEqual([]);
   await writeFile(info.outputPath('library-hall-idle-and-30-turns-metrics.json'), JSON.stringify({ idle, after, observedPageErrors: errors }, null, 2));
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

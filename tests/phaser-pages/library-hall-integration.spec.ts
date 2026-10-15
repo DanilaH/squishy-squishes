@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { auditShowcase } from './helpers/showcaseAudit';
 import { expect, test, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
@@ -16,6 +18,7 @@ for (const view of views) {
   test(`Library Hall real empty screen ${view.name}`, async ({ browser }, info) => {
     const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: view.width, height: view.height } });
     const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
@@ -35,6 +38,7 @@ for (const view of views) {
 test('real saved toys share the shelf; selection and confirmed deletion stay interactive', async ({ browser }, info) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   try {
     await page.goto('/phaser/?roomReview=0');
     await expect(page.locator('[data-sandbox-library]')).toHaveClass(/is-library-hall/);
@@ -60,13 +64,13 @@ test('real saved toys share the shelf; selection and confirmed deletion stay int
     await page.locator('[data-action="save"]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     const saveKey = 'squishy.phaser-pages-preview.squishy.save.v3';
-    await page.evaluate((key) => {
-      const saved = JSON.parse(localStorage.getItem(key) ?? 'null');
+    await page.evaluate(({__save,__input}) => {const key=__input;
+      const saved = __save;
       if (!saved || saved.library.length !== 1) throw new Error('Real save fixture missing');
       const sample = saved.library[0];
       saved.library = [sample, { ...sample, id: 'hall-fixture-second' }, { ...sample, id: 'hall-fixture-third' }];
-      localStorage.setItem(key, JSON.stringify(saved));
-    }, saveKey);
+      (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify({...saved,legacyCatalogAccess:true,libraryCapacity:Math.max(8,saved.libraryCapacity,saved.library.length)})));
+    }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:saveKey});
     await page.reload();
     await verifyHall(page, 'saved-390');
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '3');
@@ -96,3 +100,6 @@ test('one missing Library WebP preserves the original playable grid', async ({ p
   await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'shape');
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

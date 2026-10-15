@@ -1,3 +1,4 @@
+import { preloadQualityArt } from './qualityArt';
 import { drawCraftAccessory } from './craftAccessoryArt';
 import { resolveAuthoredImagePath } from '../app/runtimeAssets';
 import type { AccessoryId } from './decor';
@@ -19,7 +20,7 @@ const assets: Readonly<Partial<Record<AccessoryId, ToyAsset>>> = {
 };
 const images = new Map<AccessoryId, HTMLImageElement>();
 let pending: Promise<void> | null = null;
-export const preloadToyArt = (): Promise<void> => {
+const preloadLegacyToyArt = (): Promise<void> => {
   pending ??= Promise.all((Object.entries(assets) as [AccessoryId, ToyAsset][]).map(async ([id, asset]) => {
     if (images.has(id)) return;
     const path = `${import.meta.env.BASE_URL}assets/toy-polish/${asset.file}.webp`;
@@ -35,6 +36,10 @@ export const preloadToyArt = (): Promise<void> => {
     }
   })).then(() => { if (images.size < Object.keys(assets).length) pending = null; });
   return pending;
+};
+
+export const preloadToyArt = async (): Promise<void> => {
+  await Promise.all([preloadLegacyToyArt(), preloadQualityArt()]);
 };
 
 export const drawToyAccessory = (ctx: CanvasRenderingContext2D, id: AccessoryId, width: number, height: number, shapeId?: ShapeId, icon = false): boolean => {

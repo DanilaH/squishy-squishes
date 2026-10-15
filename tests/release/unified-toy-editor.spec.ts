@@ -1,3 +1,4 @@
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { mkdir } from 'node:fs/promises';
 import { reachableControlIssues } from '../phaser-pages/helpers/reachableControls';
 import sharp from 'sharp';
@@ -5,7 +6,7 @@ import { expect, test } from '@playwright/test';
 import { SHAPES, getShape } from '../../src/game/shapes';
 import { MATERIALS } from '../../src/game/content';
 import { SquishSimulation } from '../../src/squish/SquishSimulation';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createBodyFillStroke, createMixInPlacement } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument, getDecorFrame } from '../../src/sandbox/decor';
 
@@ -70,11 +71,13 @@ test('Hall recovers a failed furniture request and keeps decoded props after rea
 
 for (const [locale, width, height] of [['ru-RU', 320, 568], ['en-US', 390, 844], ['ru-RU', 568, 320], ['en-US', 1440, 900]] as const) {
   test(`one stable editor grid and preview physics ${locale} ${width}`, async ({ browser, baseURL }) => {
+    // Visit every item in three expanded catalogs, capture each panel, then exercise touch physics.
+    test.setTimeout(120_000);
     const context = await browser.newContext({ baseURL, locale, viewport: { width, height }, hasTouch: true, reducedMotion: 'reduce' });
     const page = await context.newPage(); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     try {
       await page.goto('/squishy-squishes/?roomReview=0');
-      await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), { ...createDefaultSaveV3(), library: [savedToy] });
+      await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), { ...createDefaultSaveV3(), library: [savedToy] });
       await page.reload(); await page.locator('[data-library-play-id="unified"]').click();
       const canvas = page.locator('[data-sandbox-canvas]'), shell = page.locator('[data-sandbox-app]');
       await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
@@ -122,7 +125,7 @@ test('Hall and Squeeze share material pixels and face ink covers existing pearls
   try {
     await page.goto('/squishy-squishes/?roomReview=0');
     for (const material of MATERIALS) {
-      await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), { ...createDefaultSaveV3(), library: [{ ...savedToy, materialId: material.id, decor: { ...savedToy.decor, accessory: null } }] });
+      await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), { ...createDefaultSaveV3(), library: [{ ...savedToy, materialId: material.id, decor: { ...savedToy.decor, accessory: null } }] });
       await page.reload(); await expect(page.locator('[data-library-thumbnail]')).toHaveAttribute('data-library-renderer', 'volume-mesh');
       const hall = await page.locator('[data-library-thumbnail]').evaluate(el => (el as HTMLCanvasElement).toDataURL());
       await page.locator('[data-library-play-id="unified"]').click(); const canvas = page.locator('[data-sandbox-canvas]');

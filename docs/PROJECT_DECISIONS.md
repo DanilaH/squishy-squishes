@@ -1374,3 +1374,42 @@ interface captures passed unchanged. Strict TS, tooling/assets, both builds and
 upload audit passed (63 files / 3,376,127 bytes). No new assets, save schema or
 physics changes were introduced in this final pass. Full PR gates and exact-byte
 hosted checks remain mandatory before declaring the release published.
+
+## Complete catalog artwork — 14 October 2026
+
+The owner accepted the first integrated authored sample, then explicitly
+authorized finishing the remaining 14 accessories, 11 stickers and 12 fillings.
+The completed target is all 17 expanded accessories and all 13 sticker / 13
+filling IDs in the approved soft molded 2.5D style. The original five authored
+accessories stay unchanged. Keep canonical physical body silhouettes procedural
+and deformable; the artwork pass does not replace the mesh or tactile model.
+
+Source masters and exact prompts are kept outside public in
+`assets-src/art-quality-sample` and `assets-src/art-quality-full`. Normalize
+through the shared kit pipeline, record actual AVIF availability and measured
+ink crops, and decode the entire immediately reachable catalog through the
+existing startup boundary. Preserve working procedural failure fallbacks.
+
+Paired leaves and wings reconstruct their existing logical roots before the
+shared seat renderer splits/mirrors them. Geometry is independent of viewport.
+Existing save IDs, color variants, transformations, foreground face priority
+and V3 documents remain authoritative. See
+`ART_QUALITY_REVIEW_2026-10-14.md` for actual validation and release status.
+The owner authorized remote work in draft PR #101; merging and publishing are
+separate from the approved implementation scope.
+
+### 2026-10-14 — headphone size and accessory layer control
+
+Owner approved one front/behind toggle for each accessory, with type defaults,
+and asked to verify whole-toy headphone sizing. Implemented an optional validated
+per-placement `depth` value, resolved identically in live overlays and thumbnails.
+Omitted values retain existing type defaults; front overlays may cover the
+face, and rear also applies to eye patches. Default and manual layers have the
+same behavior. Lock, copy, reset, undo/redo and
+V3 persistence apply. Headphones allow size .25–4; others retain .25–2.5.
+The toggle stays in the settings heading on short screens; refresh retains
+the settings scroll position.
+Fixed the observed Studio fixed-size accessory frame to follow the same body
+radius as the room/collection. Source artwork, IDs and tactile constants stay
+unchanged. Follow-up remains on draft PR #101; no merge/deployment approval is
+implied by this implementation request.

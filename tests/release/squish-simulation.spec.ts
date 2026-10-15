@@ -1,6 +1,7 @@
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
 import { getShape } from '../../src/game/shapes';
-import { createDefaultSaveV3, encodeSaveStateV3 } from '../../src/platform/saveV3';
+import {encodeSaveStateV3} from '../../src/platform/saveV3';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { SquishSimulation } from '../../src/squish/SquishSimulation';
 
@@ -90,7 +91,7 @@ test('M1: the production Phaser sandbox renders, accepts a real drag and reports
     }],
   };
   await page.evaluate((serialized) => {
-    localStorage.setItem('squishy.save.v3', serialized);
+    (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', serialized));
   }, JSON.stringify(encodeSaveStateV3(state)));
   await page.reload();
   await page.locator('[data-library-play-id="m1-synthetic-toy"]').click();

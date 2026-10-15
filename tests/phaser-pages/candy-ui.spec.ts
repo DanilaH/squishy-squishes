@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 
 const viewports = [
@@ -51,3 +52,6 @@ for (const viewport of viewports) {
     await expect(page.locator('[data-action="save"]')).toBeVisible();
   });
 }
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

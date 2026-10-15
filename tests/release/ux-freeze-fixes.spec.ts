@@ -1,5 +1,6 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createSandboxDraft } from '../../src/sandbox/types';
 import { createEmptyDecorDocument, STICKER_IDS } from '../../src/sandbox/decor';
 
@@ -54,7 +55,7 @@ for (const locale of ['ru-RU', 'en-US']) {
       await page.waitForLoadState('networkidle');
       const box = (await page.locator('[data-sandbox-canvas]').boundingBox())!;
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await save(page);
-      expect(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!).completedRecipeIds)).toEqual([]);
+      expect(await page.evaluate((__collection) => (__collection.completedRecipeIds), await readCollection(page))).toEqual([]);
     });
 
     for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }, { width: 1440, height: 900 }]) {
@@ -63,7 +64,7 @@ for (const locale of ['ru-RU', 'en-US']) {
         const toy = { ...createSandboxDraft(), id: 'detail-cap', createdAt: 1700000000000,
           decor: { ...createEmptyDecorDocument(), accessories: Array.from({ length: 127 }, () => ({ a: 'bow' as const, x: 72, y: 226, s: 1, r: 0, side: 'whole' as const })),
             stickers: Array.from({ length: 128 }, () => ({ t: 0, x: 128, y: 128, s: 28, r: 0 })) } };
-        await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), { ...createDefaultSaveV3(), library: [toy], totalCrafts: 1 });
+        await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))), { ...createDefaultSaveV3(), library: [toy], totalCrafts: 1 });
         await page.reload(); await page.locator('[data-library-play-id="detail-cap"]').click(); await ready(page);
         await page.locator('[data-action="edit-saved"]').click(); await page.locator('[data-decor-section="accessory"]').click();
         await expect(page.locator('[data-decor-accessory="cat-ears"]')).toBeDisabled();

@@ -1,0 +1,21 @@
+{
+  "generator": "OpenAI built-in image_gen",
+  "generatedAt": "2026-10-14",
+  "sourceFile": "sticker-planet.png",
+  "references": [
+    "public/assets/toy-polish/puffy-bow.webp",
+    "public/assets/toy-polish/crown.webp"
+  ],
+  "role": "Style references only; original existing game assets retained",
+  "assetId": "sticker-planet",
+  "background": "transparent alpha",
+  "intendedUse": "Squishy Squishes authored catalog; sample style approved 2026-10-14",
+  "prompt": "Use case: stylized-concept. Asset type: production transparent game sprite. Reference images define polished molded toy quality, 2.5D soft sculpted volume and clean highlights. Create: A single puffy die-cut ringed planet sticker, a lavender-blue round planet with a soft pink and gold Saturn-like ring tilted slightly diagonally. Clear ring passes behind and in front with proper occlusion. Gentle rounded inflated vinyl relief and thin cream-white die-cut rim. No stars around it, no face. Object centered with transparent padding, fills 78% of square, front-facing, isolated, clean silhouette. Soft studio light upper-left, attractive pastel color with good contrast at 24 pixels. Smooth high-quality finish with dimension comparable to reference bow. Entire background genuinely transparent. No floor, no drop shadow outside silhouette, no glow, no text, no mockup, no surrounding objects.",
+  "sourceSha256": "a067eb7dbb0ca364b9eaf4ffb242af01c59114313828c9d0621b37fee4f4155c",
+  "runtimeCanvas": 384,
+  "pipeline": "npm run asset:prepare; background=preserve, WebP quality=88, optional smaller AVIF quality=65",
+  "runtimeFormats": [
+    "webp",
+    "avif"
+  ]
+}

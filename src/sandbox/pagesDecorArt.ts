@@ -90,7 +90,7 @@ const blush = (ctx: CanvasRenderingContext2D, p: { u: number; v: number }): void
   ctx.restore();
 };
 const sticker = (ctx: CanvasRenderingContext2D, id: StickerId, size: number, variant = 0): void => {
-  if (drawExpandedSticker(ctx, id, size)) return;
+  if (drawExpandedSticker(ctx, id, size, variant)) return;
   const r = size * .5;
   const base = ({ heart: 0, flower: 1, star: 2, sparkle: 3 } as Partial<Record<StickerId, number>>)[id] ?? 0;
   const colors = stickerColors[(base + variant) % stickerColors.length]!;

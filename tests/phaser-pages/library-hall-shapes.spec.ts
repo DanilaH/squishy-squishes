@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
@@ -31,25 +33,27 @@ test('chrome and holo volume follow all eight saved shape boundaries', async ({ 
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
 
   for (const material of ['chrome', 'holo'] as const) {
-    await page.evaluate(({ material, shapes }) => {
+    await page.evaluate(({__save,__input}) => {const { material, shapes }=__input;
       const key = 'squishy.phaser-pages-preview.squishy.save.v3';
-      const save = JSON.parse(localStorage.getItem(key) ?? 'null');
+      const save = __save;
       if (!save || !save.library.length) throw new Error('Expected a real saved toy');
       const original = save.library[0];
       save.library = shapes.map((shapeId) => ({
         ...original, shapeId, materialId: material, id: `shape-review-${material}-${shapeId}`,
       }));
-      localStorage.setItem(key, JSON.stringify(save));
-    }, { material, shapes: SHAPES });
+      (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)})));
+    }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:{ material, shapes: SHAPES }});
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', String(SHAPES.length));
     await expect(page.locator('[data-library-hall-stage]')).toBeVisible();
-    // Hall thumbnails are eager: audit every native canvas directly.
+    // Audit every native canvas after scrolling it into the bounded preview window.
     // Room navigation below remains presentation/paging coverage only.
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
 
     for (const shape of SHAPES) {
       const canvas = page.locator(`[data-library-thumbnail="shape-review-${material}-${shape}"]`);
+      await canvas.scrollIntoViewIfNeeded();
+      await expect.poll(() => canvas.evaluate(node => (node as HTMLCanvasElement).width)).toBe(512);
       const output = await canvas.evaluate((node) => {
         const image = node as HTMLCanvasElement;
         const ctx = image.getContext('2d');
@@ -161,3 +165,6 @@ test('owner regression: painted Holo Paw keeps front art registered with pearls 
   await page.screenshot({ path: info.outputPath('library-hall-owner-holo-paw-room-390.png'), animations: 'disabled' });
   expect(errors).toEqual([]);
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

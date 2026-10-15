@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 
 /** Actual browser screenshots decide aesthetics; invariants prevent fake 3D results. */
@@ -66,3 +67,6 @@ test('phone: ten-way comparison closes without touching saved Hall', async ({ pa
   await expect(page.locator('.sandbox-library-shell')).toBeVisible();
   expect(new URL(page.url()).searchParams.has('volume-probe')).toBe(false);
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

@@ -1,0 +1,20 @@
+.catalog-badge { display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;line-height:1.2;white-space:normal;color:#604166; }
+.catalog-badge svg { width:16px;min-width:16px;height:16px; }
+.catalog-preview { flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px;border:2px solid #9675ac;border-radius:12px;background:#fff7fb;color:#432c4f; }
+.catalog-preview[hidden] { display:none; }
+.catalog-preview>strong,.catalog-preview>small { flex-basis:100%; }
+.catalog-preview>button { display:flex;align-items:center;justify-content:center;gap:5px;min-height:44px;flex:1;padding:6px;border:1px solid #9675ac;border-radius:9px;background:white;color:#432c4f;white-space:normal;font:inherit;font-size:12px; }
+[data-catalog-locked=true] { position:relative; }
+@media(max-height:440px) { .catalog-preview { padding:4px;gap:3px; } .catalog-preview>small { display:none; } }
+#app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting=true] .sandbox-controls:has(.catalog-preview:not([hidden])) { grid-template-rows:auto minmax(0,1fr) 44px; }
+#app .catalog-preview { width:min(100%,var(--craft-panel-width,620px));box-sizing:border-box; }
+#app [data-crafting=false] .catalog-preview { display:none; }
+#app .sandbox-controls:has(.catalog-preview:not([hidden])) > .catalog-preview { grid-area:1 / 1; }
+#app[data-jelly-ui-ready] .sandbox-controls:has(.catalog-preview:not([hidden])) > .sandbox-panel { grid-area:2 / 1;min-height:0!important;height:auto!important;max-height:100%;overflow-y:auto;align-self:stretch; }
+#app .sandbox-controls:has(.catalog-preview:not([hidden])) > .craft-actions { grid-area:3 / 1;position:relative;z-index:2; }
+#app [data-library-expand-reward] svg { width:20px;height:18px;vertical-align:middle;flex:none; }
+/* Entitlement markers must not alter catalog row heights or squeeze item labels. */
+#app .catalog-badge { position:absolute;top:3px;right:3px;margin:0;padding:2px;border-radius:5px;background:#fff8fc;pointer-events:none; }
+@media(min-width:901px) and (min-height:640px) { #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting=true] .sandbox-controls:has(.catalog-preview:not([hidden])) { grid-template-rows:auto minmax(0,1fr) 52px; } }
+#app[data-jelly-ui-ready] .replacement-expand { display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;max-width:calc(100% - 44px);padding:6px 10px;border:1px solid #9675ac;border-radius:10px;background:#fff8fc;color:#60416f;white-space:normal;font:inherit;font-size:12px;font-weight:800; }
+#app .replacement-expand svg { width:20px;height:18px;flex:none; }

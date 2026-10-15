@@ -1,4 +1,5 @@
-import { JsonStorageRepository, type StorageAdapter } from '@danilah/mini-games-kit/platform';
+import { CollectionRepository } from './collectionRepository';
+import { type StorageAdapter } from '@danilah/mini-games-kit/platform';
 import { ALL_VARIANT_IDS, MATERIALS, type MaterialId } from '../game/content';
 import { SHAPES, type ShapeId } from '../game/shapes';
 import { decodeAppearanceDocument } from '../sandbox/appearance';
@@ -15,11 +16,12 @@ import {
 
 export const SAVE_V3_STORAGE_KEY = 'squishy.save.v3';
 export const SAVE_V3_RECOVERY_STORAGE_KEY = 'squishy.save.v3.corrupt';
-export const DEFAULT_LIBRARY_CAPACITY = 8;
-export const MAX_LIBRARY_CAPACITY = 24;
+export const DEFAULT_LIBRARY_CAPACITY = 4;
+export const MAX_LIBRARY_CAPACITY = Number.MAX_SAFE_INTEGER;
 
 export interface SaveStateV3 {
   readonly version: 3;
+  readonly legacyCatalogAccess?: boolean;
   readonly library: readonly SavedSquishy[];
   readonly libraryCapacity: number;
   readonly completedRecipeIds: readonly string[];
@@ -36,7 +38,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const readNonNegativeInteger = (value: unknown, field: string): number => {
-  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
     throw new TypeError(`Save ${field} must be a non-negative integer.`);
   }
   return value;
@@ -96,6 +98,7 @@ const readSavedSquishy = (value: unknown): SavedSquishy => {
 export const createDefaultSaveV3 = (): SaveStateV3 => ({
   version: 3,
   library: [],
+  legacyCatalogAccess: false,
   libraryCapacity: DEFAULT_LIBRARY_CAPACITY,
   completedRecipeIds: [],
   unlockedRewardIds: [],
@@ -106,6 +109,7 @@ export const createDefaultSaveV3 = (): SaveStateV3 => ({
 export const decodeSaveStateV3 = (value: unknown): SaveStateV3 => {
   if (!isRecord(value)) throw new TypeError('Save root must be an object.');
   if (value.version !== 3) throw new TypeError(`Unsupported save version: ${String(value.version)}`);
+  if (value.legacyCatalogAccess !== undefined && typeof value.legacyCatalogAccess !== 'boolean') throw new TypeError('Invalid legacy catalog entitlement');
   if (!Array.isArray(value.library)) throw new TypeError('Save library must be an array.');
   if (value.library.length > MAX_LIBRARY_CAPACITY) throw new TypeError('Save library exceeds the hard capacity.');
 
@@ -125,6 +129,7 @@ export const decodeSaveStateV3 = (value: unknown): SaveStateV3 => {
 
   return {
     version: 3,
+    legacyCatalogAccess: value.legacyCatalogAccess === undefined ? true : value.legacyCatalogAccess === true,
     library,
     libraryCapacity,
     completedRecipeIds: normalizeKnownStrings(value.completedRecipeIds, 'completedRecipeIds', knownRecipeIds, 64),
@@ -142,21 +147,13 @@ export const encodeSaveStateV3 = (state: SaveStateV3): unknown => ({
   })),
 });
 
-export const createSaveV3Repository = (storage: StorageAdapter): JsonStorageRepository<SaveStateV3> =>
-  new JsonStorageRepository({
-    storage,
-    key: SAVE_V3_STORAGE_KEY,
-    createDefault: createDefaultSaveV3,
-    codec: {
-      decode: decodeSaveStateV3,
-      encode: encodeSaveStateV3,
-    },
-  });
+export const createSaveV3Repository = (storage: StorageAdapter): CollectionRepository => new CollectionRepository(storage);
 
 export const migrateSaveV2ToV3 = (legacy: SaveStateV2, updatedAt = Date.now()): SaveStateV3 => ({
   version: 3,
   library: [],
-  libraryCapacity: DEFAULT_LIBRARY_CAPACITY,
+  libraryCapacity: 8,
+  legacyCatalogAccess: true,
   completedRecipeIds: legacy.completedVariantIds.filter((id) => knownRecipeIds.has(id)),
   unlockedRewardIds: [],
   totalCrafts: legacy.totalCrafts,
@@ -192,7 +189,7 @@ const preserveCorruptV3 = async (
 
 const migrateLegacySave = async (
   storage: StorageAdapter,
-  repository: JsonStorageRepository<SaveStateV3>,
+  repository: CollectionRepository,
   onError: (error: unknown) => void,
 ): Promise<SaveStateV3> => {
   const legacyRepository = createSaveV2Repository(storage);
@@ -212,9 +209,10 @@ const migrateLegacySave = async (
 
 export const loadSaveV3WithMigration = async (
   storage: StorageAdapter,
-  repository: JsonStorageRepository<SaveStateV3>,
+  repository: CollectionRepository,
   onError: (error: unknown) => void,
 ): Promise<SaveStateV3> => {
+  if (await repository.hasManifest()) return repository.load();
   let currentRaw: string | null;
   try {
     currentRaw = await storage.getItem(SAVE_V3_STORAGE_KEY);
@@ -225,7 +223,9 @@ export const loadSaveV3WithMigration = async (
 
   if (currentRaw !== null) {
     try {
-      return await repository.load();
+      const loaded = await repository.load();
+      try { await repository.write(loaded); } catch (migrationError) { onError(migrationError); }
+      return loaded;
     } catch (error: unknown) {
       onError(error);
       await preserveCorruptV3(storage, currentRaw, onError);
@@ -235,9 +235,8 @@ export const loadSaveV3WithMigration = async (
 
       const fallback = createDefaultSaveV3();
       try {
-        // The original bytes are already quarantined above. Repair the primary
-        // key immediately so a read-only session does not re-enter the same
-        // corruption path on every launch.
+        // Keep original bytes and commit a new manifest so a read-only session
+        // does not re-enter the corruption path on every launch.
         await repository.write(fallback);
         await repository.flush();
       } catch (repairError: unknown) {
@@ -247,7 +246,10 @@ export const loadSaveV3WithMigration = async (
     }
   }
 
-  return migrateLegacySave(storage, repository, onError);
+  if (await hasLegacySave(storage, onError)) return migrateLegacySave(storage, repository, onError);
+  const fresh = createDefaultSaveV3();
+  try { await repository.write(fresh); } catch(error) { onError(error); }
+  return fresh;
 };
 
 const createSquishyId = (): string => {

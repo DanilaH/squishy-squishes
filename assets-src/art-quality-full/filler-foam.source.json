@@ -1,0 +1,21 @@
+{
+  "generator": "OpenAI built-in image_gen",
+  "generatedAt": "2026-10-14",
+  "assetId": "filler-foam",
+  "sourceFile": "filler-foam.png",
+  "sourceSha256": "5ec72885fb1394d33d8a65e35079b16d513336c514bb7e99aa055a75ae3b081d",
+  "references": [
+    "public/assets/toy-polish/puffy-bow.webp",
+    "assets-src/art-quality-sample/butterfly.png"
+  ],
+  "role": "Style references only; sample approved 2026-10-14",
+  "prompt": "Use case: stylized-concept. Production transparent sprite for Squishy Squishes. Input images are STYLE REFERENCES ONLY: match approved butterfly and original bow: polished soft 2.5D molded silicone toy volume, sculpted rounded edges, dimensional shading, tangible thickness and restrained upper-left glossy highlights. Subject: ONE small airy ivory blush foam bead, matte soft round ball, gently porous surface, subtle smooth shadow, no hole. This is a single loose small particle for scattering inside gel, not a sticker, with no backing or exterior outline. Centered isolated single asset in almost orthographic front view; fills 80% of square with clean transparent padding. Readable at 24-40 pixels and when enlarged to 160px. Crisp pastel colors, soft darker lower-right internal edges. Genuinely transparent alpha background. No floor, no outside cast shadow, no scene, no glow, no backdrop, no watermark, no text, no UI, no extra decorative sparkles.",
+  "runtimeCanvas": 128,
+  "padding": 12,
+  "background": "transparent alpha",
+  "pipeline": "npm run asset:prepare; background=preserve; WebP=88, AVIF=65 only when smaller",
+  "runtimeFormats": [
+    "webp",
+    "avif"
+  ]
+}

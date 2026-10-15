@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { expect, test } from '@playwright/test';
 
 /** Desktop Firefox may not expose TouchEvent at all. Exercise the published Pages bundle. */
@@ -42,3 +43,6 @@ test('Phaser Pages gestures work when TouchEvent is absent', async ({ page }) =>
   await expect(page.locator('[data-action="try-return"]')).toBeEnabled();
   expect(errors).toEqual([]);
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

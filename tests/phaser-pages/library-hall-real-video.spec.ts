@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { copyFile, mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
@@ -10,6 +12,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
   test.setTimeout(120_000);
   const setup = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'ru-RU' });
   const maker = await setup.newPage();
+    await returningPlayer(maker, 'squishy.phaser-pages-preview.');
   let saved = '';
   try {
     await maker.goto('/phaser/?roomReview=0');
@@ -33,7 +36,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
     await maker.locator('[data-material="chrome"]').click();
     await maker.locator('[data-action="save"]').click();
     await expect(maker.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-    saved = await maker.evaluate((key) => localStorage.getItem(key) ?? '', KEY);
+    saved = await maker.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)) ?? '');}, {__save:await readCollection(maker,"squishy.phaser-pages-preview.","local"),__input:KEY});
     const parsed = JSON.parse(saved);
     if (parsed?.version !== 3 || parsed.library?.length !== 1) throw new Error('Invalid real V3 baseline');
     parsed.library.push({ ...parsed.library[0], id: 'video-holo', materialId: 'holo' });
@@ -50,6 +53,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
     storageState: { cookies: [], origins: [{ origin: ORIGIN, localStorage: [{ name: KEY, value: saved }] }] },
   });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
@@ -90,7 +94,7 @@ test('record genuine browser Hall idle → new save → settle → page and retu
     await expect(page.locator('[data-library-toy]')).toHaveCount(3);
     await page.waitForTimeout(1400);
     expect(errors).toEqual([]);
-    const endState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null'), KEY);
+    const endState = await page.evaluate(({__save,__input}) => {const key=__input;return (__save);}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:KEY});
     expect(endState.library).toHaveLength(3);
     expect(new Set(endState.library.map((toy: { shapeId: string }) => toy.shapeId)).size).toBeGreaterThan(1);
   } finally {
@@ -100,3 +104,6 @@ test('record genuine browser Hall idle → new save → settle → page and retu
   if (!video) throw new Error('Real browser video missing');
   await copyFile(await video.path(), info.outputPath('library-hall-real-browser-arrival-page-390.webm'));
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

@@ -1,5 +1,6 @@
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
-import { createDefaultSaveV3, type SaveStateV3 } from '../../src/platform/saveV3';
+import {type SaveStateV3} from '../../src/platform/saveV3';
 import { createEmptyAppearanceDocument } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import type { SavedSquishy } from '../../src/sandbox/types';
@@ -68,7 +69,7 @@ test('production web uses the accepted 512px Hall profile and lazy Phaser maker'
   await page.goto(WEB_URL);
   await page.evaluate((value) => {
     localStorage.clear();
-    localStorage.setItem('squishy.save.v3', JSON.stringify(value));
+    (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value)));
   }, save);
   await page.reload();
 

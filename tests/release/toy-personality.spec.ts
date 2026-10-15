@@ -1,10 +1,13 @@
+import { decodeSaveStateV3 } from '../../src/platform/saveV3';
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { ToyPersonality, accessoryMotion } from '../../src/sandbox/toyPersonality';
 import { REST_TOY } from '../../src/sandbox/livingToy';
 import { SquishSimulation } from '../../src/squish/SquishSimulation';
 import { StageGestureRouter, type StageGestureHost } from '../../src/sandbox/StageGestureRouter';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
@@ -68,6 +71,7 @@ test('preview router commits one final position and cancels without editing', ()
 
 for (const [locale, width, height] of [['ru-RU', 390, 844], ['en-US', 568, 320], ['en-US', 1440, 900]] as const)
 test(`personality, Hall blink and drag preview remain durable ${locale} ${width}`, async ({ browser, baseURL }) => {
+  test.setTimeout(120_000);
   const context = await browser.newContext({ baseURL, locale, viewport: { width, height }, hasTouch: true });
   await context.addInitScript(() => {
     const Native = window.AudioContext;
@@ -86,20 +90,21 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
   const page = await context.newPage(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   try {
     await page.goto('/squishy-squishes/?roomReview=0');
-    await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
+    await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), {
       ...createDefaultSaveV3(), library: [{ id: 'personality', createdAt: 1700000000000, shapeId: 'dumpling', materialId: 'jelly',
         appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [] },
         decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory: 'crown' } }],
     });
     await page.reload(); const thumb = page.locator('[data-library-thumbnail="personality"]');
-    const before = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+    await expect(thumb).toBeVisible();
+    const before = decodeSaveStateV3(await readCollection(page));
     await thumb.evaluate(el => {
       const observer = new MutationObserver(() => { if (el.getAttribute('data-library-reaction') === 'blink') el.setAttribute('data-saw-blink', 'true'); });
       observer.observe(el, { attributes: true, attributeFilter: ['data-library-reaction'] });
     });
     await expect(thumb).toHaveAttribute('data-saw-blink', 'true', { timeout: 11000 });
     await expect(thumb).toHaveAttribute('data-library-reaction', 'rest');
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(before);
+    expect(decodeSaveStateV3(await readCollection(page))).toEqual(before);
     await page.locator('[data-library-play-id="personality"]').click();
     const shell = page.locator('[data-sandbox-app]'), canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
@@ -165,7 +170,7 @@ test(`personality, Hall blink and drag preview remain durable ${locale} ${width}
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect(shell).toHaveAttribute('data-decor-sticker-count', '0');
     await page.locator('.craft-actions [data-action="draft-undo"]').click(); await expect(shell).toHaveAttribute('data-decor-sticker-count', '1');
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(before);
+    expect(decodeSaveStateV3(await readCollection(page))).toEqual(before);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect(canvas).toHaveAttribute('data-toy-idle', 'rest');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);

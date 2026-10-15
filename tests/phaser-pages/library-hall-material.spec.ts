@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { writeFile } from 'node:fs/promises';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
@@ -7,6 +9,7 @@ let fixtureSave: string;
 test.beforeAll(async ({ browser, baseURL }, info) => {
   const context = await browser.newContext({ baseURL });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   try {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/phaser/?roomReview=0');
@@ -33,9 +36,9 @@ test.beforeAll(async ({ browser, baseURL }, info) => {
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     // The real saved Studio toy supplies every material fixture: no fake skins.
     await page.locator('[data-sandbox-canvas]').screenshot({ path: info.outputPath('library-hall-studio-soft-canvas-390.png'), animations: 'disabled' });
-    await page.evaluate(() => {
+    await page.evaluate(({__save,__input}) => {
       const key = 'squishy.phaser-pages-preview.squishy.save.v3';
-      const save = JSON.parse(localStorage.getItem(key) ?? 'null');
+      const save = __save;
       if (!save || save.library.length !== 1) throw new Error('Expected a real saved toy');
       const toy = save.library[0];
       save.library = (['soft', 'jelly', 'marshmallow', 'chrome', 'holo', 'pearl'] as const).map((materialId) => ({
@@ -43,16 +46,16 @@ test.beforeAll(async ({ browser, baseURL }, info) => {
         id: `material-fixture-${materialId}`,
         materialId,
       }));
-      localStorage.setItem(key, JSON.stringify(save));
-    });
-    fixtureSave = await page.evaluate(() => localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3')!);
+      (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify({...save,legacyCatalogAccess:true,libraryCapacity:Math.max(8,save.libraryCapacity??0,save.library?.length??0)})));
+    }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null});
+    fixtureSave = await page.evaluate(({__save,__input}) => {return ((__save === null ? null : JSON.stringify(__save))!);}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null});
   } finally { await context.close(); }
 });
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/phaser/?roomReview=0');
-  await page.evaluate(save => localStorage.setItem('squishy.phaser-pages-preview.squishy.save.v3', save), fixtureSave);
+  await page.evaluate(save => ((localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem('squishy.phaser-pages-preview.squishy.save.v3', save))), fixtureSave);
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '6');
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
@@ -64,6 +67,9 @@ const captures = (page: Page, info: TestInfo) => {
   const captureThumbnail = async (material: string): Promise<void> => {
     // Element screenshots can crop a transformed/overflow-hidden canvas or
     // capture the wrong viewport offset. Save its actual native 256px pixels.
+    const thumbnail=page.locator(`[data-library-play-id="material-fixture-${material}"] canvas`);
+    await thumbnail.scrollIntoViewIfNeeded();
+    await expect.poll(() => thumbnail.evaluate(node => (node as HTMLCanvasElement).width)).toBe(512);
     const pngBase64 = await page.locator(`[data-library-play-id="material-fixture-${material}"] canvas`)
       .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL('image/png').split(',')[1]);
     if (!pngBase64) throw new Error(`Empty ${material} thumbnail`);
@@ -83,8 +89,12 @@ const captures = (page: Page, info: TestInfo) => {
 
 test('real saved materials retain their optical comparisons and phone captures', async ({ page }, info) => {
   const { visibleProfiles, captureThumbnail, captureStudio } = captures(page, info);
-  const materialStats = await page.locator('.sandbox-library-card [data-library-material-profile]').evaluateAll((canvases) =>
-    canvases.map((node) => {
+  const materialStats=[];
+  for(const material of ['soft','jelly','marshmallow','chrome','holo','pearl']) {
+    const thumbnail=page.locator(`[data-library-play-id="material-fixture-${material}"] canvas`);
+    await thumbnail.scrollIntoViewIfNeeded();
+    await expect.poll(() => thumbnail.evaluate(node => (node as HTMLCanvasElement).width)).toBe(512);
+    materialStats.push(await thumbnail.evaluate((node) => {
       const canvas = node as HTMLCanvasElement;
       const context = canvas.getContext('2d');
       if (!context) throw new Error('No thumbnail context');
@@ -120,8 +130,8 @@ test('real saved materials retain their optical comparisons and phone captures',
           + Math.max(0, gb2 / samples - gbMean * gbMean)
         ),
       };
-    }),
-  );
+    }));
+  }
   const stats = Object.fromEntries(materialStats.map((entry) => [entry.material, entry]));
   expect(Object.keys(stats).sort()).toEqual(['chrome', 'holo', 'jelly', 'marshmallow', 'pearl', 'soft']);
   for (const entry of materialStats) expect(entry.count, `${entry.material} has a visible material body`).toBeGreaterThan(2_000);
@@ -159,3 +169,6 @@ for (const room of [
   await page.screenshot({ path: info.outputPath(`library-hall-material-${room.image}-1440.png`), animations: 'disabled' });
   for (const material of room.materials) { await captureThumbnail(material); await captureStudio(material); }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

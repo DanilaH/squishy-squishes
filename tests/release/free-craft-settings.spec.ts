@@ -1,6 +1,7 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
 import sharp from 'sharp';
-import { createDefaultSaveV3, decodeSaveStateV3 } from '../../src/platform/saveV3';
+import {decodeSaveStateV3} from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
@@ -16,7 +17,7 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
     const toy = { ...createSandboxDraft(), id: 'craft-settings', createdAt: 1700000000000,
       appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [] },
       decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', accessory: 'bow' } };
-    await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)),
+    await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))),
       { ...createDefaultSaveV3(), totalCrafts: 1, library: [toy] });
     await page.reload();
     await page.locator('[data-library-play-id="craft-settings"]').click();
@@ -104,7 +105,7 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
     await expect(axis).toHaveValue('0.8');
     await page.locator('[data-action="save"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'squeeze');
-    const saved = decodeSaveStateV3(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!))).library[0]!;
+    const saved = decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library[0]!;
     expect(saved.appearance.light).toEqual({ preset: 'moon', x: .8, y: .65 });
     expect(saved.appearance.mixinBrush).toEqual({ size: 35, density: 2 });
     expect(saved.appearance.mixins.map(item => item.t)).toEqual(expect.arrayContaining([7, 11]));

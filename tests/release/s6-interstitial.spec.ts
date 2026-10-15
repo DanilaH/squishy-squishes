@@ -1,5 +1,7 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
-import { createDefaultSaveV3, type SaveStateV3 } from '../../src/platform/saveV3';
+import {type SaveStateV3} from '../../src/platform/saveV3';
 import { createEmptyAppearanceDocument } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import type { SavedSquishy } from '../../src/sandbox/types';
@@ -90,7 +92,7 @@ const seedSave = async (page: Page, save: SaveStateV3): Promise<void> => {
   await page.goto(YANDEX_URL);
   await page.evaluate((value) => {
     localStorage.clear();
-    localStorage.setItem('squishy.save.v3', JSON.stringify(value));
+    (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value)));
   }, save);
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
@@ -143,13 +145,13 @@ const fixtureSave: SaveStateV3 = {
   updatedAt: 1,
 };
 
-test('S6 interstitial cadence counts completed saves, not saved-toy revisits, and requests only at Library break', async ({ page }) => {
+test('Interstitial cadence uses a meaningful action and only a Library break, retaining cooldown', async ({ page }) => {
   await installYandexStubWithClock(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await seedSave(page, fixtureSave);
   await expect.poll(async () => (await readYandexState(page)).loadingReady).toBe(1);
 
-  // Move beyond the unchanged 120s initial grace without changing production policy.
+  // Move beyond the retained initial grace.
   await advanceGateClock(page, 121_000);
 
   // Replaying an existing toy is a natural break but not a completed-save action.
@@ -166,16 +168,16 @@ test('S6 interstitial cadence counts completed saves, not saved-toy revisits, an
   expect((await readYandexState(page)).fullscreenRequests).toBe(0);
   await page.locator('[data-action="home"]').click();
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
-  expect((await readYandexState(page)).fullscreenRequests).toBe(0);
+  expect((await readYandexState(page)).fullscreenRequests).toBe(1);
 
   // Save two more toys without a Library break between them. Both completions must be retained.
   await startAndCompleteToy(page, 'paw');
-  expect((await readYandexState(page)).fullscreenRequests).toBe(0);
+  expect((await readYandexState(page)).fullscreenRequests).toBe(1);
   await page.getByRole('button', { name: 'NEW SQUISHY', exact: true }).click();
   await completeToyFromShape(page, 'peach');
-  expect((await readYandexState(page)).fullscreenRequests).toBe(0);
+  expect((await readYandexState(page)).fullscreenRequests).toBe(1);
 
-  // Returning after the third completed save flushes actions 2 + 3 and reaches the existing 3-action gate.
+  // Repeated returns during cooldown do not request another advertisement.
   await page.locator('[data-action="home"]').click();
   await expect(page.locator('[data-sandbox-library]')).toBeVisible();
   await expect.poll(async () => (await readYandexState(page)).fullscreenRequests).toBe(1);
@@ -206,7 +208,17 @@ test('saving directly from every Workshop section counts durable creations at th
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     await page.locator('[data-action="home"]').click();
     await expect(page.locator('[data-sandbox-library]')).toBeVisible();
-    expect((await readYandexState(page)).fullscreenRequests).toBe(section === 'shape' || section === 'paint' ? 0 : 1);
+    expect((await readYandexState(page)).fullscreenRequests).toBe(1);
   }
-  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('squishy.save.v3')))!).library).toHaveLength(5);
+  expect(JSON.parse((await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page)))!).library).toHaveLength(5);
+});
+
+test('return after meaningful Squeeze is eligible, but a recent rewarded attempt suppresses fullscreen',async({page})=>{
+ await installYandexStubWithClock(page);await seedSave(page,fixtureSave);await advanceGateClock(page,121_000);
+ await page.locator('[data-library-play-id="s6-revisit-fixture"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');await advanceGateClock(page,16_000);await page.locator('[data-action=home]').click();await expect.poll(async()=>(await readYandexState(page)).fullscreenRequests).toBe(1);
+ await advanceGateClock(page,151_000);
+ // The timestamp is the bridge written by the production rewarded transaction;
+ // the rewarded adapter's callback/error paths are covered in monetization-flow.
+ await page.evaluate(()=>{document.querySelector<HTMLElement>('#app')!.dataset.lastRewardAt=String(performance.now());});
+ await startAndCompleteToy(page,'heart');await page.locator('[data-action=home]').click();await expect(page.locator('[data-sandbox-library]')).toBeVisible();expect((await readYandexState(page)).fullscreenRequests).toBe(1);
 });

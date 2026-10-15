@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { test, expect } from '@playwright/test';
 import { decodeSaveStateV3 } from '../../src/platform/saveV3';
 
@@ -8,6 +10,7 @@ for (const [locale, width, height] of [
   test.setTimeout(90_000);
   const context = await browser.newContext({baseURL,locale,viewport:{width,height},hasTouch:true,reducedMotion:'reduce'});
   const page = await context.newPage();
+  await returningPlayer(page);
   try {
     await page.goto('/squishy-squishes/?roomReview=0'); await page.locator('[data-library-new]').first().click();
     const shell=page.locator('[data-sandbox-app]');
@@ -63,14 +66,14 @@ for (const [locale, width, height] of [
     await page.locator('[data-action="try-return"]').click(); await expect(shell).toHaveAttribute('data-stage','shape');
     await page.locator('[data-action="save"]').click(); await expect(shell).toHaveAttribute('data-stage','squeeze');
     expect(await page.locator('.sandbox-stage').boundingBox()).toEqual(scene);
-    const before=decodeSaveStateV3(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!))).library[0]!;
+    const before=decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library[0]!;
     expect(before.shapeId).toBe('mochi');expect(before.materialId).toBe('jelly');expect(before.appearance.strokes).toHaveLength(1);expect(before.decor.accessories?.[0]?.color).toBe(0xa1e2ce);
     await page.reload(); await page.locator(`[data-library-play-id="${before.id}"]`).click();await page.locator('[data-action="edit-saved"]').click();
     await expect(page.locator('.craft-sections')).toBeVisible();
     await page.locator('[data-craft-section="paint"]').click();await page.locator('[data-craft-section="shape"]').click();
     await page.locator('[data-base-tab="material"]').click();await page.locator('[data-material="pearl"]').click();
     await page.locator('[data-action="save"]').click();await expect(shell).toHaveAttribute('data-stage','squeeze');
-    const after=decodeSaveStateV3(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!))).library;
+    const after=decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library;
     expect(after).toHaveLength(1);expect(after[0]!.id).toBe(before.id);expect(after[0]!.appearance).toEqual(before.appearance);expect(after[0]!.decor).toEqual(before.decor);expect(after[0]!.materialId).toBe('pearl');
   } finally {await context.close();}
 });
@@ -79,7 +82,7 @@ test('a plain squishy saves immediately without mixing or visiting optional tool
   await page.goto('/squishy-squishes/?roomReview=0');await page.locator('[data-library-new]').first().click();
   await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready','true');
   await page.locator('[data-action="save"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');
-  expect(decodeSaveStateV3(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!))).library).toHaveLength(1);
+  expect(decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library).toHaveLength(1);
 });
 
 
@@ -87,7 +90,7 @@ test('exit cancellation retains the draft and save can be retried after storage 
   await page.addInitScript(()=>{
     const original=Storage.prototype.setItem;
     Storage.prototype.setItem=function(key,value){
-      if(key==='squishy.save.v3' && (window as Window & {rejectWorkshopSave?:boolean}).rejectWorkshopSave) throw new Error('QA storage unavailable');
+      if(key==='squishy.collection.v1' && (window as Window & {rejectWorkshopSave?:boolean}).rejectWorkshopSave) throw new Error('QA storage unavailable');
       original.call(this,key,value);
     };
   });
@@ -169,7 +172,7 @@ test('three toys in one session reset tools; choosing a filling exits Eraser; to
       await page.locator('.craft-actions [data-action="draft-redo"]').click();
       await page.locator('[data-craft-section="mixins"]').click();await page.locator('[data-action="mixin-erase"]').click();await page.locator('[data-action="mixin-settings"]').click();
       await page.locator('[data-action="save"]').click();await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage','squeeze');
-      const saved=decodeSaveStateV3(await page.evaluate(()=>JSON.parse(localStorage.getItem('squishy.save.v3')!))).library;
+      const saved=decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library;
       expect(saved).toHaveLength(i+1);expect(saved[i]!.appearance.mixins).toHaveLength(1);expect(saved[i]!.appearance.strokes).toHaveLength(1);
       if(i<2)await page.locator('[data-panel="squeeze"] [data-action="new"]').click();
     }

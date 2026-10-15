@@ -37,7 +37,7 @@ let mockReady = 0;
 const prefixStorage = (upstream: StorageAdapter): StorageAdapter => ({
   getItem: (key) => upstream.getItem(PREFIX + key),
   setItem: (key, value) => {
-    if (failSaveWrites && key === SAVE_V3_STORAGE_KEY) return Promise.reject(new Error('Injected candidate-only V3 storage failure'));
+    if (failSaveWrites && key === 'squishy.collection.v1') return Promise.reject(new Error('Injected candidate-only V3 storage failure'));
     return upstream.setItem(PREFIX + key, value);
   },
   removeItem: (key) => upstream.removeItem(PREFIX + key),

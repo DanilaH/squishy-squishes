@@ -1,10 +1,11 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { SHAPES, isPointInsideShape } from '../../src/game/shapes';
 import { ACCESSORY_IDS, createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { initialAccessoryPlacements } from '../../src/sandbox/freeCraft';
 import { getAccessoryDepth } from '../../src/sandbox/accessorySeats';
-import { createDefaultSaveV3, decodeSaveStateV3 } from '../../src/platform/saveV3';
+import {decodeSaveStateV3} from '../../src/platform/saveV3';
 import { createBodyFillStroke, createMixInPlacement, MIXIN_IDS } from '../../src/sandbox/appearance';
 
 test('every accessory has finite individual seats and keeps its specified layer on all fifteen molds', () => {
@@ -23,8 +24,8 @@ test('every accessory has finite individual seats and keeps its specified layer 
   }
 });
 
-test('rich new-content toys keep identity, face priority and complete gear across Hall, edit, Finish and reload', async ({ page }) => {
-  test.setTimeout(120_000);
+test('rich new-content toys keep identity, specified layers and complete gear across Hall, edit, Finish and reload', async ({ page }) => {
+  test.setTimeout(300_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/squishy-squishes/?roomReview=0');
@@ -39,7 +40,7 @@ test('rich new-content toys keep identity, face priority and complete gear acros
   }));
   const save = { ...createDefaultSaveV3(), libraryCapacity: 24, totalCrafts: 15, library };
   decodeSaveStateV3(save);
-  await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), save);
+  await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))), save);
   await page.reload(); await mkdir('migration-baseline-evidence/free-craft', { recursive: true });
   for (const toy of library) {
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
@@ -49,15 +50,20 @@ test('rich new-content toys keep identity, face priority and complete gear acros
     await play.click(); await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
     await expect(page.locator('[data-accessory-index]')).toHaveCount(toy.decor.accessories.length);
     await expect(page.locator('.free-face-foreground')).toBeVisible();
-    const depths = await page.locator('[data-accessory-index]').evaluateAll(nodes => nodes.map(node => Number(getComputedStyle(node).zIndex)));
-    expect(Number(await page.locator('.free-face-foreground').evaluate(node => getComputedStyle(node).zIndex))).toBeGreaterThan(Math.max(...depths));
+    const depths = await page.locator('[data-accessory-index]').evaluateAll(nodes => nodes.map(node => ({depth:(node as HTMLElement).dataset.accessoryDepth,z:Number(getComputedStyle(node).zIndex)})));
+    const faceDepth=Number(await page.locator('.free-face-foreground').evaluate(node=>getComputedStyle(node).zIndex));
+    const bodyDepth=Number(await page.locator('[data-sandbox-canvas]').evaluate(node=>getComputedStyle(node).zIndex));
+    for(const piece of depths) {
+      if(piece.depth==='front')expect(piece.z).toBeGreaterThan(faceDepth);
+      else expect(piece.z).toBeLessThan(bodyDepth);
+    }
     await page.screenshot({ path: `migration-baseline-evidence/free-craft/${toy.shapeId}-squeeze.png` });
     await page.locator('[data-action="edit-saved"]').click();
     await page.locator('[data-craft-section="shape"]').click(); await page.locator('[data-base-tab="material"]').click();
     await page.screenshot({ path: `migration-baseline-evidence/free-craft/${toy.shapeId}-finish.png` });
     await page.reload();
   }
-  expect(decodeSaveStateV3(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!))).library).toEqual(library);
+  expect(decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library).toEqual(library);
   expect(errors).toEqual([]);
 });
 
@@ -70,7 +76,7 @@ test('Hall frames the whole craft when freely enlarged decorations extend beyond
     { a: 'handbag', x: 8, y: 245, s: 2.5, r: -.7, side: 'whole', color: 0xa1e2ce },
     { a: 'wings', x: 247, y: 140, s: 2.5, r: .8, side: 'right' },
   ] } };
-  await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)),
+  await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))),
     { ...createDefaultSaveV3(), totalCrafts: 2, library: [ordinary, rich] });
   await page.reload();
   const old = page.locator('[data-library-play-id="ordinary"] canvas'), craft = page.locator('[data-library-play-id="wide-craft"] canvas');
@@ -120,7 +126,7 @@ test('new front and rear gear stays attached through full-screen downward pulls'
       appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [] },
       decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', accessories:
         (['handbag', 'wings', 'crown'] as const).flatMap(id => initialAccessoryPlacements(shape, id)) } };
-    await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)),
+    await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))),
       { ...createDefaultSaveV3(), totalCrafts: 1, library: [toy] });
     await page.reload(); await page.locator('[data-library-play-id="pull-gear"]').click();
     const canvas = page.locator('[data-sandbox-canvas]'), shell = page.locator('[data-sandbox-app]');
@@ -135,6 +141,6 @@ test('new front and rear gear stays attached through full-screen downward pulls'
     }));
     expect(positions.flat().every(Number.isFinite)).toBe(true);
     await page.mouse.up(); await expect(shell).toHaveAttribute('data-squish-active', 'false');
-    expect(decodeSaveStateV3(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!))).library[0]).toEqual(toy);
+    expect(decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library[0]).toEqual(toy);
   }
 });

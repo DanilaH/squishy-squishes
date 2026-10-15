@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { expect, test } from '@playwright/test';
 
 const SAVE_KEY = 'squishy.phaser-pages-preview.squishy.save.v3';
@@ -5,6 +7,7 @@ const SAVE_KEY = 'squishy.phaser-pages-preview.squishy.save.v3';
 test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or inaccessible controls', async ({ browser }, info) => {
   const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
@@ -32,17 +35,17 @@ test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
     // Duplicate a genuinely saved V3 object with unique IDs; don't bypass the codec
     // or synthesize unrelated art. Full library capacity is eight without ads.
-    await page.evaluate((key) => {
-      const state = JSON.parse(localStorage.getItem(key) ?? 'null');
+    await page.evaluate(({__save,__input}) => {const key=__input;
+      const state = __save;
       if (!state || state.library?.length !== 1) throw new Error('Real saved fixture missing');
       const original = state.library[0];
       const materials = ['soft', 'jelly', 'holo', 'marshmallow', 'pearl', 'chrome', 'soft', 'jelly'];
       state.library = materials.map((materialId, index) => ({ ...original, id: `stress-toy-${index}`, materialId }));
-      localStorage.setItem(key, JSON.stringify(state));
-    }, SAVE_KEY);
+      (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(key, JSON.stringify({...state,legacyCatalogAccess:true,libraryCapacity:Math.max(8,state.libraryCapacity,state.library.length)})));
+    }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:SAVE_KEY});
     await page.reload();
     await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '8');
-    const original = await page.evaluate(key=>localStorage.getItem(key), SAVE_KEY);
+    const original = await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:SAVE_KEY});
     for (let cycle = 0; cycle < 5; cycle++) {
       for (const index of [0,2,4,6,7,4,2,0]) {
         const control=page.locator(`[data-library-play-id="stress-toy-${index}"]`);
@@ -53,7 +56,7 @@ test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or
         await expect(page.locator('.library-showcase-collection')).toHaveCount(1);
       }
     }
-    expect(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)).toBe(original);
+    expect(await page.evaluate(({__save,__input}) => {const key=__input;return ((__save === null ? null : JSON.stringify(__save)));}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:SAVE_KEY})).toBe(original);
     await page.setViewportSize({ width: 667, height: 375 });
     await page.screenshot({ path: info.outputPath('library-hall-capacity-eight-landscape-667.png'), animations: 'disabled' });
     const accessible = await page.locator('.sandbox-library-heading button').evaluateAll((buttons) => buttons.map((button) => {
@@ -78,3 +81,6 @@ test('eight persisted toys scroll repeatedly without duplicate shelves, leaks or
     await context.close();
   }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

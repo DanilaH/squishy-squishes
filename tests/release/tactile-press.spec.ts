@@ -1,6 +1,8 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
 
@@ -12,7 +14,7 @@ for (const [locale, width, height, shapeId] of [
   const page = await context.newPage();
   try {
     await page.goto('/squishy-squishes/?roomReview=0');
-    await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
+    await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), {
       ...createDefaultSaveV3(), totalCrafts: 1,
       library: [{ id: 'hold', createdAt: 1700000000000, shapeId, materialId: 'jelly',
         appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [] },
@@ -21,7 +23,7 @@ for (const [locale, width, height, shapeId] of [
     await page.reload(); await page.locator('[data-library-play-id="hold"]').click();
     const shell = page.locator('[data-sandbox-app]'), canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
-    const saved = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+    const saved = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
     const box = (await canvas.boundingBox())!;
     const point = { x: box.x + box.width / 2, y: box.y + box.height / 2, id: 1 };
     const cdp = await context.newCDPSession(page);
@@ -56,7 +58,7 @@ for (const [locale, width, height, shapeId] of [
     await expect(shell).toHaveAttribute('data-squish-active', 'false');
     await expect(shell).toHaveAttribute('data-face-reaction', '0:0');
     expect(await shell.getAttribute('data-sandbox-squeezes')).toBe(count);
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(saved);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(saved);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
   } finally { await context.close(); }
 });

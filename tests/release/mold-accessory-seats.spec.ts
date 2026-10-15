@@ -1,7 +1,8 @@
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { SHAPES } from '../../src/game/shapes';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
 for (const accessory of ['bow', 'crown', 'cat-ears', 'bunny-ears', 'horns'] as const) test(`all fifteen molds preserve ${accessory} seats and depth through real squeeze`, async ({ page }) => {
@@ -9,7 +10,7 @@ for (const accessory of ['bow', 'crown', 'cat-ears', 'bunny-ears', 'horns'] as c
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/squishy-squishes/?roomReview=0');
-    await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), {
+    await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))), {
       ...createDefaultSaveV3(), totalCrafts: 8,
       libraryCapacity: 24, library: SHAPES.map((shape, n) => ({ id: shape.id, createdAt: 1700000000000 + n, shapeId: shape.id, materialId: 'soft',
         appearance: { v: 1, strokes: [], mixins: [] }, decor: { ...createEmptyDecorDocument(), accessory } })),

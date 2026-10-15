@@ -1,7 +1,9 @@
+import { drawQualityArt } from './qualityArt';
 import type { MixInId } from './appearance';
 import { drawPearlStar } from './pearlStars';
 
 const TAU = Math.PI * 2;
+const DEFAULT_HEART_COLORS: readonly [string, string, string] = ['#ffe5e7', '#fda3c8', '#d660a0'];
 const heart = (ctx: CanvasRenderingContext2D, r: number): void => {
   ctx.beginPath(); ctx.moveTo(0, r * .82);
   ctx.bezierCurveTo(-r * 1.2, r * .1, -r * .85, -r * .92, 0, -r * .28);
@@ -19,7 +21,16 @@ const sphere = (ctx: CanvasRenderingContext2D, r: number, foam: boolean): void =
 };
 
 /** Same small material drawing in the tray, UV bake and transient placement cue. */
-export const drawToyMixIn = (ctx: CanvasRenderingContext2D, id: MixInId, r: number, variation = 0, depth = 0, heartColors: readonly [string, string, string] = ['#ffe5e7', '#fda3c8', '#d660a0']): void => {
+export const drawToyMixIn = (ctx: CanvasRenderingContext2D, id: MixInId, r: number, variation = 0, depth = 0, heartColors: readonly [string, string, string] = DEFAULT_HEART_COLORS): void => {
+  ctx.save(); ctx.globalAlpha *= 1 - depth * (id === 'stars' ? .38 : .25);
+  const paletteIndex = Math.abs(variation) % 3;
+  if (id === 'flowers' || id === 'confetti') {
+    const angle = (id === 'flowers' ? [-45, 65, 165] : [0, 110, -115])[paletteIndex]!;
+    ctx.filter = `hue-rotate(${angle}deg)`;
+  }
+  const authored = (id !== 'hearts' || heartColors === DEFAULT_HEART_COLORS) && drawQualityArt(ctx, id === 'hearts' ? 'filler-heart' : `filler-${id}`, -r, -r, r*2, r*2);
+  ctx.restore();
+  if (authored) return;
   if (id === 'stars') { drawPearlStar(ctx, r, depth); return; }
   ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.globalAlpha *= 1 - depth * .25;
   if (id === 'pearls' || id === 'foam') sphere(ctx, r, id === 'foam');

@@ -79,14 +79,15 @@ test('M5: real bootstrap persists V3 and rewards only after an SDK grant; duplic
   expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).some((event) => event.startsWith('analytics:craft_save:'))).toBe(true);
   expect(await page.evaluate(() => window.__squishyPhaserPlatform!.getSdkCounters()?.interstitials)).toBe(0);
 
-  const ids = await page.evaluate(() => {
+  const ids = await page.evaluate(async () => {
     const control = window.__squishyPhaserPlatform!;
-    const saved = JSON.parse(sessionStorage.getItem(control.storageKey())!) as { library: { id: string; createdAt: number }[]; libraryCapacity: number; totalCrafts: number; updatedAt: number };
+    const saved = await control.readSave() as { library: { id: string; createdAt: number }[]; libraryCapacity: number; totalCrafts: number; updatedAt: number };
     const original = saved.library[0]!;
     saved.library = Array.from({ length: 8 }, (_, index) => ({ ...original, id: `sdk-stub-toy-${index}`, createdAt: original.createdAt + index }));
     saved.libraryCapacity = 8;
     saved.totalCrafts = 8;
     saved.updatedAt = Date.now();
+    sessionStorage.removeItem(control.storageKey().replace('squishy.save.v3','squishy.collection.v1'));
     sessionStorage.setItem(control.storageKey(), JSON.stringify(saved));
     return saved.library.map((toy) => toy.id);
   });
@@ -97,14 +98,14 @@ test('M5: real bootstrap persists V3 and rewards only after an SDK grant; duplic
   expect((await page.evaluate(() => window.__squishyPhaserPlatform!.readSave())).libraryCapacity).toBe(8);
   await page.evaluate(() => window.__squishyPhaserPlatform!.setRewardMode('duplicate'));
   await page.locator('[data-library-expand-reward]').click();
-  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '10');
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '9');
   const granted = await page.evaluate(() => window.__squishyPhaserPlatform!.readSave());
   expect(granted.library.map((toy) => toy.id)).toEqual(ids);
-  expect(granted.libraryCapacity).toBe(10);
-  expect(granted.unlockedRewardIds).toHaveLength(1);
+  expect(granted.libraryCapacity).toBe(9);
+  expect(granted.unlockedRewardIds).toHaveLength(0);
   expect(granted.totalCrafts).toBe(8);
-  expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).filter((event) => event.startsWith('analytics:shelf_reward_granted:'))).toHaveLength(1);
+  expect((await page.evaluate(() => window.__squishyPhaserPlatform!.getEvents())).filter((event) => event.startsWith('analytics:reward_result:') && event.includes('true'))).toHaveLength(1);
   expect(await page.evaluate(() => window.__squishyPhaserPlatform!.getSdkCounters()?.rewarded)).toBe(2);
   await page.reload();
-  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '10');
+  await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-capacity', '9');
 });

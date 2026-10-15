@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { expect, test, type Page } from '@playwright/test';
 
 const PAGES_URL = '/squishy-squishes/?roomReview=0';
@@ -5,6 +7,7 @@ const PAGES_URL = '/squishy-squishes/?roomReview=0';
 const freshMaker = async (page: Page): Promise<ReturnType<Page['locator']>> => {
   await page.goto(PAGES_URL);
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  await returningPlayer(page);
   await page.reload();
   await page.locator('[data-library-new]').first().click();
   const shell = page.locator('[data-sandbox-app]');
@@ -60,9 +63,9 @@ test('Base exposes six material identities and a new material persists through S
   await page.locator('.sandbox-material[data-material="chrome"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(shell).toHaveAttribute('data-stage', 'squeeze');
-  const savedMaterial = await page.evaluate(() => {
-    const value = JSON.parse(localStorage.getItem('squishy.save.v3') ?? '{}') as { library?: Array<{ materialId?: string }> };
+  const savedMaterial = await page.evaluate((__collection) => {
+    const value = __collection as { library?: Array<{ materialId?: string }> };
     return value.library?.[0]?.materialId ?? null;
-  });
+  }, await readCollection(page));
   expect(savedMaterial).toBe('chrome');
 });

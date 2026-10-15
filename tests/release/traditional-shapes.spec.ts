@@ -1,7 +1,8 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { SHAPES, getShape, isPointInsideShape } from '../../src/game/shapes';
-import { createDefaultSaveV3, decodeSaveStateV3 } from '../../src/platform/saveV3';
+import {decodeSaveStateV3} from '../../src/platform/saveV3';
 import { ACCESSORY_IDS, createEmptyDecorDocument } from '../../src/sandbox/decor';
 
 test('traditional molds retain legacy V3 shapes and a continuous touchable body', () => {
@@ -41,9 +42,9 @@ for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) for (const acc
     })), totalCrafts: ACCESSORY_IDS.length };
     decodeSaveStateV3(save);
     await page.goto('/squishy-squishes/?roomReview=0');
-    await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), save);
+    await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))), save);
     await page.reload();
-    const beforeSave = await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library));
+    const beforeSave = decodeSaveStateV3(save).library;
     await mkdir('migration-baseline-evidence', { recursive: true });
     {
       const hall = page.locator('[data-sandbox-library]');
@@ -72,7 +73,7 @@ for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) for (const acc
       await expect.poll(async () => Number(await page.locator('[data-sandbox-app]').getAttribute('data-sandbox-squeezes'))).toBeGreaterThan(0);
       await page.reload();
     }
-    expect(await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('squishy.save.v3')!).library))).toBe(beforeSave);
+    expect(decodeSaveStateV3(await readCollection(page)).library).toEqual(beforeSave);
     expect(errors).toEqual([]);
   });
 }

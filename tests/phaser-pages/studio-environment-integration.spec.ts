@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { reachableControlIssues } from './helpers/reachableControls';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
@@ -102,6 +103,7 @@ for (const view of views) {
   test(`Studio v8 integrated real browser ${view.name}`, async ({ browser }, info: TestInfo) => {
     const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: view.width, height: view.height }, deviceScaleFactor: view.dpr });
     const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
     const pageErrors: string[] = [];
     page.on('pageerror', (err) => pageErrors.push(err.message));
     try {
@@ -138,3 +140,6 @@ for (const view of views) {
     }
   });
 }
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

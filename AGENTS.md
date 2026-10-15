@@ -42,12 +42,20 @@ replacement/deletion, catalog return position and the room podium geometry.
 
 ## Current polish invariants
 
+The owner approved the authored puffy art sample and the full catalog pass on
+14 October 2026. See `docs/ART_QUALITY_REVIEW_2026-10-14.md` and the masters in
+`assets-src/art-quality-sample` / `assets-src/art-quality-full`. Expanded
+accessories, stickers and fillings use the shared `qualityArt` manifest and
+preload boundary; procedural drawings remain error fallbacks. Preserve existing
+IDs, color variants, per-piece attachment roots and the deformable body renderer.
+Style approval is separate from merging or publishing the artwork.
+
 - Pinned Squeeze follows the pointer modestly; retain bounded whole-body travel and local tap/poke rebound. The owner paused the Unpin entry on 7 October 2026; retain its transient experimental code without restoring the player button.
 - Draw volume sidewall backing before the front surface to avoid stretch stripes.
 - Composite eyes/mouth/blush after body material lighting.
 - The first Paint stroke must render before pointer-up, including live uncommitted appearance content.
 - Normal Studio entry waits for decoded furniture. Genuine asset failure retains a usable fallback.
-- Hall thumbnails are eager. Do not restore the obsolete `data-library-rendered` marker.
+- Collection previews retain only visible/adjacent raster buffers; initial nearby cards render first. Do not restore eager rendering of the complete collection or the obsolete `data-library-rendered` marker.
 
 Start with `docs/README.md` and current code/tests. Historical migration plans describe the path to cutover, not an outstanding migration. `docs/IMPLEMENTATION_ROADMAP.md` and old recipe/dark-lab art documents are historical. Keep new fixes scoped to observed behavior; advanced appendage grabbing and source-art margin cleanup are deferred ideas, not release blockers.
 
@@ -55,7 +63,7 @@ Start with `docs/README.md` and current code/tests. Historical migration plans d
 
 - Strict TypeScript, Vite, one deformable WebGL2 renderer, a single parameterized shader and generic deformation; do not introduce React, per-shape physics or a second on-screen WebGL game. Production uses the lazy Phaser maker; the raw `SquishSurface` remains for diagnostic/legacy paths. Do not revert production to it.
 - `src/game/shapes.ts` owns the canonical boundary used by hit testing, field, UV rendering and previews. Content remains free to create; optional Ideas never gate it.
-- SaveState V3 and existing IDs/migration are durable. Library has 8 free slots and one optional rewarded expansion to 10. Do not alter save, reward or ad cadence for an infrastructure/asset task.
+- Existing V3 IDs, artwork and migration remain durable. The owner approved release monetization on 15 October: four fresh places, repeatable permanent +1 rewarded places, free previews and permanent optional catalog openings. Imported old capacity and full catalog access are retained. Follow docs/MONETIZATION_RELEASE_ROADMAP_2026-10-15.md; publication requires separate validation. The manifest/individual records now persist V3 domain data; do not revive monolithic writes.
 - `PlatformRuntime.activity` remains the sole source of aggregated blockers. New audio/input/loading code must respect it.
 - Preserve the reviewed tactile constants and Finish-only disabled-canvas pointer passthrough; global `.sandbox-canvas.is-disabled { pointer-events: none }` breaks Paint/Decor.
 

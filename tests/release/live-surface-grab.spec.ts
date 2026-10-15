@@ -66,8 +66,8 @@ for (const [width, height, stage] of [[390, 844, 'squeeze'], [1440, 900, 'previe
     const page = await context.newPage();
     try {
       await page.goto('/squishy-squishes/?roomReview=0');
-      await page.evaluate(() => localStorage.setItem('squishy.save.v3', JSON.stringify({ version: 3, libraryCapacity: 8, totalCrafts: 1, completedRecipeIds: [], unlockedRewardIds: [], updatedAt: 1,
-        library: [{ id: 'catch', createdAt: 1, shapeId: 'mochi', materialId: 'soft', appearance: { v: 1, strokes: [], mixins: [] }, decor: { v: 1, eyes: 'dot', mouth: 'smile', blush: true, stickers: [], accessory: 'bow' } }] })));
+      await page.evaluate(() => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify({ version: 3, libraryCapacity: 8, totalCrafts: 1, completedRecipeIds: [], unlockedRewardIds: [], updatedAt: 1,
+        library: [{ id: 'catch', createdAt: 1, shapeId: 'mochi', materialId: 'soft', appearance: { v: 1, strokes: [], mixins: [] }, decor: { v: 1, eyes: 'dot', mouth: 'smile', blush: true, stickers: [], accessory: 'bow' } }] }))));
       await page.reload(); await page.locator('[data-library-play-id="catch"]').click();
       const canvas = page.locator('[data-sandbox-canvas]'), shell = page.locator('[data-sandbox-app]');
       await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');

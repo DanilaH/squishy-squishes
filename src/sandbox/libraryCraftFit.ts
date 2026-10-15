@@ -60,3 +60,7 @@ export const fitLibraryCraft = (ctx: CanvasRenderingContext2D, shape: ShapeDefin
   }
   return scale;
 };
+
+/** Flat silhouettes rest at the same exhibit baseline as taller molds. */
+export const libraryCraftSeatOffset = (shape: ShapeDefinition): number =>
+  Math.max(0, .82 + Math.min(...shape.boundary.map(point => point.y))) * .905;

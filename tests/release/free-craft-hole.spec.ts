@@ -1,7 +1,8 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
 import { createShapeField, getShape, isPointInsideShape } from '../../src/game/shapes';
 import { SquishSimulation } from '../../src/squish/SquishSimulation';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 import { mkdir } from 'node:fs/promises';
 
@@ -35,7 +36,7 @@ test('production donut preserves its hole through Hall, Squeeze and reload', asy
     appearance: { v: 1, strokes: [], mixins: [] },
     decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory: 'bow' },
   }] };
-  await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), save);
+  await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))), save);
   await page.reload();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-hall-mounted', 'true');
   await mkdir('migration-baseline-evidence', { recursive: true });
@@ -53,5 +54,5 @@ test('production donut preserves its hole through Hall, Squeeze and reload', asy
   await page.mouse.move(x + 145, y - 25, { steps: 12 }); await page.mouse.up();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-sandbox-squeezes', '1');
   await page.reload();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!).library[0].shapeId)).toBe('donut');
+  expect(await page.evaluate((__collection) => (__collection.library[0].shapeId), await readCollection(page))).toBe('donut');
 });

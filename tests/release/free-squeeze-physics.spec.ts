@@ -1,13 +1,15 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 // Browser free-flight cases are dormant while the owner-paused Unpin entry is absent.
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createSandboxDraft } from '../../src/sandbox/types';
 
 for (const viewport of [{width:390,height:844},{width:1440,height:900},{width:568,height:320}]) {
   test.skip(`room geometry stays fixed through Squeeze, Unpin and return at ${viewport.width}`, async ({page}) => {
     await page.setViewportSize(viewport);
     await page.goto('/squishy-squishes/?roomReview=1');
-    await page.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'geometry',createdAt:1,shapeId:'mochi',materialId:'jelly'}]});
+    await page.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'geometry',createdAt:1,shapeId:'mochi',materialId:'jelly'}]});
     await page.reload();
     const table=page.locator('.library-showcase-table');
     await expect(page.locator('[data-library-table-ready]')).toHaveAttribute('data-library-table-ready','true');
@@ -31,10 +33,10 @@ for (const viewport of [{width:390,height:844},{width:1440,height:900},{width:56
 for(const material of ['jelly','chrome'] as const) test.skip(`real ${material} grab, spin, wall contact and decorated return`, async ({page},info)=>{
   await page.setViewportSize({width:900,height:760});
   await page.goto('/squishy-squishes/?roomReview=1');
-  await page.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'spin',createdAt:1,shapeId:'mochi',materialId:material,decor:{v:1,eyes:'dot',mouth:'smile',blush:true,accessory:'bow',stickers:[]}}]});
+  await page.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'spin',createdAt:1,shapeId:'mochi',materialId:material,decor:{v:1,eyes:'dot',mouth:'smile',blush:true,accessory:'bow',stickers:[]}}]});
   await page.reload();await page.locator('[data-library-select-id="spin"]').click();
   const canvas=page.locator('[data-sandbox-canvas]');await expect(canvas).toHaveAttribute('data-phaser-ready','true');
-  const before=await page.evaluate(()=>localStorage.getItem('squishy.save.v3'));
+  const before=await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
   const box=(await canvas.boundingBox())!,home={x:box.x+box.width/2,y:box.y+box.height/2};
   await page.locator('[data-action="free-squeeze"]').click();
   // Pick up while still near home, lift, then swing from an off-center grip.
@@ -61,13 +63,13 @@ for(const material of ['jelly','chrome'] as const) test.skip(`real ${material} g
   await page.screenshot({path:info.outputPath(`${material}-landed.png`)});
   await page.locator('[data-action="free-squeeze"]').click();
   await expect(page.locator('[data-sandbox-app]')).not.toHaveAttribute('data-free-squeeze','true');
-  expect(await page.evaluate(()=>localStorage.getItem('squishy.save.v3'))).toBe(before);
+  expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(before);
 });
 
 
 test('exhibit preview stays present during the live canvas startup', async ({page}) => {
   await page.goto('/squishy-squishes/?roomReview=1');
-  await page.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'handoff',createdAt:1}]});
+  await page.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'handoff',createdAt:1}]});
   await page.reload();
   await expect(page.locator('[data-library-select-id="handoff"]')).toBeVisible();
   await page.evaluate(()=>{
@@ -89,7 +91,7 @@ test('exhibit preview stays present during the live canvas startup', async ({pag
 test.skip('a spinning Jelly throw hits the wall and settles on the room floor', async ({page},info)=>{
   await page.setViewportSize({width:900,height:760});
   await page.goto('/squishy-squishes/?roomReview=1');
-  await page.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'flight',createdAt:1,shapeId:'mochi',materialId:'jelly',decor:{v:1,eyes:'dot',mouth:'smile',blush:true,accessory:'bow',stickers:[]}}]});
+  await page.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'flight',createdAt:1,shapeId:'mochi',materialId:'jelly',decor:{v:1,eyes:'dot',mouth:'smile',blush:true,accessory:'bow',stickers:[]}}]});
   await page.reload();await page.locator('[data-library-select-id="flight"]').click();
   const canvas=page.locator('[data-sandbox-canvas]');await expect(canvas).toHaveAttribute('data-phaser-ready','true');
   const box=(await canvas.boundingBox())!,home={x:box.x+box.width/2,y:box.y+box.height/2};
@@ -120,7 +122,7 @@ test.skip('a spinning Jelly throw hits the wall and settles on the room floor', 
 test.skip('Jelly hangs from its caught surface and keeps the grip during a swing', async ({page},info)=>{
   await page.setViewportSize({width:900,height:760});
   await page.goto('/squishy-squishes/?roomReview=1');
-  await page.evaluate(save=>localStorage.setItem('squishy.save.v3',JSON.stringify(save)),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'hang',createdAt:1,shapeId:'mochi',materialId:'jelly',decor:{v:1,eyes:'dot',mouth:'smile',blush:true,accessory:'bow',stickers:[]}}]});
+  await page.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),{...createDefaultSaveV3(),totalCrafts:1,library:[{...createSandboxDraft(),id:'hang',createdAt:1,shapeId:'mochi',materialId:'jelly',decor:{v:1,eyes:'dot',mouth:'smile',blush:true,accessory:'bow',stickers:[]}}]});
   await page.reload();await page.locator('[data-library-select-id="hang"]').click();
   const canvas=page.locator('[data-sandbox-canvas]');await expect(canvas).toHaveAttribute('data-phaser-ready','true');
   await page.locator('[data-action="free-squeeze"]').click();

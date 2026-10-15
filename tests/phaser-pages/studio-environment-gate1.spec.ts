@@ -1,3 +1,4 @@
+import { returningPlayer } from '../returning-player';
 import { reachableControlIssues } from './helpers/reachableControls';
 import { expect, test, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
@@ -60,6 +61,7 @@ for (const d of devices) {
   test(`Studio Gate 1 real-UI geometry ${d.name}`, async ({ browser }, info) => {
     const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: d.width, height: d.height } });
     const page = await context.newPage();
+    await returningPlayer(page, 'squishy.phaser-pages-preview.');
     try {
       await page.goto('/phaser/?roomReview=0');
       await expect(page.locator('#app')).toHaveAttribute('data-jelly-ui-ready', '');
@@ -87,3 +89,6 @@ for (const d of devices) {
     }
   });
 }
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

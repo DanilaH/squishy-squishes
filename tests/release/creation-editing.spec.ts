@@ -1,6 +1,7 @@
+import { readCollection, createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import { createDefaultSaveV3, decodeSaveStateV3, updateSavedSquishy } from '../../src/platform/saveV3';
+import {decodeSaveStateV3,updateSavedSquishy} from '../../src/platform/saveV3';
 import { createSandboxDraft } from '../../src/sandbox/types';
 
 const saved = (id: string) => ({ ...createSandboxDraft(), id, createdAt: 1700000000000 });
@@ -29,7 +30,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
   try {
     await page.goto('/squishy-squishes/?roomReview=0');
     const state = { ...createDefaultSaveV3(), library: Array.from({ length: 8 }, (_, i) => saved(`toy-${i}`)), totalCrafts: 19 };
-    await page.evaluate(value => localStorage.setItem('squishy.save.v3', JSON.stringify(value)), state);
+    await page.evaluate(value => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(value))), state);
     await page.reload();
     await page.locator('[data-library-play-id="toy-0"]').click();
     await page.locator('[data-action="edit-saved"]').click();
@@ -76,7 +77,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     await page.locator('[data-action="save"]').click();
     await expect(shell).toHaveAttribute('data-stage', 'squeeze');
     await expect(page.locator('[data-library-replace-overlay]')).toHaveCount(0);
-    const rawAfter = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!));
+    const rawAfter = await page.evaluate((__collection) => (__collection), await readCollection(page));
     const after = decodeSaveStateV3(rawAfter);
     expect(after.totalCrafts).toBe(19);
     expect(after.library).toHaveLength(8);
@@ -103,7 +104,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
     await page.locator('button[data-decor-section="accessory"]').click(); await page.locator('[data-decor-accessory="none"]').click();
     await page.locator('[data-action="exit-craft"]').click();
     await page.locator('[data-action="exit-confirm"]').click();
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!))).toEqual(rawAfter);
+    expect(await page.evaluate((__collection) => (__collection), await readCollection(page))).toEqual(rawAfter);
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   } finally { await context.close(); }
 });

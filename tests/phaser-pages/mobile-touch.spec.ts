@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { Buffer } from 'node:buffer';
 import { expect, test } from '@playwright/test';
 
@@ -11,6 +13,7 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     isMobile: true,
   });
   const page = await context.newPage();
+    await returningPlayer(page,'squishy.phaser-pages-preview.');
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
@@ -93,10 +96,10 @@ test('touch creates a painted, sprinkled and decorated squishy, mixes and reopen
     await page.locator('[data-action="save"]').tap();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
 
-    const stored = await page.evaluate(() => ({
+    const stored = await page.evaluate(({__save,__input}) => {return ({
       original: localStorage.getItem('squishy.save.v3'),
-      preview: localStorage.getItem('squishy.phaser-pages-preview.squishy.save.v3'),
-    }));
+      preview: (__save === null ? null : JSON.stringify(__save)),
+    });}, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:null});
     expect(stored.original).toBe('keep-original-save');
     const saved = JSON.parse(stored.preview ?? 'null');
     expect(saved).toMatchObject({ version: 3, library: [{ shapeId: 'heart', materialId: 'holo' }] });
@@ -128,6 +131,7 @@ test('DPR 3 phone keeps the tactile Phaser framebuffer in CSS pixels', async ({ 
     isMobile: true,
   });
   const page = await context.newPage();
+    await returningPlayer(page,'squishy.phaser-pages-preview.');
   try {
     await page.goto('/phaser/?roomReview=0');
     await page.locator('[data-library-new]').first().tap();
@@ -180,3 +184,6 @@ test('DPR 3 phone keeps the tactile Phaser framebuffer in CSS pixels', async ({ 
     await context.close();
   }
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

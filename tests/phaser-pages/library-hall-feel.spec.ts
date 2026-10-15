@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { expect, test } from '@playwright/test';
 
 const key = 'squishy.phaser-pages-preview.squishy.save.v3';
@@ -24,12 +26,12 @@ test('review: parquet repeats, shelf fits, toys stay still and catalog scrolling
   await page.locator('[data-base-tab="material"]').click();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-  await page.evaluate((storageKey) => {
-    const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
+  await page.evaluate(({__save,__input}) => {const storageKey=__input;
+    const saved = __save;
     if (saved?.library?.length !== 1) throw new Error('No real V3 saved fixture');
     saved.library = [saved.library[0], { ...saved.library[0], id: 'feel-second', materialId: 'holo' }, { ...saved.library[0], id: 'feel-third', materialId: 'chrome' }];
-    localStorage.setItem(storageKey, JSON.stringify(saved));
-  }, key);
+    (localStorage.removeItem("squishy.phaser-pages-preview.squishy.collection.v1"), localStorage.setItem(storageKey, JSON.stringify({...saved,legacyCatalogAccess:true,libraryCapacity:Math.max(8,saved.libraryCapacity??0,saved.library?.length??0)})));
+  }, {__save:await readCollection(page,"squishy.phaser-pages-preview.","local"),__input:key});
   await page.reload();
   const card = page.locator('.sandbox-library-card:visible').first();
   await expect(card).toBeVisible();
@@ -83,3 +85,6 @@ test('review: parquet repeats, shelf fits, toys stay still and catalog scrolling
   expect(desktop.planeRepeat).toBe('repeat');
   await page.screenshot({ path: info.outputPath('library-hall-perspective-desktop-1440.png'), animations: 'disabled' });
 });
+
+// This regression profile retains the previously free catalog. Fresh monetization is tested separately.
+test.beforeEach(async ({ page }) => returningPlayer(page, 'squishy.phaser-pages-preview.'));

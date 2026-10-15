@@ -154,7 +154,7 @@
 #app [data-library-live] .sandbox-stage { container-type: size; }
 #app [data-library-live] .sandbox-canvas {
   --squish-seat-size: calc(min(80cqw, 120cqh, 440px) * var(--library-craft-scale, 1));
-  top: calc(50% + min(80cqw, 120cqh, 440px) * .2584 * (1 - var(--library-craft-scale, 1)));
+  top: calc(50% + min(80cqw, 120cqh, 440px) * (.2584 * (1 - var(--library-craft-scale, 1)) + .34 * var(--library-craft-scale, 1) * var(--library-shape-seat, 0)));
 }
 #app [data-library-live] .sandbox-accessory-layer {
   /* Match the shared thumbnail's 112×75 artwork at a 204.8px body diameter.
@@ -200,4 +200,8 @@
 @media (max-height:520px) and (orientation:landscape) {
   #app .library-showcase-workbench { grid-template-rows: minmax(0, 1fr) 38px; }
   #app .library-showcase-selected { height: 38px; }
+}
+
+#app .room-library [data-library-display] {
+  top: calc(50% + min(68cqw, 102cqh, 374px) * .4 * var(--library-shape-seat, 0));
 }

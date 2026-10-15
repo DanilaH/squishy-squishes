@@ -1,3 +1,5 @@
+import { returningPlayer } from '../returning-player';
+import { readCollection } from '../collection';
 import { expect, test } from '@playwright/test';
 
 for (const locale of ['ru-RU', 'en-US']) {
@@ -5,6 +7,7 @@ for (const locale of ['ru-RU', 'en-US']) {
     test(`all ideas are reachable without scrolling in ${locale} at ${viewport.width}px`, async ({ browser, baseURL }) => {
       const context = await browser.newContext({ baseURL, locale, viewport });
       const page = await context.newPage();
+      await returningPlayer(page);
       try {
         await page.goto('/squishy-squishes/?roomReview=0');
         await page.locator('[data-library-ideas]').click();
@@ -38,34 +41,34 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }
     test.setTimeout(60_000);
     await page.setViewportSize(viewport);
     await page.addInitScript(() => {
-      localStorage.setItem('squishy.save.v3', JSON.stringify({
+      (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify({
         version: 3, libraryCapacity: 8, completedRecipeIds: [], unlockedRewardIds: [], totalCrafts: 8, updatedAt: 1,
         library: Array.from({ length: 8 }, (_, index) => ({
           id: `slot-${index}`, createdAt: 1, shapeId: 'soft-square', materialId: 'soft',
           appearance: { v: 1, strokes: [], mixins: [] }, decor: { v: 1 },
         })),
-      }));
+      })));
     });
     await page.goto('/squishy-squishes/?roomReview=0');
     await page.screenshot({ path: test.info().outputPath('full-library.png'), animations: 'disabled' });
     await page.locator('[data-library-new]').first().click();
     await expect(page.locator('[data-sandbox-canvas]')).toHaveAttribute('data-phaser-ready', 'true');
-    const original = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+    const original = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
     await page.locator('[data-action="save"]').click();
     const sheet = page.locator('[data-library-replace-overlay] [role="dialog"]');
     await expect(sheet.locator('[data-library-replace-id]:visible')).toHaveCount(4);
     await sheet.locator('[data-card-page-step="1"]').click();
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(original);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(original);
     expect(await sheet.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
     await page.screenshot({ path: test.info().outputPath('replacement-page2.png'), animations: 'disabled' });
     const box = await sheet.boundingBox();
     expect(box!.y).toBeGreaterThanOrEqual(0);
     expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
     await page.locator('[data-library-replace-id="slot-7"]').click();
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(original);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(original);
     await page.locator('[data-library-replace-confirm]').click();
     await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-stage', 'squeeze');
-    const ids = await page.evaluate(() => JSON.parse(localStorage.getItem('squishy.save.v3')!).library.map((toy: { id: string }) => toy.id));
+    const ids = await page.evaluate((__collection) => (__collection.library.map((toy: { id: string }) => toy.id)), await readCollection(page));
     expect(ids).toHaveLength(8);
     expect(ids.slice(0, 7)).toEqual(Array.from({ length: 7 }, (_, index) => `slot-${index}`));
     expect(ids[7]).not.toBe('slot-7');

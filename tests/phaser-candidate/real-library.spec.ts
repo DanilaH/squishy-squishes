@@ -85,6 +85,7 @@ test('M5 preview: full eight-slot shelf requires deliberate replacement; a close
       id: `phaser-seeded-${index}`,
       createdAt: original.createdAt + index,
     }));
+    sessionStorage.removeItem(app.storageKey().replace('squishy.save.v3','squishy.collection.v1'));
     sessionStorage.setItem(app.storageKey(), JSON.stringify({
       ...state,
       library: seeded,

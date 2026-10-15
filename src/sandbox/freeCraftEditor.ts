@@ -1,6 +1,6 @@
 import { getShape } from '../game/shapes';
 import { getDecorFrame, MAX_DECOR_STICKERS, type DecorDocumentV1 } from './decor';
-import { accessoryPlacements, initialAccessoryPlacements, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
+import { accessoryPlacements, accessoryDepth, accessoryMaxScale, initialAccessoryPlacements, MAX_ACCESSORY_PLACEMENTS } from './freeCraft';
 import type { SandboxDraft } from './types';
 import type { StagePointer } from './StageGestureRouter';
 import { isBodyFillStroke } from './appearance';
@@ -75,6 +75,7 @@ export class FreeCraftEditor {
     const panelTop = panel.scrollTop;
     const listLeft = panel.querySelector('.free-object-list')?.scrollLeft ?? 0;
     const colorsLeft = panel.querySelector('.free-color-choices')?.scrollLeft ?? 0;
+    const moreTop = panel.querySelector('.free-object-more')?.scrollTop ?? 0;
     const focused = document.activeElement instanceof HTMLElement && panel.contains(document.activeElement) ? document.activeElement : null;
     const focusKey = focused ? ['object', 'objectAction', 'objectControl'].find(key => focused.dataset[key] !== undefined) : undefined;
     const focusValue = focusKey ? focused!.dataset[focusKey] : undefined;
@@ -94,21 +95,23 @@ export class FreeCraftEditor {
     const atLimit = selected.kind === 'accessory' ? items.length >= MAX_ACCESSORY_PLACEMENTS
       : selected.kind === 'sticker' && decor.stickers.length >= MAX_DECOR_STICKERS;
     const limitHint = atLimit ? t('Limit reached. Delete an item to add a copy.', 'Лимит достигнут. Удали деталь, чтобы добавить копию.') : '';
-    const actionButton = (action: string) => `<button type="button" data-object-action="${action}" ${action === 'lock' ? `aria-pressed="${!!locked}"` : action === 'more' ? `aria-expanded="${this.moreOpen}" aria-controls="free-object-more"` : ''} ${(action === 'reset' && locked) || (atLimit && (action === 'duplicate' || action === 'mirror')) ? 'disabled' : ''}>${({reset:t('Reset','Сброс'),lock:locked?t('Unlock','Открепить'):t('Lock','Закрепить'),duplicate:t('Copy','Копия'),mirror:t('Mirror copy','Парная копия'),delete:t('Delete','Удалить'),more:selected.kind === 'accessory' ? t('Color','Цвет') : t('More','Ещё')} as Record<string,string>)[action]}</button>`;
+    const rear = selected.kind === 'accessory' && accessoryDepth(items[selected.index]!) === 'rear';
+    const actionButton = (action: string) => `<button type="button" data-object-action="${action}" ${action === 'lock' ? `aria-pressed="${!!locked}"` : action === 'depth' ? `aria-pressed="${rear}" aria-label="${t('Behind squishy','За сквишом')}"` : action === 'more' ? `aria-expanded="${this.moreOpen}" aria-controls="free-object-more"` : ''} ${((action === 'reset' || action === 'depth') && locked) || (atLimit && (action === 'duplicate' || action === 'mirror')) ? 'disabled' : ''}>${({reset:t('Reset','Сброс'),lock:locked?t('Unlock','Открепить'):t('Lock','Закрепить'),duplicate:t('Copy','Копия'),mirror:t('Mirror copy','Парная копия'),delete:t('Delete','Удалить'),more:t('More','Ещё'),depth:rear?t('Behind','Сзади'):t('In front','Спереди')} as Record<string,string>)[action]}</button>`;
     panel.innerHTML = `<div class="free-object-core" ${this.moreOpen && selected.kind !== 'face' ? 'hidden inert' : ''}><div class="free-object-list" aria-label="${t('Objects', 'Объекты')}">${objectButton('face', t('Face', 'Личико'))}${items.map((item, i) => objectButton(`accessory:${i}`, `${i + 1} · ${name(item.a)}${item.locked ? ' 🔒' : ''}`)).join('')}${decor.stickers.map((item, i) => objectButton(`sticker:${i}`, `${stickerName(i)}${item.locked ? ' 🔒' : ''}`)).join('')}</div>
       ${atLimit ? `<p class="decor-limit-notice" data-object-limit role="status">${limitHint}</p>` : ''}
       <div class="free-object-transforms">
-        <label>${t('Size', 'Размер')} <input aria-label="${t('Size', 'Размер')}" data-object-control="scale" type="range" min="${selected.kind === 'face' ? .45 : selected.kind === 'sticker' ? .5 : .25}" max="${selected.kind === 'face' ? 1.65 : 2.5}" step=".01" value="${scale}" ${locked ? 'disabled' : ''}></label>
+        <label>${t('Size', 'Размер')} <input aria-label="${t('Size', 'Размер')}" data-object-control="scale" type="range" min="${selected.kind === 'face' ? .45 : selected.kind === 'sticker' ? .5 : .25}" max="${selected.kind === 'face' ? 1.65 : selected.kind === 'accessory' ? accessoryMaxScale(items[selected.index]!.a) : 2.5}" step=".01" value="${scale}" ${locked ? 'disabled' : ''}></label>
         ${selected.kind === 'face' ? '' : `<label>${t('Rotation', 'Поворот')} <input aria-label="${t('Rotation', 'Поворот')}" data-object-control="rotation" type="range" min="-180" max="180" step="1" value="${rotation > 180 ? rotation - 360 : rotation}" ${locked ? 'disabled' : ''}></label>`}
       </div>
       <div class="free-object-actions">${(selected.kind === 'face' ? ['reset'] : ['lock','mirror','delete','more']).map(actionButton).join('')}</div>
       </div><div class="free-object-more" id="free-object-more" role="group" aria-label="${t('Detail settings','Настройки детали')}" ${this.moreOpen && selected.kind !== 'face' ? '' : 'hidden'}>
-        <div class="free-object-more-heading"><strong>${selected.kind === 'accessory' ? name(items[selected.index]!.a) : selected.kind === 'sticker' ? stickerName(selected.index) : t('Face','Личико')}</strong><button type="button" data-object-action="close-more" aria-label="${t('Close settings','Закрыть настройки')}">×</button></div>
+        <div class="free-object-more-heading"><strong>${selected.kind === 'accessory' ? name(items[selected.index]!.a) : selected.kind === 'sticker' ? stickerName(selected.index) : t('Face','Личико')}</strong>${selected.kind === 'accessory' ? actionButton('depth') : ''}<button type="button" data-object-action="close-more" aria-label="${t('Close settings','Закрыть настройки')}">×</button></div>
         ${selected.kind === 'accessory' ? `<div class="free-color-choices" aria-label="${t('Color','Цвет')}">${[[0xffa6cb,t('Pink','Розовый')],[0xcab0e8,t('Lavender','Лаванда')],[0xa1e2ce,t('Mint','Мята')],[0xffcea8,t('Peach','Персик')],[0xeec984,t('Gold','Золото')],[0xe8e5f0,t('Pearl','Перламутр')]].map(([color,label])=>`<button type="button" data-object-action="color:${color}" aria-label="${label}" aria-pressed="${'color' in current && current.color === color}" style="--craft-color:#${Number(color).toString(16)}" ${locked ? 'disabled' : ''}>●</button>`).join('')}<button type="button" data-object-action="color:body" aria-label="${t('Body colour','Цвет тела')}" aria-pressed="${'color' in current && current.color === this.bodyColor()}" style="--craft-color:#${this.bodyColor().toString(16)}" ${locked ? 'disabled' : ''}>●</button></div>` : ''}
         ${atLimit ? `<p class="decor-limit-notice" data-object-limit role="status">${limitHint}</p>` : ''}
         <div class="free-object-actions">${['duplicate','reset'].map(actionButton).join('')}</div>
       </div>`;
     panel.scrollTop = this.moreOpen ? 0 : panelTop;
+    const more = panel.querySelector('.free-object-more'); if (more) more.scrollTop = moreTop;
     const list = panel.querySelector('.free-object-list');
     if (list) {
       list.scrollLeft = listLeft;
@@ -146,6 +149,7 @@ export class FreeCraftEditor {
     if (selected.kind === 'accessory') {
       const items = [...accessoryPlacements(decor, getShape(draft.shapeId))], item = items[selected.index]; if (!item) return;
       if (action === 'lock') { const {locked: _locked, ...rest} = item; items[selected.index] = item.locked ? rest : {...item, locked: true}; }
+      else if (action === 'depth' && !item.locked) items[selected.index] = {...item, depth: accessoryDepth(item) === 'front' ? 'rear' : 'front'};
       else if (action === 'delete') items.splice(selected.index, 1);
       else if (action === 'reset' && !item.locked) items[selected.index] = { ...initialAccessoryPlacements(getShape(draft.shapeId), item.a).find(p => p.side === item.side) ?? initialAccessoryPlacements(getShape(draft.shapeId), item.a)[0]!, ...(item.color === undefined ? {} : {color:item.color}) };
       else if ((action === 'duplicate' || action === 'mirror') && items.length < MAX_ACCESSORY_PLACEMENTS) {

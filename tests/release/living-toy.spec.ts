@@ -1,3 +1,5 @@
+import { readCollection } from '../collection';
+import { createLegacySaveV3 as createDefaultSaveV3 } from '../collection';
 import { expect, test } from '@playwright/test';
 import { REST_TOY, idleToyPose, posePoint, unposePoint, inclusionLag, contactFeedback } from '../../src/sandbox/livingToy';
 import { SquishSimulation } from '../../src/squish/SquishSimulation';
@@ -41,7 +43,7 @@ test('short back-and-forth strokes stay strokes and an edge pull stays local', (
 });
 
 import { mkdir } from 'node:fs/promises';
-import { createDefaultSaveV3 } from '../../src/platform/saveV3';
+
 import { createBodyFillStroke } from '../../src/sandbox/appearance';
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
@@ -52,7 +54,7 @@ for (const [locale, width, height, shapeId] of [
   const page = await context.newPage();
   try {
     await page.goto('/squishy-squishes/?roomReview=0');
-    await page.evaluate(save => localStorage.setItem('squishy.save.v3', JSON.stringify(save)), {
+    await page.evaluate(save => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify(save))), {
       ...createDefaultSaveV3(), totalCrafts: 1,
       library: [{ id: 'living', createdAt: 1700000000000, shapeId, materialId: 'jelly',
         appearance: { v: 1, strokes: [createBodyFillStroke(0xffb7cf)], mixins: [
@@ -62,7 +64,7 @@ for (const [locale, width, height, shapeId] of [
     await page.reload(); await page.locator('[data-library-play-id="living"]').click();
     const shell = page.locator('[data-sandbox-app]'), canvas = page.locator('[data-sandbox-canvas]');
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
-    const saved = await page.evaluate(() => localStorage.getItem('squishy.save.v3'));
+    const saved = await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page));
     const box = (await canvas.boundingBox())!;
     await expect(page.locator('[data-sandbox-hint]')).toContainText(locale === 'ru-RU' ? 'двумя пальцами' : 'two fingers');
     // Frame observation catches brief movements without racing one pose boundary.
@@ -94,10 +96,10 @@ for (const [locale, width, height, shapeId] of [
     await expect(canvas).toHaveAttribute('data-toy-idle', 'rest');
     await expect(canvas).toHaveAttribute('data-toy-skew', '0.0000');
     await expect(shell).toHaveAttribute('data-face-reaction', '0:0');
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(saved);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(saved);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
     await page.reload(); await page.locator('[data-library-play-id="living"]').click();
     await expect(canvas).toHaveAttribute('data-phaser-ready', 'true');
-    expect(await page.evaluate(() => localStorage.getItem('squishy.save.v3'))).toBe(saved);
+    expect(await page.evaluate((__collection) => (JSON.stringify(__collection)), await readCollection(page))).toBe(saved);
   } finally { await context.close(); }
 });
