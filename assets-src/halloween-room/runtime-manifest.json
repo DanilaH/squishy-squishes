@@ -14,8 +14,8 @@
     "sourceSha256": "2921f85c2ce8607bdc5f20baafed9804dd822c8add8e66837447c180762a61f1",
     "output": "public/assets/room/ghost-rug.webp",
     "hasAvifCompanion": false,
-    "bytes": 4866,
-    "runtimeSha256": "dfc24391f2bd5e16ab6a9f98b5750b04d09d4611552e12fceae4970c027fa3c6"
+    "bytes": 13578,
+    "runtimeSha256": "a5fd30cf748179e036c84557631e7d432f556e91bcdab40ec35bbe44c884bac1"
   },
   {
     "id": "coffin-dresser",

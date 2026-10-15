@@ -420,15 +420,15 @@
     "source": "assets-src/room/ghost-rug.png",
     "output": "public/assets/room/ghost-rug.webp",
     "sha256": "a15d0dea31f2196d3e55c08853eed5e07ee15917f768bb9080cb4f7f886b9dea",
-    "runtimeSha256": "dfc24391f2bd5e16ab6a9f98b5750b04d09d4611552e12fceae4970c027fa3c6",
-    "bytes": 4866,
+    "runtimeSha256": "a5fd30cf748179e036c84557631e7d432f556e91bcdab40ec35bbe44c884bac1",
+    "bytes": 13578,
     "hasAvifCompanion": false,
     "frame": {
       "left": 8,
-      "top": 93,
-      "width": 284,
-      "height": 114,
-      "canvas": 300
+      "top": 183,
+      "width": 584,
+      "height": 235,
+      "canvas": 600
     }
   },
   {

@@ -184,10 +184,10 @@ export const ROOM_ASSET_FRAMES: Readonly<Record<string, { left: number; top: num
   },
   "ghost-rug": {
     "left": 8,
-    "top": 93,
-    "width": 284,
-    "height": 114,
-    "canvas": 300
+    "top": 183,
+    "width": 584,
+    "height": 235,
+    "canvas": 600
   },
   "cobweb-garland": {
     "left": 8,
