@@ -1,4 +1,4 @@
-export type ShapeId = 'soft-square' | 'heart' | 'mochi' | 'peach' | 'mushroom' | 'paw' | 'dumpling' | 'strawberry' | 'donut' | 'bun' | 'ice-cream' | 'cupcake' | 'watermelon' | 'mochi-cat' | 'mochi-bunny';
+export type ShapeId = 'soft-square' | 'heart' | 'mochi' | 'peach' | 'mushroom' | 'paw' | 'dumpling' | 'strawberry' | 'donut' | 'bun' | 'ice-cream' | 'cupcake' | 'watermelon' | 'mochi-cat' | 'mochi-bunny' | 'ghost' | 'bat' | 'pumpkin';
 
 export interface ShapePoint {
   readonly x: number;
@@ -247,6 +247,44 @@ const createMochiAnimalBoundary = (bunny: boolean): readonly ShapePoint[] => sam
   [{x:0,y:-.72},{x:-.78,y:-.71},{x:-1,y:-.13},{x:-.77,y:.18}],
 ]);
 
+// Soft seasonal molds share the canonical boundary, hit field and deformable mesh.
+const createGhostBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
+  [{x:0,y:.90},{x:.60,y:.90},{x:.66,y:.42},{x:.65,y:.12}],
+  [{x:.65,y:.12},{x:.82,y:.28},{x:.97,y:.10},{x:.78,y:-.10}],
+  [{x:.78,y:-.10},{x:.68,y:-.20},{x:.69,y:-.53},{x:.74,y:-.74}],
+  [{x:.74,y:-.74},{x:.50,y:-.52},{x:.44,y:-.93},{x:.25,y:-.76}],
+  [{x:.25,y:-.76},{x:.13,y:-.56},{x:.12,y:-.90},{x:0,y:-.90}],
+  [{x:0,y:-.90},{x:-.12,y:-.90},{x:-.13,y:-.56},{x:-.25,y:-.76}],
+  [{x:-.25,y:-.76},{x:-.44,y:-.93},{x:-.50,y:-.52},{x:-.74,y:-.74}],
+  [{x:-.74,y:-.74},{x:-.69,y:-.53},{x:-.68,y:-.20},{x:-.78,y:-.10}],
+  [{x:-.78,y:-.10},{x:-.97,y:.10},{x:-.82,y:.28},{x:-.65,y:.12}],
+  [{x:-.65,y:.12},{x:-.66,y:.42},{x:-.60,y:.90},{x:0,y:.90}],
+]);
+const createBatBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
+  [{x:0,y:.39},{x:.09,y:.39},{x:.13,y:.43},{x:.19,y:.59}],
+  [{x:.19,y:.59},{x:.30,y:.62},{x:.25,y:.25},{x:.37,y:.25}],
+  [{x:.37,y:.25},{x:.59,y:.54},{x:.76,y:.40},{x:1.02,y:.28}],
+  [{x:1.02,y:.28},{x:.90,y:.21},{x:.79,y:.04},{x:.80,y:-.13}],
+  [{x:.80,y:-.13},{x:.64,y:.02},{x:.52,y:-.02},{x:.47,y:-.29}],
+  [{x:.47,y:-.29},{x:.34,y:-.14},{x:.25,y:-.18},{x:.17,y:-.42}],
+  [{x:.17,y:-.42},{x:.09,y:-.51},{x:-.09,y:-.51},{x:-.17,y:-.42}],
+  [{x:-.17,y:-.42},{x:-.25,y:-.18},{x:-.34,y:-.14},{x:-.47,y:-.29}],
+  [{x:-.47,y:-.29},{x:-.52,y:-.02},{x:-.64,y:.02},{x:-.80,y:-.13}],
+  [{x:-.80,y:-.13},{x:-.79,y:.04},{x:-.90,y:.21},{x:-1.02,y:.28}],
+  [{x:-1.02,y:.28},{x:-.76,y:.40},{x:-.59,y:.54},{x:-.37,y:.25}],
+  [{x:-.37,y:.25},{x:-.25,y:.25},{x:-.30,y:.62},{x:-.19,y:.59}],
+  [{x:-.19,y:.59},{x:-.13,y:.43},{x:-.09,y:.39},{x:0,y:.39}],
+]);
+const createPumpkinBoundary = (): readonly ShapePoint[] => sampleCubicBoundary([
+  [{x:-.13,y:.63},{x:-.13,y:.77},{x:-.06,y:.86},{x:.04,y:.91}],
+  [{x:.04,y:.91},{x:.21,y:.99},{x:.24,y:.80},{x:.12,y:.65}],
+  [{x:.12,y:.65},{x:.57,y:.87},{x:.99,y:.48},{x:.94,y:-.08}],
+  [{x:.94,y:-.08},{x:.92,y:-.66},{x:.52,y:-.83},{x:.24,y:-.76}],
+  [{x:.24,y:-.76},{x:.10,y:-.84},{x:-.10,y:-.84},{x:-.24,y:-.76}],
+  [{x:-.24,y:-.76},{x:-.52,y:-.83},{x:-.92,y:-.66},{x:-.94,y:-.08}],
+  [{x:-.94,y:-.08},{x:-.99,y:.48},{x:-.57,y:.87},{x:-.13,y:.63}],
+]);
+
 export const SHAPES: readonly ShapeDefinition[] = [
   { id: 'soft-square', label: 'Soft Cube', boundary: createSoftSquareBoundary() },
   { id: 'heart', label: 'Soft Heart', boundary: createHeartBoundary() },
@@ -263,6 +301,9 @@ export const SHAPES: readonly ShapeDefinition[] = [
   { id: 'mochi-cat', label: 'Mochi Cat', boundary: createMochiAnimalBoundary(false) },
   { id: 'mochi-bunny', label: 'Mochi Bunny', boundary: createMochiAnimalBoundary(true) },
   { id: 'donut', label: 'Donut', boundary: ellipseBoundary(.94, .87), holes: [ellipseBoundary(.30, .28, true)] },
+  { id: 'ghost', label: 'Ghost', boundary: createGhostBoundary() },
+  { id: 'bat', label: 'Bat', boundary: createBatBoundary() },
+  { id: 'pumpkin', label: 'Pumpkin', boundary: createPumpkinBoundary() },
 ] as const;
 
 const SELECTOR_SHAPE_IDS = new Set<ShapeId>(['soft-square', 'heart']);

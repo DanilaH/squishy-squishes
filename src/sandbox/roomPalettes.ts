@@ -16,4 +16,6 @@ export const ROOM_PALETTES = [
   { ru: 'Манго', en: 'Mango', wall: '#eee0be', floor: '#d0e7e6', baseboard: '#d7c795', pedestal: '#eda34e', top: '#b96038', rims: '#69c8cd' },
   { ru: 'Арбуз', en: 'Watermelon', wall: '#dde5cc', floor: '#f1c3bf', baseboard: '#b4c59b', pedestal: '#62b68e', top: '#d86589', rims: '#ee927e' },
   { ru: 'Черничная конфета', en: 'Blueberry candy', wall: '#d9d1e9', floor: '#c1c8e8', baseboard: '#b5a3ce', pedestal: '#9970d0', top: '#5157aa', rims: '#e8ce67' },
+  { ru: 'Тыквенный вечер', en: 'Pumpkin evening', wall: '#d7bedb', floor: '#bd9279', baseboard: '#9f7c9f', pedestal: '#9e719e', top: '#77557f', rims: '#e9b36d' },
+  { ru: 'Мятная полночь', en: 'Mint midnight', wall: '#566073', floor: '#343e50', baseboard: '#7b8c96', pedestal: '#738b8d', top: '#4c666e', rims: '#bfe0cd' },
 ] as const;

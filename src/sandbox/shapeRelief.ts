@@ -6,6 +6,10 @@ const ellipse = (x: number, y: number, rx: number, ry: number, angle = 0): strin
   return `M ${x - dx} ${y - dy} a ${rx} ${ry} ${degrees} 1 0 ${dx * 2} ${dy * 2} a ${rx} ${ry} ${degrees} 1 0 ${-dx * 2} ${-dy * 2}`;
 };
 const parts: Partial<Record<ShapeId, readonly ReliefPart[]>> = {
+  pumpkin: [
+    {path:'M -.12 .65 Q -.12 .81 .08 .90 L .17 .86 Q .07 .74 .12 .65 Z',fill:'rgba(110,78,64,.85)'},
+    ...[-.50,-.25,.25,.50].map(x=>({path:`M ${x*.5} .58 Q ${x*1.5} .0 ${x*.6} -.68`,stroke:'rgba(143,77,40,.22)',width:.025})),
+  ],
   bun: [-.32,0,.32].flatMap(x=>[
     {path:`M ${x-.09} .57 Q ${x-.04} .42 ${x+.04} .34`,stroke:'rgba(161,119,89,.26)',width:.024},
     {path:`M ${x-.065} .57 Q ${x-.015} .43 ${x+.065} .35`,stroke:'rgba(255,250,228,.7)',width:.012},

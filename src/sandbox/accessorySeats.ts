@@ -2,7 +2,7 @@ import { isPointInsideShape, getShapeTopAtX, type ShapeDefinition, type ShapeId 
 import type { AccessoryId } from './decor';
 
 export const getAccessoryDepth = (id: AccessoryId): 'front' | 'rear' =>
-  id === 'antennae' || id === 'halo' || id === 'cat-ears' || id === 'bunny-ears' || id === 'horns' || id === 'wings' ? 'rear' : 'front';
+  id === 'antennae' || id === 'halo' || id === 'cat-ears' || id === 'bunny-ears' || id === 'horns' || id === 'wings' || id === 'bat-wings' ? 'rear' : 'front';
 
 // Heart gear rests in the cleft: its base must meet the root, rather than
 // using the deeper crown overlap suitable for broad convex tops.
@@ -33,6 +33,9 @@ const seats: Record<ShapeId, { bow: readonly [number, number]; pair: readonly [n
   watermelon: { bow: [-.29, -.20], pair: [-.32, .32], earAngle: .16, crown: 0 },
   'mochi-cat': { bow: [-.28, -.38], pair: [-.29, .29], earAngle: .16, crown: -.03 },
   'mochi-bunny': { bow: [-.29, -.36], pair: [-.29, .29], earAngle: .14, crown: -.015 },
+  ghost: { bow: [-.22,-.25], pair: [-.23,.23], earAngle: .15, crown:0 },
+  bat: { bow: [-.08,-.25], pair: [-.09,.09], earAngle: .12, crown:0 },
+  pumpkin: { bow: [-.27,-.3], pair: [-.30,.30], earAngle: .18, crown:0 },
   donut: { bow: [-.29, -.35], pair: [-.30, .30], earAngle: .22, crown: 0 },
   strawberry: { bow: [-.28, -.48], pair: [-.31, .31], earAngle: .24, crown: .035 },
 };
@@ -58,11 +61,14 @@ export const getAccessorySeats = (shape: ShapeDefinition, id: AccessoryId): read
   if (id === 'glasses') return bodySeat(0, bodyY + height * .085);
   if (id === 'headphones') return bodySeat(0, bodyY + height * .10);
   if (id === 'heart-patch') return bodySeat(width * .28, bodyY - height * .08);
+  if (id === 'toy-scythe') return bodySeat(width * .28, bodyY - height * .08);
+  if (id === 'cobweb') return [seat(profile.bow[0], -.2, 'whole')];
+  if (id === 'monster-hat') return [seat(0, 0, 'whole')];
   if (id === 'handbag') return bodySeat(width * .20, bodyY - height * .04);
   if (id === 'petal-flower' || id === 'butterfly') return [seat(profile.bow[0], profile.bow[1], 'whole')];
   if (id === 'antennae' || id === 'halo' || id === 'mushroom-hat' || id === 'witch-hat') return [seat(0, 0, 'whole')];
   if (id === 'cream' || id === 'bucket-hat' || id === 'cherry') return [seat(id === 'cherry' ? .13 : 0, id === 'cherry' ? -.12 : 0, 'whole')];
-  if (id === 'wings') {
+  if (id === 'wings' || id === 'bat-wings') {
     const y = bodyY - height * .08;
     return [-1, 1].map(direction => {
       let x = center + direction * width * .43;
@@ -70,7 +76,7 @@ export const getAccessorySeats = (shape: ShapeDefinition, id: AccessoryId): read
       // Find an embedded root at this height while retaining the outward wing.
       for (let n = 0; n < 80 && !isPointInsideShape(shape, x, y); n++) x -= direction * .01;
       return { u: (x - direction * .012 + 1) / 2, v: (y + 1) / 2,
-        angle: direction * .6, side: direction < 0 ? 'left' as const : 'right' as const };
+        angle: direction * (id === 'bat-wings' ? .12 : .6), side: direction < 0 ? 'left' as const : 'right' as const };
     });
   }
   if (id === 'bow') return [seat(profile.bow[0], profile.bow[1], 'whole')];

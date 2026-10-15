@@ -35,7 +35,7 @@ for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) for (const acc
     page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const save = { ...createDefaultSaveV3(), libraryCapacity:24, library: ACCESSORY_IDS.map((accessory, n) => ({
+    const save = { ...createDefaultSaveV3(), libraryCapacity:Math.max(24,ACCESSORY_IDS.length), library: ACCESSORY_IDS.map((accessory, n) => ({
       id: `${shapeId}-${accessory}`, createdAt: 1700000000000 + n, shapeId, materialId: 'soft',
       appearance: { v: 1, strokes: [], mixins: [] },
       decor: { ...createEmptyDecorDocument(), eyes: 'dot', mouth: 'smile', blush: true, accessory },
@@ -80,14 +80,14 @@ for (const shapeId of ['dumpling', 'paw', 'strawberry'] as const) for (const acc
 
 for (const locale of ['ru-RU', 'en-US']) {
   for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }, { width: 1440, height: 900 }]) {
-    test(`all fifteen mold choices are reachable ${locale} at ${viewport.width}px`, async ({ browser, baseURL }) => {
+    test(`all eighteen mold choices are reachable ${locale} at ${viewport.width}px`, async ({ browser, baseURL }) => {
       const context = await browser.newContext({ baseURL, locale, viewport });
       const page = await context.newPage();
       try {
         await page.goto('/squishy-squishes/?roomReview=0');
         await page.locator('[data-library-new]').first().click();
         const panel = page.locator('[data-panel="shape"]');
-        await expect(panel.locator('[data-shape]')).toHaveCount(15);
+        await expect(panel.locator('[data-shape]')).toHaveCount(18);
         for (const choice of await panel.getByRole('button').all()) {
           await choice.scrollIntoViewIfNeeded();
           await expect(choice).toBeVisible();

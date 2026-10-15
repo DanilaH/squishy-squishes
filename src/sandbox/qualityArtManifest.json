@@ -9,6 +9,26 @@
       367
     ]
   },
+  "bat-wings": {
+    "file": "bat-wings",
+    "hasAvif": false,
+    "crop": [
+      16,
+      155,
+      480,
+      202
+    ],
+    "leftCrop": [
+      16,
+      155,
+      480,
+      202
+    ],
+    "leftRoot": [
+      0.97,
+      0.46
+    ]
+  },
   "bolt": {
     "file": "bolt",
     "hasAvif": true,
@@ -49,6 +69,16 @@
       464
     ]
   },
+  "cobweb": {
+    "file": "cobweb",
+    "hasAvif": false,
+    "crop": [
+      16,
+      30,
+      480,
+      453
+    ]
+  },
   "cream": {
     "file": "cream",
     "hasAvif": true,
@@ -69,6 +99,16 @@
       314
     ]
   },
+  "filler-bones": {
+    "file": "filler-bones",
+    "hasAvif": false,
+    "crop": [
+      16,
+      42,
+      96,
+      45
+    ]
+  },
   "filler-bubbles": {
     "file": "filler-bubbles",
     "hasAvif": true,
@@ -77,6 +117,16 @@
       14,
       104,
       101
+    ]
+  },
+  "filler-candies": {
+    "file": "filler-candies",
+    "hasAvif": false,
+    "crop": [
+      16,
+      47,
+      96,
+      34
     ]
   },
   "filler-confetti": {
@@ -269,6 +319,16 @@
       1
     ]
   },
+  "monster-hat": {
+    "file": "monster-hat",
+    "hasAvif": false,
+    "crop": [
+      16,
+      99,
+      480,
+      315
+    ]
+  },
   "mushroom-hat": {
     "file": "mushroom-hat",
     "hasAvif": true,
@@ -287,6 +347,16 @@
       42,
       464,
       429
+    ]
+  },
+  "sticker-bone": {
+    "file": "sticker-bone",
+    "hasAvif": false,
+    "crop": [
+      16,
+      76,
+      224,
+      104
     ]
   },
   "sticker-candy": {
@@ -417,6 +487,16 @@
       24,
       336,
       336
+    ]
+  },
+  "toy-scythe": {
+    "file": "toy-scythe",
+    "hasAvif": false,
+    "crop": [
+      16,
+      25,
+      480,
+      463
     ]
   },
   "wings": {

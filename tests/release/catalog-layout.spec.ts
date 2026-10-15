@@ -46,7 +46,22 @@ for (const locale of ['ru-RU', 'en-US']) for (const viewport of [
     expect(await page.evaluate(()=>scrollY===0&&document.documentElement.scrollHeight<=innerHeight&&document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await catalog.locator('button[data-decor-accessory]').last().click();
     await expect(page.locator('[data-decor-panel="objects"]')).toBeVisible();
+    await expect(page.locator('[data-catalog-preview] > strong')).toContainText(locale==='ru-RU'?'Крылья мыши':'Bat wings');
     expect([await canvas.boundingBox(),await scene.boundingBox(),await actions.boundingBox()]).toEqual(geometry);
+    if(viewport.height<=350){
+      // The preview keeps primary actions fixed; its compact contextual panel scrolls by touch.
+      const preview=page.locator('.sandbox-controls:has(.catalog-preview:not([hidden])) > .sandbox-panel:not([hidden])');
+      const before=await preview.evaluate(el=>{el.scrollTop=el.scrollHeight;return el.scrollTop;});
+      expect(before).toBeGreaterThan(0);const rect=(await preview.boundingBox())!;
+      const cdp=await context.newCDPSession(page),x=rect.x+3,start=rect.y+8;
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y:start,id:2}]});
+      for(let step=1;step<=6;step++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:start+step*(rect.height-16)/6,id:2}]});
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
+      await expect.poll(()=>preview.evaluate(el=>el.scrollTop)).toBeLessThan(before);
+      await preview.evaluate(el=>new Promise<void>(resolve=>{
+        let previous=el.scrollTop,stable=0;const settle=()=>{const current=el.scrollTop;stable=Math.abs(current-previous)<.1?stable+1:0;previous=current;if(stable>=3)resolve();else requestAnimationFrame(settle);};requestAnimationFrame(settle);
+      }));
+    }
     expect(await reachableControlIssues(page)).toEqual([]);expect(errors).toEqual([]);
   } finally {await context.close();}
 });

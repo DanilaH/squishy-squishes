@@ -1,0 +1,47 @@
+[
+  {
+    "id": "cobweb-garland",
+    "source": "assets-src/halloween-room/cobweb-garland.png",
+    "sourceSha256": "faa4fd66ee20f4366a1e423029fde056cfe94c54759e57ddade7da85c39dc494",
+    "output": "public/assets/room/cobweb-garland.webp",
+    "hasAvifCompanion": false,
+    "bytes": 22668,
+    "runtimeSha256": "49cac9c4d65852a3f20793e323d5e2972e43ebd1c07e365f89cc9f891012730c"
+  },
+  {
+    "id": "ghost-rug",
+    "source": "assets-src/halloween-room/ghost-rug.png",
+    "sourceSha256": "2921f85c2ce8607bdc5f20baafed9804dd822c8add8e66837447c180762a61f1",
+    "output": "public/assets/room/ghost-rug.webp",
+    "hasAvifCompanion": false,
+    "bytes": 13578,
+    "runtimeSha256": "a5fd30cf748179e036c84557631e7d432f556e91bcdab40ec35bbe44c884bac1"
+  },
+  {
+    "id": "coffin-dresser",
+    "source": "assets-src/halloween-room/coffin-dresser.png",
+    "sourceSha256": "8e12d00e315226b6227027a6ac3e0860386d03274134614eb0dfb71532fe537e",
+    "output": "public/assets/room/coffin-dresser.webp",
+    "hasAvifCompanion": false,
+    "bytes": 8266,
+    "runtimeSha256": "a1e9386f85558f0ec5ccc733242e994d7179ed834b259f92a96681db9b4dcabe"
+  },
+  {
+    "id": "potion-shelf",
+    "source": "assets-src/halloween-room/potion-shelf.png",
+    "sourceSha256": "65e9030ca7b7ee9494619b81e16e9de5c330bb21fa1b3cb7bf4776e20b5dde3c",
+    "output": "public/assets/room/potion-shelf.webp",
+    "hasAvifCompanion": false,
+    "bytes": 9634,
+    "runtimeSha256": "ca140d389d691bb353be320d30bc1ecf828fa18b5baacbccd44ec08280cb33c1"
+  },
+  {
+    "id": "pumpkin-pouf",
+    "source": "assets-src/halloween-room/pumpkin-pouf.png",
+    "sourceSha256": "ea2e0277b3d44b2368894ef8a6afe1ce9131b80d9621d384c575bf8eeba0017c",
+    "output": "public/assets/room/pumpkin-pouf.webp",
+    "hasAvifCompanion": false,
+    "bytes": 8366,
+    "runtimeSha256": "7e6e6046520db62ff0b0049ebb5c630e3a596bf52ecac2359ff181dc1a5253ec"
+  }
+]

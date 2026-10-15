@@ -68,7 +68,7 @@ test('new art failure retains usable procedural accessories and saved toy data',
  expect(decodeSaveStateV3(await page.evaluate((__collection) => (__collection), await readCollection(page))).library).toEqual(decodeSaveStateV3(save).library);
 });
 
-test('review all fifteen live mold silhouettes',async({page},info)=>{
+test('review all eighteen live mold silhouettes',async({page},info)=>{
  test.setTimeout(150000);await page.setViewportSize({width:1440,height:900});await page.emulateMedia({reducedMotion:'reduce'});
  const library=SHAPES.map((shape,i)=>({...draft,shapeId:shape.id,id:shape.id,createdAt:1700000000000+i}));
  const state={...createDefaultSaveV3(),libraryCapacity:24,library,totalCrafts:library.length};decodeSaveStateV3(state);
