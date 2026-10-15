@@ -20,7 +20,7 @@ Nine runtime WebP files total 110,264 bytes; no AVIF companions. Original master
 
 ## Validation
 
-Clean `npm run release:check` passed: strict TypeScript, CI contract tests, shared image pipeline tests, both production builds and unchanged 5 MiB upload audit. Yandex output: 159 files, 4,731,509 bytes. Repeated local builds exposed obsolete hashed JS files in the output root; `emptyOutDir: true` now makes build cleanup explicit. The upload budget is unchanged.
+Clean `npm run release:check` passed: strict TypeScript, CI contract tests, shared image pipeline tests, both production builds and unchanged 5 MiB upload audit. Yandex output: 159 files, 4,731,662 bytes. Local rebuild audits encountered obsolete hashed JS files in the output root. Output cleanup is explicit in Vite configuration; final local size validation uses freshly removed generated roots, and CI independently validates cold roots. The upload budget is unchanged.
 
 `tests/release/halloween.spec.ts` covers stable old codes, contour/attachment validity, runtime alpha/matte checks, EN/RU at 320×568, 568×320 and 1440×900, save/edit/reload and an explicit rewarded opening for a returning player. Local Chromium uses a temporary longer readiness expectation because this environment starts software WebGL slowly; committed readiness assertions remain unchanged. The new multi-toy scenario has a five-minute overall budget after the first desktop EN run exhausted three minutes. A returning-player reward test exposed a legacy-entitlement shortcut in RewardGrants; it now calls the same ownership predicate as the editor, with idempotent opening coverage for all four seasonal rewards.
 
@@ -29,3 +29,7 @@ The required release browser matrix retains every test. Both authored-art files 
 Real-phone tactile acceptance and hosted Yandex advertisement acceptance are separate from browser regression evidence.
 
 Desktop face choices now use ten columns: all ten eye choices and nine mouth choices fit without a clipped partial row, retaining at least 44 px hit areas. The two changed desktop Decor baselines were regenerated from the actual application and visually reviewed; other baselines remain unchanged. The new desktop content journey explicitly checks panel bounds and hit areas.
+
+Selecting a new rewarded accessory exposed a four-pixel mobile action-row shift when the preview banner appeared. Normal and preview controls now share one action-row CSS variable: 48 px in phone portrait, 44 px in short landscape and 52 px on desktop. In short landscape the existing contextual preview panel scrolls internally; a real touch gesture verifies it, and the reachability audit now traverses that allowed scroll container as well as its inner catalogs. Catalog geometry assertions remain exact. The full Decor traversal passed the unchanged 45-second CI budget after the desktop layout correction; every button, hit-area and layout assertion is retained. The canonical migration ID baseline explicitly includes the three appended molds.
+
+Reward-preview captions now read the item label before the empty art-canvas wrapper. The catalog journey asserts the selected accessory name in both languages. The short-landscape preview panel is aligned to its scroll origin, so its category controls are reachable above the object settings rather than centered into negative overflow.
