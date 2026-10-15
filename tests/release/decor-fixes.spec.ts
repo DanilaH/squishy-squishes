@@ -19,6 +19,8 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
   { width: 320, height: 568 }, { width: 568, height: 320 }, { width: 1440, height: 900 },
 ]) {
   test(`Decor tabs keep controls and body still in ${locale} ${viewport.width}`, async ({ browser, baseURL }) => {
+    // Expanded desktop choices plus three full raster captures need a traversal budget.
+    if (viewport.width >= 901) test.setTimeout(60_000);
     const context = await browser.newContext({ baseURL, locale, viewport, reducedMotion: 'reduce' });
     const page = await context.newPage();
     try {
@@ -40,7 +42,7 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
       }
       const tabs = page.locator('.sandbox-decor-tabs'), next = page.locator('[data-action="save"]');
       const before = { tabs: await tabs.boundingBox(), next: await next.boundingBox(), body: await body.boundingBox() };
-      for (const section of ['face', 'stickers', 'accessory', 'face']) {
+      for (const [index, section] of ['face', 'stickers', 'accessory', 'face'].entries()) {
         await page.locator(`button[data-decor-section="${section}"]`).click();
         expect({ tabs: await tabs.boundingBox(), next: await next.boundingBox(), body: await body.boundingBox() }).toEqual(before);
         const panel = page.locator(`[data-decor-panel="${section}"]`);
@@ -54,7 +56,8 @@ for (const locale of ['en-US', 'ru-RU']) for (const viewport of [
         }
         for (const other of ['face', 'stickers', 'accessory'].filter(s => s !== section)) await expect(page.locator(`[data-decor-panel="${other}"]`)).toBeHidden();
         await mkdir('migration-baseline-evidence', { recursive: true });
-        await page.screenshot({ path: `migration-baseline-evidence/decor-tab-${locale}-${viewport.width}-${section}.png` });
+        // The first Face capture was overwritten by the final return to Face.
+        if (index > 0) await page.screenshot({ path: `migration-baseline-evidence/decor-tab-${locale}-${viewport.width}-${section}.png` });
       }
       expect(await page.evaluate(() => ({ x: document.documentElement.scrollWidth > innerWidth, y: document.documentElement.scrollHeight > innerHeight }))).toEqual({ x: false, y: false });
     } finally { await context.close(); }
