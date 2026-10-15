@@ -161,6 +161,41 @@ export const ROOM_ASSET_FRAMES: Readonly<Record<string, { left: number; top: num
     "height": 284,
     "canvas": 300
   },
+  "coffin-dresser": {
+    "left": 8,
+    "top": 65,
+    "width": 284,
+    "height": 171,
+    "canvas": 300
+  },
+  "pumpkin-pouf": {
+    "left": 8,
+    "top": 61,
+    "width": 284,
+    "height": 179,
+    "canvas": 300
+  },
+  "potion-shelf": {
+    "left": 8,
+    "top": 90,
+    "width": 284,
+    "height": 121,
+    "canvas": 300
+  },
+  "ghost-rug": {
+    "left": 8,
+    "top": 93,
+    "width": 284,
+    "height": 114,
+    "canvas": 300
+  },
+  "cobweb-garland": {
+    "left": 8,
+    "top": 174,
+    "width": 464,
+    "height": 132,
+    "canvas": 480
+  },
   "gift-box": {
     "left": 8,
     "top": 54,

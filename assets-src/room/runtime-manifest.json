@@ -368,6 +368,86 @@
     }
   },
   {
+    "id": "coffin-dresser",
+    "source": "assets-src/room/coffin-dresser.png",
+    "output": "public/assets/room/coffin-dresser.webp",
+    "sha256": "c518977d06d374237c3bf46642ab15497740866a81b2283a4a37bd436bcc019f",
+    "runtimeSha256": "a1e9386f85558f0ec5ccc733242e994d7179ed834b259f92a96681db9b4dcabe",
+    "bytes": 8266,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 65,
+      "width": 284,
+      "height": 171,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "pumpkin-pouf",
+    "source": "assets-src/room/pumpkin-pouf.png",
+    "output": "public/assets/room/pumpkin-pouf.webp",
+    "sha256": "8c6cf9805c54b3d95d9f3adf50608d03cf7377622e3d30989d4c5a2408af8d83",
+    "runtimeSha256": "7e6e6046520db62ff0b0049ebb5c630e3a596bf52ecac2359ff181dc1a5253ec",
+    "bytes": 8366,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 61,
+      "width": 284,
+      "height": 179,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "potion-shelf",
+    "source": "assets-src/room/potion-shelf.png",
+    "output": "public/assets/room/potion-shelf.webp",
+    "sha256": "38379f7047991c0cb02e69ab67938a742a3ac60071031f17dcf8e732bb1f9877",
+    "runtimeSha256": "ca140d389d691bb353be320d30bc1ecf828fa18b5baacbccd44ec08280cb33c1",
+    "bytes": 9634,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 90,
+      "width": 284,
+      "height": 121,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "ghost-rug",
+    "source": "assets-src/room/ghost-rug.png",
+    "output": "public/assets/room/ghost-rug.webp",
+    "sha256": "a15d0dea31f2196d3e55c08853eed5e07ee15917f768bb9080cb4f7f886b9dea",
+    "runtimeSha256": "dfc24391f2bd5e16ab6a9f98b5750b04d09d4611552e12fceae4970c027fa3c6",
+    "bytes": 4866,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 93,
+      "width": 284,
+      "height": 114,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "cobweb-garland",
+    "source": "assets-src/room/cobweb-garland.png",
+    "output": "public/assets/room/cobweb-garland.webp",
+    "sha256": "89115e45e08ccce723fcf4965283d91c66f7315c3a7103f685a7482238290d49",
+    "runtimeSha256": "49cac9c4d65852a3f20793e323d5e2972e43ebd1c07e365f89cc9f891012730c",
+    "bytes": 22668,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 8,
+      "top": 174,
+      "width": 464,
+      "height": 132,
+      "canvas": 480
+    }
+  },
+  {
     "id": "gift-box",
     "source": "assets-src/room/gift-box.png",
     "output": "public/assets/room/gift-box.webp",

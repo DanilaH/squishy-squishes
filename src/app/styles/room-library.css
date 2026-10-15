@@ -274,3 +274,7 @@
   #app .room-library .room-prop--wall { top: 8%; }
   #app .room-library .room-prop--garland { top: 0; }
 }
+
+/* Seasonal furniture uses the same pedestal camera as the original set. */
+#app .room-library .room-prop--coffin-dresser { width: calc(var(--room-podium-width, 400px) * .6); }
+#app .room-library .room-prop--pumpkin-pouf { width: calc(var(--room-podium-width, 400px) * .525); }

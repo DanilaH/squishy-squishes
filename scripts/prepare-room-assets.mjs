@@ -13,7 +13,7 @@ const manifest = previous.filter(item => !ids.includes(item.id));
 for (const id of ids) {
   if (!present.has(`${id}.png`)) throw new Error(`Missing source ${id}`);
   const source = `assets-src/room/${id}.png`, output = `public/assets/room/${id}.webp`;
-  const result = spawnSync(process.execPath, ['scripts/prepare-image.mjs', source, output, `--canvas=${id === 'garland' ? 480 : 300}`, '--padding=8', '--webp-quality=66', '--background=preserve', '--webp-only', '--force'], { encoding: 'utf8' });
+  const result = spawnSync(process.execPath, ['scripts/prepare-image.mjs', source, output, `--canvas=${(id === 'garland' || id === 'cobweb-garland') ? 480 : 300}`, '--padding=8', '--webp-quality=66', '--background=preserve', '--webp-only', '--force'], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(`${id}: ${result.stderr}\n${result.stdout}`);
   const { data, info } = await sharp(output).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   let left = info.width, top = info.height, right = -1, bottom = -1;
