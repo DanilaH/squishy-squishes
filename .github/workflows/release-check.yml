@@ -116,7 +116,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, art]
     runs-on: ubuntu-24.04
     # Full catalog artwork journeys include many renderer entries and screenshots.
     timeout-minutes: 30
@@ -149,7 +149,14 @@ jobs:
           test -f dist/phaser/index.html
           test -f dist-yandex/index.html
       - name: Run release browser QA
-        run: npm run qa:browser -- --shard=${{ matrix.shard }}/8
+        env:
+          QA_SHARD: ${{ matrix.shard }}
+        run: |
+          if [ "$QA_SHARD" = art ]; then
+            npm run qa:browser -- --grep 'complete authored catalog, live attachment and persistence'
+          else
+            npm run qa:browser -- --grep-invert 'complete authored catalog, live attachment and persistence' --shard="$QA_SHARD/8"
+          fi
       - name: Upload passing migration baseline evidence
         if: success() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4

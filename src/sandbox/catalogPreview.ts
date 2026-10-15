@@ -28,7 +28,7 @@ export class CatalogPreview {
       const key=catalogKey(selection.category,selection.id),locked=!!key&&!this.port.owns(key);
       button.dataset.catalogLocked=String(locked);
       button.querySelector('[data-catalog-badge]')?.remove();
-      if(locked){const badge=document.createElement('small');badge.dataset.catalogBadge='';badge.className='catalog-badge';badge.innerHTML=`${ICON}<span>${this.ru?'Примерить бесплатно':'Try free'}</span>`;button.append(badge);}
+      if(locked){const badge=document.createElement('small');badge.dataset.catalogBadge='';badge.className='catalog-badge';badge.setAttribute('role','img');badge.setAttribute('aria-label',this.ru?'Примерить бесплатно':'Try free');badge.innerHTML=ICON;button.append(badge);}
     }
   }
   private click=(event:MouseEvent):void=>{

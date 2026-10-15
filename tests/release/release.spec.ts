@@ -646,6 +646,8 @@ test('S3 Decor authors identity through real UI, preserves paint/mix-ins, saves,
   await page.locator('[data-action="home"]').click();
   await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', '1');
   const decoratedThumb = page.locator(`[data-library-thumbnail="${first.id}"]`).first();
+  await decoratedThumb.scrollIntoViewIfNeeded();
+  await expect(decoratedThumb).toHaveJSProperty('width', 512);
   const decoratedThumbData = await decoratedThumb.evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
   expect(decoratedThumbData.length).toBeGreaterThan(200);
 
