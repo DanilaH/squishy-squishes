@@ -31,6 +31,8 @@ export const ROOM_ITEMS: readonly RoomItem[] = [
   { id: 'rug-cloud', ru: 'Коврик-облачко', en: 'Cloud rug', category: 'rugs', slots: ['rug'] },
   { id: 'rug-donut', ru: 'Коврик-пончик', en: 'Donut rug', category: 'rugs', slots: ['rug'] },
   { id: 'garland', ru: 'Гирлянда', en: 'Garland', category: 'details', slots: ['garland'] },
+  { id: 'pumpkin-lamp', ru: 'Лампа-тыква', en: 'Pumpkin lamp', category: 'details', slots: ['detail'] },
+  { id: 'ghost-picture', ru: 'Картина с призраком', en: 'Ghost picture', category: 'posters', slots: ['wall'] },
   { id: 'gift-box', ru: 'Коробка с бантом', en: 'Gift box', category: 'details', slots: ['detail'] },
 ];
 export const CATEGORY_SLOTS: Readonly<Record<RoomCategory, readonly RoomSlot[]>> = {

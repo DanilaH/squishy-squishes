@@ -147,6 +147,20 @@ export const ROOM_ASSET_FRAMES: Readonly<Record<string, { left: number; top: num
     "height": 129,
     "canvas": 480
   },
+  "pumpkin-lamp": {
+    "left": 17,
+    "top": 8,
+    "width": 267,
+    "height": 284,
+    "canvas": 300
+  },
+  "ghost-picture": {
+    "left": 9,
+    "top": 8,
+    "width": 282,
+    "height": 284,
+    "canvas": 300
+  },
   "gift-box": {
     "left": 8,
     "top": 54,

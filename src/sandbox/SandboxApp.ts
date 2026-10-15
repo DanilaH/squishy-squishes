@@ -284,17 +284,17 @@ interface DecorLabels {
 
 const DECOR_LABELS: Readonly<Record<SandboxLanguage, DecorLabels>> = {
   en: {
-    eyes: { dot: 'Dot', happy: 'Happy', sleepy: 'Sleepy', angry:'Angry', sly:'Sly', cross:'Crosses', sparkling:'Sparkling' },
-    mouths: { smile: 'Smile', o: 'O', cat: 'Cat', tongue:'Tongue', fangs:'Fangs', flat:'Straight', sewn:'Stitched' },
-    stickers: { heart: 'Heart', star: 'Star', flower: 'Flower', sparkle: 'Sparkle', candy:'Candy', donut:'Donut', strawberry:'Strawberry', lightning:'Lightning', flame:'Flame', skull:'Skull', planet:'Planet', eye:'Eye', ghost:'Ghost' },
-    accessories: { 'cat-ears': 'Cat ears', 'bunny-ears': 'Bunny ears', horns: 'Horns', bow: 'Bow', crown: 'Crown', glasses:'Glasses', headphones:'Headphones', 'bucket-hat':'Bucket hat', 'petal-flower':'Flower', leaves:'Leaves', butterfly:'Butterfly', cream:'Cream', cherry:'Cherry', 'heart-patch':'Heart patch', handbag:'Bag', wings:'Wings', antennae:'Antennae', 'mushroom-hat':'Mushroom hat', 'witch-hat':'Witch hat', halo:'Halo', 'eye-patch':'Eye patch', bolt:'Bolt' },
+    eyes: { dot: 'Dot', happy: 'Happy', sleepy: 'Sleepy', angry:'Angry', sly:'Sly', cross:'Crosses', sparkling:'Sparkling', frightened:'Scared', 'stitched-eye':'Stitched eye' },
+    mouths: { smile: 'Smile', o: 'O', cat: 'Cat', tongue:'Tongue', fangs:'Fangs', flat:'Straight', sewn:'Stitched', grin:'Grin' },
+    stickers: { heart: 'Heart', star: 'Star', flower: 'Flower', sparkle: 'Sparkle', candy:'Candy', donut:'Donut', strawberry:'Strawberry', lightning:'Lightning', flame:'Flame', skull:'Skull', planet:'Planet', eye:'Eye', ghost:'Ghost', bone:'Bone' },
+    accessories: { 'cat-ears': 'Cat ears', 'bunny-ears': 'Bunny ears', horns: 'Horns', bow: 'Bow', crown: 'Crown', glasses:'Glasses', headphones:'Headphones', 'bucket-hat':'Bucket hat', 'petal-flower':'Flower', leaves:'Leaves', butterfly:'Butterfly', cream:'Cream', cherry:'Cherry', 'heart-patch':'Heart patch', handbag:'Bag', wings:'Wings', antennae:'Antennae', 'mushroom-hat':'Mushroom hat', 'witch-hat':'Witch hat', halo:'Halo', 'eye-patch':'Eye patch', bolt:'Bolt', cobweb:'Cobweb', 'toy-scythe':'Toy scythe', 'monster-hat':'Monster hat', 'bat-wings':'Bat wings' },
     stickerTip: 'Tap the squishy to place it.',
   },
   ru: {
-    eyes: { dot: 'Точки', happy: 'Весёлые', sleepy: 'Сонные', angry:'Злые', sly:'Хитрые', cross:'Крестики', sparkling:'Сияющие' },
-    mouths: { smile: 'Улыбка', o: 'О', cat: 'Котик', tongue:'Язык', fangs:'Клыки', flat:'Прямой', sewn:'Зашитый' },
-    stickers: { heart: 'Сердце', star: 'Звезда', flower: 'Цветок', sparkle: 'Искра', candy:'Конфета', donut:'Пончик', strawberry:'Клубника', lightning:'Молния', flame:'Пламя', skull:'Череп', planet:'Планета', eye:'Глаз', ghost:'Призрак' },
-    accessories: { 'cat-ears': 'Кошачьи', 'bunny-ears': 'Заячьи', horns: 'Рожки', bow: 'Бант', crown: 'Корона', glasses:'Очки', headphones:'Наушники', 'bucket-hat':'Панамка', 'petal-flower':'Цветок', leaves:'Листики', butterfly:'Бабочка', cream:'Сливки', cherry:'Вишенка', 'heart-patch':'Пластырь', handbag:'Сумочка', wings:'Крылышки', antennae:'Антенны', 'mushroom-hat':'Грибная шляпа', 'witch-hat':'Шляпа ведьмы', halo:'Нимб', 'eye-patch':'Повязка', bolt:'Болт' },
+    eyes: { dot: 'Точки', happy: 'Весёлые', sleepy: 'Сонные', angry:'Злые', sly:'Хитрые', cross:'Крестики', sparkling:'Сияющие', frightened:'Испуг', 'stitched-eye':'Шов на глазу' },
+    mouths: { smile: 'Улыбка', o: 'О', cat: 'Котик', tongue:'Язык', fangs:'Клыки', flat:'Прямой', sewn:'Зашитый', grin:'Ухмылка' },
+    stickers: { heart: 'Сердце', star: 'Звезда', flower: 'Цветок', sparkle: 'Искра', candy:'Конфета', donut:'Пончик', strawberry:'Клубника', lightning:'Молния', flame:'Пламя', skull:'Череп', planet:'Планета', eye:'Глаз', ghost:'Призрак', bone:'Косточка' },
+    accessories: { 'cat-ears': 'Кошачьи', 'bunny-ears': 'Заячьи', horns: 'Рожки', bow: 'Бант', crown: 'Корона', glasses:'Очки', headphones:'Наушники', 'bucket-hat':'Панамка', 'petal-flower':'Цветок', leaves:'Листики', butterfly:'Бабочка', cream:'Сливки', cherry:'Вишенка', 'heart-patch':'Пластырь', handbag:'Сумочка', wings:'Крылышки', antennae:'Антенны', 'mushroom-hat':'Грибная шляпа', 'witch-hat':'Шляпа ведьмы', halo:'Нимб', 'eye-patch':'Повязка', bolt:'Болт', cobweb:'Паутинка', 'toy-scythe':'Коса', 'monster-hat':'Шляпа-глаз', 'bat-wings':'Крылья мыши' },
     stickerTip: 'Тапни по сквишу, чтобы наклеить.',
   },
 };
@@ -310,7 +310,7 @@ const SHAPE_LABELS: Readonly<Record<SandboxLanguage, Readonly<Record<ShapeId, st
     dumpling: 'Dumpling',
     strawberry: 'Strawberry',
   donut: 'Donut',
-  bun: 'Puffy Bun', 'ice-cream': 'Ice Cream', cupcake: 'Cupcake', watermelon: 'Watermelon', 'mochi-cat': 'Mochi Cat', 'mochi-bunny': 'Mochi Bunny',
+  bun: 'Puffy Bun', 'ice-cream': 'Ice Cream', cupcake: 'Cupcake', watermelon: 'Watermelon', 'mochi-cat': 'Mochi Cat', 'mochi-bunny': 'Mochi Bunny', ghost:'Ghost', bat:'Bat', pumpkin:'Pumpkin',
   },
   ru: {
     'soft-square': 'Кубик',
@@ -322,13 +322,13 @@ const SHAPE_LABELS: Readonly<Record<SandboxLanguage, Readonly<Record<ShapeId, st
     dumpling: 'Дамплинг',
     strawberry: 'Клубничка',
   donut: 'Пончик',
-  bun: 'Булочка', 'ice-cream': 'Мороженое', cupcake: 'Кексик', watermelon: 'Арбузик', 'mochi-cat': 'Котик-моти', 'mochi-bunny': 'Зайчик-моти',
+  bun: 'Булочка', 'ice-cream': 'Мороженое', cupcake: 'Кексик', watermelon: 'Арбузик', 'mochi-cat': 'Котик-моти', 'mochi-bunny': 'Зайчик-моти', ghost:'Призрак', bat:'Летучая мышь', pumpkin:'Тыква',
   },
 };
 
 const MIXIN_LABELS: Readonly<Record<SandboxLanguage, Readonly<Record<MixInId, string>>>> = {
-  en: { glitter: 'Glitter', stars: 'Stars', foam: 'Foam', pearls: 'Pearls', hearts: 'Hearts', confetti: 'Confetti', crescents:'Crescents', bubbles:'Bubbles', 'strawberry-slices':'Berry slices', 'lemon-slices':'Lemon slices', 'kiwi-slices':'Kiwi slices', flowers:'Flowers', flakes:'Pearl flakes' },
-  ru: { glitter: 'Блёстки', stars: 'Звёзды', foam: 'Пена', pearls: 'Жемчужины', hearts: 'Сердечки', confetti: 'Конфетти', crescents:'Полумесяцы', bubbles:'Пузырьки', 'strawberry-slices':'Клубника', 'lemon-slices':'Лимон', 'kiwi-slices':'Киви', flowers:'Цветочки', flakes:'Хлопья' },
+  en: { glitter: 'Glitter', stars: 'Stars', foam: 'Foam', pearls: 'Pearls', hearts: 'Hearts', confetti: 'Confetti', crescents:'Crescents', bubbles:'Bubbles', 'strawberry-slices':'Berry slices', 'lemon-slices':'Lemon slices', 'kiwi-slices':'Kiwi slices', flowers:'Flowers', flakes:'Pearl flakes', bones:'Bones', candies:'Candy' },
+  ru: { glitter: 'Блёстки', stars: 'Звёзды', foam: 'Пена', pearls: 'Жемчужины', hearts: 'Сердечки', confetti: 'Конфетти', crescents:'Полумесяцы', bubbles:'Пузырьки', 'strawberry-slices':'Клубника', 'lemon-slices':'Лимон', 'kiwi-slices':'Киви', flowers:'Цветочки', flakes:'Хлопья', bones:'Косточки', candies:'Конфетки' },
 };
 
 const PAINT_COLORS = [
@@ -345,7 +345,7 @@ const BRUSH_SIZE_LABELS: Readonly<Record<SandboxLanguage, readonly string[]>> = 
   ru: ['Маленькая кисть', 'Средняя кисть', 'Большая кисть'],
 };
 const BRUSH_SIZES = [18, 34, 56] as const;
-const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti', 'crescents', 'bubbles', 'strawberry-slices', 'lemon-slices', 'kiwi-slices', 'flowers', 'flakes'];
+const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti', 'crescents', 'bubbles', 'strawberry-slices', 'lemon-slices', 'kiwi-slices', 'flowers', 'flakes', 'bones', 'candies'];
 const MIX_DISTANCE_FOR_COMPLETE_PX = 1_650;
 const MIXIN_SPACING_PX = 24;
 const BASE_PALETTE_ID = 'milk' as const;

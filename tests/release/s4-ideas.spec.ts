@@ -60,7 +60,7 @@ const startTargetIdea = async (page: Page): Promise<void> => {
   await expect(shell).toHaveAttribute('data-shape', 'soft-square');
   await expect(page.locator('[data-phaser-ready]')).toHaveAttribute('data-phaser-ready','true');
   await expect(page.locator('[data-idea-guide]')).toHaveAttribute('data-idea-active', TARGET_ID);
-  await expect(page.locator('.sandbox-shape')).toHaveCount(15);
+  await expect(page.locator('.sandbox-shape')).toHaveCount(18);
   await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);
 };
 

@@ -13,6 +13,12 @@
 | Phaser preview / migration | [`PHASER_LANDSCAPE_MIGRATION_PLAN.md`](PHASER_LANDSCAPE_MIGRATION_PLAN.md), [`PHASER_BOOTSTRAP_ADOPTION.md`](PHASER_BOOTSTRAP_ADOPTION.md) | Migration plans are historical; production now uses Phaser. A landscape redesign remains a separate product decision. |
 | QA / release | [`../README.md`](../README.md), [build, browser QA and deployment](../.github/workflows/release-check.yml) | Browser CI is not real-phone or hosted Yandex DRAFT approval. |
 
+## Halloween content
+
+The approved seasonal set and its source-art/validation contract are recorded in
+[`HALLOWEEN_SET_2026-10-15.md`](HALLOWEEN_SET_2026-10-15.md). Implementation is on
+`feat/halloween-set`; merging and publication are separate.
+
 ## Next release work
 
 The owner-requested monetization and scalable-collection roadmap is

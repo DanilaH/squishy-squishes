@@ -8,10 +8,10 @@ import { getAccessoryDepth } from '../../src/sandbox/accessorySeats';
 import {decodeSaveStateV3} from '../../src/platform/saveV3';
 import { createBodyFillStroke, createMixInPlacement, MIXIN_IDS } from '../../src/sandbox/appearance';
 
-test('every accessory has finite individual seats and keeps its specified layer on all fifteen molds', () => {
+test('every accessory has finite individual seats and keeps its specified layer on all eighteen molds', () => {
   for (const shape of SHAPES) for (const accessory of ACCESSORY_IDS) {
     const placements = initialAccessoryPlacements(shape, accessory);
-    expect(placements.length).toBe(['cat-ears', 'bunny-ears', 'horns', 'leaves', 'wings'].includes(accessory) ? 2 : 1);
+    expect(placements.length).toBe(['cat-ears', 'bunny-ears', 'horns', 'leaves', 'wings', 'bat-wings'].includes(accessory) ? 2 : 1);
     for (const placement of placements) {
       expect(Number.isFinite(placement.r)).toBe(true);
       expect(placement.x).toBeGreaterThanOrEqual(0); expect(placement.x).toBeLessThanOrEqual(255);
@@ -20,7 +20,7 @@ test('every accessory has finite individual seats and keeps its specified layer 
       const x = placement.x / 255 * 2 - 1, y = placement.y / 255 * 2 - 1;
       expect([-1, 0, 1].some(dx => [-1, 0, 1].some(dy => isPointInsideShape(shape, x + dx * .012, y + dy * .012))), `${shape.id}/${accessory} root`).toBe(true);
     }
-    expect(getAccessoryDepth(accessory)).toBe(['cat-ears', 'bunny-ears', 'horns', 'wings', 'antennae', 'halo'].includes(accessory) ? 'rear' : 'front');
+    expect(getAccessoryDepth(accessory)).toBe(['cat-ears', 'bunny-ears', 'horns', 'wings', 'antennae', 'halo', 'bat-wings'].includes(accessory) ? 'rear' : 'front');
   }
 });
 

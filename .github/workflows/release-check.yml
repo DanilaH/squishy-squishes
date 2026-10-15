@@ -153,9 +153,9 @@ jobs:
           QA_SHARD: ${{ matrix.shard }}
         run: |
           if [ "$QA_SHARD" = art ]; then
-            npm run qa:browser -- --grep 'complete authored catalog, live attachment and persistence'
+            npm run qa:browser -- --grep 'art-quality-(full|sample)\.spec'
           else
-            npm run qa:browser -- --grep-invert 'complete authored catalog, live attachment and persistence' --shard="$QA_SHARD/8"
+            npm run qa:browser -- --grep-invert 'art-quality-(full|sample)\.spec' --shard="$QA_SHARD/8"
           fi
       - name: Upload passing migration baseline evidence
         if: success() && github.event_name == 'pull_request'

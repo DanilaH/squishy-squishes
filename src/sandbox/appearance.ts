@@ -9,7 +9,7 @@ export const MAX_MIXIN_PLACEMENTS = 160;
 export const BODY_FILL_BRUSH_SIZE = 112;
 
 export type AppearanceStrokeMode = 0 | 1;
-export type MixInId = 'glitter' | 'stars' | 'foam' | 'pearls' | 'hearts' | 'confetti' | 'crescents' | 'bubbles' | 'strawberry-slices' | 'lemon-slices' | 'kiwi-slices' | 'flowers' | 'flakes';
+export type MixInId = 'glitter' | 'stars' | 'foam' | 'pearls' | 'hearts' | 'confetti' | 'crescents' | 'bubbles' | 'strawberry-slices' | 'lemon-slices' | 'kiwi-slices' | 'flowers' | 'flakes' | 'bones' | 'candies';
 
 export interface AppearancePoint {
   readonly u: number;
@@ -39,7 +39,7 @@ export interface AppearanceDocumentV1 {
   readonly mixins: readonly MixInPlacementV1[];
 }
 
-export const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti', 'crescents', 'bubbles', 'strawberry-slices', 'lemon-slices', 'kiwi-slices', 'flowers', 'flakes'];
+export const MIXIN_IDS: readonly MixInId[] = ['glitter', 'stars', 'foam', 'pearls', 'hearts', 'confetti', 'crescents', 'bubbles', 'strawberry-slices', 'lemon-slices', 'kiwi-slices', 'flowers', 'flakes', 'bones', 'candies'];
 const mixinCodeById = new Map<MixInId, number>(MIXIN_IDS.map((id, index) => [id, index]));
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));

@@ -33,7 +33,7 @@ const state = {...createDefaultSaveV3(), libraryCapacity: 24, totalCrafts: libra
 
 test('authored set covers every planned catalog ID without changing V3 data', () => {
   expect(Object.keys(manifest).sort()).toEqual(expectedIds.sort());
-  expect(expectedIds).toHaveLength(43);
+  expect(expectedIds).toHaveLength(50);
   expect(decodeSaveStateV3(state).library).toHaveLength(library.length);
   for (const id of ['leaves', 'wings']) {
     const asset = manifest[id as keyof typeof manifest] as {leftCrop?: number[]; leftRoot?: number[]};

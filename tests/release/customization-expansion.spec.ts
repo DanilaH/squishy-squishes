@@ -37,14 +37,14 @@ for(const locale of ['ru-RU','en-US'])for(const viewport of [{width:320,height:5
         decor:{...draft.decor,eyes:'dot' as const,mouth:'smile' as const,stickers:STICKER_IDS.map((id,i)=>({...createStickerPlacement(id,{u:.28+(i%4)*.145,v:.28+Math.floor(i/4)*.14},i),r:0,s:24}))}};
       await page.evaluate(save=>(localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3',JSON.stringify(save))),{...createDefaultSaveV3(),library:[toy],totalCrafts:1});
       await page.reload();await page.locator('[data-library-select-id]').click();await page.locator('[data-action="edit-saved"]').click();
-      await expect(page.locator('[data-accessory-icon]')).toHaveCount(22);
-      await expect(page.locator('[data-decor-sticker]')).toHaveCount(13);
+      await expect(page.locator('[data-accessory-icon]')).toHaveCount(26);
+      await expect(page.locator('[data-decor-sticker]')).toHaveCount(14);
       // Each new icon must contain ink and have a distinct image, rather than fallback art.
       const hashes=await page.locator('[data-sticker-icon]').evaluateAll(nodes=>nodes.map(node=>{
         const c=node as HTMLCanvasElement,data=c.getContext('2d')!.getImageData(0,0,c.width,c.height).data;
         let hash=2166136261,ink=0;for(let i=0;i<data.length;i++){hash=Math.imul(hash^data[i]!,16777619);if(i%4===3&&data[i])ink++;}return {hash,ink};
       }));
-      expect(hashes.every(h=>h.ink>40)).toBe(true);expect(new Set(hashes.map(h=>h.hash)).size).toBe(13);
+      expect(hashes.every(h=>h.ink>40)).toBe(true);expect(new Set(hashes.map(h=>h.hash)).size).toBe(STICKER_IDS.length);
       await page.locator('button[data-decor-section="face"]').click();await page.locator(`button[data-decor-eyes="${eyes[index%4]}"]`).click();await page.locator(`button[data-decor-mouth="${mouths[index%4]}"]`).click();
       await page.screenshot({path:info.outputPath('face-catalog.png')});
       await page.locator('button[data-decor-section="accessory"]').click();await page.locator(`button[data-decor-accessory="${accessories[index]}"]`).click();

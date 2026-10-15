@@ -5,7 +5,7 @@ import { SHAPES } from '../../src/game/shapes';
 
 import { createEmptyDecorDocument } from '../../src/sandbox/decor';
 
-for (const accessory of ['bow', 'crown', 'cat-ears', 'bunny-ears', 'horns'] as const) test(`all fifteen molds preserve ${accessory} seats and depth through real squeeze`, async ({ page }) => {
+for (const accessory of ['bow', 'crown', 'cat-ears', 'bunny-ears', 'horns'] as const) test(`all eighteen molds preserve ${accessory} seats and depth through real squeeze`, async ({ page }) => {
   test.setTimeout(150_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });

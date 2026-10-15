@@ -50,7 +50,7 @@ export function drawQualityAccessory(ctx: CanvasRenderingContext2D, id: string,
     // x=58.5/y=110.4 before drawAccessoryPiece separates and seats the halves.
     const [sx, sy, sw, sh] = asset.leftCrop as [number, number, number, number];
     const [rootX, rootY] = asset.leftRoot as [number, number];
-    const scale = Math.min(width * .39 / sw, height * (id === 'leaves' ? .62 : .76) / sh);
+    const scale = Math.min(width * (id === 'bat-wings' ? .31 : .39) / sw, height * (id === 'leaves' ? .62 : .76) / sh);
     const w = sw * scale, h = sh * scale;
     for (const side of [-1, 1]) {
       ctx.save(); if (side === 1) { ctx.translate(width, 0); ctx.scale(-1, 1); }
@@ -72,6 +72,7 @@ export function drawQualityAccessory(ctx: CanvasRenderingContext2D, id: string,
 }
 
 const accessoryFrames = {
+  cobweb: [.55, .65, .57], 'toy-scythe': [.65, .98, .55], 'monster-hat': [.88, .88, .53],
   headphones: [.80, .90, .53], butterfly: [.80, .78, .58], cherry: [.60, .82, .55],
   glasses: [.70, .43, .58], 'bucket-hat': [.86, .76, .60],
   'petal-flower': [.57, .65, .64], cream: [.68, .80, .53],

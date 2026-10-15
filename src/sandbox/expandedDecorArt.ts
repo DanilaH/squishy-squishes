@@ -6,9 +6,16 @@ const path = (ctx: CanvasRenderingContext2D, points: readonly (readonly [number,
   ctx.beginPath(); points.forEach(([x,y],i) => i ? ctx.lineTo(x,y) : ctx.moveTo(x,y)); if(close)ctx.closePath();
 };
 export const drawExpandedEye = (ctx: CanvasRenderingContext2D, id: string, x: number, y: number, left: boolean): boolean => {
-  if(!['angry','sly','cross','sparkling'].includes(id))return false;
+  if(!['angry','sly','cross','sparkling','frightened','stitched-eye'].includes(id))return false;
   ctx.save();ctx.translate(x,y);ctx.strokeStyle=INK;ctx.fillStyle=INK;ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';
-  if(id==='cross') {
+  if(id==='frightened') {
+    ctx.beginPath();ctx.ellipse(0,2,8,10,0,0,TAU);ctx.fillStyle='#fffaf1';ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.ellipse(0,3,2.7,4.3,0,0,TAU);ctx.fillStyle=INK;ctx.fill();
+    ctx.beginPath();ctx.moveTo(-8,-12);ctx.quadraticCurveTo(0,-18,8,-12);ctx.stroke();
+  } else if(id==='stitched-eye') {
+    if(left){path(ctx,[[-9,1],[9,-1]]);ctx.stroke();for(const dx of [-6,0,6]){path(ctx,[[dx-2,-4],[dx+2,5]]);ctx.lineWidth=2;ctx.stroke();}}
+    else{ctx.beginPath();ctx.ellipse(0,2,5,8,0,0,TAU);ctx.fill();ctx.beginPath();ctx.arc(-1,0,1.5,0,TAU);ctx.fillStyle='#fffaf1';ctx.fill();}
+  } else if(id==='cross') {
     path(ctx,[[-7,-7],[7,7]]);ctx.stroke();path(ctx,[[-7,7],[7,-7]]);ctx.stroke();
   } else if(id==='sparkling') {
     path(ctx,[[0,-11],[3,-3],[10,0],[3,3],[0,11],[-3,3],[-10,0],[-3,-3]],true);ctx.fill();
@@ -23,9 +30,14 @@ export const drawExpandedEye = (ctx: CanvasRenderingContext2D, id: string, x: nu
   ctx.restore();return true;
 };
 export const drawExpandedMouth = (ctx: CanvasRenderingContext2D,id:string,x:number,y:number):boolean => {
-  if(!['tongue','fangs','flat','sewn'].includes(id))return false;
+  if(!['tongue','fangs','flat','sewn','grin'].includes(id))return false;
   ctx.save();ctx.translate(x,y);ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=INK;ctx.fillStyle=INK;ctx.lineWidth=3;
-  if(id==='flat'||id==='sewn') {
+  if(id==='grin') {
+    ctx.beginPath();ctx.moveTo(-14,-2);ctx.quadraticCurveTo(0,5,14,-4);ctx.quadraticCurveTo(11,15,-3,11);ctx.quadraticCurveTo(-12,9,-14,-2);ctx.closePath();ctx.fillStyle='#fff6df';ctx.fill();ctx.stroke();
+    ctx.save();ctx.clip();
+    ctx.beginPath();ctx.moveTo(-12,3);ctx.quadraticCurveTo(0,8,12,2);ctx.lineWidth=1.2;ctx.stroke();
+    for(const x of [-5,3,9]){path(ctx,[[x,2],[x,10]]);ctx.stroke();}ctx.restore();
+  } else if(id==='flat'||id==='sewn') {
     path(ctx,[[-12,1],[12,1]]);ctx.stroke();
     if(id==='sewn')for(const dx of [-8,0,8]){path(ctx,[[dx-2,-3],[dx+2,5]]);ctx.lineWidth=2;ctx.stroke();}
   }else{
@@ -39,11 +51,13 @@ export const drawExpandedMouth = (ctx: CanvasRenderingContext2D,id:string,x:numb
 };
 export const drawExpandedSticker = (ctx:CanvasRenderingContext2D,id:string,size:number,variant=0):boolean => {
   if (drawQualitySticker(ctx,id,size,variant)) return true;
-  if(!['candy','donut','strawberry','lightning','flame','skull','planet','eye','ghost'].includes(id))return false;
+  if(!['candy','donut','strawberry','lightning','flame','skull','planet','eye','ghost','bone'].includes(id))return false;
   ctx.save();ctx.scale(size/40,size/40);ctx.lineWidth=1.6;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle='#715571';
   const fill=(color:string)=>{ctx.fillStyle=color;ctx.fill();ctx.stroke();};
   const circle=(x:number,y:number,r:number,color:string)=>{ctx.beginPath();ctx.arc(x,y,r,0,TAU);fill(color);};
-  if(id==='candy'){
+  if(id==='bone'){
+    path(ctx,[[-10,-4],[-16,-8],[-20,-4],[-15,0],[-20,4],[-16,8],[-10,4],[10,4],[16,8],[20,4],[15,0],[20,-4],[16,-8],[10,-4]],true);fill('#fff4dc');
+  }else if(id==='candy'){
     path(ctx,[[-8,-6],[-18,-10],[-16,0],[-18,10],[-8,6]],true);fill('#b9a3df');
     path(ctx,[[8,-6],[18,-10],[16,0],[18,10],[8,6]],true);fill('#b9a3df');
     ctx.beginPath();ctx.ellipse(0,0,12,9,-.25,0,TAU);fill('#f5a8c8');path(ctx,[[-3,-7],[3,7]]);ctx.strokeStyle='#fff1df';ctx.lineWidth=4;ctx.stroke();
@@ -75,12 +89,24 @@ export const drawExpandedSticker = (ctx:CanvasRenderingContext2D,id:string,size:
   ctx.restore();return true;
 };
 export const drawExpandedAccessory = (ctx:CanvasRenderingContext2D,id:string,width:number,height:number,icon=false):boolean => {
-  if(!['antennae','mushroom-hat','witch-hat','halo','eye-patch','bolt'].includes(id))return false;
+  if(!['antennae','mushroom-hat','witch-hat','halo','eye-patch','bolt','cobweb','toy-scythe','monster-hat','bat-wings'].includes(id))return false;
   ctx.save();ctx.scale(width/180,height/120);if(icon)ctx.translate(0,-8);
   ctx.lineWidth=2;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle='#806480';ctx.shadowColor='rgba(92,66,107,.18)';ctx.shadowBlur=3;ctx.shadowOffsetY=2;
   const puff=(p:Path2D,top:string,bottom:string)=>{const g=ctx.createLinearGradient(55,25,120,112);g.addColorStop(0,top);g.addColorStop(1,bottom);ctx.fillStyle=g;ctx.fill(p);ctx.stroke(p);};
   const oval=(x:number,y:number,rx:number,ry:number)=>{const p=new Path2D();p.ellipse(x,y,rx,ry,0,0,TAU);return p;};
-  if(id==='antennae'){
+  if(id==='cobweb'){
+    ctx.strokeStyle='#ddd4ee';ctx.lineWidth=4;path(ctx,[[90,35],[55,105],[125,105],[90,35],[90,108]]);ctx.stroke();
+    for(const y of [65,85]){ctx.beginPath();ctx.moveTo(90-(y-35)/2,y);ctx.quadraticCurveTo(90,y+10,90+(y-35)/2,y);ctx.stroke();}
+  }else if(id==='toy-scythe'){
+    path(ctx,[[73,110],[104,29]]);ctx.strokeStyle='#dca16e';ctx.lineWidth=9;ctx.stroke();
+    puff(new Path2D('M 101 26 Q 147 25 148 74 Q 130 46 98 42 Z'),'#f6f1ef','#b8adc8');
+  }else if(id==='monster-hat'){
+    puff(new Path2D('M 50 100 L 76 29 Q 118 6 125 56 L 110 47 L 133 100 Z'),'#b59bd7','#6c4e91');
+    puff(oval(90,105,65,10),'#b59bd7','#6c4e91');
+    for(const [x,y,r] of [[74,65,15],[111,74,11]] as const){puff(oval(x,y,r,r),'#ffe4a1','#eab660');ctx.fillStyle=INK;ctx.beginPath();ctx.arc(x,y,r*.4,0,TAU);ctx.fill();}
+  }else if(id==='bat-wings'){
+    for(const d of [-1,1]){ctx.save();if(d===1){ctx.translate(180,0);ctx.scale(-1,1);}puff(new Path2D('M 58 110 L 13 66 Q 28 59 43 83 Q 42 94 51 93 L 58 110 Z'),'#ad8bc9','#63437d');ctx.restore();}
+  }else if(id==='antennae'){
     ctx.strokeStyle='#a990bb';ctx.lineWidth=7;
     for(const dir of [-1,1]){ctx.beginPath();ctx.moveTo(90+dir*20,110);ctx.bezierCurveTo(90+dir*18,86,90+dir*48,75,90+dir*44,47);ctx.stroke();puff(oval(90+dir*44,43,13,13),'#f3edff','#b2a1d8');}
   }else if(id==='mushroom-hat'){

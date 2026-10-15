@@ -1,0 +1,83 @@
+[
+  {
+    "id": "cobweb",
+    "source": "assets-src/halloween/cobweb.png",
+    "sourceSha256": "c38b967daaf25f92191ff5d1addabf4ae2707d1b1548b7ecd3b1c0a6740b16ef",
+    "output": "public/assets/art-quality/cobweb.webp",
+    "bytes": 29502,
+    "hasAvifCompanion": false,
+    "runtimeSha256": "87ab8ac54b0f10835fbe82c0d1d8e14e1fdead04d80c30ac315640bcea08417b"
+  },
+  {
+    "id": "toy-scythe",
+    "source": "assets-src/halloween/toy-scythe.png",
+    "sourceSha256": "76014f0816922e2fd31f207696a17e277fbcf36d3da7e1a27e4b11c2134d3416",
+    "output": "public/assets/art-quality/toy-scythe.webp",
+    "bytes": 19696,
+    "hasAvifCompanion": false,
+    "runtimeSha256": "21d084aac96f3d0abb8bc449884f2c5df706da36ceb5119ace2237da30e29992"
+  },
+  {
+    "id": "sticker-bone",
+    "source": "assets-src/halloween/sticker-bone.png",
+    "sourceSha256": "f857894829be94fe47f7b2cd72245516a48110544cdac9d6b2ef2bdc6edd9a54",
+    "output": "public/assets/art-quality/sticker-bone.webp",
+    "bytes": 4970,
+    "hasAvifCompanion": false,
+    "runtimeSha256": "99a85acaf745557bc790c92f9f91038700e57a5faa90779c24fe2bd6109f4dbf"
+  },
+  {
+    "id": "filler-bones",
+    "source": "assets-src/halloween/sticker-bone.png",
+    "sourceSha256": "f857894829be94fe47f7b2cd72245516a48110544cdac9d6b2ef2bdc6edd9a54",
+    "output": "public/assets/art-quality/filler-bones.webp",
+    "bytes": 2080,
+    "hasAvifCompanion": false,
+    "runtimeSha256": "04f76812d86a018a09ff0fee56e4487819543d40c67ae7a62a79a78c8ac2730f"
+  },
+  {
+    "id": "bat-wings",
+    "source": "assets-src/halloween/bat-wings.png",
+    "sourceSha256": "8bb0322f1ff4b5f197da66aac517c33a25ff95c321f2e7a77d2a296772ee2c25",
+    "output": "public/assets/art-quality/bat-wings.webp",
+    "bytes": 13582,
+    "hasAvifCompanion": false,
+    "runtimeSha256": "d0b94193785412a0759ec942653d8c79884f2115d3e848cb2655db15238d2312"
+  },
+  {
+    "id": "monster-hat",
+    "source": "assets-src/halloween/monster-hat.png",
+    "sourceSha256": "8b1fc3f96ef4ebc3f4815602bb177a33e36e3c92b3f31328bf388f25d22aa98d",
+    "output": "public/assets/art-quality/monster-hat.webp",
+    "bytes": 20016,
+    "hasAvifCompanion": false,
+    "runtimeSha256": "48d3d4ab251403b6c61ea0121ae692264dd713fec10d667567b57e824de8e37f"
+  },
+  {
+    "id": "filler-candies",
+    "source": "assets-src/halloween/filler-candy.png",
+    "sourceSha256": "05178dab13c569417fd29d86a8ac365d9e29bfeaa2e64e41751387f01accf7cd",
+    "output": "public/assets/art-quality/filler-candies.webp",
+    "bytes": 2764,
+    "hasAvifCompanion": false,
+    "runtimeSha256": "c00c3d16c88c2c66e7fdffceab8239b40f5600b001afbb9ef123ad285268bd69"
+  },
+  {
+    "id": "pumpkin-lamp",
+    "source": "assets-src/halloween/pumpkin-lamp.png",
+    "sourceSha256": "5eb07a7e097cdd46e5f4d345ab1aeb9a9f105874a96e9d60474fd19235577ae5",
+    "output": "public/assets/room/pumpkin-lamp.webp",
+    "bytes": 10880,
+    "hasAvifCompanion": false,
+    "runtimeSha256": "3c6bc2f4adbc424c447dca5a31089fa0ed6341274d5bead68a08fe983d85ec3c"
+  },
+  {
+    "id": "ghost-picture",
+    "source": "assets-src/halloween/ghost-picture.png",
+    "sourceSha256": "93cf4ef4baf234e0cf45d82cfa50efebc29786e0b6b41d4990f02c553bdd80f1",
+    "output": "public/assets/room/ghost-picture.webp",
+    "bytes": 6774,
+    "hasAvifCompanion": false,
+    "runtimeSha256": "c8ba072804295a0b850d652bebdd0e04b6d8c913b3f0c9e75348b28f090250f7"
+  }
+]

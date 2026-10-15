@@ -336,6 +336,38 @@
     }
   },
   {
+    "id": "pumpkin-lamp",
+    "source": "assets-src/room/pumpkin-lamp.png",
+    "output": "public/assets/room/pumpkin-lamp.webp",
+    "sha256": "b435fe7a6f148a2fc92032bea648a9872cce14c37c000ace6efcfc74360ff3d0",
+    "runtimeSha256": "3c6bc2f4adbc424c447dca5a31089fa0ed6341274d5bead68a08fe983d85ec3c",
+    "bytes": 10880,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 17,
+      "top": 8,
+      "width": 267,
+      "height": 284,
+      "canvas": 300
+    }
+  },
+  {
+    "id": "ghost-picture",
+    "source": "assets-src/room/ghost-picture.png",
+    "output": "public/assets/room/ghost-picture.webp",
+    "sha256": "1a9819bd7ea09b09b9191de763dd65b025eb3500b3416bd2ab8d8f0478dea992",
+    "runtimeSha256": "c8ba072804295a0b850d652bebdd0e04b6d8c913b3f0c9e75348b28f090250f7",
+    "bytes": 6774,
+    "hasAvifCompanion": false,
+    "frame": {
+      "left": 9,
+      "top": 8,
+      "width": 282,
+      "height": 284,
+      "canvas": 300
+    }
+  },
+  {
     "id": "gift-box",
     "source": "assets-src/room/gift-box.png",
     "output": "public/assets/room/gift-box.webp",
