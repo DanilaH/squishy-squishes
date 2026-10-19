@@ -1,5 +1,5 @@
 import {PEDESTALS,pedestalRewardKey} from '../game/pedestals';
-import {pedestalUrl,pedestalReady,preloadPedestals} from './pedestalArt';
+import {pedestalUrl,pedestalBackgroundUrl,pedestalReady,preloadPedestals} from './pedestalArt';
 import type {CatalogPort} from '../platform/catalogOwnership';
 import {REWARD_VIDEO_ICON} from '../app/rewardIcon';
 import { mountCatalogScrollHints } from './catalogScrollHints';
@@ -76,7 +76,7 @@ export class RoomEditorReview {
     const selectedPedestal=this.settings.pedestal??'standard';
     const visiblePedestal=pedestalReady(selectedPedestal)?selectedPedestal:'standard';
     shell.dataset.roomPedestal=visiblePedestal;
-    shell.style.setProperty('--room-pedestal-art',visiblePedestal==='standard'?'none':`url("${pedestalUrl(visiblePedestal)}")`);
+    shell.style.setProperty('--room-pedestal-art',visiblePedestal==='standard'?'none':`url("${pedestalBackgroundUrl(visiblePedestal)}")`);
     const furniture = shell.querySelector('[data-room-furniture]');
     if (furniture) furniture.innerHTML = ROOM_SLOTS.flatMap(slot => {
       const item = ROOM_ITEMS.find(candidate => candidate.id === this.settings.items[slot]);

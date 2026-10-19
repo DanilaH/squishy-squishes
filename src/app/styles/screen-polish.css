@@ -146,3 +146,8 @@
 .sandbox-shell:not([data-stage="decor"]) .accessory-selection-frame,
 .sandbox-shell:not([data-decor-section="objects"]) .accessory-selection-frame,
 .sandbox-shell[data-try-on="true"] .accessory-selection-frame { display: none; }
+
+/* Reward preview actions remain fixed; the catalog uses the space left over. */
+@media (max-height: 520px) {
+ #app[data-jelly-ui-ready] .room-library .room-editor[data-pedestal-preview='true'] .room-editor-content { min-height: 0; }
+}

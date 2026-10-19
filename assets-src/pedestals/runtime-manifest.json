@@ -1,0 +1,134 @@
+[
+  {
+    "id": "ufo",
+    "source": "assets-src/pedestals/ufo.png",
+    "sourceSha256": "5f696948d09e180f11d024dec9da790e72127e5afe44c2cf796979bb3337b5aa",
+    "output": "public/assets/pedestals/ufo.webp",
+    "sha256": "8a72e5eb010548b19c5fcf260468b218af08d90a636ebbf12ab587d0f38069d8",
+    "bytes": 32750,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "shell",
+    "source": "assets-src/pedestals/shell.png",
+    "sourceSha256": "99eeb7ca308f7e0096a89c9747173488eb0676be695809f45351432f1277c316",
+    "output": "public/assets/pedestals/shell.webp",
+    "sha256": "2ee6a1a45294ec3fb95f0b1f00391d6c48de1360519a82bc4413d9b601010a4d",
+    "bytes": 39170,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "mushroom-stump",
+    "source": "assets-src/pedestals/mushroom-stump.png",
+    "sourceSha256": "75698fe68c5299b369ed74f7653f40c259466e11877dd392cc1683517e7f5eb1",
+    "output": "public/assets/pedestals/mushroom-stump.webp",
+    "sha256": "8deeb6a01d86201f8e598473d1e95b75678c65112b3f60d717c762845f94f06e",
+    "bytes": 34878,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "aquarium",
+    "source": "assets-src/pedestals/aquarium.png",
+    "sourceSha256": "0d251fb13d9a3ede453e0c8a11cff97b21c2f6873831046eacd314a3ff54ac82",
+    "output": "public/assets/pedestals/aquarium.webp",
+    "sha256": "6e778f07f576f1fefa0f586b38009d3e7ca83871b99b15306954e713a54fdf6e",
+    "bytes": 35968,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "cake",
+    "source": "assets-src/pedestals/cake.png",
+    "sourceSha256": "adb8b6d40068bc1e767b5b3c78d08f3e0986977c97495bd1b4f4819b38936175",
+    "output": "public/assets/pedestals/cake.webp",
+    "sha256": "e317e7f16fe31b94c3c168fb8646b6a591c1237d854d51269626d67abe330e86",
+    "bytes": 36782,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "cauldron",
+    "source": "assets-src/pedestals/cauldron.png",
+    "sourceSha256": "d7331f2db97415f1a88889c1757bef469a8a6fa27c8ae31732c76595270568f3",
+    "output": "public/assets/pedestals/cauldron.webp",
+    "sha256": "b15462f9e86468adcaf9e017d566fd84b762fddaa9602ea1d45f124ea884137f",
+    "bytes": 24630,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "pumpkin",
+    "source": "assets-src/pedestals/pumpkin.png",
+    "sourceSha256": "bfa73a6417baa49f0741c415343f7d7d3cd9bf1c1c6b4ab84526b3e213d2601f",
+    "output": "public/assets/pedestals/pumpkin.webp",
+    "sha256": "4ffe6049dbb9ccf06891256672842e0f284a4d4815b5f699fad47a3dc5d90354",
+    "bytes": 27850,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "ghost",
+    "source": "assets-src/pedestals/ghost.png",
+    "sourceSha256": "e6f5dd7fdca1083bbdbc56f92b79f4a67f5a2bb3af00668a942b89294f8533f5",
+    "output": "public/assets/pedestals/ghost.webp",
+    "sha256": "499907a271920b8a3f443ef43e8254ba64b4219e5b723b25266d8bfaedd97915",
+    "bytes": 27064,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "crystal",
+    "source": "assets-src/pedestals/crystal.png",
+    "sourceSha256": "0ac3accaac9d921c5488def0d768441dac45143e865821a4a63cbc461425fcdd",
+    "output": "public/assets/pedestals/crystal.webp",
+    "sha256": "b23300287a3068721cd70490226215fd4f7ec4fba85d100b85fd57da26918429",
+    "bytes": 32524,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "ice",
+    "source": "assets-src/pedestals/ice.png",
+    "sourceSha256": "fdd4ca6d300c9d17719e3c53bf90bd2205212dd022122739d04076fb7cd544f5",
+    "output": "public/assets/pedestals/ice.webp",
+    "sha256": "c315ce32d59a39824ca61e818d1abbbaefd716881db64f5c04154ee1e50932df",
+    "bytes": 45012,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "donut",
+    "source": "assets-src/pedestals/donut.png",
+    "sourceSha256": "54a6a25eab3b9055cb8393fe7ff9ac2a33efabd608793076fc6d3fbba2c14b66",
+    "output": "public/assets/pedestals/donut.webp",
+    "sha256": "6be02ba48d58f4ebaade1ebd9e88bacaca4d150ee2cdc8a3f136686055c7de58",
+    "bytes": 30764,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  },
+  {
+    "id": "cushion-throne",
+    "source": "assets-src/pedestals/cushion-throne.png",
+    "sourceSha256": "ef7be1f0fac67d43c781da45e3e46b476d57847a485c99f71922c05cd55a6d58",
+    "output": "public/assets/pedestals/cushion-throne.webp",
+    "sha256": "e04aa0e38c6a2d953303e95c4bc40feb9a97fb05ab3107c30e1f215efaa96ec4",
+    "bytes": 26808,
+    "width": 640,
+    "height": 364,
+    "hasAvifCompanion": false
+  }
+]

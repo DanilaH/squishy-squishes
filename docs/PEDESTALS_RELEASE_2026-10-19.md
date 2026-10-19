@@ -21,3 +21,5 @@ The original table, landing plane, labels and furniture camera remain in place a
 `tests/release/pedestals.spec.ts` covers all twelve entitlements, duplicate callbacks, earned-journal recovery, old room compatibility, normalized alpha, EN/RU at portrait/short landscape/desktop, no automatic ads, closed/error/earned callbacks, free retries, cancel/save/reload and unchanged toy data. It checks primary action bounds, 44px targets and actual hit testing during preview. Failed image loading has a separate retry scenario.
 
 Keep the unchanged 5 MiB upload budget. Strict TypeScript, release tooling, shared asset smoke, both builds, full browser/visual/Pages checks and post-merge hosted smoke remain required. SDK stubs and Pages do not establish real hosted Yandex ad or tactile phone acceptance.
+
+Cold local release checks passed: strict TypeScript, CI tooling, shared asset smoke, both builds and the unchanged Yandex upload audit. Runtime pedestal art is 394,200 bytes; Yandex output has 177 files / 5,198,534 bytes. Browser and visual validation are tracked on the final PR head.
