@@ -7,6 +7,8 @@ export default defineConfig(({ mode }) => {
   return {
     base: mode === 'yandex' || candidate || phaserYandexDraft || phaserPagesPreview ? './' : '/squishy-squishes/',
     build: {
+      // Every upload root must contain only the current build, including new hashed chunks.
+      emptyOutDir: true,
       outDir: candidate ? 'dist-phaser-candidate' : phaserYandexDraft ? 'dist-phaser-yandex' : phaserPagesPreview ? 'dist-phaser-pages' : mode === 'yandex' ? 'dist-yandex' : 'dist',
       sourcemap: false,
       // Keep all seven modular Studio PNGs as individually inspectable assets on the isolated Pages build.

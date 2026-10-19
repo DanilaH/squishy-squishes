@@ -47,7 +47,7 @@ export class CatalogPreview {
         if(anotherLockedItem || replacesCurrentChoice) this.restore();
       }
       if(key&&!this.port.owns(key)){
-        if(!this.pending)this.pending={...selection,key,before:structuredClone(this.get()),label:button.getAttribute('aria-label')??button.querySelector('small:not([data-catalog-badge]), :scope > span:last-of-type')?.textContent?.trim()??selection.id};
+        if(!this.pending)this.pending={...selection,key,before:structuredClone(this.get()),label:button.getAttribute('aria-label')?.trim() || button.querySelector('small:not([data-catalog-badge])')?.textContent?.trim() || button.querySelector(':scope > span:last-of-type')?.textContent?.trim() || selection.id};
         if(key.startsWith('face:')) this.pending.label = ({'face:love':this.ru?'Влюблённый':'In love','face:cat':this.ru?'Хитрый котик':'Sly kitty','face:vampire':this.ru?'Вампирчик':'Little vampire','face:zombie':this.ru?'Сквиш-зомби':'Zombie squishy'} as Record<string,string>)[key] ?? this.pending.label;
         this.port.track('catalog_preview',key);this.render();
       }

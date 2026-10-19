@@ -1,6 +1,6 @@
 import type { StorageAdapter } from '@danilah/mini-games-kit/platform';
 import type { SaveStateV3 } from './saveV3';
-import { CATALOG_KEYS } from './catalogOwnership';
+import { CATALOG_KEYS, ownsCatalogItem } from './catalogOwnership';
 export const REWARD_JOURNAL_KEY = 'squishy.reward.pending.v1';
 interface Grant { key: string; targetCapacity: number }
 /** Earned callback is journaled before applying; replay is idempotent after failure/reload. */
@@ -26,7 +26,7 @@ export class RewardGrants {
       // Retry an already earned reward before another offer, without another ad.
       const pending=this.pendingGrant ? JSON.stringify(this.pendingGrant) : await this.storage.getItem(REWARD_JOURNAL_KEY);
       if(pending!==null){const old=JSON.parse(pending) as Grant;await this.recover();if(old.key===key)return true;}
-      if(key!=='capacity' && (this.current().legacyCatalogAccess || this.current().unlockedRewardIds.includes(key)))return true;
+      if(key!=='capacity' && ownsCatalogItem(this.current(),key))return true;
       await this.storage.setItem(reserve,' '.repeat(128*1024));
       const grant:Grant={key,targetCapacity:this.current().libraryCapacity+1};
       if(!Number.isSafeInteger(grant.targetCapacity))throw new RangeError('Capacity overflow');

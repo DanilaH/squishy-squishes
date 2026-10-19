@@ -33,7 +33,11 @@ export const drawToyMixIn = (ctx: CanvasRenderingContext2D, id: MixInId, r: numb
   if (authored) return;
   if (id === 'stars') { drawPearlStar(ctx, r, depth); return; }
   ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.globalAlpha *= 1 - depth * .25;
-  if (id === 'pearls' || id === 'foam') sphere(ctx, r, id === 'foam');
+  if (id === 'bones') {
+    ctx.scale(r/20,r/20);ctx.beginPath();ctx.roundRect(-14,-4,28,8,4);for(const x of [-14,14])for(const y of [-3,3]){ctx.moveTo(x+5,y);ctx.arc(x,y,5,0,TAU);}ctx.fillStyle='#f9edd7';ctx.fill();
+  } else if (id === 'candies') {
+    ctx.beginPath();ctx.roundRect(-r*.65,-r*.45,r*1.3,r*.9,r*.4);ctx.fillStyle='#f3a24d';ctx.fill();for(const d of [-1,1]){ctx.beginPath();ctx.moveTo(d*r*.5,0);ctx.lineTo(d*r,-r*.5);ctx.lineTo(d*r,r*.5);ctx.closePath();ctx.fillStyle='#a786d2';ctx.fill();}
+  } else if (id === 'pearls' || id === 'foam') sphere(ctx, r, id === 'foam');
   else if (id === 'hearts') {
     ctx.translate(0, r * .1); heart(ctx, r); ctx.fillStyle = heartColors[2]; ctx.fill(); ctx.translate(0, -r * .1);
     heart(ctx, r); const g = ctx.createLinearGradient(-r, -r, r, r);

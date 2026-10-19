@@ -21,9 +21,9 @@ for (const locale of ['ru-RU', 'en-US']) {
         decor: { ...createEmptyDecorDocument(), eyes: EYE_STYLE_IDS[n % 3], mouth: MOUTH_STYLE_IDS[n % 3], blush: true, accessory },
       }));
       // Validate fixtures through the production codec before browser injection.
-      decodeSaveStateV3({ ...createDefaultSaveV3(), libraryCapacity:24, library: toys, totalCrafts: 5 });
+      decodeSaveStateV3({ ...createDefaultSaveV3(), libraryCapacity:Math.max(24,ACCESSORY_IDS.length), library: toys, totalCrafts: 5 });
       await page.goto('/squishy-squishes/?roomReview=0');
-      await page.evaluate((library) => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify({ ...library.save, libraryCapacity:24, library: library.toys, totalCrafts: 5 }))), { save: createDefaultSaveV3(), toys });
+      await page.evaluate((library) => (localStorage.removeItem('squishy.collection.v1'), localStorage.setItem('squishy.save.v3', JSON.stringify({ ...library.save, libraryCapacity:Math.max(24,library.toys.length), library: library.toys, totalCrafts: 5 }))), { save: createDefaultSaveV3(), toys });
       await page.reload();
       await expect(page.locator('[data-sandbox-library]')).toHaveAttribute('data-library-count', String(ACCESSORY_IDS.length));
       const savedBefore = decodeSaveStateV3(await readCollection(page)).library;

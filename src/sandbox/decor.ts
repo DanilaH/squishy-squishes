@@ -9,10 +9,10 @@ import { APPEARANCE_TEXTURE_SIZE, type AppearancePoint } from './appearance';
 
 export const MAX_DECOR_STICKERS = 128;
 
-export const EYE_STYLE_IDS = ['dot', 'happy', 'sleepy', 'angry', 'sly', 'cross', 'sparkling'] as const;
-export const MOUTH_STYLE_IDS = ['smile', 'o', 'cat', 'tongue', 'fangs', 'flat', 'sewn'] as const;
-export const STICKER_IDS = ['heart', 'star', 'flower', 'sparkle', 'candy', 'donut', 'strawberry', 'lightning', 'flame', 'skull', 'planet', 'eye', 'ghost'] as const;
-export const ACCESSORY_IDS = ['cat-ears', 'bunny-ears', 'horns', 'bow', 'crown', 'glasses', 'headphones', 'bucket-hat', 'petal-flower', 'leaves', 'butterfly', 'cream', 'cherry', 'heart-patch', 'handbag', 'wings', 'antennae', 'mushroom-hat', 'witch-hat', 'halo', 'eye-patch', 'bolt'] as const;
+export const EYE_STYLE_IDS = ['dot', 'happy', 'sleepy', 'angry', 'sly', 'cross', 'sparkling', 'frightened', 'stitched-eye'] as const;
+export const MOUTH_STYLE_IDS = ['smile', 'o', 'cat', 'tongue', 'fangs', 'flat', 'sewn', 'grin'] as const;
+export const STICKER_IDS = ['heart', 'star', 'flower', 'sparkle', 'candy', 'donut', 'strawberry', 'lightning', 'flame', 'skull', 'planet', 'eye', 'ghost', 'bone'] as const;
+export const ACCESSORY_IDS = ['cat-ears', 'bunny-ears', 'horns', 'bow', 'crown', 'glasses', 'headphones', 'bucket-hat', 'petal-flower', 'leaves', 'butterfly', 'cream', 'cherry', 'heart-patch', 'handbag', 'wings', 'antennae', 'mushroom-hat', 'witch-hat', 'halo', 'eye-patch', 'bolt', 'cobweb', 'toy-scythe', 'monster-hat', 'bat-wings'] as const;
 
 export type EyeStyleId = (typeof EYE_STYLE_IDS)[number];
 export type MouthStyleId = (typeof MOUTH_STYLE_IDS)[number];
@@ -265,10 +265,11 @@ export const getDecorFrame = (shape: ShapeDefinition, accessory: AccessoryId | n
   const centerY = (minY + maxY) * 0.5;
   const faceY = getFaceCenterY(shape, centerY, height);
   const eyeY = faceY + height * 0.085;
-  const eyeDx = width * (shape.id === 'donut' ? .11 : .135);
+  const faceWidth = width * (shape.id === 'bat' ? .55 : 1);
+  const eyeDx = faceWidth * (shape.id === 'donut' ? .11 : .135);
   const mouthY = faceY - height * 0.075;
   const blushY = faceY - height * 0.015;
-  const blushDx = width * 0.225;
+  const blushDx = faceWidth * 0.225;
 
   // Attach head accessories to the actual upper contour at the horizontal center.
   // Using only maxY makes concave shapes (notably the heart) place the anchor in empty space.

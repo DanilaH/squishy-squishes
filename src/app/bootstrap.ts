@@ -159,6 +159,7 @@ export const bootstrapSquishyApp = async (
     const [{ createRoomSettingsRepository, starterRoomSettings }, { preloadRoomItems }, { RoomEditorReview }] = await Promise.all([
       import('../platform/roomSettings'), import('../sandbox/roomCatalog'), import('../sandbox/roomEditorReview'),
     ]);
+    const {preloadPedestals} = await import('../sandbox/pedestalArt');
     const roomRepository = createRoomSettingsRepository(runtime.storage);
     let roomSettings = await roomRepository.loadOrDefault(error => reportError('room-settings-load', error));
     if (freshPlayer) {
@@ -166,11 +167,12 @@ export const bootstrapSquishyApp = async (
       try { await roomRepository.write(roomSettings); await roomRepository.flush(); }
       catch (error) { reportError('starter-room-save', error); }
     }
-    try { await preloadRoomItems(); } catch (error) { reportError('room-assets-load', error); }
+    await Promise.all([preloadRoomItems().catch(error=>reportError('room-assets-load',error)),preloadPedestals().catch(error=>reportError('pedestal-assets-load',error))]);
     createRoomEditor = blocked => new RoomEditorReview(language, blocked, roomSettings, async state => {
+      if(state.pedestal && !monetization.owns(`pedestal:${state.pedestal}`))throw new Error('Resolve the pedestal preview before saving.');
       await roomRepository.write(state);
       await roomRepository.flush();
-    });
+    }, monetization);
   }
 
   const app = new SandboxLibraryApp(root, {

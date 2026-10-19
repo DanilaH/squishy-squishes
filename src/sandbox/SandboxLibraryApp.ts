@@ -184,7 +184,7 @@ const RU_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
   dumpling: 'Дамплинг',
   strawberry: 'Клубничка',
   donut: 'Пончик',
-  bun: 'Булочка', 'ice-cream': 'Мороженое', cupcake: 'Кексик', watermelon: 'Арбузик', 'mochi-cat': 'Котик-моти', 'mochi-bunny': 'Зайчик-моти',
+  bun: 'Булочка', 'ice-cream': 'Мороженое', cupcake: 'Кексик', watermelon: 'Арбузик', 'mochi-cat': 'Котик-моти', 'mochi-bunny': 'Зайчик-моти', ghost:'Призрак', bat:'Летучая мышь', pumpkin:'Тыква',
 };
 
 const EN_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
@@ -197,7 +197,7 @@ const EN_SHAPES: Readonly<Record<SavedSquishy['shapeId'], string>> = {
   dumpling: 'Dumpling',
   strawberry: 'Strawberry',
   donut: 'Donut',
-  bun: 'Puffy Bun', 'ice-cream': 'Ice Cream', cupcake: 'Cupcake', watermelon: 'Watermelon', 'mochi-cat': 'Mochi Cat', 'mochi-bunny': 'Mochi Bunny',
+  bun: 'Puffy Bun', 'ice-cream': 'Ice Cream', cupcake: 'Cupcake', watermelon: 'Watermelon', 'mochi-cat': 'Mochi Cat', 'mochi-bunny': 'Mochi Bunny', ghost:'Ghost', bat:'Bat', pumpkin:'Pumpkin',
 };
 
 const RU_MATERIALS: Readonly<Record<SavedSquishy['materialId'], string>> = {

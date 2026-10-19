@@ -1,0 +1,65 @@
+{
+  "generator": "OpenAI built-in image_gen",
+  "generatedAt": "2026-10-15",
+  "background": "Uniform green production matte; deterministic extraction in scripts/prepare-halloween-assets.mjs",
+  "assets": [
+    {
+      "id": "cobweb",
+      "source": "cobweb.png",
+      "prompt": "Use case: stylized-concept. Single isolated game sprite, premium smooth puffy silicone toy, softly modeled 3D product illustration, restrained surface highlights, front orthographic view, complete silhouette and generous margins. BACKGROUND: perfectly uniform flat pure bright green RGB(0,255,0), a chroma-key production matte, no gradient, no floor, no shadow, no bloom, no haze. Object fully opaque. Crisp object silhouette. No text, no watermark. Small triangular cobweb ornament, six thick silver-white silicone radial strands joined by three curved scalloped cross strands. Real open green gaps between every strand, no membrane, no spider.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "toy-scythe",
+      "source": "toy-scythe.png",
+      "prompt": "Use case: stylized-concept. Single isolated game sprite, premium smooth puffy silicone toy, softly modeled 3D product illustration, restrained surface highlights, front orthographic view, complete silhouette and generous margins. BACKGROUND: perfectly uniform flat pure bright green RGB(0,255,0), a chroma-key production matte, no gradient, no floor, no shadow, no bloom, no haze. Object fully opaque. Crisp object silhouette. No text, no watermark. A small blunt toy scythe, angled diagonally from bottom left to top right: short muted orange wooden-look silicone handle, thick curved moon-shaped silver blade on top, lilac binding at the blade root. Rounded child-safe chunky edges. One coherent object, no skull, no character.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "sticker-bone",
+      "source": "sticker-bone.png",
+      "prompt": "Use case: stylized-concept. Single isolated game sprite, premium smooth puffy silicone toy, softly modeled 3D product illustration, restrained surface highlights, front orthographic view, complete silhouette and generous margins. BACKGROUND: perfectly uniform flat pure bright green RGB(0,255,0), a chroma-key production matte, no gradient, no floor, no shadow, no bloom, no haze. Object fully opaque. Crisp object silhouette. No text, no watermark. One plump ivory-white cartoon bone with two rounded knobs at each end. Horizontal gently tilted silhouette, subtle warm cream rim shading and glossy puffy relief. No other bones, no outline border, no characters.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "bat-wings",
+      "source": "bat-wings.png",
+      "prompt": "Use case: stylized-concept. One isolated premium game sprite, smooth puffy molded silicone collectible toy, rounded sculpted 3D volume, restrained upper-left highlights, almost orthographic front view, crisp silhouette fully inside frame with generous empty margins. Perfectly uniform flat pure bright green RGB(0,255,0) chroma-key background. NO gradient, NO floor, NO outside shadows, NO bloom or haze, NO text. Object fully opaque. ONE single LEFT bat wing reaching left from a short attachment root at the far right, three scalloped lobes. Thick lilac-purple curved spars and opaque dark plum membranes. No body, no head, no second wing. Broad horizontal silhouette.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "monster-hat",
+      "source": "monster-hat.png",
+      "prompt": "Use case: stylized-concept. One isolated premium game sprite, smooth puffy molded silicone collectible toy, rounded sculpted 3D volume, restrained upper-left highlights, almost orthographic front view, crisp silhouette fully inside frame with generous empty margins. Perfectly uniform flat pure bright green RGB(0,255,0) chroma-key background. NO gradient, NO floor, NO outside shadows, NO bloom or haze, NO text. Object fully opaque. One squat dark-purple floppy monster witch hat with broad curved brim, short bent tip, two asymmetrical LARGE ROUND AMBER-YELLOW EYEBALLS attached on top, black pupils, muted orange band. No head or body. Whimsical soft toy, fully solid eyes and hat.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "filler-candy",
+      "source": "filler-candy.png",
+      "prompt": "Use case: stylized-concept. One isolated premium game sprite, smooth puffy molded silicone collectible toy, rounded sculpted 3D volume, restrained upper-left highlights, almost orthographic front view, crisp silhouette fully inside frame with generous empty margins. Perfectly uniform flat pure bright green RGB(0,255,0) chroma-key background. NO gradient, NO floor, NO outside shadows, NO bloom or haze, NO text. Object fully opaque. One wrapped piece of candy: small plump orange oval sweet with thick purple twist wrappers on both ends, horizontal. Glossy toy candy, simple broad shapes readable at 20 pixels. One object only.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "pumpkin-lamp",
+      "source": "pumpkin-lamp.png",
+      "prompt": "Use case: stylized-concept. One isolated premium game sprite, smooth puffy molded silicone collectible toy, rounded sculpted 3D volume, restrained upper-left highlights, almost orthographic front view, crisp silhouette fully inside frame with generous empty margins. Perfectly uniform flat pure bright green RGB(0,255,0) chroma-key background. NO gradient, NO floor, NO outside shadows, NO bloom or haze, NO text. Object fully opaque. One decorative tabletop pumpkin lamp for a cozy pastel game room. Squat tangerine-orange ceramic pumpkin with sculpted soft ribs, little dark brown stem, friendly carved triangle eyes and broad smile filled with warm cream-yellow inner light. Tapered round lilac base, three-quarter view very slight top visible. Light stays INSIDE openings, no exterior glow, no cast shadow, no cable, no table, no extra props.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "ghost-picture",
+      "source": "ghost-picture.png",
+      "prompt": "Use case: stylized-concept. One isolated premium game sprite, smooth puffy molded silicone collectible toy, rounded sculpted 3D volume, restrained upper-left highlights, almost orthographic front view, crisp silhouette fully inside frame with generous empty margins. Perfectly uniform flat pure bright green RGB(0,255,0) chroma-key background. NO gradient, NO floor, NO outside shadows, NO bloom or haze, NO text. Object fully opaque. One framed square wall picture for a cozy pastel game room. Thick rounded lavender painted wooden frame, cream paper inside, a simple little white floating ghost with two dark oval eyes over a muted purple starry night illustration contained entirely WITHIN the frame. Warm little orange moon in corner inside artwork. Front flat wall-hanging view, no wall outside picture, no shadows outside object, no text. Solid opaque picture with physical frame thickness and soft toy-like 3D bevel.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    }
+  ],
+  "provenance": "Original generated artwork created for this project using the built-in OpenAI image generation tool; no third-party source art.",
+  "derivatives": "Green matte extraction, edge decontamination, shared prepare-image pipeline, WebP encoding; one wing is mirrored into a pair. Bone master is reused for sticker and filling."
+}

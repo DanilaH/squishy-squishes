@@ -1,0 +1,92 @@
+{
+  "generator": "OpenAI built-in image_gen",
+  "generatedAt": "2026-10-19",
+  "reference": "src/experiments/phaser/library-assets/pedestal.webp",
+  "referenceRole": "Camera and silhouette only",
+  "assets": [
+    {
+      "id": "ufo",
+      "source": "ufo.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A squat UFO flying-saucer display plinth, satin silver metal body, tiny cyan portholes in a dark blue front band, purple rim accents. Its top is a FLAT empty silvery blue elliptical landing pad, no cockpit dome, no rays, no legs.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "shell",
+      "source": "shell.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A pearlescent seashell display plinth, ivory and pale coral, gently scalloped rounded exterior wall. The entire top is a broad flat lavender mother-of-pearl landing surface. Small pearl details embedded low on the front, no raised shell back.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "mushroom-stump",
+      "source": "mushroom-stump.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A squat round tree-stump pedestal with warm honey wood, a flat cut-log elliptical top, sculpted brown bark front, tiny lavender mushrooms and deep muted moss growing only at the lower outer edge. No branches.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "aquarium",
+      "source": "aquarium.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A wide squat cylindrical aquarium pedestal: flat sturdy pale-blue lid as the empty landing surface, turquoise glass sidewall with two tiny orange fish, pale pebbles and one small purple coral inside. Stylized glass with gentle reflections, enclosed contained water, no splash or bubbles outside.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "cake",
+      "source": "cake.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A squat round strawberry layer-cake pedestal, flat smooth ivory icing top, pink frosting dripping slightly over the front edge, visible vanilla cake layers and raspberry filling in the cylindrical wall, tiny sugar pearls only along lower rim. No candles, no fruit, no decoration on the landing surface.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "cauldron",
+      "source": "cauldron.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A squat round witch's cauldron pedestal, dark plum cast iron body with small copper side handles contained within the low silhouette and three short feet. CLOSED flat lilac circular lid is the empty landing surface; NO open bowl, NO liquid, NO steam, NO spikes.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "pumpkin",
+      "source": "pumpkin.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A squat pumpkin-carved display plinth, orange sculpted lobes as the front wall, small carved warm amber star-shaped windows inset into the front but no exterior glow. Flat dark-purple elliptical top platform. NO stem, no tall lid, no pumpkin head.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "ghost",
+      "source": "ghost.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A squat round ghostly display pedestal, softly translucent milky ivory sculpted body with scalloped dripping front edge, restrained lavender shading. Broad flat pale lavender elliptical top, no face, no head, no upright ghost.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "crystal",
+      "source": "crystal.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A squat wide faceted amethyst display plinth, lilac and deep violet translucent gem facets on its side wall, flat polished lavender elliptical top surface, faceted rounded lower edge. No protruding crystal spikes.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "ice",
+      "source": "ice.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A squat wide ice display plinth with a broad flat frosted pale-blue elliptical top, glacier-cyan cylindrical sidewall containing small trapped bubbles and a few sculpted cracks, subtly faceted rounded lower rim. No icicles projecting above the top, no exterior mist.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "donut",
+      "source": "donut.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A squat wide donut pedestal, warm golden pastry curved sidewall with pink glossy glaze dripping over it and colorful tiny sprinkles on the FRONT WALL only. FLAT continuous lavender round top plate covers the central hole to support a toy. Top landing surface empty, no toppings on top.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "cushion-throne",
+      "source": "cushion-throne.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated premium 3D game pedestal sprite, no toy on top. Reference image is a CAMERA AND SILHOUETTE GUIDE: preserve its squat round display-plinth proportions, width about 1.75 times height, frontal view slightly from above, large clear flat elliptical landing surface at the top, vertical front sidewall, bottom resting on a common horizontal line. The top ellipse center is 20 percent down from the object's top. All ornament stays below that surface. Match the polished rounded puffy game art of Squishy Squishes, softly sculpted volume, upper-left soft light, restrained material highlights. Whole object centered with empty margin. Completely transparent background, crisp clean alpha edges, NO external glow, NO exterior shadow, NO haze, NO floor, NO text, NO watermark, NO upright backrests, NO tall appendages, NO character, NO object on the top landing surface. A squat round upholstered throne cushion pedestal, deep wine-purple velvet cushion wall, ivory piping and a restrained sculpted gold base with four very short feet. Large flat softly padded plum elliptical top. No backrest, no tall tassels, no tall crown.",
+      "transparentBackground": true,
+      "hasAvifCompanion": false
+    }
+  ]
+}

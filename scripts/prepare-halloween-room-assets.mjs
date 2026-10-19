@@ -1,0 +1,34 @@
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import sharp from 'sharp';
+
+// Production matte extraction, followed by the shared canonical asset pipeline.
+// The authored palette contains no green: the matte also fills enclosed web gaps.
+const sourceRoot='assets-src/halloween-room';
+const entries=JSON.parse(await readFile(`${sourceRoot}/source-manifest.json`,'utf8')).assets;
+const temporary=join(tmpdir(),'squishy-halloween-room-cutouts');await mkdir(temporary,{recursive:true});
+const prepared=[];
+for(const entry of entries){
+  const source=`${sourceRoot}/${entry.source}`,bytes=await readFile(source);
+  const {data,info}=await sharp(bytes).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+  const bg=data[1];if(bg<180||data[0]>30||data[2]>30)throw Error(`Unexpected matte: ${source}`);
+  for(let i=0;i<data.length;i+=4){
+    if(data[i+1]>150 && data[i+1]-Math.max(data[i],data[i+2])>60){data[i]=data[i+1]=data[i+2]=data[i+3]=0;continue;}
+    const a=Math.min(1,Math.max(0,1-Math.max(0,data[i+1]-Math.max(data[i],data[i+2]))/bg));
+    if(a<.025){data[i]=data[i+1]=data[i+2]=data[i+3]=0;continue;}
+    data[i]=Math.min(255,Math.round(data[i]/a));
+    data[i+1]=Math.max(0,Math.min(255,Math.round((data[i+1]-(1-a)*bg)/a)));
+    data[i+2]=Math.min(255,Math.round(data[i+2]/a));data[i+3]=Math.round(a*255);
+  }
+  const cutout=join(temporary,`${entry.id}.png`);
+  await sharp(data,{raw:info}).png().toFile(cutout);
+  await writeFile(`assets-src/room/${entry.id}.png`,await readFile(cutout));
+  prepared.push({id:entry.id,source,sourceSha256:createHash('sha256').update(bytes).digest('hex'),output:`public/assets/room/${entry.id}.webp`,hasAvifCompanion:false});
+}
+const result=spawnSync(process.execPath,['scripts/prepare-room-assets.mjs',...entries.map(entry=>entry.id)],{encoding:'utf8'});if(result.status!==0)throw Error(result.stderr+result.stdout);
+for(const asset of prepared){const bytes=await readFile(asset.output);asset.bytes=bytes.length;asset.runtimeSha256=createHash('sha256').update(bytes).digest('hex');}
+await writeFile(`${sourceRoot}/runtime-manifest.json`,JSON.stringify(prepared,null,2)+'\n');
+console.log(`Prepared ${prepared.length} Halloween runtime assets, ${prepared.reduce((n,x)=>n+x.bytes,0)} bytes`);

@@ -1,0 +1,47 @@
+{
+  "generator": "OpenAI built-in image_gen",
+  "generatedAt": "2026-10-15",
+  "background": "Green production matte after targeted image edit; original generator alpha drafts were not used.",
+  "assets": [
+    {
+      "id": "cobweb-garland",
+      "source": "cobweb-garland.png",
+      "prompt": "Use case: stylized-concept. Asset type: a single isolated room furniture sprite for the Squishy Squishes Halloween set. Polished sculpted 3D game art with softly rounded edges, tactile puffy vinyl, lavender/plum and pumpkin orange with warm ivory accents. Soft upper-left studio illumination, restrained highlights and self shading. Slightly elevated mostly frontal view, consistent room perspective. Entire object visible with generous empty margin, no scene, no text, no watermark, no external glow, no cast shadow. Real transparent background. A wide shallow hanging garland: one curved purple cord with five small hanging ivory spiderweb medallions alternating with three small orange beads. Clearly separated web strands and transparent holes, tidy hand-crafted puffy sculpted style, clean silhouette, horizontal 3:1 composition. No spiders.",
+      "editPrompt": "Use case: precise-object-edit. Preserve exactly the object, composition, materials, colors and geometry from the reference. Remove all exterior glow, external shadow, edge fringe and atmospheric haze. Replace the entire background and all holes between the object's parts with perfectly uniform flat pure chroma green #00ff00. Hard clean object silhouette, antialiased only within one pixel. No green anywhere in the object material itself. No other modifications. This is a production game sprite matte, not a lit backdrop.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "ghost-rug",
+      "source": "ghost-rug.png",
+      "prompt": "Use case: stylized-concept. Asset type: a single isolated room furniture sprite for the Squishy Squishes Halloween set. Polished sculpted 3D game art with softly rounded edges, tactile puffy vinyl, lavender/plum and pumpkin orange with warm ivory accents. Soft upper-left studio illumination, restrained highlights and self shading. Slightly elevated mostly frontal view, consistent room perspective. Entire object visible with generous empty margin, no scene, no text, no watermark, no external glow, no cast shadow. Real transparent background. A flat plush warm ivory rug shaped like a friendly sheet ghost, wavy rounded border, two small plum embroidered eyes. Rug lies flat on the floor in perspective: horizontal ellipse-like footprint, width about twice height, visible small plush thickness along front edge. No upright standing ghost, no raised head, no extra objects.",
+      "editPrompt": "Use case: precise-object-edit. Preserve exactly the object, composition, materials, colors and geometry from the reference. Remove all exterior glow, external shadow, edge fringe and atmospheric haze. Replace the entire background and all holes between the object's parts with perfectly uniform flat pure chroma green #00ff00. Hard clean object silhouette, antialiased only within one pixel. No green anywhere in the object material itself. No other modifications. This is a production game sprite matte, not a lit backdrop.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "coffin-dresser",
+      "source": "coffin-dresser.png",
+      "prompt": "Use case: stylized-concept. Asset type: a single isolated room furniture sprite for the Squishy Squishes Halloween set. Polished sculpted 3D game art with softly rounded edges, tactile puffy vinyl, lavender/plum and pumpkin orange with warm ivory accents. Soft upper-left studio illumination, restrained highlights and self shading. Slightly elevated mostly frontal view, consistent room perspective. Entire object visible with generous empty margin, no scene, no text, no watermark, no external glow, no cast shadow. Real transparent background. A squat wide plum dresser with a subtle coffin-shaped outline: broad flat top, lightly bevelled upper shoulders, two broad lavender drawers, each with two small orange pumpkin knobs, short rounded feet. Width roughly equals height, readable functional furniture rather than a standing coffin. No skulls, no cross, no inscription.",
+      "editPrompt": "Use case: precise-object-edit. Preserve exactly this purple dresser with pumpkin knobs, object geometry, camera, composition and lighting. Replace the empty background with perfectly uniform pure chroma green #00ff00 including between feet, remove all external haze, stray colored pixels and shadow. Perfect clean silhouette. No green on the object itself. No other changes.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "potion-shelf",
+      "source": "potion-shelf.png",
+      "prompt": "Use case: stylized-concept. Asset type: a single isolated room furniture sprite for the Squishy Squishes Halloween set. Polished sculpted 3D game art with softly rounded edges, tactile puffy vinyl, lavender/plum and pumpkin orange with warm ivory accents. Soft upper-left studio illumination, restrained highlights and self shading. Slightly elevated mostly frontal view, consistent room perspective. Entire object visible with generous empty margin, no scene, no text, no watermark, no external glow, no cast shadow. Real transparent background. One lavender wall shelf plank with rounded edge and small brackets, holding exactly three squat potion bottles: amber orange, pale lilac, and creamy ivory, purple corks, plus one tiny closed plum book. Tactile stylized vinyl, translucent-looking bottles with restrained reflections. A compact horizontal shelf, no wall, no labels.",
+      "editPrompt": "Use case: precise-object-edit. Preserve exactly the object, composition, materials, colors and geometry from the reference. Remove all exterior glow, external shadow, edge fringe and atmospheric haze. Replace the entire background and all holes between the object's parts with perfectly uniform flat pure chroma green #00ff00. Hard clean object silhouette, antialiased only within one pixel. No green anywhere in the object material itself. No other modifications. This is a production game sprite matte, not a lit backdrop.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    },
+    {
+      "id": "pumpkin-pouf",
+      "source": "pumpkin-pouf.png",
+      "prompt": "Use case: stylized-concept. Asset type: a single isolated room furniture sprite for the Squishy Squishes Halloween set. Polished sculpted 3D game art with softly rounded edges, tactile puffy vinyl, lavender/plum and pumpkin orange with warm ivory accents. Soft upper-left studio illumination, restrained highlights and self shading. Slightly elevated mostly frontal view, consistent room perspective. Entire object visible with generous empty margin, no scene, no text, no watermark, no external glow, no cast shadow. Real transparent background. One squat round pumpkin-shaped upholstered pouf, warm muted orange segmented cushions, a small soft brown stem at top, subtle stitched seams, plum piping along the bottom. No face, no lamp, no pedestal or base. Soft comfortable rounded furniture, width about 1.5 times height.",
+      "editPrompt": "Use case: precise-object-edit. Preserve exactly the pumpkin pouf, its orange upholstery, seams, stem, plum piping, geometry, lighting and perspective. Remove ALL external glow, light haze and cast shadow. Replace entire background with perfectly uniform flat pure chroma green #00ff00 right up to the object edge, no gradients. No green on the furniture. Clean silhouette. No other changes.",
+      "transparentBackground": false,
+      "hasAvifCompanion": false
+    }
+  ]
+}

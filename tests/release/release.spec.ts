@@ -295,7 +295,7 @@ test('Returning-player production build keeps the empty Library and full maker c
 
   const shell = page.locator('[data-sandbox-app]');
   await expect(shell).toHaveAttribute('data-stage', 'shape');
-  await expect(page.locator('.sandbox-shape')).toHaveCount(15);
+  await expect(page.locator('.sandbox-shape')).toHaveCount(18);
   await expect(page.locator('.sandbox-shape:disabled')).toHaveCount(0);
   for (const shapeId of SHAPES.map(shape => shape.id)) {
     await page.locator(`.sandbox-shape[data-shape="${shapeId}"]`).click();

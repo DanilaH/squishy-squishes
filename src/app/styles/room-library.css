@@ -274,3 +274,27 @@
   #app .room-library .room-prop--wall { top: 8%; }
   #app .room-library .room-prop--garland { top: 0; }
 }
+
+/* Seasonal furniture uses the same pedestal camera as the original set. */
+#app .room-library .room-prop--coffin-dresser { width: calc(var(--room-podium-width, 400px) * .6); }
+#app .room-library .room-prop--pumpkin-pouf { width: calc(var(--room-podium-width, 400px) * .525); }
+
+/* Authored stands retain the original landing plane, camera and label seat. */
+#app .room-library[data-room-pedestal]:not([data-room-pedestal='standard']) .library-showcase-table::before { background-image:var(--room-pedestal-art); filter:none; }
+#app .room-library[data-room-pedestal]:not([data-room-pedestal='standard']) .library-showcase-table > span { display:none; }
+#app .room-library .room-editor-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
+#app .room-library .room-editor-tabs button { min-width:0; padding-inline:5px; }
+#app .room-library .room-editor-pedestals .room-editor-item { grid-template-rows:62px auto auto; gap:3px; }
+#app .room-library .room-editor-pedestals small { display:flex; justify-content:center; align-items:center; gap:3px; font-size:10px; }
+#app .room-library .room-editor-pedestals small svg { width:15px; height:14px; flex:none; }
+#app .room-library .room-standard-swatch { display:block; width:90%; height:45px; margin:auto; border-radius:50% / 30%; border:4px solid var(--room-pedestal-rim-color); background:var(--room-pedestal-color); box-shadow:inset 0 8px var(--room-pedestal-top-color); }
+#app .room-library .room-pedestal-preview { flex:none; display:grid; gap:4px; border-top:1px solid #cbb9c8; padding-top:6px; }
+#app .room-library .room-pedestal-preview strong { font-size:12px; }
+#app .room-library .room-pedestal-preview small { font-size:11px; line-height:1.25; }
+#app .room-library .room-pedestal-preview > div { display:grid; grid-template-columns:1.25fr 1fr; gap:6px; }
+#app .room-library .room-pedestal-preview button { display:flex; align-items:center; justify-content:center; gap:5px; font-size:11px; padding:4px; min-height:44px; }
+#app .room-library .room-pedestal-preview svg { flex:none; width:20px; }
+@media(max-height:520px) {
+ #app .room-library .room-editor[data-pedestal-preview='true'] { padding:8px; gap:4px; }
+ #app .room-library .room-editor[data-pedestal-preview='true'] header { display:none; }
+}

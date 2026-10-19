@@ -31,6 +31,7 @@ for (const file of files.filter(file => file.endsWith('.webp')).sort()) {
     }
     asset.leftRoot = [Number((weightedX / weight / width).toFixed(5)), 1];
   }
+  if (id === 'bat-wings') { asset.leftCrop = asset.crop; asset.leftRoot = [.97, .46]; }
   manifest[id] = asset;
 }
 await writeFile(new URL('../src/sandbox/qualityArtManifest.json', import.meta.url), JSON.stringify(manifest, null, 2) + '\n');

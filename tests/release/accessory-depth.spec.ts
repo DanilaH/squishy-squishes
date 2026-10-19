@@ -11,7 +11,7 @@ const state = {...createDefaultSaveV3(),totalCrafts:1,library:[{...draft,id:'dep
   decor:{...draft.decor,eyes:'dot' as const,mouth:'smile' as const,accessories:initialAccessoryPlacements(getShape('mochi'),'headphones')}}]};
 
 test('accessory defaults, old saves and explicit depth survive V3 validation',()=>{
-  const rear = new Set(['cat-ears','bunny-ears','horns','antennae','halo','wings']);
+  const rear = new Set(['cat-ears','bunny-ears','horns','antennae','halo','wings','bat-wings']);
   for(const id of ACCESSORY_IDS) for(const item of initialAccessoryPlacements(getShape('mochi'),id)){
     expect(accessoryDepth(item)).toBe(rear.has(id)?'rear':'front');
     for(const depth of ['front','rear'] as const){
