@@ -1,3 +1,4 @@
+import { PEDESTALS } from '../game/pedestals';
 import { JsonStorageRepository, type StorageAdapter } from '@danilah/mini-games-kit/platform';
 import { ROOM_ITEMS, ROOM_SLOTS, type RoomSlot } from '../sandbox/roomCatalog';
 import { ROOM_PALETTES } from '../sandbox/roomPalettes';
@@ -5,6 +6,7 @@ export const ROOM_SETTINGS_KEY = 'squishy.room.v1';
 export interface RoomSettings {
   readonly version: 1;
   readonly palette: number;
+  readonly pedestal?: string;
   readonly items: Readonly<Partial<Record<RoomSlot, string>>>;
 }
 export const starterRoomSettings = (): RoomSettings => ({ version: 1, palette: 0, items: { left: 'dresser', wall: 'picture', rug: 'rug-oval' } });
@@ -23,7 +25,8 @@ export const decodeRoomSettings = (value: unknown): RoomSettings => {
     // Unknown/removed content is discarded without losing remaining room choices.
     if (item) items[slot] = item.id;
   }
-  return { version: 1, palette: input.palette, items };
+  const pedestal = typeof input.pedestal === 'string' && input.pedestal !== 'standard' && PEDESTALS.some(p=>p.id===input.pedestal) ? input.pedestal : null;
+  return { version: 1, palette: input.palette, items, ...(pedestal ? {pedestal} : {}) };
 };
 export const createRoomSettingsRepository = (storage: StorageAdapter): JsonStorageRepository<RoomSettings> => new JsonStorageRepository({
   storage, key: ROOM_SETTINGS_KEY, createDefault: defaultRoomSettings,

@@ -26,7 +26,7 @@ test('Halloween content appends stable codes and preserves the legacy entitlemen
   expect(SHAPES).toHaveLength(18);expect(MIXIN_IDS.slice(0,13).at(-1)).toBe('flakes');
   expect(STICKER_IDS.slice(0,13).at(-1)).toBe('ghost');expect(STICKER_IDS.at(-1)).toBe('bone');
   const legacy={...createDefaultSaveV3(),legacyCatalogAccess:true};
-  expect(LEGACY_CATALOG_KEYS).toHaveLength(22);expect(CATALOG_KEYS).toHaveLength(26);
+  expect(LEGACY_CATALOG_KEYS).toHaveLength(22);expect(CATALOG_KEYS).toHaveLength(38);
   for(const key of LEGACY_CATALOG_KEYS)expect(ownsCatalogItem(legacy,key)).toBe(true);
   for(const key of SEASONAL_CATALOG_KEYS)expect(ownsCatalogItem(legacy,key)).toBe(false);
   expect(decodeSaveStateV3(encodeSaveStateV3(fixture())).library).toEqual(library);
