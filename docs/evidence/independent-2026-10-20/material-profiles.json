@@ -1,0 +1,32 @@
+[
+  {
+    "material": "soft",
+    "held": "0.380",
+    "returned": "0.048"
+  },
+  {
+    "material": "jelly",
+    "held": "0.820",
+    "returned": "0.008"
+  },
+  {
+    "material": "marshmallow",
+    "held": "0.347",
+    "returned": "0.115"
+  },
+  {
+    "material": "pearl",
+    "held": "0.234",
+    "returned": "0.000"
+  },
+  {
+    "material": "holo",
+    "held": "0.320",
+    "returned": "0.000"
+  },
+  {
+    "material": "chrome",
+    "held": "0.183",
+    "returned": "0.000"
+  }
+]

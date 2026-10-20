@@ -1,0 +1,76 @@
+[
+  {
+    "mode": "webgl",
+    "start": 6054.800000000745,
+    "firstPaintMs": 1793.5999999996275,
+    "longTasks": [
+      {
+        "at": 6053.800000000745,
+        "duration": 1741
+      }
+    ],
+    "renderers": [
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh",
+      "volume-mesh"
+    ]
+  },
+  {
+    "mode": "fallback",
+    "start": 3985.5,
+    "firstPaintMs": 95.59999999962747,
+    "longTasks": [
+      {
+        "at": 3984.5999999996275,
+        "duration": 93
+      }
+    ],
+    "renderers": [
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback",
+      "canvas2d-fallback"
+    ]
+  }
+]

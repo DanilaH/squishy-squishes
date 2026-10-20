@@ -1,0 +1,58 @@
+[
+  {
+    "id": "heart",
+    "name": "Сердечко · 1"
+  },
+  {
+    "id": "star",
+    "name": "Звезда · 2"
+  },
+  {
+    "id": "flower",
+    "name": "Цветок · 3"
+  },
+  {
+    "id": "sparkle",
+    "name": "Искорка · 4"
+  },
+  {
+    "id": "candy",
+    "name": "Конфета · 5"
+  },
+  {
+    "id": "donut",
+    "name": "Пончик · 6"
+  },
+  {
+    "id": "strawberry",
+    "name": "Клубника · 7"
+  },
+  {
+    "id": "lightning",
+    "name": "Молния · 8"
+  },
+  {
+    "id": "flame",
+    "name": "Пламя · 9"
+  },
+  {
+    "id": "skull",
+    "name": "Череп · 10"
+  },
+  {
+    "id": "planet",
+    "name": "Планета · 11"
+  },
+  {
+    "id": "eye",
+    "name": "Глаз · 12"
+  },
+  {
+    "id": "ghost",
+    "name": "Призрак · 13"
+  },
+  {
+    "id": "bone",
+    "name": "undefined · 14"
+  }
+]

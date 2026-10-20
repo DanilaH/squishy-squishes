@@ -1,0 +1,650 @@
+[
+  {
+    "shape": "soft-square",
+    "material": "soft",
+    "max": 0.42227954670431533,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "soft-square",
+    "material": "jelly",
+    "max": 1.768539938757186,
+    "after": 4.716561927222313e-13
+  },
+  {
+    "shape": "soft-square",
+    "material": "marshmallow",
+    "max": 0.38600425546081824,
+    "after": 2.161819161953443e-11
+  },
+  {
+    "shape": "soft-square",
+    "material": "pearl",
+    "max": 0.2762693248946501,
+    "after": 4.965068306494546e-16
+  },
+  {
+    "shape": "soft-square",
+    "material": "holo",
+    "max": 0.3719737643255909,
+    "after": 9.420554752102651e-16
+  },
+  {
+    "shape": "soft-square",
+    "material": "chrome",
+    "max": 0.18909187769328725,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "heart",
+    "material": "soft",
+    "max": 0.42133197895286006,
+    "after": 2.0175840826237853e-15
+  },
+  {
+    "shape": "heart",
+    "material": "jelly",
+    "max": 1.753583014339871,
+    "after": 6.184281882365714e-13
+  },
+  {
+    "shape": "heart",
+    "material": "marshmallow",
+    "max": 0.347897954055446,
+    "after": 2.081593908895025e-11
+  },
+  {
+    "shape": "heart",
+    "material": "pearl",
+    "max": 0.2913674232315547,
+    "after": 6.280369834735101e-16
+  },
+  {
+    "shape": "heart",
+    "material": "holo",
+    "max": 0.3566836157785011,
+    "after": 7.447602459741819e-16
+  },
+  {
+    "shape": "heart",
+    "material": "chrome",
+    "max": 0.20626337729950606,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "mochi",
+    "material": "soft",
+    "max": 0.4284741758115497,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "mochi",
+    "material": "jelly",
+    "max": 2.0961357694425513,
+    "after": 5.108859535427408e-13
+  },
+  {
+    "shape": "mochi",
+    "material": "marshmallow",
+    "max": 0.3438760298735945,
+    "after": 3.2618212114354005e-11
+  },
+  {
+    "shape": "mochi",
+    "material": "pearl",
+    "max": 0.2863222125027664,
+    "after": 6.280369834735101e-16
+  },
+  {
+    "shape": "mochi",
+    "material": "holo",
+    "max": 0.35770256867326944,
+    "after": 9.420554752102651e-16
+  },
+  {
+    "shape": "mochi",
+    "material": "chrome",
+    "max": 0.20463623134208098,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "peach",
+    "material": "soft",
+    "max": 0.43176765293488584,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "peach",
+    "material": "jelly",
+    "max": 2.523751524025108,
+    "after": 5.268578213714421e-13
+  },
+  {
+    "shape": "peach",
+    "material": "marshmallow",
+    "max": 0.344714665679718,
+    "after": 2.6480340431315618e-11
+  },
+  {
+    "shape": "peach",
+    "material": "pearl",
+    "max": 0.2969167678838823,
+    "after": 4.965068306494546e-16
+  },
+  {
+    "shape": "peach",
+    "material": "holo",
+    "max": 0.388468231179957,
+    "after": 8.005932084973443e-16
+  },
+  {
+    "shape": "peach",
+    "material": "chrome",
+    "max": 0.16503411467511778,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "mushroom",
+    "material": "soft",
+    "max": 0.4362329372387518,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "mushroom",
+    "material": "jelly",
+    "max": 1.8320926844629055,
+    "after": 7.673269468670732e-13
+  },
+  {
+    "shape": "mushroom",
+    "material": "marshmallow",
+    "max": 0.37031843371524326,
+    "after": 2.743124664986161e-11
+  },
+  {
+    "shape": "mushroom",
+    "material": "pearl",
+    "max": 0.28838455346589764,
+    "after": 4.577566798522237e-16
+  },
+  {
+    "shape": "mushroom",
+    "material": "holo",
+    "max": 0.37302289914995596,
+    "after": 8.005932084973443e-16
+  },
+  {
+    "shape": "mushroom",
+    "material": "chrome",
+    "max": 0.20521114782221167,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "paw",
+    "material": "soft",
+    "max": 0.41793594041700577,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "paw",
+    "material": "jelly",
+    "max": 2.013417983469893,
+    "after": 2.8434639394886796e-13
+  },
+  {
+    "shape": "paw",
+    "material": "marshmallow",
+    "max": 0.3492597554382744,
+    "after": 1.582275526022894e-11
+  },
+  {
+    "shape": "paw",
+    "material": "pearl",
+    "max": 0.2829522926738168,
+    "after": 4.965068306494546e-16
+  },
+  {
+    "shape": "paw",
+    "material": "holo",
+    "max": 0.36003774249736686,
+    "after": 9.420554752102651e-16
+  },
+  {
+    "shape": "paw",
+    "material": "chrome",
+    "max": 0.2017485889364077,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "dumpling",
+    "material": "soft",
+    "max": 0.4298286731029982,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "dumpling",
+    "material": "jelly",
+    "max": 2.4105401392825425,
+    "after": 3.048737972952405e-13
+  },
+  {
+    "shape": "dumpling",
+    "material": "marshmallow",
+    "max": 0.3628621805294115,
+    "after": 1.552238493359161e-11
+  },
+  {
+    "shape": "dumpling",
+    "material": "pearl",
+    "max": 0.27375407111504696,
+    "after": 6.280369834735101e-16
+  },
+  {
+    "shape": "dumpling",
+    "material": "holo",
+    "max": 0.37732986995262424,
+    "after": 7.447602459741819e-16
+  },
+  {
+    "shape": "dumpling",
+    "material": "chrome",
+    "max": 0.20473171354521874,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "strawberry",
+    "material": "soft",
+    "max": 0.4330792191301295,
+    "after": 1.7342238036525472e-15
+  },
+  {
+    "shape": "strawberry",
+    "material": "jelly",
+    "max": 2.2761918687148857,
+    "after": 5.061346140882698e-13
+  },
+  {
+    "shape": "strawberry",
+    "material": "marshmallow",
+    "max": 0.3549020476087626,
+    "after": 1.2799126010149789e-11
+  },
+  {
+    "shape": "strawberry",
+    "material": "pearl",
+    "max": 0.2750809843469851,
+    "after": 6.280369834735101e-16
+  },
+  {
+    "shape": "strawberry",
+    "material": "holo",
+    "max": 0.35032289102688025,
+    "after": 8.005932084973443e-16
+  },
+  {
+    "shape": "strawberry",
+    "material": "chrome",
+    "max": 0.1922810755178945,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "bun",
+    "material": "soft",
+    "max": 0.4330136369479337,
+    "after": 1.7342238036525472e-15
+  },
+  {
+    "shape": "bun",
+    "material": "jelly",
+    "max": 2.076547253268122,
+    "after": 5.606683049336133e-13
+  },
+  {
+    "shape": "bun",
+    "material": "marshmallow",
+    "max": 0.33311980100566124,
+    "after": 2.2473913288476904e-11
+  },
+  {
+    "shape": "bun",
+    "material": "pearl",
+    "max": 0.3034497327032789,
+    "after": 6.280369834735101e-16
+  },
+  {
+    "shape": "bun",
+    "material": "holo",
+    "max": 0.37148932176174154,
+    "after": 9.420554752102651e-16
+  },
+  {
+    "shape": "bun",
+    "material": "chrome",
+    "max": 0.20096569221998103,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "ice-cream",
+    "material": "soft",
+    "max": 0.4283408259639095,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "ice-cream",
+    "material": "jelly",
+    "max": 1.831580546013577,
+    "after": 2.8370994672631497e-13
+  },
+  {
+    "shape": "ice-cream",
+    "material": "marshmallow",
+    "max": 0.3443819536919861,
+    "after": 2.255815937211355e-11
+  },
+  {
+    "shape": "ice-cream",
+    "material": "pearl",
+    "max": 0.2997599706333994,
+    "after": 4.965068306494546e-16
+  },
+  {
+    "shape": "ice-cream",
+    "material": "holo",
+    "max": 0.3788667734699356,
+    "after": 9.420554752102651e-16
+  },
+  {
+    "shape": "ice-cream",
+    "material": "chrome",
+    "max": 0.22061545851307743,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "cupcake",
+    "material": "soft",
+    "max": 0.41747335324245516,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "cupcake",
+    "material": "jelly",
+    "max": 1.9886853897417447,
+    "after": 4.425362693767318e-13
+  },
+  {
+    "shape": "cupcake",
+    "material": "marshmallow",
+    "max": 0.38101069829392725,
+    "after": 2.669104192622809e-11
+  },
+  {
+    "shape": "cupcake",
+    "material": "pearl",
+    "max": 0.2720551701566135,
+    "after": 6.280369834735101e-16
+  },
+  {
+    "shape": "cupcake",
+    "material": "holo",
+    "max": 0.34789664631149414,
+    "after": 8.005932084973443e-16
+  },
+  {
+    "shape": "cupcake",
+    "material": "chrome",
+    "max": 0.17387959503182462,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "watermelon",
+    "material": "soft",
+    "max": 0.4312519110167357,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "watermelon",
+    "material": "jelly",
+    "max": 1.87362724340843,
+    "after": 3.2604010597648605e-13
+  },
+  {
+    "shape": "watermelon",
+    "material": "marshmallow",
+    "max": 0.3322536123021522,
+    "after": 2.7945403054748826e-11
+  },
+  {
+    "shape": "watermelon",
+    "material": "pearl",
+    "max": 0.3144338849306415,
+    "after": 6.280369834735101e-16
+  },
+  {
+    "shape": "watermelon",
+    "material": "holo",
+    "max": 0.35182474048854817,
+    "after": 9.420554752102651e-16
+  },
+  {
+    "shape": "watermelon",
+    "material": "chrome",
+    "max": 0.19982366278173894,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "mochi-cat",
+    "material": "soft",
+    "max": 0.4242448856433919,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "mochi-cat",
+    "material": "jelly",
+    "max": 2.3036650286525426,
+    "after": 5.631421781155907e-13
+  },
+  {
+    "shape": "mochi-cat",
+    "material": "marshmallow",
+    "max": 0.3673213058072678,
+    "after": 1.5942742605281027e-11
+  },
+  {
+    "shape": "mochi-cat",
+    "material": "pearl",
+    "max": 0.2872420024146151,
+    "after": 6.280369834735101e-16
+  },
+  {
+    "shape": "mochi-cat",
+    "material": "holo",
+    "max": 0.375329106216445,
+    "after": 9.420554752102651e-16
+  },
+  {
+    "shape": "mochi-cat",
+    "material": "chrome",
+    "max": 0.19200145907034333,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "mochi-bunny",
+    "material": "soft",
+    "max": 0.41528290795916256,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "mochi-bunny",
+    "material": "jelly",
+    "max": 1.817149607809188,
+    "after": 3.9461227681237284e-13
+  },
+  {
+    "shape": "mochi-bunny",
+    "material": "marshmallow",
+    "max": 0.38202834705980915,
+    "after": 2.6685932099194964e-11
+  },
+  {
+    "shape": "mochi-bunny",
+    "material": "pearl",
+    "max": 0.30236088479437656,
+    "after": 3.1401849173675503e-16
+  },
+  {
+    "shape": "mochi-bunny",
+    "material": "holo",
+    "max": 0.36041196440183204,
+    "after": 7.021666937153402e-16
+  },
+  {
+    "shape": "mochi-bunny",
+    "material": "chrome",
+    "max": 0.20888787404080594,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "donut",
+    "material": "soft",
+    "max": 0.3978066955590021,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "donut",
+    "material": "jelly",
+    "max": 1.8828828636738162,
+    "after": 3.029677652463805e-13
+  },
+  {
+    "shape": "donut",
+    "material": "marshmallow",
+    "max": 0.34699129288580577,
+    "after": 5.836828399937436e-12
+  },
+  {
+    "shape": "donut",
+    "material": "pearl",
+    "max": 0.3099075560170457,
+    "after": 4.965068306494546e-16
+  },
+  {
+    "shape": "donut",
+    "material": "holo",
+    "max": 0.33927643211016123,
+    "after": 8.005932084973443e-16
+  },
+  {
+    "shape": "donut",
+    "material": "chrome",
+    "max": 0.16408994146172148,
+    "after": 7.108895957933346e-16
+  },
+  {
+    "shape": "ghost",
+    "material": "soft",
+    "max": 0.4362650003730292,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "ghost",
+    "material": "jelly",
+    "max": 1.6797655149205672,
+    "after": 5.875765548123412e-13
+  },
+  {
+    "shape": "ghost",
+    "material": "marshmallow",
+    "max": 0.34441976479444436,
+    "after": 3.083288942603087e-11
+  },
+  {
+    "shape": "ghost",
+    "material": "pearl",
+    "max": 0.2885246008059006,
+    "after": 6.280369834735101e-16
+  },
+  {
+    "shape": "ghost",
+    "material": "holo",
+    "max": 0.3552161595157035,
+    "after": 9.420554752102651e-16
+  },
+  {
+    "shape": "ghost",
+    "material": "chrome",
+    "max": 0.20900146962046515,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "bat",
+    "material": "soft",
+    "max": 0.4241612873564892,
+    "after": 1.5700924586837751e-15
+  },
+  {
+    "shape": "bat",
+    "material": "jelly",
+    "max": 2.0897424145128096,
+    "after": 3.3882653463812366e-13
+  },
+  {
+    "shape": "bat",
+    "material": "marshmallow",
+    "max": 0.39459662396677236,
+    "after": 1.8076296168280023e-11
+  },
+  {
+    "shape": "bat",
+    "material": "pearl",
+    "max": 0.2844097525994802,
+    "after": 4.577566798522237e-16
+  },
+  {
+    "shape": "bat",
+    "material": "holo",
+    "max": 0.3552833876847143,
+    "after": 9.420554752102651e-16
+  },
+  {
+    "shape": "bat",
+    "material": "chrome",
+    "max": 0.20242651076551196,
+    "after": 7.850462293418876e-16
+  },
+  {
+    "shape": "pumpkin",
+    "material": "soft",
+    "max": 0.43861760649261144,
+    "after": 1.7342238036525472e-15
+  },
+  {
+    "shape": "pumpkin",
+    "material": "jelly",
+    "max": 2.008329491228956,
+    "after": 2.6397934583578173e-13
+  },
+  {
+    "shape": "pumpkin",
+    "material": "marshmallow",
+    "max": 0.35142524127196073,
+    "after": 1.3169768852846148e-11
+  },
+  {
+    "shape": "pumpkin",
+    "material": "pearl",
+    "max": 0.293064995523296,
+    "after": 6.280369834735101e-16
+  },
+  {
+    "shape": "pumpkin",
+    "material": "holo",
+    "max": 0.35295699839328626,
+    "after": 9.420554752102651e-16
+  },
+  {
+    "shape": "pumpkin",
+    "material": "chrome",
+    "max": 0.18004762059568444,
+    "after": 7.850462293418876e-16
+  }
+]

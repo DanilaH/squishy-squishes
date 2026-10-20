@@ -1,0 +1,49 @@
+{
+  "version": 3,
+  "legacyCatalogAccess": true,
+  "library": [
+    {
+      "id": "original",
+      "createdAt": 1,
+      "shapeId": "heart",
+      "materialId": "soft",
+      "appearance": {
+        "v": 1,
+        "strokes": [],
+        "mixins": []
+      },
+      "decor": {
+        "v": 1,
+        "eyes": null,
+        "mouth": null,
+        "blush": false,
+        "stickers": [],
+        "accessory": null
+      }
+    },
+    {
+      "id": "created-in-b",
+      "createdAt": 1,
+      "shapeId": "heart",
+      "materialId": "soft",
+      "appearance": {
+        "v": 1,
+        "strokes": [],
+        "mixins": []
+      },
+      "decor": {
+        "v": 1,
+        "eyes": null,
+        "mouth": null,
+        "blush": false,
+        "stickers": [],
+        "accessory": null
+      }
+    }
+  ],
+  "libraryCapacity": 8,
+  "completedRecipeIds": [],
+  "unlockedRewardIds": [],
+  "totalCrafts": 1,
+  "updatedAt": 0
+}

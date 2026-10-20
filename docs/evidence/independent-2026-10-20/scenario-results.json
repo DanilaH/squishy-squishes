@@ -1,0 +1,165 @@
+[
+  {
+    "scenario": "AUDIT-01 stale second repository must not erase a toy saved by the first tab",
+    "status": "failed",
+    "durationMs": 35,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-02 loading another tab during a verified write must not delete its staged records",
+    "status": "failed",
+    "durationMs": 43,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-03 unpaid room preview must leave Decor and actions usable ru 320",
+    "status": "failed",
+    "durationMs": 9792,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-03 unpaid room preview must leave Decor and actions usable ru 568",
+    "status": "failed",
+    "durationMs": 12011,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-03 unpaid room preview must leave Decor and actions usable ru 1440",
+    "status": "passed",
+    "durationMs": 13926,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-03 unpaid room preview must leave Decor and actions usable en 320",
+    "status": "failed",
+    "durationMs": 7538,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-03 unpaid room preview must leave Decor and actions usable en 568",
+    "status": "failed",
+    "durationMs": 11287,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-03 unpaid room preview must leave Decor and actions usable en 1440",
+    "status": "passed",
+    "durationMs": 15560,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-04 two real tabs must retain independently saved toys",
+    "status": "failed",
+    "durationMs": 48094,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-05 unscripted first craft, locked preview and modal after rotation ru",
+    "status": "passed",
+    "durationMs": 17166,
+    "batch": "followup"
+  },
+  {
+    "scenario": "AUDIT-05 unscripted first craft, locked preview and modal after rotation en",
+    "status": "passed",
+    "durationMs": 14484,
+    "batch": "followup"
+  },
+  {
+    "scenario": "AUDIT-06 keyboard focus must stay inside Paint tools until Escape restores its trigger",
+    "status": "passed",
+    "durationMs": 19338,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-07 interrupted squeeze, blur, rotation and return to craft must not leave active gestures",
+    "status": "passed",
+    "durationMs": 18367,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-08 named pedestal previews remain legible on light and dark rooms",
+    "status": "passed",
+    "durationMs": 23157,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-09 unsaved edits: leave/cancel and return from try-on preserve the working toy",
+    "status": "passed",
+    "durationMs": 23453,
+    "batch": "followup"
+  },
+  {
+    "scenario": "AUDIT-10 collection, Ideas, delete cancel and replacement cancel 320",
+    "status": "passed",
+    "durationMs": 27811,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-10 collection, Ideas, delete cancel and replacement cancel 568",
+    "status": "passed",
+    "durationMs": 18674,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-10 collection, Ideas, delete cancel and replacement cancel 1440",
+    "status": "failed",
+    "durationMs": 34516,
+    "batch": "confirm",
+    "classification": "intermittent software-WebGL timeout; needs native-GPU verification"
+  },
+  {
+    "scenario": "AUDIT-11 record normal-motion material press, pull, release and return profiles",
+    "status": "passed",
+    "durationMs": 52278,
+    "batch": "followup"
+  },
+  {
+    "scenario": "AUDIT-13 headphones at maximum size, rotation, depth and another active accessory",
+    "status": "passed",
+    "durationMs": 14474,
+    "batch": "followup"
+  },
+  {
+    "scenario": "AUDIT-14 a failed Save keeps the draft editable and a retry saves exactly once",
+    "status": "passed",
+    "durationMs": 22061,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-12 deterministic stress of 18 shapes × 6 materials, large drags, jittered frames and cancellation",
+    "status": "passed",
+    "durationMs": 91850,
+    "batch": "final"
+  },
+  {
+    "scenario": "AUDIT-15 corrupt manifest preserves bytes and offers an actionable recovery screen",
+    "status": "failed",
+    "durationMs": 1592,
+    "batch": "followup"
+  },
+  {
+    "scenario": "AUDIT-16 room preview warning and removal restore a usable furniture catalog",
+    "status": "failed",
+    "durationMs": 9096,
+    "batch": "confirm"
+  },
+  {
+    "scenario": "AUDIT-17 every sticker has a readable selected-object name ru",
+    "status": "failed",
+    "durationMs": 36672,
+    "batch": "confirm"
+  },
+  {
+    "scenario": "AUDIT-17 every sticker has a readable selected-object name en",
+    "status": "failed",
+    "durationMs": 25221,
+    "batch": "confirm"
+  },
+  {
+    "scenario": "AUDIT-18 measure Ideas first-paint with software WebGL and Canvas2D fallback",
+    "status": "passed",
+    "durationMs": 26930,
+    "batch": "timing-touch"
+  }
+]

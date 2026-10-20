@@ -1,0 +1,109 @@
+{
+  "found": [
+    {
+      "text": "+Слева",
+      "x": 24.625,
+      "y": 133.703125,
+      "width": 64,
+      "height": 64,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "+Справа",
+      "x": 231.375,
+      "y": 133.703125,
+      "width": 64,
+      "height": 64,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Палитры",
+      "x": 27,
+      "y": 260.28125,
+      "width": 83.328125,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Обстановка",
+      "x": 118.328125,
+      "y": 260.28125,
+      "width": 83.328125,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Постаменты",
+      "x": 209.65625,
+      "y": 260.28125,
+      "width": 83.34375,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Слева",
+      "x": 27,
+      "y": 364.28125,
+      "width": 130,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Справа",
+      "x": 163,
+      "y": 364.28125,
+      "width": 130,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Открыть за рекламу",
+      "x": 27,
+      "y": 469.03125,
+      "width": 144.4375,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Убрать примерку",
+      "x": 177.4375,
+      "y": 469.03125,
+      "width": 115.5625,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Отмена",
+      "x": 27,
+      "y": 519.03125,
+      "width": 128,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Готово",
+      "x": 165,
+      "y": 519.03125,
+      "width": 128,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    }
+  ],
+  "panel": {
+    "x": 27,
+    "y": 414.28125,
+    "width": 266,
+    "height": 4
+  }
+}

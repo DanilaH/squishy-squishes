@@ -1,0 +1,109 @@
+{
+  "found": [
+    {
+      "text": "+Слева",
+      "x": 22.46875,
+      "y": 139.59375,
+      "width": 64,
+      "height": 64,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "+Справа",
+      "x": 161.53125,
+      "y": 139.59375,
+      "width": 64,
+      "height": 64,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Палитры",
+      "x": 265,
+      "y": 75,
+      "width": 88.65625,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Обстановка",
+      "x": 361.65625,
+      "y": 75,
+      "width": 88.671875,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Постаменты",
+      "x": 458.328125,
+      "y": 75,
+      "width": 88.65625,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Слева",
+      "x": 392.546875,
+      "y": 123,
+      "width": 75.71875,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Справа",
+      "x": 471.265625,
+      "y": 123,
+      "width": 75.734375,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Открыть за рекламу",
+      "x": 265,
+      "y": 223.75,
+      "width": 153.328125,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Убрать примерку",
+      "x": 424.328125,
+      "y": 223.75,
+      "width": 122.65625,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Отмена",
+      "x": 265,
+      "y": 271.75,
+      "width": 136,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Готово",
+      "x": 411,
+      "y": 271.75,
+      "width": 136,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    }
+  ],
+  "panel": {
+    "x": 265,
+    "y": 171,
+    "width": 282,
+    "height": 4
+  }
+}

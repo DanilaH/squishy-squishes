@@ -1,0 +1,58 @@
+[
+  {
+    "id": "heart",
+    "name": "Heart · 1"
+  },
+  {
+    "id": "star",
+    "name": "Star · 2"
+  },
+  {
+    "id": "flower",
+    "name": "Flower · 3"
+  },
+  {
+    "id": "sparkle",
+    "name": "Sparkle · 4"
+  },
+  {
+    "id": "candy",
+    "name": "Candy · 5"
+  },
+  {
+    "id": "donut",
+    "name": "Donut · 6"
+  },
+  {
+    "id": "strawberry",
+    "name": "Strawberry · 7"
+  },
+  {
+    "id": "lightning",
+    "name": "Lightning · 8"
+  },
+  {
+    "id": "flame",
+    "name": "Flame · 9"
+  },
+  {
+    "id": "skull",
+    "name": "Skull · 10"
+  },
+  {
+    "id": "planet",
+    "name": "Planet · 11"
+  },
+  {
+    "id": "eye",
+    "name": "Eye · 12"
+  },
+  {
+    "id": "ghost",
+    "name": "Ghost · 13"
+  },
+  {
+    "id": "bone",
+    "name": "undefined · 14"
+  }
+]

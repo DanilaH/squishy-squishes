@@ -1,0 +1,56 @@
+{
+  "blocked": {
+    "x": 27,
+    "y": 414.28125,
+    "width": 266,
+    "height": 4
+  },
+  "found": [
+    {
+      "text": "Unlock for an ad",
+      "x": 27,
+      "y": 482.78125,
+      "width": 144.4375,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Remove preview",
+      "x": 177.4375,
+      "y": 482.78125,
+      "width": 115.5625,
+      "height": 44,
+      "outside": false,
+      "covered": false
+    },
+    {
+      "text": "Cancel",
+      "x": 27,
+      "y": 532.78125,
+      "width": 128,
+      "height": 44,
+      "outside": true,
+      "covered": false
+    },
+    {
+      "text": "Done",
+      "x": 165,
+      "y": 532.78125,
+      "width": 128,
+      "height": 44,
+      "outside": true,
+      "covered": false
+    }
+  ],
+  "restored": {
+    "x": 27,
+    "y": 414.28125,
+    "width": 266,
+    "height": 80.71875
+  },
+  "focus": {
+    "tag": "BODY",
+    "inEditor": false
+  }
+}
