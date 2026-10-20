@@ -37,3 +37,5 @@ Implementation checkpoints: `8683dd1d12be19e425d3c5ff61feb6e4c42c6f62` (storage)
 - [Add more and selected detail](evidence/audit-fixes-2026-10-20/add-more-phone.png)
 - [Saved confirmation](evidence/audit-fixes-2026-10-20/saved-phone.png)
 - [Visible Ideas](evidence/audit-fixes-2026-10-20/ideas-phone.png)
+
+The first full CI run caught a 1px mobile Ideas overflow from the scaled transparent canvas bounds. Cards now clip those bounds; the existing all-pages RU/EN pagination regression remains unchanged. All other first-run jobs passed. The updated PR must pass its full gates again.
