@@ -1769,13 +1769,15 @@ export class SandboxApp {
   }
 
   private showSavedFeedback(): void {
-    this.root.querySelector('[data-saved-feedback]')?.remove();
-    const message = document.createElement('div');
+    const heading = this.shell.querySelector<HTMLElement>('.sandbox-copy h1');
+    if (!heading) return;
+    const original = heading.textContent;
+    const message = document.createElement('span');
     message.className = 'squishy-saved-feedback'; message.dataset.savedFeedback = '';
     message.setAttribute('role', 'status');
     message.textContent = this.options.language === 'ru' ? '✓ Сохранено' : '✓ Saved';
-    this.shell.append(message);
-    setTimeout(() => message.remove(), 1800);
+    heading.replaceChildren(message);
+    setTimeout(() => { if (heading.contains(message)) heading.textContent = original; }, 1800);
   }
 
   private openSavedForSqueeze(): void {

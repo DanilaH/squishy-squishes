@@ -1,3 +1,5 @@
+import { CollectionConflictError, sameCollectionToy } from '../platform/collectionRepository';
+import './styles/free-craft.css';
 import { withStorageLock } from '../platform/collectionLock';
 import { renderSaveRecovery } from './saveRecovery';
 import { RewardGrants } from '../platform/rewardGrants';
@@ -163,6 +165,12 @@ export const bootstrapSquishyApp = async (
     return completeRecipeIdea(state, ideaId);
   };
 
+  const assertUnchanged = (targetId: string, expected: typeof saveState.library[number] | undefined): void => {
+    if (expected && !sameCollectionToy(saveState.library.find(toy => toy.id === targetId), expected)) {
+      throw new CollectionConflictError('changed', 'This squishy changed in another tab. Your draft is still open.');
+    }
+  };
+
   const roomReview = new URLSearchParams(location.search).get('roomReview') !== '0';
   const language: SandboxLanguage = runtime.language === 'ru' ? 'ru' : 'en';
   let createRoomEditor: ((blocked: () => boolean) => import('../sandbox/roomEditorReview').RoomEditorReview) | undefined;
@@ -203,6 +211,7 @@ export const bootstrapSquishyApp = async (
       const granted = await requestReward('capacity');
       return { granted, libraryCapacity: saveState.libraryCapacity, status: 'closed' as const };
     },
+    currentLibraryCapacity: () => saveState.libraryCapacity,
     onRefreshCollection: async () => { saveState = await saveRepository.load(); return {library:saveState.library, libraryCapacity:saveState.libraryCapacity, completedRecipeIds:saveState.completedRecipeIds}; },
     onAppendSquishy: async (draft, ideaId) => {
       assertOwned(draft);
@@ -213,7 +222,8 @@ export const bootstrapSquishyApp = async (
       trackCatalogUse(draft, 'create');
       return { savedSquishy, library: saveState.library, completedRecipeIds: saveState.completedRecipeIds, libraryCapacity:saveState.libraryCapacity };
     },
-    onReplaceSquishy: async (targetId, draft, ideaId) => {
+    onReplaceSquishy: async (targetId, draft, ideaId, expected) => {
+      assertUnchanged(targetId, expected);
       assertOwned(draft);
       const savedSquishy = createSavedSquishy(draft);
       let nextState = replaceSavedSquishy(saveState, targetId, savedSquishy);
@@ -222,7 +232,8 @@ export const bootstrapSquishyApp = async (
       trackCatalogUse(draft, 'create');
       return { savedSquishy, library: saveState.library, completedRecipeIds: saveState.completedRecipeIds, libraryCapacity:saveState.libraryCapacity };
     },
-    onUpdateSquishy: async (targetId, draft) => {
+    onUpdateSquishy: async (targetId, draft, expected) => {
+      assertUnchanged(targetId, expected);
       assertOwned(draft);
       const nextState = updateSavedSquishy(saveState, targetId, draft);
       await persistSave(nextState);
@@ -230,7 +241,8 @@ export const bootstrapSquishyApp = async (
       const savedSquishy = nextState.library.find(toy => toy.id === targetId)!;
       return { savedSquishy, library: saveState.library, completedRecipeIds: saveState.completedRecipeIds, libraryCapacity:saveState.libraryCapacity };
     },
-    onDeleteSquishy: async (targetId) => {
+    onDeleteSquishy: async (targetId, expected) => {
+      assertUnchanged(targetId, expected);
       const nextState = deleteSavedSquishy(saveState, targetId);
       await persistSave(nextState);
       return saveState.library;

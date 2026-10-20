@@ -21,4 +21,19 @@ Owner approved all six findings and the small feel/Ideas improvements in one imp
 
 ## Validation
 
-In progress. Do not infer release completion from this document until final results and immutable commit/PR evidence are recorded below.
+Implementation checkpoints: `8683dd1d12be19e425d3c5ff61feb6e4c42c6f62` (storage) and `c84216ea10fdaf2347d7e175bfe0b95a43f3ccb2` (UI integration). Final follow-up also protects an open editor when an ad refreshes repository state and avoids rereading unchanged toy records.
+
+- Local `release:check`: passed, 177 Yandex files / 5,215,187 bytes; existing limit unchanged.
+- Nine storage regression cases passed, including interrupted commit, concurrent updates, recovery, and unchanged-record reads. Existing incremental-write/migration tests also passed.
+- Seventeen browser regression cases cover mobile/landscape/desktop in RU/EN, real two-tab saves and edit conflicts, last-slot replacement cancellation, reward-time conflicts, recovery export/confirmation, labels, focus, saved feedback and Add more. Targeted runs passed; the last RU screenshot journey required a 90-second overall test budget under software WebGL (individual assertions retain their normal limits).
+- Visual baselines intentionally change only the six Ideas screenshots. Full browser/visual and alternate-entrypoint gates must pass on the implementation PR before merge; deployment is established by its post-merge workflow, not by this document.
+- Browser evidence uses Chromium with software WebGL. Real phone tactile acceptance and hosted Yandex advertising remain separate.
+
+## Screenshots
+
+- [Phone pedestal preview](evidence/audit-fixes-2026-10-20/room-preview-phone.png)
+- [Short landscape preview](evidence/audit-fixes-2026-10-20/room-preview-landscape.png)
+- [Explicit unlock controls](evidence/audit-fixes-2026-10-20/room-unlock-phone.png)
+- [Add more and selected detail](evidence/audit-fixes-2026-10-20/add-more-phone.png)
+- [Saved confirmation](evidence/audit-fixes-2026-10-20/saved-phone.png)
+- [Visible Ideas](evidence/audit-fixes-2026-10-20/ideas-phone.png)

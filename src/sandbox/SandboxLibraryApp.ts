@@ -50,11 +50,12 @@ export interface SandboxLibraryAppOptions {
   readonly libraryCapacity: number;
   readonly shelfExpansionTargetCapacity: number;
   readonly onUnlockShelfExpansion: () => Promise<{ readonly granted: boolean; readonly libraryCapacity: number; readonly status: 'closed' | 'error' }>;
+  readonly currentLibraryCapacity?: () => number;
   readonly onRefreshCollection?: () => Promise<{library:readonly SavedSquishy[]; libraryCapacity:number; completedRecipeIds:readonly string[]}>;
   readonly onAppendSquishy: (draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
-  readonly onReplaceSquishy: (targetId: string, draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
-  readonly onUpdateSquishy: (targetId: string, draft: SandboxDraft) => Promise<SandboxLibraryCommitResult>;
-  readonly onDeleteSquishy: (targetId: string) => Promise<readonly SavedSquishy[]>;
+  readonly onReplaceSquishy: (targetId: string, draft: SandboxDraft, ideaId: string | null, expected?: SavedSquishy) => Promise<SandboxLibraryCommitResult>;
+  readonly onUpdateSquishy: (targetId: string, draft: SandboxDraft, expected?: SavedSquishy) => Promise<SandboxLibraryCommitResult>;
+  readonly onDeleteSquishy: (targetId: string, expected?: SavedSquishy) => Promise<readonly SavedSquishy[]>;
   /** Candidate-only renderer port. Ordinary library bootstrap leaves it absent. */
   readonly makerRendererOptions?: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
   /** Optional lazy renderer seam: keeps Phaser out of the first Library paint. */
@@ -312,6 +313,7 @@ export class SandboxLibraryApp {
   }
 
   private renderLibrary(): void {
+    this.libraryCapacity = this.options.currentLibraryCapacity?.() ?? this.libraryCapacity;
     this.disposeScrollHints?.(); this.disposeScrollHints = null;
     this.roomEditor?.unmount();
     this.personality.stop();
@@ -908,7 +910,7 @@ export class SandboxLibraryApp {
 
   private async handleSaveRequest(draft: SandboxDraft, editingId: string | null): Promise<SavedSquishy | null> {
     if (editingId) {
-      const result = await this.options.onUpdateSquishy(editingId, draft);
+      const result = await this.options.onUpdateSquishy(editingId, draft, this.library.find(toy => toy.id === editingId));
       if (this.disposed) return null;
       this.library = [...result.library];
       if (result.libraryCapacity !== undefined) this.libraryCapacity = result.libraryCapacity;
@@ -1171,7 +1173,7 @@ export class SandboxLibraryApp {
     this.setModalBusy(overlay, true);
     try {
       const previousCompleted = this.completedRecipeIds;
-      const result = await this.options.onReplaceSquishy(targetId, pending.draft, pending.ideaId);
+      const result = await this.options.onReplaceSquishy(targetId, pending.draft, pending.ideaId, this.library.find(toy => toy.id === targetId));
       if (this.disposed || this.pendingReplacement !== pending || !overlay.isConnected) return;
       this.library = [...result.library];
       if (result.libraryCapacity !== undefined) this.libraryCapacity = result.libraryCapacity;
@@ -1251,7 +1253,7 @@ export class SandboxLibraryApp {
     if (!overlay || overlay.getAttribute('aria-busy') === 'true') return;
     this.setModalBusy(overlay, true);
     try {
-      const library = await this.options.onDeleteSquishy(targetId);
+      const library = await this.options.onDeleteSquishy(targetId, this.library.find(toy => toy.id === targetId));
       if (this.disposed || this.pendingDeleteId !== targetId || !overlay.isConnected) return;
       this.library = [...library];
       this.pendingDeleteId = null;

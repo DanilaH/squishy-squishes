@@ -151,3 +151,6 @@
 @media (max-height: 520px) {
  #app[data-jelly-ui-ready] .room-library .room-editor[data-pedestal-preview='true'] .room-editor-content { min-height: 0; }
 }
+
+/* Use the transparent thumbnail margin to make the existing authored details legible. */
+#app[data-jelly-ui-ready] .sandbox-idea-card__preview { transform:scale(1.4); }

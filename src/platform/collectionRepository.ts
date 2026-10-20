@@ -34,11 +34,13 @@ export class CollectionConflictError extends Error {
   constructor(readonly reason: 'changed' | 'full', message: string) { super(message); this.name = 'CollectionConflictError'; }
 }
 
+const toySignature = (toy: SaveStateV3['library'][number] | undefined): string => toy ? JSON.stringify((encodeSaveStateV3({...createDefaultSaveV3(), library:[toy]}) as {library:unknown[]}).library, (_key, value: unknown) => value && typeof value === 'object' && !Array.isArray(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value) : '';
+export const sameCollectionToy = (a: SaveStateV3['library'][number] | undefined, b: SaveStateV3['library'][number] | undefined): boolean => a === b || toySignature(a) === toySignature(b);
+
 /** Merge only the caller's changes against its loaded base. Concurrent edits to
  * the same toy are rejected; unrelated additions and monotonic rewards survive. */
 export function mergeCollection(base: SaveStateV3, next: SaveStateV3, current: SaveStateV3): SaveStateV3 {
-  const signature = (toy: SaveStateV3['library'][number] | undefined): string => toy ? JSON.stringify((encodeSaveStateV3({...createDefaultSaveV3(), library:[toy]}) as {library:unknown[]}).library, (_key, value: unknown) => value && typeof value === 'object' && !Array.isArray(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value) : '';
-  const same = (a: SaveStateV3['library'][number] | undefined, b: SaveStateV3['library'][number] | undefined): boolean => a === b || signature(a) === signature(b);
+  const same = sameCollectionToy;
   const before = new Map(base.library.map(toy => [toy.id, toy]));
   const wanted = new Map(next.library.map(toy => [toy.id, toy]));
   const live = new Map(current.library.map(toy => [toy.id, toy]));
@@ -68,6 +70,7 @@ export class CollectionRepository {
   private queue: Promise<void> = Promise.resolve();
   private state: SaveStateV3 | null = null;
   private records: string[] = [];
+  private manifestRaw: string | null = null;
   constructor(private readonly storage: StorageAdapter) {}
   async loadOrDefault(onError: (error: unknown) => void = () => undefined): Promise<SaveStateV3> {
     try { return await this.load(); } catch(error) { onError(error); throw error; }
@@ -81,8 +84,12 @@ export class CollectionRepository {
       const legacy = await this.storage.getItem(SAVE_V3_STORAGE_KEY);
       const state = legacy === null ? createDefaultSaveV3() : decodeSaveStateV3(JSON.parse(legacy));
       await this.cleanupPending([]).catch(error => console.error('[squishy:collection-cleanup]', error));
-      this.state = state; this.records = [];
+      this.state = state; this.records = []; this.manifestRaw = null;
       return state;
+    }
+    if (raw === this.manifestRaw && this.state) {
+      await this.cleanupPending(this.records).catch(error => console.error('[squishy:collection-cleanup]', error));
+      return this.state;
     }
     const manifest = JSON.parse(raw) as Manifest;
     if (manifest.version !== 1 || !Array.isArray(manifest.records) || manifest.records.some(k => typeof k !== 'string' || !k.startsWith(PREFIX))) throw new TypeError('Invalid collection manifest');
@@ -94,19 +101,19 @@ export class CollectionRepository {
       library.push(await unpack(toy));
     }
     this.state = decodeSaveStateV3({ ...manifest.state, library });
-    this.records = manifest.records;
+    this.records = manifest.records; this.manifestRaw = raw;
     await this.cleanupPending(this.records).catch(error => console.error('[squishy:collection-cleanup]', error));
     return this.state;
   }
   write(state: SaveStateV3): Promise<void> {
     const base = this.state ?? createDefaultSaveV3();
     const task = this.queue.catch(() => undefined).then(() => withCollectionLock(async () => {
-      const previousState = this.state, previousRecords = this.records;
+      const previousState = this.state, previousRecords = this.records, previousRaw = this.manifestRaw;
       try {
         const raw = await this.storage.getItem(COLLECTION_KEY);
         const current = raw === null ? base : await this.read();
         await this.commit(raw === null ? state : mergeCollection(base, state, current));
-      } catch (error) { this.state = previousState; this.records = previousRecords; throw error; }
+      } catch (error) { this.state = previousState; this.records = previousRecords; this.manifestRaw = previousRaw; throw error; }
     }));
     this.queue = task; return task;
   }
@@ -125,7 +132,8 @@ export class CollectionRepository {
     const oldManifest = await this.storage.getItem(COLLECTION_KEY);
     // Keep one complete previous generation, including its records.
     if (oldManifest !== null) await this.storage.setItem(COLLECTION_BACKUP_KEY, oldManifest);
-    await this.storage.setItem(PENDING_KEY, JSON.stringify([...staged, ...obsolete, ...olderKeys]));
+    const expired = olderKeys.filter(key => !oldKeys.has(key) && !retained.has(key));
+    await this.storage.setItem(PENDING_KEY, JSON.stringify([...staged, ...expired]));
     const { library: _library, ...metadata } = state;
     const manifest: Manifest = { version: 1, state: metadata, records };
     const manifestRaw = JSON.stringify(manifest);
@@ -144,14 +152,14 @@ export class CollectionRepository {
       // its records on an ambiguous outcome; a later reader safely reconciles.
       let actual: string | null;
       try { actual = await this.storage.getItem(COLLECTION_KEY); } catch { throw error; }
-      if (actual === manifestRaw) { this.state = state; this.records = records; return; }
+      if (actual === manifestRaw) { this.state = state; this.records = records; this.manifestRaw = manifestRaw; return; }
       if (backup === null) await this.storage.removeItem(COLLECTION_BACKUP_KEY).catch(() => undefined);
       else await this.storage.setItem(COLLECTION_BACKUP_KEY, backup).catch(() => undefined);
       const cleaned = await Promise.allSettled(staged.map(key => this.storage.removeItem(key)));
       if (cleaned.every(result => result.status === 'fulfilled')) await this.storage.removeItem(PENDING_KEY).catch(() => undefined);
       throw error;
     }
-    this.state = state; this.records = records;
+    this.state = state; this.records = records; this.manifestRaw = manifestRaw;
     // Failure of best-effort cleanup must never turn a committed write into a failure.
     const protectedKeys = new Set([...records, ...this.manifestKeys(oldManifest)]);
     const cleaned = await Promise.allSettled([...new Set([...obsolete, ...olderKeys])].filter(key => !protectedKeys.has(key)).map(key => this.storage.removeItem(key)));
@@ -213,7 +221,7 @@ export class CollectionRepository {
       await this.storage.removeItem(COLLECTION_KEY);
       await this.storage.removeItem(COLLECTION_BACKUP_KEY);
       await Promise.all([...new Set(keys)].map(key => this.storage.removeItem(key)));
-      await this.storage.removeItem(SAVE_V3_STORAGE_KEY); this.state = null; this.records = [];
+      await this.storage.removeItem(SAVE_V3_STORAGE_KEY); this.state = null; this.records = []; this.manifestRaw = null;
     });
   }
 }

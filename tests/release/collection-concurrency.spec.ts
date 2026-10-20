@@ -68,3 +68,9 @@ test('recovery cannot roll back a collection repaired by another tab',async()=>{
  const recovery=new CollectionRepository(s);await recovery.restoreBackup();
  expect((await recovery.load()).library.map(t=>t.id)).toEqual(['one','two']);
 });
+test('unchanged manifest avoids rereading every toy for a local incremental edit',async()=>{
+ const s=memory(),reads:string[]=[];const repo=new CollectionRepository({...s,getItem:async key=>{reads.push(key);return s.getItem(key);}});
+ await repo.write({...createDefaultSaveV3(),library:[toy('a'),toy('b'),toy('c')]});reads.length=0;
+ await repo.write(updateSavedSquishy(repo.current!,'a',{...createSandboxDraft(),materialId:'jelly'}));
+ expect(reads.filter(key=>key.startsWith('squishy.toy.'))).toHaveLength(1);
+});
