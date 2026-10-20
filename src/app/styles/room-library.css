@@ -298,3 +298,35 @@
  #app .room-library .room-editor[data-pedestal-preview='true'] { padding:8px; gap:4px; }
  #app .room-library .room-editor[data-pedestal-preview='true'] header { display:none; }
 }
+
+/* Compact preview management keeps the room and the furniture catalog visible. */
+#app .room-library .room-editor-compact-slots { display:none; }
+#app .room-library .room-preview-compact { display:grid; grid-template-columns:minmax(0,1fr) 44px; gap:6px; flex:none; }
+@media (max-width:700px), (max-height:520px) {
+  #app .room-library .room-editor[data-pedestal-preview='true'] { padding:8px; gap:4px; }
+  #app .room-library .room-editor[data-pedestal-preview='true'] header { display:none; }
+  #app .room-library .room-editor[data-pedestal-preview='true'] .room-editor-decor-nav { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  #app .room-library .room-editor[data-pedestal-preview='true'] .room-editor-categories,
+  #app .room-library .room-editor[data-pedestal-preview='true'] .room-editor-surfaces { display:none; }
+  #app .room-library .room-editor[data-pedestal-preview='true'] .room-editor-category-select,
+  #app .room-library .room-editor[data-pedestal-preview='true'] .room-editor-compact-slots {
+    display:block; min-width:0; width:100%; min-height:44px; border:1px solid #d4bdcc;
+    border-radius:13px; background:#fffbf7; color:var(--room-ink); font:inherit; font-size:12px;
+  }
+}
+@media (max-height:520px) {
+  #app .room-library[data-room-preview='true'] .room-editor-slots { display:none; }
+  #app .room-library .room-editor[data-pedestal-preview='true'][data-editor-tab='decor'] {
+    width:min(380px,calc(100vw - 24px)); display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows:44px 44px minmax(72px,1fr) 44px;
+  }
+  #app .room-library .room-editor[data-pedestal-preview='true'][data-editor-tab='decor'] .room-editor-tabs { grid-column:1 / -1; }
+  #app .room-library .room-editor[data-pedestal-preview='true'][data-editor-tab='decor'] .room-editor-decor-nav { grid-column:1; grid-row:2; }
+  #app .room-library .room-editor[data-pedestal-preview='true'][data-editor-tab='decor'] .room-preview-compact { grid-column:2; grid-row:2; }
+  #app .room-library .room-editor[data-pedestal-preview='true'][data-editor-tab='decor'] .room-editor-content { grid-column:1 / -1; grid-row:3; }
+  #app .room-library .room-editor[data-pedestal-preview='true'][data-editor-tab='decor'] footer { grid-column:1 / -1; grid-row:4; }
+}
+@media (max-height:520px) {
+  #app .room-library[data-room-preview='true'][data-room-editing='true'] .sandbox-library-topbar { visibility:hidden; }
+  #app .room-library .room-editor[data-pedestal-preview='true'] { top:8px; bottom:8px; height:auto; }
+}

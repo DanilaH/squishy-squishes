@@ -1,0 +1,18 @@
+
+.free-add-more { min-height:44px; margin:0; }
+.squishy-saved-feedback {
+  display:inline-block; color:#674373; background:#fff8f1; border-radius:10px;
+  font:inherit; pointer-events:none; animation:squishy-saved-in 240ms ease-out;
+}
+@keyframes squishy-saved-in { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:scale(1); } }
+@media(prefers-reduced-motion:reduce) { .squishy-saved-feedback { animation:none; } }
+.save-recovery { max-width:560px; max-height:calc(100dvh - 32px); overflow:auto; margin:auto; padding:20px; }
+.save-recovery button { min-height:44px; margin:4px; padding:8px 12px; }
+
+[data-save-conflict-copy] { min-height:44px; padding:8px 12px; }
+.save-recovery h1 { font-size:22px; }
+.save-recovery p { line-height:1.45; }
+
+#app .free-object-heading { display:grid; grid-template-columns:minmax(0,1fr) 60px; gap:6px; align-items:center; }
+#app .free-object-heading .free-add-more { min-height:44px; padding:4px; font-size:12px; }
+#app .sandbox-copy h1 .squishy-saved-feedback { font:inherit; line-height:inherit; letter-spacing:inherit; color:#674373; }

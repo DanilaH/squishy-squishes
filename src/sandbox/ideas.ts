@@ -1,3 +1,4 @@
+import { createEmptyDecorDocument, type DecorDocumentV1, type AccessoryId, type EyeStyleId } from './decor';
 import {
   ALL_VARIANTS,
   type FillingId,
@@ -27,6 +28,8 @@ const MIXIN_BY_FILLING: Readonly<Record<FillingId, MixInId | null>> = {
 export interface SquishyIdea {
   readonly id: string;
   readonly labelEn: string;
+  readonly labelRu?: string;
+  readonly decor?: DecorDocumentV1;
   readonly shapeId: ShapeId;
   readonly paletteId: PaletteId;
   readonly paintColor: number;
@@ -42,6 +45,23 @@ export interface IdeaMatchResult {
   readonly complete: boolean;
 }
 
+// Existing IDs and completion requirements remain stable. These free details
+// are inspiration, never additional requirements for completing an old idea.
+const featured: Record<string, readonly [string, string, AccessoryId, EyeStyleId]> = {
+  'grape-smooth': ['Lavender royalty', 'Лавандовый принц', 'crown', 'happy'],
+  'grape-beads': ['Bubble scientist', 'Пенный учёный', 'glasses', 'dot'],
+  'strawberry-smooth': ['Berry ribbon', 'Ягодный бантик', 'bow', 'happy'],
+  'strawberry-beads': ['Cherry pop', 'Вишнёвый поп', 'cherry', 'dot'],
+  'lime-smooth': ['Garden friend', 'Садовый друг', 'petal-flower', 'sleepy'],
+  'lime-beads': ['Tiny explorer', 'Маленький исследователь', 'antennae', 'happy'],
+  'heart-grape-smooth': ['Sleepy kitten', 'Сонный котик', 'cat-ears', 'sleepy'],
+  'heart-strawberry-smooth': ['Butterfly kiss', 'Поцелуй бабочки', 'butterfly', 'happy'],
+};
+const ideaDetails = (id: string): Pick<SquishyIdea, 'labelEn' | 'labelRu' | 'decor'> | Record<string, never> => {
+  const spec = featured[id];
+  return spec ? {labelEn: spec[0], labelRu: spec[1], decor: {...createEmptyDecorDocument(), eyes: spec[3], mouth: 'smile', blush: true, accessory: spec[2]}} : {};
+};
+
 export const SQUISHY_IDEAS: readonly SquishyIdea[] = ALL_VARIANTS.map((variant) => ({
   id: variant.id,
   labelEn: variant.label,
@@ -50,6 +70,7 @@ export const SQUISHY_IDEAS: readonly SquishyIdea[] = ALL_VARIANTS.map((variant) 
   paintColor: IDEA_PAINT_COLORS[variant.choice.palette],
   materialId: variant.choice.material,
   requiredMixin: MIXIN_BY_FILLING[variant.choice.filling],
+  ...ideaDetails(variant.id),
 }));
 
 const ideaById = new Map(SQUISHY_IDEAS.map((idea) => [idea.id, idea] as const));
@@ -136,6 +157,7 @@ const RU_MIXINS: Readonly<Record<MixInId, string>> = {
 
 export const getIdeaLabel = (idea: SquishyIdea, language: IdeaLanguage): string => {
   if (language === 'en') return idea.labelEn;
+  if (idea.labelRu) return idea.labelRu;
   return `${RU_SHAPES[idea.shapeId]} · ${RU_PALETTES[idea.paletteId]}`;
 };
 

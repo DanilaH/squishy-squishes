@@ -1,6 +1,6 @@
 # Documentation map — Squishy Squishes
 
-**Updated 2026-10-14.** Start with [`../AGENTS.md`](../AGENTS.md) and current code/tests. A filename containing `PLAN`, `REVIEW` or `PASS` does **not** imply current scope or approval.
+**Updated 2026-10-20.** Start with [`../AGENTS.md`](../AGENTS.md) and current code/tests. A filename containing `PLAN`, `REVIEW` or `PASS` does **not** imply current scope or approval.
 
 ## Working on the current game
 
@@ -22,7 +22,7 @@ The twelve-style extension and authorized release scope are recorded in
 
 The approved seasonal set and its source-art/validation contract are recorded in
 [`HALLOWEEN_SET_2026-10-15.md`](HALLOWEEN_SET_2026-10-15.md). Implementation is on
-`feat/halloween-set`; merging and publication are separate.
+`feat/halloween-set`; it merged and shipped with PR #103 at `f4d97c4` on 19 October. Hosted Yandex acceptance remains separate.
 
 ## Next release work
 
@@ -30,8 +30,7 @@ The owner-requested monetization and scalable-collection roadmap is
 [`MONETIZATION_RELEASE_ROADMAP_2026-10-15.md`](MONETIZATION_RELEASE_ROADMAP_2026-10-15.md).
 It records the collection/storage prerequisites, four starting places plus one
 per rewarded expansion without a fixed gameplay count ceiling, preview/ownership
-flow and a proposed first-release catalog split. Implementation is in draft PR #102 on `feat/release-monetization`;
-regression/CI verification and hosted acceptance are tracked separately from publication.
+flow and the first-release catalog split. PR #102 merged at `5699fa2`; the current production version includes it. Hosted Yandex acceptance remains separate from Pages publication.
 
 ## Current Library follow-up
 
@@ -39,7 +38,7 @@ The owner-approved 14 October artwork pass is recorded in
 [`ART_QUALITY_REVIEW_2026-10-14.md`](ART_QUALITY_REVIEW_2026-10-14.md).
 The first integrated sample was accepted and the remaining catalog authorized;
 PR #101 retains source masters, exact prompts, runtime crops and validation.
-This art pass has not been merged or published.
+PR #101 merged at `28a66dda`; the current production version includes the art pass.
 
 [`ROOM_FOUNDATION_2026-10-06.md`](ROOM_FOUNDATION_2026-10-06.md) records the new
 owner-approved empty customizable room foundation and exhibit/catalog flow.
@@ -103,7 +102,9 @@ idea bank is not a release checklist.
 
 ## Latest independent review
 
-[`PROJECT_REVIEW_2026-10-01.md`](PROJECT_REVIEW_2026-10-01.md) records the browser review, scoped polish, verification limits and improvement priorities. It is evidence and recommendations, not authorization for a redesign.
+[`INDEPENDENT_AUDIT_2026-10-20.md`](INDEPENDENT_AUDIT_2026-10-20.md) records the independent adversarial review of published main `f4d97c4`, confirmed storage/UI findings, reproducible evidence, animation coverage and proposed feel improvements. It does not implement fixes or authorize a redesign. The six confirmed issues supersede earlier freeze recommendations for the affected paths.
+
+Earlier review: [`PROJECT_REVIEW_2026-10-01.md`](PROJECT_REVIEW_2026-10-01.md) records the browser review, scoped polish, verification limits and improvement priorities. It is evidence and recommendations, not authorization for a redesign.
 
 ## Historical material and recovery
 

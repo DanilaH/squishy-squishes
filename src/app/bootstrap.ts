@@ -1,3 +1,7 @@
+import { CollectionConflictError, sameCollectionToy } from '../platform/collectionRepository';
+import './styles/free-craft.css';
+import { withStorageLock } from '../platform/collectionLock';
+import { renderSaveRecovery } from './saveRecovery';
 import { RewardGrants } from '../platform/rewardGrants';
 import { ownsCatalogItem, draftLockedKeys } from '../platform/catalogOwnership';
 import { createOnboardingRepository } from '../platform/onboarding';
@@ -93,11 +97,17 @@ export const bootstrapSquishyApp = async (
   const saveRepository = createSaveV3Repository(runtime.storage);
   const settingsRepository = createSettingsRepository(runtime.storage);
 
-  let saveState = await loadSaveV3WithMigration(
+  let saveState: ReturnType<typeof createDefaultSaveV3>;
+  try { saveState = await loadSaveV3WithMigration(
     runtime.storage,
     saveRepository,
     (error) => reportError('save-v3-load', error),
-  );
+  ); } catch (error) {
+    reportError('save-v3-load', error);
+    await renderSaveRecovery(root, saveRepository, runtime.language === 'ru' ? 'ru' : 'en');
+    runtime.markReady();
+    return {async dispose() { runtime.destroy(); }};
+  }
   let settingsState = await settingsRepository.loadOrDefault(
     (error) => reportError('settings-load', error),
   );
@@ -107,7 +117,7 @@ export const bootstrapSquishyApp = async (
     try {
       await saveRepository.write(nextState);
       await saveRepository.flush();
-      saveState = nextState;
+      saveState = saveRepository.current ?? nextState;
     } catch(error) {
       runtime.analytics.track('collection_write_failed', { count: nextState.library.length, capacity: nextState.libraryCapacity });
       throw error;
@@ -119,13 +129,16 @@ export const bootstrapSquishyApp = async (
   }
 
   const grants = new RewardGrants(runtime.storage, () => saveState, persistSave);
-  try { await grants.recover(); } catch (error) { reportError('reward-recovery', error); }
+  try { await withStorageLock('squishy.reward.v1', async () => { saveState = await saveRepository.load(); await grants.recover(); }); } catch (error) { reportError('reward-recovery', error); }
   const requestReward = async (key: string): Promise<boolean> => {
     root.dataset.lastRewardAt = String(performance.now());
     runtime.analytics.track('reward_offer_click', { item: key });
     runtime.activity.setBlocked('reward-transaction', true);
     try {
-      const earned = await grants.request(key, onReward => runtime.ads.showRewarded({ rewardId: key, onReward }));
+      const earned = await withStorageLock('squishy.reward.v1', async () => {
+        saveState = await saveRepository.load();
+        return grants.request(key, onReward => runtime.ads.showRewarded({ rewardId: key, onReward }));
+      });
       runtime.analytics.track('reward_result', { item: key, earned, capacity: saveState.libraryCapacity });
       return earned;
     } catch(error) {
@@ -150,6 +163,12 @@ export const bootstrapSquishyApp = async (
     const idea = getSquishyIdea(ideaId);
     if (!idea || !matchSquishyIdea(draft, idea).complete) return state;
     return completeRecipeIdea(state, ideaId);
+  };
+
+  const assertUnchanged = (targetId: string, expected: typeof saveState.library[number] | undefined): void => {
+    if (expected && !sameCollectionToy(saveState.library.find(toy => toy.id === targetId), expected)) {
+      throw new CollectionConflictError('changed', 'This squishy changed in another tab. Your draft is still open.');
+    }
   };
 
   const roomReview = new URLSearchParams(location.search).get('roomReview') !== '0';
@@ -192,6 +211,8 @@ export const bootstrapSquishyApp = async (
       const granted = await requestReward('capacity');
       return { granted, libraryCapacity: saveState.libraryCapacity, status: 'closed' as const };
     },
+    currentLibraryCapacity: () => saveState.libraryCapacity,
+    onRefreshCollection: async () => { saveState = await saveRepository.load(); return {library:saveState.library, libraryCapacity:saveState.libraryCapacity, completedRecipeIds:saveState.completedRecipeIds}; },
     onAppendSquishy: async (draft, ideaId) => {
       assertOwned(draft);
       const savedSquishy = createSavedSquishy(draft);
@@ -199,29 +220,32 @@ export const bootstrapSquishyApp = async (
       nextState = completeMatchingIdea(nextState, draft, ideaId);
       await persistSave(nextState);
       trackCatalogUse(draft, 'create');
-      return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
+      return { savedSquishy, library: saveState.library, completedRecipeIds: saveState.completedRecipeIds, libraryCapacity:saveState.libraryCapacity };
     },
-    onReplaceSquishy: async (targetId, draft, ideaId) => {
+    onReplaceSquishy: async (targetId, draft, ideaId, expected) => {
+      assertUnchanged(targetId, expected);
       assertOwned(draft);
       const savedSquishy = createSavedSquishy(draft);
       let nextState = replaceSavedSquishy(saveState, targetId, savedSquishy);
       nextState = completeMatchingIdea(nextState, draft, ideaId);
       await persistSave(nextState);
       trackCatalogUse(draft, 'create');
-      return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
+      return { savedSquishy, library: saveState.library, completedRecipeIds: saveState.completedRecipeIds, libraryCapacity:saveState.libraryCapacity };
     },
-    onUpdateSquishy: async (targetId, draft) => {
+    onUpdateSquishy: async (targetId, draft, expected) => {
+      assertUnchanged(targetId, expected);
       assertOwned(draft);
       const nextState = updateSavedSquishy(saveState, targetId, draft);
       await persistSave(nextState);
       trackCatalogUse(draft, 'edit');
       const savedSquishy = nextState.library.find(toy => toy.id === targetId)!;
-      return { savedSquishy, library: nextState.library, completedRecipeIds: nextState.completedRecipeIds };
+      return { savedSquishy, library: saveState.library, completedRecipeIds: saveState.completedRecipeIds, libraryCapacity:saveState.libraryCapacity };
     },
-    onDeleteSquishy: async (targetId) => {
+    onDeleteSquishy: async (targetId, expected) => {
+      assertUnchanged(targetId, expected);
       const nextState = deleteSavedSquishy(saveState, targetId);
       await persistSave(nextState);
-      return nextState.library;
+      return saveState.library;
     },
     onMutedChange: (muted) => {
       settingsState = { version: 1, muted };

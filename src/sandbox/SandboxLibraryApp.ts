@@ -1,3 +1,4 @@
+import { CollectionConflictError } from '../platform/collectionRepository';
 import { REWARD_VIDEO_ICON } from '../app/rewardIcon';
 import { catalogKey } from '../platform/catalogOwnership';
 import { mountCollectionPreviews } from './collectionPreviews';
@@ -14,6 +15,7 @@ import { getShape } from '../game/shapes';
 import type { SandboxApp, SandboxAppOptions, SandboxLanguage } from './SandboxApp';
 import {
   SQUISHY_IDEAS,
+  getSquishyIdea,
   getIdeaLabel,
   getIdeaMaterialLabel,
   getIdeaMixinLabel,
@@ -28,6 +30,7 @@ import { createBodyFillStroke, createMixInPlacement } from './appearance';
 import { mountCatalogScrollHints } from './catalogScrollHints';
 
 export interface SandboxLibraryCommitResult {
+  readonly libraryCapacity?: number;
   readonly savedSquishy: SavedSquishy;
   readonly library: readonly SavedSquishy[];
   readonly completedRecipeIds: readonly string[];
@@ -47,10 +50,12 @@ export interface SandboxLibraryAppOptions {
   readonly libraryCapacity: number;
   readonly shelfExpansionTargetCapacity: number;
   readonly onUnlockShelfExpansion: () => Promise<{ readonly granted: boolean; readonly libraryCapacity: number; readonly status: 'closed' | 'error' }>;
+  readonly currentLibraryCapacity?: () => number;
+  readonly onRefreshCollection?: () => Promise<{library:readonly SavedSquishy[]; libraryCapacity:number; completedRecipeIds:readonly string[]}>;
   readonly onAppendSquishy: (draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
-  readonly onReplaceSquishy: (targetId: string, draft: SandboxDraft, ideaId: string | null) => Promise<SandboxLibraryCommitResult>;
-  readonly onUpdateSquishy: (targetId: string, draft: SandboxDraft) => Promise<SandboxLibraryCommitResult>;
-  readonly onDeleteSquishy: (targetId: string) => Promise<readonly SavedSquishy[]>;
+  readonly onReplaceSquishy: (targetId: string, draft: SandboxDraft, ideaId: string | null, expected?: SavedSquishy) => Promise<SandboxLibraryCommitResult>;
+  readonly onUpdateSquishy: (targetId: string, draft: SandboxDraft, expected?: SavedSquishy) => Promise<SandboxLibraryCommitResult>;
+  readonly onDeleteSquishy: (targetId: string, expected?: SavedSquishy) => Promise<readonly SavedSquishy[]>;
   /** Candidate-only renderer port. Ordinary library bootstrap leaves it absent. */
   readonly makerRendererOptions?: Pick<SandboxAppOptions, 'rendererBackend' | 'makePhaserRenderer'>;
   /** Optional lazy renderer seam: keeps Phaser out of the first Library paint. */
@@ -287,6 +292,7 @@ export class SandboxLibraryApp {
   }
 
   public dispose(): void {
+    cancelAnimationFrame(this.ideaFrame);
     this.previewDisposers.forEach(dispose => dispose());
     if (this.disposed) return;
     this.disposed = true;
@@ -307,6 +313,7 @@ export class SandboxLibraryApp {
   }
 
   private renderLibrary(): void {
+    this.libraryCapacity = this.options.currentLibraryCapacity?.() ?? this.libraryCapacity;
     this.disposeScrollHints?.(); this.disposeScrollHints = null;
     this.roomEditor?.unmount();
     this.personality.stop();
@@ -525,10 +532,28 @@ export class SandboxLibraryApp {
       </main>
     `;
     this.updateIdeaPages();
-    for (const canvas of this.root.querySelectorAll<HTMLCanvasElement>('[data-idea-preview]')) {
-      const idea = SQUISHY_IDEAS.find(item => item.id === canvas.dataset.ideaPreview);
-      if (idea) renderLibraryThumbnail(canvas, this.ideaPreview(idea), 256);
+  }
+
+  private ideaFrame = 0;
+  private renderVisibleIdeas(): void {
+    cancelAnimationFrame(this.ideaFrame);
+    const shell = this.root.querySelector<HTMLElement>('[data-sandbox-ideas]');
+    if (!shell) return;
+    const visible: HTMLCanvasElement[] = [];
+    for (const canvas of shell.querySelectorAll<HTMLCanvasElement>('[data-idea-preview]')) {
+      if (canvas.closest<HTMLElement>('[data-card-page-item]')?.hidden) {
+        canvas.width = canvas.height = 1; delete canvas.dataset.ideaRendered;
+      } else if (!canvas.dataset.ideaRendered) visible.push(canvas);
     }
+    const next = (): void => {
+      if (!shell.isConnected || this.disposed) return;
+      const canvas = visible.shift();
+      if (!canvas) return;
+      const idea = getSquishyIdea(canvas.dataset.ideaPreview ?? '');
+      if (idea) { renderLibraryThumbnail(canvas, this.ideaPreview(idea), 256); canvas.dataset.ideaRendered = 'true'; }
+      if (visible.length) this.ideaFrame = requestAnimationFrame(next);
+    };
+    this.ideaFrame = requestAnimationFrame(next);
   }
 
   private updateIdeaPages(): void {
@@ -538,11 +563,13 @@ export class SandboxLibraryApp {
     const perPage = innerWidth >= 901 && innerHeight >= 640 ? 12 : 4;
     shell.dataset.cardsPerPage = String(perPage);
     showCardPage(shell, Math.floor(first / perPage));
+    this.renderVisibleIdeas();
   }
 
   private ideaPreview(idea: SquishyIdea): SavedSquishy {
     return { ...createSandboxDraft(), id: idea.id, createdAt: 0,
       shapeId: idea.shapeId, materialId: idea.materialId,
+      ...(idea.decor ? {decor:idea.decor} : {}),
       appearance: { v: 1, strokes: [createBodyFillStroke(idea.paintColor)],
         mixins: idea.requiredMixin ? [.3,.5,.7].flatMap(u => [.35,.65].map(v => createMixInPlacement(idea.requiredMixin!, {u,v}, 22, u))) : [] } };
   }
@@ -774,7 +801,7 @@ export class SandboxLibraryApp {
         savedSquishy: toy,
         preserveDraftOnExit: toy === null && !idea && Boolean(this.onboarding && (this.onboarding.status === 'active' || this.onboarding.draft || (!this.library.length && this.onboarding.status === 'skipped'))),
         ...(toy === null && !idea && this.onboarding?.draft ? { initialDraft: this.onboarding.draft } : {}),
-        ...(toy === null && idea ? { initialShapeId: idea.shapeId } : {}),
+        ...(toy === null && idea ? { initialShapeId: idea.shapeId, ...(idea.decor ? {initialDraft:{...createSandboxDraft(),shapeId:idea.shapeId,decor:idea.decor}} : {}) } : {}),
         startSavedInSqueeze: toy !== null,
         onExitToLibrary: () => this.returnFromRoomSqueeze(),
         onResetCraftContext: () => this.resetCraftContext(),
@@ -883,9 +910,10 @@ export class SandboxLibraryApp {
 
   private async handleSaveRequest(draft: SandboxDraft, editingId: string | null): Promise<SavedSquishy | null> {
     if (editingId) {
-      const result = await this.options.onUpdateSquishy(editingId, draft);
+      const result = await this.options.onUpdateSquishy(editingId, draft, this.library.find(toy => toy.id === editingId));
       if (this.disposed) return null;
       this.library = [...result.library];
+      if (result.libraryCapacity !== undefined) this.libraryCapacity = result.libraryCapacity;
       this.selectedToyId = result.savedSquishy.id;
       this.completedRecipeIds = [...result.completedRecipeIds];
       return result.savedSquishy;
@@ -893,9 +921,17 @@ export class SandboxLibraryApp {
     const ideaId = this.activeIdea?.id ?? null;
     if (this.library.length < this.libraryCapacity) {
       const previousCompleted = this.completedRecipeIds;
-      const result = await this.options.onAppendSquishy(draft, ideaId);
+      let result: SandboxLibraryCommitResult;
+      try { result = await this.options.onAppendSquishy(draft, ideaId); }
+      catch(error) {
+        if (!(error instanceof CollectionConflictError) || error.reason !== 'full' || !this.options.onRefreshCollection) throw error;
+        const fresh = await this.options.onRefreshCollection();
+        this.library = [...fresh.library]; this.libraryCapacity = fresh.libraryCapacity; this.completedRecipeIds = [...fresh.completedRecipeIds];
+        return this.handleSaveRequest(draft, editingId);
+      }
       if (this.disposed) return null;
       this.library = [...result.library];
+      if (result.libraryCapacity !== undefined) this.libraryCapacity = result.libraryCapacity;
       this.selectedToyId = result.savedSquishy.id;
       this.completedRecipeIds = [...result.completedRecipeIds];
       if (ideaId) this.renderIdeaCompletion(ideaId, previousCompleted);
@@ -1086,7 +1122,7 @@ export class SandboxLibraryApp {
     }
     if (target.hasAttribute('data-card-page-step')) {
       const scope = target.closest<HTMLElement>('[data-card-pages]');
-      if (scope) showCardPage(scope, Number(scope.dataset.cardPage ?? 0) + Number(target.dataset.cardPageStep));
+      if (scope) { showCardPage(scope, Number(scope.dataset.cardPage ?? 0) + Number(target.dataset.cardPageStep)); if (scope.hasAttribute('data-sandbox-ideas')) this.renderVisibleIdeas(); }
       return;
     }
     if (target.hasAttribute('data-library-ideas')) {
@@ -1137,9 +1173,10 @@ export class SandboxLibraryApp {
     this.setModalBusy(overlay, true);
     try {
       const previousCompleted = this.completedRecipeIds;
-      const result = await this.options.onReplaceSquishy(targetId, pending.draft, pending.ideaId);
+      const result = await this.options.onReplaceSquishy(targetId, pending.draft, pending.ideaId, this.library.find(toy => toy.id === targetId));
       if (this.disposed || this.pendingReplacement !== pending || !overlay.isConnected) return;
       this.library = [...result.library];
+      if (result.libraryCapacity !== undefined) this.libraryCapacity = result.libraryCapacity;
       this.selectedToyId = result.savedSquishy.id;
       this.completedRecipeIds = [...result.completedRecipeIds];
       this.pendingReplacement = null;
@@ -1185,6 +1222,7 @@ export class SandboxLibraryApp {
       if (this.disposed || this.pendingReplacement !== pending || !overlay.isConnected) return;
       const previousCompleted = this.completedRecipeIds;
       this.library = [...result.library];
+      if (result.libraryCapacity !== undefined) this.libraryCapacity = result.libraryCapacity;
       this.selectedToyId = result.savedSquishy.id;
       this.completedRecipeIds = [...result.completedRecipeIds];
       this.pendingReplacement = null;
@@ -1215,7 +1253,7 @@ export class SandboxLibraryApp {
     if (!overlay || overlay.getAttribute('aria-busy') === 'true') return;
     this.setModalBusy(overlay, true);
     try {
-      const library = await this.options.onDeleteSquishy(targetId);
+      const library = await this.options.onDeleteSquishy(targetId, this.library.find(toy => toy.id === targetId));
       if (this.disposed || this.pendingDeleteId !== targetId || !overlay.isConnected) return;
       this.library = [...library];
       this.pendingDeleteId = null;

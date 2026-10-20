@@ -151,3 +151,9 @@
 @media (max-height: 520px) {
  #app[data-jelly-ui-ready] .room-library .room-editor[data-pedestal-preview='true'] .room-editor-content { min-height: 0; }
 }
+
+/* Use the transparent thumbnail margin to make the existing authored details legible. */
+#app[data-jelly-ui-ready] .sandbox-idea-card__preview { transform:scale(1.4); }
+
+/* Scaled transparent preview margins must not extend the paged panel scroll area. */
+#app[data-jelly-ui-ready] .sandbox-idea-card { overflow:clip; }
