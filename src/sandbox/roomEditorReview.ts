@@ -61,6 +61,10 @@ export class RoomEditorReview {
     shell.addEventListener('click', this.click, { signal: this.events.signal });
     shell.addEventListener('change', event => {
       const select = event.target;
+      if (select instanceof HTMLSelectElement && select.hasAttribute('data-room-compact-slot') && this.editing && !this.blocked() && !this.saving && !this.unlocking) {
+        if (CATEGORY_SLOTS[this.category].includes(select.value as RoomSlot)) { this.slot = select.value as RoomSlot; this.render(); shell.querySelector<HTMLSelectElement>('[data-room-compact-slot]')?.focus({preventScroll:true}); }
+        return;
+      }
       if (!(select instanceof HTMLSelectElement) || !select.hasAttribute('data-room-category-select') || !this.editing || this.blocked() || this.saving || this.unlocking) return;
       if (!(select.value in CATEGORY_SLOTS)) return;
       this.category = select.value as RoomCategory; this.slot = CATEGORY_SLOTS[this.category][0]!; this.render();
@@ -89,7 +93,7 @@ export class RoomEditorReview {
   private async close(save: boolean): Promise<void> {
     if (save && this.lockedPedestal()) {
       this.rewardMessage=this.text('Перед сохранением открой постамент или убери примерку.','Unlock the pedestal or remove its preview before saving.');
-      this.render();this.shell?.querySelector<HTMLButtonElement>('[data-pedestal-unlock]')?.focus({preventScroll:true});return;
+      this.tab='pedestals';this.render();this.shell?.querySelector<HTMLButtonElement>('[data-pedestal-unlock]')?.focus({preventScroll:true});return;
     }
     if (save) {
       this.saving = true; this.error = false; this.render();
@@ -105,19 +109,21 @@ export class RoomEditorReview {
     const shell = this.shell, panel = shell?.querySelector<HTMLElement>('[data-room-editor]'), anchors = shell?.querySelector<HTMLElement>('[data-room-slots]');
     if (!shell || !panel || !anchors) return;
     shell.dataset.roomEditing = String(this.editing);
+    shell.dataset.roomPreview = String(!!this.lockedPedestal());
     const preview = shell.querySelector<HTMLButtonElement>('.library-showcase-preview'); if (preview) preview.disabled = this.editing;
     panel.hidden = !this.editing; panel.setAttribute('aria-busy', String(this.saving || this.unlocking)); panel.dataset.pedestalPreview=String(!!this.lockedPedestal()); anchors.hidden = !this.editing || this.tab !== 'decor';
     if (!this.editing) return;
     const active = document.activeElement;
+    const hadPanelFocus = active instanceof HTMLElement && panel.contains(active);
     const focusAttribute = active instanceof HTMLElement && panel.contains(active)
-      ? ['data-room-editor-tab','data-room-theme','data-room-category','data-room-slot','data-room-item','data-room-category-select','data-room-pedestal'].find(key => active.hasAttribute(key)) : undefined;
+      ? ['data-room-editor-tab','data-room-theme','data-room-category','data-room-slot','data-room-item','data-room-category-select','data-room-compact-slot','data-room-pedestal'].find(key => active.hasAttribute(key)) : undefined;
     const focusValue = focusAttribute ? active!.getAttribute(focusAttribute) ?? '' : '';
     const categories: [RoomCategory, string][] = [['furniture', this.text('Мебель', 'Furniture')], ['shelves', this.text('Полочки', 'Shelves')], ['posters', this.text('На стену', 'Wall decor')], ['rugs', this.text('Коврики', 'Rugs')], ['details', this.text('Мелочи', 'Details')]];
     const scrollTop = panel.dataset.editorTab === this.tab && panel.dataset.editorCategory === this.category && panel.dataset.editorSlot === this.slot ? panel.querySelector('.room-editor-content')?.scrollTop ?? 0 : 0;
     const categoryScroll = panel.querySelector('.room-editor-categories')?.scrollLeft ?? 0;
     panel.dataset.editorTab = this.tab; panel.dataset.editorCategory = this.category; panel.dataset.editorSlot = this.slot;
     const choices = ROOM_ITEMS.filter(item => item.category === this.category && item.slots.includes(this.slot));
-    const decorNav = `<div class="room-editor-decor-nav"><select class="room-editor-category-select" data-room-category-select aria-label="${this.text('Категория предметов', 'Item category')}">${categories.map(([id,label]) => `<option value="${id}" ${id === this.category ? 'selected' : ''}>${label}</option>`).join('')}</select><div class="room-editor-categories">${categories.map(([id, label]) => `<button type="button" data-room-category="${id}" aria-pressed="${this.category === id}">${label}</button>`).join('')}</div><div class="room-editor-surfaces">${CATEGORY_SLOTS[this.category].map(id => `<button type="button" data-room-slot="${id}" aria-pressed="${this.slot === id}">${this.slotLabel(id)}</button>`).join('')}</div></div>`;
+    const decorNav = `<div class="room-editor-decor-nav"><select class="room-editor-category-select" data-room-category-select aria-label="${this.text('Категория предметов', 'Item category')}">${categories.map(([id,label]) => `<option value="${id}" ${id === this.category ? 'selected' : ''}>${label}</option>`).join('')}</select><select class="room-editor-compact-slots" data-room-compact-slot aria-label="${this.text('Место','Position')}">${CATEGORY_SLOTS[this.category].map(id=>`<option value="${id}" ${id===this.slot?'selected':''}>${this.slotLabel(id)}</option>`).join('')}</select><div class="room-editor-categories">${categories.map(([id, label]) => `<button type="button" data-room-category="${id}" aria-pressed="${this.category === id}">${label}</button>`).join('')}</div><div class="room-editor-surfaces">${CATEGORY_SLOTS[this.category].map(id => `<button type="button" data-room-slot="${id}" aria-pressed="${this.slot === id}">${this.slotLabel(id)}</button>`).join('')}</div></div>`;
     panel.innerHTML = `<header><strong>${this.text('Твоя комната', 'Your room')}</strong><span>${this.text('Примеряй — результат виден сразу', 'Try it — see the change right away')}</span></header>
       <div class="room-editor-tabs" aria-label="${this.text('Разделы', 'Sections')}">${(['colors', 'decor', 'pedestals'] as const).map(tab => `<button type="button" data-room-editor-tab="${tab}" aria-pressed="${tab === this.tab}">${tab === 'colors' ? this.text('Палитры', 'Palettes') : tab === 'decor' ? this.text('Обстановка', 'Decor') : this.text('Постаменты', 'Pedestals')}</button>`).join('')}</div>
       ${this.tab === 'decor' ? decorNav : ''}
@@ -131,7 +137,8 @@ export class RoomEditorReview {
     const content = panel.querySelector('.room-editor-content'); if (content) content.scrollTop = scrollTop;
     const row = panel.querySelector('.room-editor-categories'); if (row) row.scrollLeft = categoryScroll;
     if (this.saving || this.unlocking) for (const control of panel.querySelectorAll<HTMLButtonElement | HTMLSelectElement>('button,select')) control.disabled = true;
-    if (focusAttribute) panel.querySelector<HTMLElement>(`[${focusAttribute}="${CSS.escape(focusValue)}"]`)?.focus({preventScroll:true});
+    if (hadPanelFocus) (focusAttribute ? panel.querySelector<HTMLElement>(`[${focusAttribute}="${CSS.escape(focusValue)}"]`) : null)?.focus({preventScroll:true});
+    if (hadPanelFocus && !panel.contains(document.activeElement)) panel.querySelector<HTMLButtonElement>(`[data-room-editor-tab="${this.tab}"]`)?.focus({preventScroll:true});
     anchors.innerHTML = CATEGORY_SLOTS[this.category].map(slot => `<button type="button" class="room-editor-slot room-editor-slot--${slot}" data-room-slot="${slot}" aria-pressed="${this.slot === slot}"><span aria-hidden="true">${this.settings.items[slot] ? '✓' : '+'}</span>${this.slotLabel(slot)}</button>`).join('');
   }
   private lockedPedestal(): string | null {
@@ -159,6 +166,7 @@ export class RoomEditorReview {
   private pedestalPreview():string {
     if(!this.lockedPedestal())return '';
     const selected=PEDESTALS.find(p=>p.id===this.settings.pedestal)!;
+    if (this.tab !== 'pedestals') return `<aside class="room-preview-compact" data-room-pedestal-preview><button type="button" data-preview-manage>${this.text('Примерка','Preview')} · ${selected[this.language]} →</button><button type="button" data-pedestal-restore aria-label="${this.text('Убрать примерку','Remove preview')}">×</button></aside>`;
     return `<aside class="room-pedestal-preview" data-room-pedestal-preview aria-live="polite"><strong>${this.text('Примерка','Preview')} · ${selected[this.language]}</strong><small>${this.rewardMessage??this.text('Один просмотр — постамент твой навсегда.','One ad unlocks this pedestal permanently.')}</small><div><button type="button" data-pedestal-unlock ${this.unlocking||!this.catalog?'disabled':''}>${REWARD_VIDEO_ICON}<span>${this.unlocking?this.text('Открываем…','Unlocking…'):this.text('Открыть за рекламу','Unlock for an ad')}</span></button><button type="button" data-pedestal-restore>${this.text('Убрать примерку','Remove preview')}</button></div></aside>`;
   }
   private async unlockPedestal():Promise<void> {
@@ -177,6 +185,7 @@ export class RoomEditorReview {
     const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null; if (!target) return;
     if (target.hasAttribute('data-room-edit-open')) { this.before = { ...this.settings, items: { ...this.settings.items } }; this.editing = true; this.error = false; this.render(); this.shell?.querySelector<HTMLButtonElement>('[data-room-editor-tab]')?.focus({ preventScroll: true }); return; }
     if (!this.editing) return;
+    if (target.hasAttribute('data-preview-manage')) { this.tab='pedestals';this.render();this.shell?.querySelector<HTMLButtonElement>('[data-room-editor-tab="pedestals"]')?.focus({preventScroll:true});return; }
     if (target.hasAttribute('data-pedestal-unlock')) {void this.unlockPedestal();return;}
     if (target.hasAttribute('data-pedestal-restore')) {this.selectPedestal(this.previewBaseline??'standard');return;}
     if (target.hasAttribute('data-pedestal-retry')) {

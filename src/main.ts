@@ -1,3 +1,4 @@
+import './app/styles/free-craft.css';
 import './styles.css';
 import './interaction-pass.css';
 import './interaction-pass-03.css';

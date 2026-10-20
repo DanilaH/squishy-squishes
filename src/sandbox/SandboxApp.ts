@@ -1,3 +1,5 @@
+import { CollectionConflictError } from '../platform/collectionRepository';
+import { STICKER_LABELS } from './stickerLabels';
 import { CatalogPreview } from './catalogPreview';
 import type { CatalogPort } from '../platform/catalogOwnership';
 import { PAINT_PATTERNS, createPaintPattern } from './paintPatterns';
@@ -286,14 +288,14 @@ const DECOR_LABELS: Readonly<Record<SandboxLanguage, DecorLabels>> = {
   en: {
     eyes: { dot: 'Dot', happy: 'Happy', sleepy: 'Sleepy', angry:'Angry', sly:'Sly', cross:'Crosses', sparkling:'Sparkling', frightened:'Scared', 'stitched-eye':'Stitched eye' },
     mouths: { smile: 'Smile', o: 'O', cat: 'Cat', tongue:'Tongue', fangs:'Fangs', flat:'Straight', sewn:'Stitched', grin:'Grin' },
-    stickers: { heart: 'Heart', star: 'Star', flower: 'Flower', sparkle: 'Sparkle', candy:'Candy', donut:'Donut', strawberry:'Strawberry', lightning:'Lightning', flame:'Flame', skull:'Skull', planet:'Planet', eye:'Eye', ghost:'Ghost', bone:'Bone' },
+    stickers: STICKER_LABELS.en,
     accessories: { 'cat-ears': 'Cat ears', 'bunny-ears': 'Bunny ears', horns: 'Horns', bow: 'Bow', crown: 'Crown', glasses:'Glasses', headphones:'Headphones', 'bucket-hat':'Bucket hat', 'petal-flower':'Flower', leaves:'Leaves', butterfly:'Butterfly', cream:'Cream', cherry:'Cherry', 'heart-patch':'Heart patch', handbag:'Bag', wings:'Wings', antennae:'Antennae', 'mushroom-hat':'Mushroom hat', 'witch-hat':'Witch hat', halo:'Halo', 'eye-patch':'Eye patch', bolt:'Bolt', cobweb:'Cobweb', 'toy-scythe':'Toy scythe', 'monster-hat':'Monster hat', 'bat-wings':'Bat wings' },
     stickerTip: 'Tap the squishy to place it.',
   },
   ru: {
     eyes: { dot: 'Точки', happy: 'Весёлые', sleepy: 'Сонные', angry:'Злые', sly:'Хитрые', cross:'Крестики', sparkling:'Сияющие', frightened:'Испуг', 'stitched-eye':'Шов на глазу' },
     mouths: { smile: 'Улыбка', o: 'О', cat: 'Котик', tongue:'Язык', fangs:'Клыки', flat:'Прямой', sewn:'Зашитый', grin:'Ухмылка' },
-    stickers: { heart: 'Сердце', star: 'Звезда', flower: 'Цветок', sparkle: 'Искра', candy:'Конфета', donut:'Пончик', strawberry:'Клубника', lightning:'Молния', flame:'Пламя', skull:'Череп', planet:'Планета', eye:'Глаз', ghost:'Призрак', bone:'Косточка' },
+    stickers: STICKER_LABELS.ru,
     accessories: { 'cat-ears': 'Кошачьи', 'bunny-ears': 'Заячьи', horns: 'Рожки', bow: 'Бант', crown: 'Корона', glasses:'Очки', headphones:'Наушники', 'bucket-hat':'Панамка', 'petal-flower':'Цветок', leaves:'Листики', butterfly:'Бабочка', cream:'Сливки', cherry:'Вишенка', 'heart-patch':'Пластырь', handbag:'Сумочка', wings:'Крылышки', antennae:'Антенны', 'mushroom-hat':'Грибная шляпа', 'witch-hat':'Шляпа ведьмы', halo:'Нимб', 'eye-patch':'Повязка', bolt:'Болт', cobweb:'Паутинка', 'toy-scythe':'Коса', 'monster-hat':'Шляпа-глаз', 'bat-wings':'Крылья мыши' },
     stickerTip: 'Тапни по сквишу, чтобы наклеить.',
   },
@@ -1050,6 +1052,11 @@ export class SandboxApp {
       return;
     }
 
+    if (target.hasAttribute('data-add-more-details')) {
+      this.setDecorSection(this.lastDetailSection);
+      this.root.querySelector<HTMLButtonElement>(`button[data-decor-section="${this.lastDetailSection}"]`)?.focus({preventScroll:true});
+      return;
+    }
     const decorSticker = target.dataset.decorSticker as StickerId | undefined;
     if (decorSticker && STICKER_IDS.includes(decorSticker)) {
       this.stickerErase = false;
@@ -1593,7 +1600,9 @@ export class SandboxApp {
     this.replayAndUpload();
   }
 
+  private lastDetailSection: 'accessory' | 'stickers' = 'accessory';
   private setDecorSection(next: DecorSection): void {
+    if (next === 'accessory' || next === 'stickers') this.lastDetailSection = next;
     this.decorSection = next;
     this.shell.dataset.decorSection = next;
     this.updatePressed('[data-decor-section]', 'decorSection', next);
@@ -1734,6 +1743,7 @@ export class SandboxApp {
       this.shell.dataset.saveComplete = 'true';
       this.loadSavedSquishy(saved);
       this.setStage('squeeze');
+      this.showSavedFeedback();
       if (newlyCrafted) this.options.onCraftSaved?.();
     } catch (error: unknown) {
       if (this.disposed) return;
@@ -1741,6 +1751,13 @@ export class SandboxApp {
       this.shell.dataset.saveComplete = 'false';
       this.shell.dataset.saveFailed = 'true';
       this.status.textContent = this.copy.saveFailed;
+      if (error instanceof CollectionConflictError && error.reason === 'changed') {
+        this.status.textContent = this.options.language === 'ru' ? 'Этот сквиш изменён в другой вкладке. Черновик остался здесь. ' : 'This squishy changed in another tab. Your draft is still here. ';
+        const copy = document.createElement('button'); copy.type = 'button'; copy.dataset.saveConflictCopy = '';
+        copy.textContent = this.options.language === 'ru' ? 'Сохранить копию' : 'Save a copy';
+        copy.addEventListener('click', event => { event.stopPropagation(); this.editingId = null; this.status.textContent = ''; void this.saveDraft(); });
+        this.status.append(copy);
+      }
     } finally {
       this.saving = false;
       if (!this.disposed) {
@@ -1749,6 +1766,16 @@ export class SandboxApp {
         this.syncInteractivity();
       }
     }
+  }
+
+  private showSavedFeedback(): void {
+    this.root.querySelector('[data-saved-feedback]')?.remove();
+    const message = document.createElement('div');
+    message.className = 'squishy-saved-feedback'; message.dataset.savedFeedback = '';
+    message.setAttribute('role', 'status');
+    message.textContent = this.options.language === 'ru' ? '✓ Сохранено' : '✓ Saved';
+    this.shell.append(message);
+    setTimeout(() => message.remove(), 1800);
   }
 
   private openSavedForSqueeze(): void {
