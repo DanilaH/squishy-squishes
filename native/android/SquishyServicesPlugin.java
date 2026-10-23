@@ -145,7 +145,7 @@ public class SquishyServicesPlugin extends Plugin {
       });
     }
   }
-  @PluginMethod public void show(PluginCall call) { getActivity().runOnUiThread(() -> showOnMain(call)); }
+  @PluginMethod public void show(PluginCall call) { getActivity().runOnUiThread(() -> { try { showOnMain(call); } catch (Exception error) { call.reject("Ad request failed", error); } }); }
   private void showOnMain(PluginCall call) {
     String kind = call.getString("kind", "");
     if (!kind.equals("rewarded") && !kind.equals("interstitial")) { call.reject("Invalid format"); return; }

@@ -129,14 +129,17 @@ export const bootstrapSquishyApp = async (
   }
 
   const grants = new RewardGrants(runtime.storage, () => saveState, persistSave);
+  const recoverNativeReward = async (): Promise<string | undefined> => {
+    const receipt = await runtime.receipts?.pending();
+    if (!receipt) return undefined;
+    await grants.recoverExternal(receipt.attempt);
+    await runtime.receipts!.acknowledge(receipt.token);
+    runtime.analytics.track('reward_recovered');
+    return (JSON.parse(receipt.attempt) as { key: string }).key;
+  };
   const recoverRewards = async (): Promise<void> => {
     await grants.recover();
-    const receipt = await runtime.receipts?.pending();
-    if (receipt) {
-      await grants.recoverExternal(receipt.attempt);
-      await runtime.receipts!.acknowledge(receipt.token);
-      runtime.analytics.track('reward_recovered');
-    }
+    await recoverNativeReward();
   };
   try { await withStorageLock('squishy.reward.v1', async () => { saveState = await saveRepository.load(); await recoverRewards(); }); } catch (error) { reportError('reward-recovery', error); }
   const requestReward = async (key: string): Promise<boolean> => {
@@ -146,7 +149,7 @@ export const bootstrapSquishyApp = async (
     try {
       const earned = await withStorageLock('squishy.reward.v1', async () => {
         saveState = await saveRepository.load();
-        await recoverRewards();
+        if (await recoverNativeReward() === key) return true;
         return grants.request(key, (onReward, grant) => runtime.ads.showRewarded({ rewardId: key, onReward, context: JSON.stringify(grant) }));
       });
       runtime.analytics.track('reward_result', { item: key, earned, capacity: saveState.libraryCapacity });

@@ -1,5 +1,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { loadEnv } from 'vite';
+const analyticsEnabled = loadEnv('android', process.cwd(), 'VITE_').VITE_ANALYTICS !== 'none';
 const release = process.env.SQUISHY_BUILD_FLAVOR === 'release';
 const appId = release ? 'com.danilah.squishysquishes' : 'com.danilah.squishysquishes.preview';
 const names = ['APPMETRICA_API_KEY', 'YANDEX_BANNER_AD_UNIT_ID', 'YANDEX_INTERSTITIAL_AD_UNIT_ID', 'YANDEX_REWARDED_AD_UNIT_ID'];
@@ -30,7 +32,7 @@ copyFileSync('native/android/proguard-rules.pro', 'android/app/proguard-rules.pr
 const xml = names.map(name => {
   const resource = { APPMETRICA_API_KEY: 'appmetrica_api_key', YANDEX_BANNER_AD_UNIT_ID: 'yandex_banner_id', YANDEX_INTERSTITIAL_AD_UNIT_ID: 'yandex_interstitial_id', YANDEX_REWARDED_AD_UNIT_ID: 'yandex_rewarded_id' }[name];
   // Test analytics must use a separate project key, supplied explicitly.
-  const value = name === 'APPMETRICA_API_KEY' ? (release ? values[name] : process.env.APPMETRICA_TEST_API_KEY ?? '') : live ? values[name] : `demo-${name.split('_')[1].toLowerCase()}-yandex`;
+  const value = name === 'APPMETRICA_API_KEY' ? (analyticsEnabled ? (release ? values[name] : process.env.APPMETRICA_TEST_API_KEY ?? '') : '') : live ? values[name] : `demo-${name.split('_')[1].toLowerCase()}-yandex`;
   if (!/^[a-zA-Z0-9-]*$/.test(value)) throw new Error(`Invalid ${name} configuration`);
   return `<string name="${resource}" translatable="false">${value}</string>`;
 }).join('\n');
