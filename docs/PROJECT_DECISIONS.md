@@ -1413,3 +1413,12 @@ Fixed the observed Studio fixed-size accessory frame to follow the same body
 radius as the room/collection. Source artwork, IDs and tactile constants stay
 unchanged. Follow-up remains on draft PR #101; no merge/deployment approval is
 implied by this implementation request.
+
+## 23 October 2026 — Android/RuStore target
+
+The owner approved Android/RuStore with Yandex Mobile Ads and AppMetrica, retained
+switchable platform/provider build profiles, and explicit space for native banners.
+See [RUSTORE_MIGRATION.md](RUSTORE_MIGRATION.md). The Android banner uses a native
+sibling dock reducing the WebView viewport, rather than a gameplay overlay. The
+existing kit pin and V3 collection repository remain; Android storage and earned
+receipt durability are native adapters. Implementation does not imply publication.

@@ -1,0 +1,70 @@
+name: Android RuStore
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Build unsigned release using live service configuration
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  android-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:android
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --config=playwright.android.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-ui-evidence
+          path: |
+            test-results/
+            playwright-report/
+  android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - name: Prepare preview with demo ads
+        if: inputs.release != true
+        run: npm run android:prepare
+      - name: Prepare live release
+        if: inputs.release == true
+        run: npm run android:prepare
+        env:
+          SQUISHY_BUILD_FLAVOR: release
+          ADS_MODE: live
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          APPMETRICA_API_KEY: ${{ secrets.APPMETRICA_API_KEY }}
+          YANDEX_BANNER_AD_UNIT_ID: ${{ secrets.YANDEX_BANNER_AD_UNIT_ID }}
+          YANDEX_INTERSTITIAL_AD_UNIT_ID: ${{ secrets.YANDEX_INTERSTITIAL_AD_UNIT_ID }}
+          YANDEX_REWARDED_AD_UNIT_ID: ${{ secrets.YANDEX_REWARDED_AD_UNIT_ID }}
+      - name: Compile APK
+        working-directory: android
+        run: ./gradlew --no-daemon ${{ inputs.release == true && 'assembleRelease' || 'assembleDebug' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: squishy-android-${{ inputs.release == true && 'unsigned-live' || 'demo-preview' }}
+          path: android/app/build/outputs/apk/**/*.apk

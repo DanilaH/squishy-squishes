@@ -4,11 +4,11 @@ import {
   bootstrapYandexPlatformRuntime,
   createMockPlatformRuntime,
   installYandexMetricaTag,
-  type PlatformRuntime,
 } from '@danilah/mini-games-kit/yandex';
-import { normalizeLanguage, type Language } from '../i18n';
+import { normalizeLanguage } from '../i18n';
 
-export type SquishyPlatformRuntime = PlatformRuntime<Language>;
+import type { SquishyPlatformRuntime } from './contracts';
+export type { SquishyPlatformRuntime } from './contracts';
 
 const shouldUseYandexRuntime = (): boolean => import.meta.env.VITE_PLATFORM === 'yandex';
 
@@ -28,7 +28,11 @@ const createAnalytics = (): AnalyticsAdapter => {
 };
 
 export const createSquishyPlatformRuntime = async (): Promise<SquishyPlatformRuntime> => {
-  const analytics = createAnalytics();
+  if (import.meta.env.VITE_PLATFORM === 'android') {
+    const { createAndroidRuntime } = await import('./android/runtime');
+    return createAndroidRuntime();
+  }
+  const analytics = import.meta.env.VITE_ANALYTICS === 'none' ? new ConsoleAnalyticsAdapter(false) : createAnalytics();
   if (shouldUseYandexRuntime()) {
     return bootstrapYandexPlatformRuntime({
       analytics,

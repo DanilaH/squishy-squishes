@@ -55,7 +55,7 @@ export const bootstrapSquishyApp = async (
   document.body.dataset.releaseBuild = import.meta.env.PROD ? 'production' : 'development';
 
   if (
-    import.meta.env.VITE_PLATFORM !== 'yandex'
+    !['yandex', 'android'].includes(import.meta.env.VITE_PLATFORM)
     && new URLSearchParams(window.location.search).get('appearanceProbe') === '1'
     && !options.makerRendererOptions
     && !options.loadMakerRendererOptions
@@ -129,7 +129,16 @@ export const bootstrapSquishyApp = async (
   }
 
   const grants = new RewardGrants(runtime.storage, () => saveState, persistSave);
-  try { await withStorageLock('squishy.reward.v1', async () => { saveState = await saveRepository.load(); await grants.recover(); }); } catch (error) { reportError('reward-recovery', error); }
+  const recoverRewards = async (): Promise<void> => {
+    await grants.recover();
+    const receipt = await runtime.receipts?.pending();
+    if (receipt) {
+      await grants.recoverExternal(receipt.attempt);
+      await runtime.receipts!.acknowledge(receipt.token);
+      runtime.analytics.track('reward_recovered');
+    }
+  };
+  try { await withStorageLock('squishy.reward.v1', async () => { saveState = await saveRepository.load(); await recoverRewards(); }); } catch (error) { reportError('reward-recovery', error); }
   const requestReward = async (key: string): Promise<boolean> => {
     root.dataset.lastRewardAt = String(performance.now());
     runtime.analytics.track('reward_offer_click', { item: key });
@@ -137,7 +146,8 @@ export const bootstrapSquishyApp = async (
     try {
       const earned = await withStorageLock('squishy.reward.v1', async () => {
         saveState = await saveRepository.load();
-        return grants.request(key, onReward => runtime.ads.showRewarded({ rewardId: key, onReward }));
+        await recoverRewards();
+        return grants.request(key, (onReward, grant) => runtime.ads.showRewarded({ rewardId: key, onReward, context: JSON.stringify(grant) }));
       });
       runtime.analytics.track('reward_result', { item: key, earned, capacity: saveState.libraryCapacity });
       return earned;

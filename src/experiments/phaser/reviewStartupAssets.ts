@@ -20,7 +20,7 @@ export const prepareReviewFirstPaint = async (
     if (!ready) {
       // Retry outside the startup budget: the Library is already playable with
       // native/CSS controls, so recovery must never delay first interaction.
-      globalThis.setTimeout(() => {
+      window.setTimeout(() => {
         if (!root.isConnected || root.dataset.jellyUiReady === '') return;
         void preloadJellyUi().then(markJellyReady);
       }, 900);
@@ -32,7 +32,7 @@ export const prepareReviewFirstPaint = async (
 
   let budgetTimer = 0;
   const budget = new Promise<void>((resolve) => {
-    budgetTimer = globalThis.setTimeout(() => {
+    budgetTimer = window.setTimeout(() => {
       budgetTimer = 0;
       resolve();
     }, STARTUP_ART_BUDGET_MS);

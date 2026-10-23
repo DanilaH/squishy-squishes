@@ -2,7 +2,7 @@ import type { StorageAdapter } from '@danilah/mini-games-kit/platform';
 import type { SaveStateV3 } from './saveV3';
 import { CATALOG_KEYS, ownsCatalogItem } from './catalogOwnership';
 export const REWARD_JOURNAL_KEY = 'squishy.reward.pending.v1';
-interface Grant { key: string; targetCapacity: number }
+export interface Grant { key: string; targetCapacity: number }
 /** Earned callback is journaled before applying; replay is idempotent after failure/reload. */
 export class RewardGrants {
   private inFlight = false;
@@ -18,7 +18,14 @@ export class RewardGrants {
     const next=grant.key==='capacity'?{...state,libraryCapacity:Math.max(state.libraryCapacity,grant.targetCapacity),updatedAt:Date.now()}:{...state,unlockedRewardIds:[...new Set([...state.unlockedRewardIds,grant.key])],updatedAt:Date.now()};
     await this.persist(next); this.pendingGrant=null; await this.storage.removeItem(REWARD_JOURNAL_KEY);
   }
-  async request(key:string, show:(onReward:()=>Promise<void>)=>Promise<unknown>):Promise<boolean>{
+  async recoverExternal(raw: string): Promise<void> {
+    const grant = JSON.parse(raw) as Grant;
+    if (!Number.isSafeInteger(grant.targetCapacity) || grant.targetCapacity < 1 || !(grant.key === 'capacity' || CATALOG_KEYS.includes(grant.key))) throw new TypeError('Invalid external reward intent');
+    await this.recover();
+    this.pendingGrant = grant;
+    await this.recover();
+  }
+  async request(key:string, show:(onReward:()=>Promise<void>, grant: Grant)=>Promise<unknown>):Promise<boolean>{
     if(key!=='capacity'&&!CATALOG_KEYS.includes(key))throw new TypeError('Unknown reward');
     if(this.inFlight)return false; this.inFlight=true;
     const reserve='squishy.reward.reserve';let earned=false;
@@ -34,7 +41,7 @@ export class RewardGrants {
       await show(()=>callback??=(async()=>{
         this.pendingGrant=grant;
         await this.recover();earned=true;
-      })());
+      })(), grant);
       if(callback)await callback;
       return earned;
     } finally {this.inFlight=false;await this.storage.removeItem(reserve).catch(()=>undefined);}

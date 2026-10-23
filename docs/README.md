@@ -2,6 +2,10 @@
 
 **Updated 2026-10-20.** Start with [`../AGENTS.md`](../AGENTS.md) and current code/tests. A filename containing `PLAN`, `REVIEW` or `PASS` does **not** imply current scope or approval.
 
+## Android / RuStore
+
+Current migration contract: [RUSTORE_MIGRATION.md](RUSTORE_MIGRATION.md).
+
 ## Working on the current game
 
 | Need | Read first | Boundary |

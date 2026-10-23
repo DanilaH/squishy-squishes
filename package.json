@@ -33,17 +33,24 @@
     "candidate:qa": "npm run candidate:build && playwright test --config=playwright.phaser-candidate.config.ts",
     "qa:visual": "playwright test --config=playwright.visual.config.ts",
     "qa:visual:update": "playwright test --config=playwright.visual.config.ts --update-snapshots",
-    "ci:check": "node --test tests/tooling/ci-release-reuse.test.mjs tests/tooling/ci-change-scope.test.mjs"
+    "ci:check": "node --test tests/tooling/ci-release-reuse.test.mjs tests/tooling/ci-change-scope.test.mjs",
+    "build:android": "npm run typecheck && vite build --mode android",
+    "android:prepare": "npm run build:android && node scripts/prepare-android.mjs",
+    "android:apk": "npm run android:prepare && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "@danilah/mini-games-kit": "git+https://github.com/DanilaH/mini-games-kit.git#797b5689767e9dc1059514e0446479e054bf1352",
-    "@fontsource-variable/nunito": "5.3.0"
+    "@fontsource-variable/nunito": "5.3.0",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "phaser": "4.2.1",
     "sharp": "0.35.4",
     "typescript": "7.0.2",
-    "vite": "8.2.2"
+    "vite": "8.2.2",
+    "@capacitor/cli": "8.5.3"
   }
 }
