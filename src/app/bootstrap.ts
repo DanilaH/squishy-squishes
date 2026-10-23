@@ -55,7 +55,7 @@ export const bootstrapSquishyApp = async (
   document.body.dataset.releaseBuild = import.meta.env.PROD ? 'production' : 'development';
 
   if (
-    !['yandex', 'android'].includes(import.meta.env.VITE_PLATFORM)
+    import.meta.env.VITE_PLATFORM !== 'yandex' && import.meta.env.VITE_PLATFORM !== 'android'
     && new URLSearchParams(window.location.search).get('appearanceProbe') === '1'
     && !options.makerRendererOptions
     && !options.loadMakerRendererOptions

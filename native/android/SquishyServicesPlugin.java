@@ -42,7 +42,7 @@ public class SquishyServicesPlugin extends Plugin {
   private android.view.View.OnLayoutChangeListener dockListener;
   private boolean bannerWanted;
   private DurableStore store;
-  private JSObject unsavedReward;
+  private volatile JSObject unsavedReward;
   private PluginCall showing;
   private String showingKind, showingAttempt;
   private boolean shown, rewardIssued;

@@ -16,6 +16,9 @@ export default defineConfig(({ mode }) => {
   const phaserYandexDraft = mode === 'phaser-yandex';
   const phaserPagesPreview = mode === 'phaser-pages';
   return {
+    // Native SystemBars pads the entire game+dock column. Edge-to-edge CSS
+    // would leave the sibling banner under gesture navigation on WebView 140+.
+    plugins: mode === 'android' ? [{ name: 'android-safe-viewport', transformIndexHtml: (html: string) => html.replace('viewport-fit=cover', 'viewport-fit=contain') }] : [],
     base: mode === 'android' || mode === 'yandex' || candidate || phaserYandexDraft || phaserPagesPreview ? './' : '/squishy-squishes/',
     build: {
       // Every upload root must contain only the current build, including new hashed chunks.
