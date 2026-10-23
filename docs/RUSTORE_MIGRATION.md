@@ -75,7 +75,7 @@ Set `ANDROID_VERSION_CODE` to a monotonically increasing release value.
 Preview always uses demo ads; analytics are off unless a separate
 `APPMETRICA_TEST_API_KEY` is explicitly provided. Values are not printed.
 
-GitHub Actions Android RuStore builds preview APKs on PRs and unsigned live APKs
+GitHub Actions Android RuStore builds preview APKs on PRs and signed live APKs
 on manual release requests. Production signing, service IDs, store metadata,
 privacy disclosure and device acceptance are still required before publication.
 No new signing identity is silently created for production.
@@ -104,3 +104,18 @@ bounds, portrait/landscape rotation, system Back, background/foreground, offline
 process death, update preservation, rewarded dismissal/earning and dashboard
 event delivery. Mocked bridge tests do not prove native SDK delivery or store
 readiness. Record actual results below as they become available.
+
+## Release signing
+
+The permanent signing identity is supplied through GitHub Actions secrets:
+`ANDROID_KEYSTORE_BASE64` (base64 of the binary JKS/PKCS12 keystore),
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+No key is automatically created or committed. Keep an independent secure backup.
+
+Trusted same-repository PRs continue validating unsigned live configuration when
+all signing secrets are absent. Partial signing configuration fails. With all four
+values, CI aligns the release APK, signs it, verifies its signature and alignment,
+and uploads `squishy-rustore-signed` containing the APK, certificate information
+and checksum. Manual live release requires signing; it fails if keys are missing.
+The temporary keystore is removed on exit and is never uploaded. Signing does not
+publish the application or establish real-device/service acceptance.

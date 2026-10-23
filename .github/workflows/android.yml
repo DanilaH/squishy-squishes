@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: Build unsigned release using live service configuration
+        description: Build signed RuStore release using live service configuration
         type: boolean
         default: false
 permissions:
@@ -67,7 +67,24 @@ jobs:
       - name: Compile APK
         working-directory: android
         run: ./gradlew --no-daemon ${{ inputs.release == true && 'assembleRelease' || 'assembleDebug' }}
+      - name: Sign and verify RuStore APK
+        id: signing
+        if: inputs.release == true
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          bash scripts/sign-android.sh
+          echo "signed=true" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
+        if: steps.signing.outputs.signed == 'true'
+        with:
+          name: squishy-rustore-signed
+          path: release-android/
+      - uses: actions/upload-artifact@v4
+        if: inputs.release != true
         with:
           name: squishy-android-${{ inputs.release == true && 'unsigned-live' || 'demo-preview' }}
           path: android/app/build/outputs/apk/**/*.apk
@@ -130,3 +147,22 @@ jobs:
         with:
           name: squishy-android-unsigned-live
           path: android/app/build/outputs/apk/release/*.apk
+      - name: Sign and verify RuStore APK
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -z "$ANDROID_KEYSTORE_BASE64$ANDROID_KEYSTORE_PASSWORD$ANDROID_KEY_ALIAS$ANDROID_KEY_PASSWORD" ]]; then
+            echo 'Signing not configured; only unsigned live validation is available.'
+            exit 0
+          fi
+          bash scripts/sign-android.sh
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.signing.outputs.signed == 'true'
+        with:
+          name: squishy-rustore-signed
+          path: release-android/
