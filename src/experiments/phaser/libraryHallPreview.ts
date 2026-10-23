@@ -120,7 +120,7 @@ export const mountLibraryHallPreview = (root: HTMLElement): (() => void) => {
         console.warn('[squishy:library-hall] Art decode failed; keeping the original Library grid until a later retry.', error);
         if (assetRetryCount < 3 && root.querySelector('[data-sandbox-library]')) {
           assetRetryCount += 1;
-          assetRetryTimer = globalThis.setTimeout(() => {
+          assetRetryTimer = window.setTimeout(() => {
             assetRetryTimer = 0;
             ensureAssets();
           }, 900 * assetRetryCount);

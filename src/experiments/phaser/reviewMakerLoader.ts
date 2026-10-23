@@ -69,7 +69,7 @@ export const createReviewMakerRendererLoader = (scope: ReviewScope): ReviewMaker
     if (typeof window.requestIdleCallback === 'function') {
       idleHandle = window.requestIdleCallback(warm, { timeout: 1800 });
     } else {
-      timeoutHandle = globalThis.setTimeout(warm, 900);
+      timeoutHandle = window.setTimeout(warm, 900);
     }
 
     return () => {

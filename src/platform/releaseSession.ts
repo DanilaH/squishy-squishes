@@ -68,7 +68,7 @@ export const installReleaseSession = (
   const showInterstitialIfEligible = async (eligibleActions = 1): Promise<void> => {
     if (
       disposed
-      || runtime.kind !== 'yandex'
+      || !(runtime.capabilities?.interstitial ?? runtime.kind === 'yandex')
       || adInFlight
       || !isNaturalBreak()
       || performance.now() - Number(root.dataset.lastRewardAt ?? -Infinity) < 150_000
@@ -105,8 +105,12 @@ export const installReleaseSession = (
   let bannerDesired: boolean | null = null;
   let bannerQueue = Promise.resolve();
   const syncBanner = (): void => {
-    if (runtime.kind !== 'yandex' || import.meta.env.VITE_STICKY_BANNER_CONTROL !== '1') return;
-    const visible = ['library', 'squeeze'].includes(currentStage());
+    if (!(runtime.capabilities?.banner ?? (runtime.kind === 'yandex' && import.meta.env.VITE_STICKY_BANNER_CONTROL === '1'))) return;
+    const modal = [...root.querySelectorAll<HTMLElement>('[role="dialog"], dialog[open], [data-room-editing="true"]')].some(node => node.getClientRects().length > 0);
+    const tutorial = root.querySelector('[data-guide-skip], [data-room-decor-hint]');
+    const visible = runtime.kind === 'android'
+      ? !modal && !tutorial && !runtime.activity.isBlocked()
+      : ['library', 'squeeze'].includes(currentStage());
     if (bannerDesired === visible) return;
     bannerDesired = visible;
     bannerQueue = bannerQueue.then(async () => {
@@ -115,6 +119,7 @@ export const installReleaseSession = (
       runtime.analytics.track('banner_visibility_result', { requested: visible, showing: result.isShowing });
     }).catch(error => console.error('[squishy:banner]', error));
   };
+  const unsubscribeBanner = runtime.activity.onBlockedChange(() => syncBanner());
   syncBanner();
   const handleStageChange = (): void => {
     syncBanner();
@@ -164,7 +169,7 @@ export const installReleaseSession = (
     subtree: true,
     childList: true,
     attributes: true,
-    attributeFilter: ['data-stage', 'hidden'],
+    attributeFilter: ['data-stage', 'hidden', 'data-room-editing'],
   });
 
   const handleClick = (event: MouseEvent): void => {
@@ -193,6 +198,8 @@ export const installReleaseSession = (
     dispose() {
       if (disposed) return;
       disposed = true;
+      unsubscribeBanner();
+      void runtime.ads.setStickyBannerVisible(false).catch(() => undefined);
       stageObserver.disconnect();
       root.removeEventListener('click', handleClick);
       const stage = currentStage();

@@ -1,0 +1,19 @@
+/* Android's native banner shrinks the WebView. Keep the action row fixed even
+   when short landscape leaves less height than the authored catalog contents. */
+@media (max-height: 520px) {
+  body[data-release-platform='android'] #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-panel {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: 100%;
+    align-self: stretch;
+    align-content: start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+  body[data-release-platform='android'] #app [data-crafting='true'] .craft-actions {
+    position: relative;
+    z-index: 2;
+    min-height: 44px;
+  }
+}

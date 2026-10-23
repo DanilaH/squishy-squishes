@@ -27,7 +27,7 @@ const renderFatal = (error: unknown): void => {
   root.innerHTML = `<main class="lab-shell"><section class="recipe-panel"><strong>${copy.fatal.title}</strong><span>${copy.fatal.retry}</span></section></main>`;
 };
 
-const appearanceProbe = import.meta.env.VITE_PLATFORM !== 'yandex'
+const appearanceProbe = import.meta.env.VITE_PLATFORM !== 'yandex' && import.meta.env.VITE_PLATFORM !== 'android'
   && new URLSearchParams(window.location.search).get('appearanceProbe') === '1';
 
 if (appearanceProbe) {
