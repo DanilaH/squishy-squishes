@@ -95,3 +95,38 @@ jobs:
         with:
           name: android-native-evidence
           path: test-results/android-native/
+
+  android-live-config:
+    # Same-repository PRs only; fork code must never receive service credentials.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v4
+      - run: npm ci
+      - name: Validate live configuration and prepare release
+        run: npm run android:prepare
+        env:
+          SQUISHY_BUILD_FLAVOR: release
+          ADS_MODE: live
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          APPMETRICA_API_KEY: ${{ secrets.APPMETRICA_API_KEY }}
+          YANDEX_BANNER_AD_UNIT_ID: ${{ secrets.YANDEX_BANNER_AD_UNIT_ID }}
+          YANDEX_INTERSTITIAL_AD_UNIT_ID: ${{ secrets.YANDEX_INTERSTITIAL_AD_UNIT_ID }}
+          YANDEX_REWARDED_AD_UNIT_ID: ${{ secrets.YANDEX_REWARDED_AD_UNIT_ID }}
+      - name: Compile unsigned live APK
+        working-directory: android
+        run: ./gradlew --no-daemon assembleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: squishy-android-unsigned-live
+          path: android/app/build/outputs/apk/release/*.apk
