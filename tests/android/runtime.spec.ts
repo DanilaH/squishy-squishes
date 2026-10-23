@@ -62,7 +62,7 @@ test('native receipt recovers after acknowledgement failure without another ad',
   await page.locator('[data-guide-skip]').click();
   await page.locator('[data-shape="mochi-cat"]').click();
   await page.evaluate(() => { (window as any).__failNativeAck = true; });
-  await page.locator('[data-preview-unlock]').click();
+  await page.locator('[data-preview-open]').click();
   await expect.poll(() => page.evaluate(() => !!localStorage.getItem('test.native.pending'))).toBe(true);
   await page.reload();
   await expect(page.locator('[data-phaser-ready=true]')).toBeVisible();
