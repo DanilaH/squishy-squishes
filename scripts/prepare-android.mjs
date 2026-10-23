@@ -7,7 +7,7 @@ const appId = release ? 'com.danilah.squishysquishes' : 'com.danilah.squishysqui
 const names = ['APPMETRICA_API_KEY', 'YANDEX_BANNER_AD_UNIT_ID', 'YANDEX_INTERSTITIAL_AD_UNIT_ID', 'YANDEX_REWARDED_AD_UNIT_ID'];
 const values = Object.fromEntries(names.map(name => [name, (process.env[name] ?? '').trim()]));
 const live = process.env.ADS_MODE === 'live';
-if (release && (!live || names.some(name => !values[name]))) throw new Error('Release requires ADS_MODE=live and all four mobile configuration values');
+if (release && (!live || names.some(name => (name !== 'APPMETRICA_API_KEY' || analyticsEnabled) && !values[name]))) throw new Error('Release requires ADS_MODE=live and all four mobile configuration values');
 if (!release && live) throw new Error('Preview builds use demo ads; live ads require the release flavor');
 for (const name of names) {
   if (values[name] && !(name === 'APPMETRICA_API_KEY' ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i : /^R-M-\d+-\d+$/).test(values[name])) throw new Error(`Invalid format: ${name}`);

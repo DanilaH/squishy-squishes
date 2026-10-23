@@ -38,9 +38,36 @@ for (const locale of ['ru-RU', 'en-US']) for (const viewport of [{width:320,heig
       await page.locator('[data-action="home"]').click();
       await expect(page.locator('[data-sandbox-library]')).toBeVisible();
       await page.screenshot({path:info.outputPath('room-with-banner-reservation.png')});
+      await page.locator('.room-edit-open').click();
+      await expect(page.locator('[data-room-edit-cancel]')).toBeVisible();
+      await page.evaluate(() => (window as any).__nativeEvent('backButton', {}));
+      await expect(page.locator('[data-room-edit-cancel]')).not.toBeVisible();
+      await page.locator('[data-room-collection]').click();
+      await expect(page.locator('[data-room-back]')).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(true);
+      await page.evaluate(() => (window as any).__nativeEvent('backButton', {}));
+      await expect(page.locator('[data-room-collection]')).toBeVisible();
       await page.reload();
       await expect(page.locator('[data-sandbox-library]')).toBeVisible();
       expect(errors).toEqual([]);
     } finally { await context.close(); }
   });
 }
+
+
+test('native receipt recovers after acknowledgement failure without another ad', async ({page}) => {
+  await installAndroidBridge(page);
+  await page.goto('/android/');
+  await expect(page.locator('[data-phaser-ready=true]')).toBeVisible();
+  await page.locator('[data-guide-skip]').click();
+  await page.locator('[data-shape="mochi-cat"]').click();
+  await page.evaluate(() => { (window as any).__failNativeAck = true; });
+  await page.locator('[data-preview-unlock]').click();
+  await expect.poll(() => page.evaluate(() => !!localStorage.getItem('test.native.pending'))).toBe(true);
+  await page.reload();
+  await expect(page.locator('[data-phaser-ready=true]')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('test.native.pending'))).toBe(null);
+  await page.locator('[data-shape="mochi-cat"]').click();
+  await expect(page.locator('[data-catalog-preview]')).not.toBeVisible();
+  expect(await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => call.method === 'show').length)).toBe(0);
+});

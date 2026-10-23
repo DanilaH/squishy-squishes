@@ -23,8 +23,14 @@ final class DurableStore {
   }
   synchronized String get(String key) throws Exception {
     AtomicFile file = file(key);
-    if (!file.exists()) return null;
-    String value = new String(file.readFully(), StandardCharsets.UTF_8);
+    final String value;
+    try { value = new String(file.readFully(), StandardCharsets.UTF_8); }
+    catch (java.io.FileNotFoundException error) {
+      // openRead performs AtomicFile backup recovery. Treat only genuinely absent
+      // files as empty; an unreadable existing save must never become a new game.
+      if (file.getBaseFile().exists() || new File(file.getBaseFile().getPath() + ".bak").exists()) throw error;
+      return null;
+    }
     return value.equals("null") ? null : new org.json.JSONArray("[" + value + "]").getString(0);
   }
   synchronized void set(String key, String value) throws Exception {

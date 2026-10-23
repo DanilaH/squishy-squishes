@@ -26,7 +26,7 @@ import java.util.UUID;
 
 @CapacitorPlugin(name = "SquishyServices")
 public class SquishyServicesPlugin extends Plugin {
-  private static final long INTERVAL = 180000L, RETRY = 60000L;
+  private static final long INTERVAL = 150000L, FIRST_GRACE = 120000L, RETRY = 60000L;
   private final Handler handler = new Handler(Looper.getMainLooper());
   private SharedPreferences prefs;
   private boolean initialized, destroyed, resumed = true, loadingInterstitial, loadingRewarded;
@@ -51,7 +51,7 @@ public class SquishyServicesPlugin extends Plugin {
   @Override public void load() {
     store = new DurableStore(getContext());
     prefs = getContext().getSharedPreferences("squishy-monetization", 0);
-    if (!prefs.contains("last_fullscreen")) prefs.edit().putLong("last_fullscreen", System.currentTimeMillis()).apply();
+    if (!prefs.contains("first_open")) prefs.edit().putLong("first_open", System.currentTimeMillis()).apply();
     getActivity().runOnUiThread(() -> {
       installDock();
       YandexAds.initialize(getContext(), () -> getActivity().runOnUiThread(() -> {
@@ -150,8 +150,10 @@ public class SquishyServicesPlugin extends Plugin {
     String kind = call.getString("kind", "");
     if (!kind.equals("rewarded") && !kind.equals("interstitial")) { call.reject("Invalid format"); return; }
     if (destroyed || !resumed || showing != null || !initialized || !enabled()) { call.resolve(new JSObject().put("status", "unavailable")); return; }
-    long since = System.currentTimeMillis() - prefs.getLong("last_fullscreen", System.currentTimeMillis());
-    if (kind.equals("interstitial") && (since < INTERVAL || interstitial == null)) {
+    long now = System.currentTimeMillis();
+    long since = now - prefs.getLong("last_fullscreen", 0L);
+    long firstSession = now - prefs.getLong("first_open", now);
+    if (kind.equals("interstitial") && (firstSession < FIRST_GRACE || since < INTERVAL || interstitial == null)) {
       call.resolve(new JSObject().put("status", "skipped")); preloadAds(); return;
     }
     if (kind.equals("rewarded") && (rewarded == null || (receipt() != null || unsavedReward != null) || call.getString("attempt", "").isEmpty())) {

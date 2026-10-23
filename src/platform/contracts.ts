@@ -1,5 +1,4 @@
 import type { AnalyticsAdapter, GameplayActivityCoordinator, StorageAdapter } from '@danilah/mini-games-kit/platform';
-import type { AdsAdapter, RewardedRequest, RewardedResult } from '@danilah/mini-games-kit/yandex';
 import type { Language } from '../i18n';
 
 export interface NativeRewardReceipt { token: string; attempt: string }
@@ -8,8 +7,10 @@ export interface SquishyPlatformRuntime {
   language: Language;
   storage: StorageAdapter;
   analytics: AnalyticsAdapter;
-  ads: Omit<AdsAdapter, 'showRewarded'> & {
-    showRewarded(request: RewardedRequest & { context?: string }): Promise<RewardedResult>;
+  ads: {
+    showRewarded(request: { rewardId: string; context?: string; onReward(): Promise<void> | void }): Promise<{ status: 'closed' | 'error'; rewardEarned: boolean; error?: string }>;
+    showInterstitial(): Promise<{ status: 'closed' | 'error' | 'offline'; wasShown: boolean; error?: string }>;
+    setStickyBannerVisible(visible: boolean): Promise<{ isShowing: boolean; reason?: string }>;
   };
   activity: GameplayActivityCoordinator;
   capabilities?: { interstitial: boolean; banner: boolean };
