@@ -28,7 +28,7 @@ export async function createAndroidRuntime(): Promise<SquishyPlatformRuntime> {
     activity.setBlocked('native-background', !(await App.getState()).isActive);
     listeners.push(await App.addListener('backButton', () => {
       if (fullscreen || activity.isBlocked()) return;
-      if (!handleAndroidBack()) void App.minimizeApp();
+      if (!handleAndroidBack()) void App.minimizeApp().catch(error => console.error('[android:back]', error));
     }));
     const config = await bridge.initialize();
     const show = async (kind: 'interstitial' | 'rewarded', attempt?: string) => {
@@ -77,7 +77,7 @@ export async function createAndroidRuntime(): Promise<SquishyPlatformRuntime> {
         if (disposed) return;
         disposed = true;
         removeVisibility();
-        for (const listener of listeners) void listener.remove();
+        for (const listener of listeners) void listener.remove().catch(() => undefined);
         void bridge.banner({ visible: false }).catch(() => undefined);
       },
     };

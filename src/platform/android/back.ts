@@ -12,5 +12,6 @@ export function handleAndroidBack(root: ParentNode = document): boolean {
   if (click('[data-action="try-return"]')) return true;
   if (click('[data-action="exit-craft"]')) return true;
   if (click('[data-action="home"], [data-ideas-back], [data-room-back]')) return true;
-  return !!root.querySelector('[data-sandbox-app], [role="dialog"]');
+  return [...root.querySelectorAll<HTMLElement>('[data-sandbox-app], [role="dialog"]')]
+    .some(node => !node.closest('[data-library-live]') && node.getClientRects().length > 0);
 }

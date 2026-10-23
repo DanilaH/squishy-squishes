@@ -57,6 +57,8 @@ try:
     wait('document.querySelector("[data-sandbox-app]")?.dataset.saveComplete === "true"')
     click('[data-action="home"]')
     wait('document.querySelector("[data-sandbox-library]")?.dataset.libraryCount === "1"')
+    wait('Math.abs(document.querySelector("[data-sandbox-library]").getBoundingClientRect().height-innerHeight) < 2')
+    time.sleep(2)
     screenshot('portrait-room')
     portrait = evaluate('({width:innerWidth,height:innerHeight,screenHeight:screen.height,overflow:document.documentElement.scrollHeight>innerHeight})')
     assert not portrait['overflow'], portrait
@@ -73,8 +75,12 @@ try:
     screenshot('landscape-room')
     adb('shell','settings','put','system','user_rotation','0')
     wait('innerHeight > innerWidth')
+    wait('Math.abs(document.querySelector("[data-sandbox-library]").getBoundingClientRect().height-innerHeight) < 2')
+    time.sleep(2)
+    returned = evaluate('({width:innerWidth,height:innerHeight,overflow:document.documentElement.scrollHeight>innerHeight})')
+    assert not returned['overflow'], returned
     screenshot('portrait-return')
-    (OUT/'acceptance.json').write_text(json.dumps({'portrait':portrait,'landscape':landscape,'processDeathSave':True,'backDraftConfirmation':True,'liveAdsVerified':False},indent=2))
+    (OUT/'acceptance.json').write_text(json.dumps({'portrait':portrait,'landscape':landscape,'returned':returned,'processDeathSave':True,'backDraftConfirmation':True,'liveAdsVerified':False},indent=2))
 finally:
     if sock: sock.close()
     (OUT/'logcat.txt').write_text(adb('logcat','-d','-t','1500'))
