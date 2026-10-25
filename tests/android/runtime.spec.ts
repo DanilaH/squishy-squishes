@@ -41,6 +41,7 @@ for (const locale of ['ru-RU', 'en-US']) for (const viewport of [{width:320,heig
       }
       for (const section of ['paint','mixins','decor','shape']) {
         await page.locator(`[data-craft-section="${section}"]`).click(); await check();
+        await page.screenshot({path:info.outputPath(`section-${section}.png`)});
       }
       await page.locator('[data-shape="heart"]').click();
       await page.screenshot({path:info.outputPath('craft-with-banner-reservation.png')});

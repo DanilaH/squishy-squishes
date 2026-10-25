@@ -22,7 +22,7 @@
    this viewport. Spend the remaining height on the toy, not a second header. */
 @media (orientation: portrait) {
   body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) {
-    row-gap: 8px;
+    row-gap: 12px;
   }
 }
 @media (orientation: landscape) and (max-height: 520px) {
@@ -113,7 +113,7 @@
     grid-template-rows: 44px minmax(0,1fr) 44px;
     gap: 8px;
   }
-  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-stage { grid-area: 2 / 1; }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-stage { grid-area: 1 / 1 / 3 / 2; }
   body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-controls { grid-area: 3 / 1; }
   body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-copy {
     grid-area: 1 / 1;
@@ -149,4 +149,11 @@
     font-size: 12px;
   }
   body[data-release-platform='android'] #app .first-room-decor-hint p { font-size: 12px; }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-canvas {
+    --squish-seat-size: min(110cqh, 90cqw, 420px);
+  }
+  body[data-release-platform='android'] #app .first-room-decor-hint p { flex-basis: 100%; margin: 0; }
 }
