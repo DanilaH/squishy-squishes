@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { installAndroidBridge } from '../android-bridge';
 
-for (const locale of ['ru-RU', 'en-US']) for (const viewport of [{width:320,height:508},{width:390,height:724},{width:740,height:300}]) {
+for (const locale of ['ru-RU', 'en-US']) for (const viewport of [{width:320,height:508},{width:390,height:724},{width:740,height:300},{width:640,height:240}]) {
   test(`Android usable viewport ${locale} ${viewport.width}x${viewport.height}`, async ({browser,baseURL}, info) => {
     const context = await browser.newContext({baseURL,locale,viewport,reducedMotion:'reduce'});
     const page = await context.newPage();
@@ -24,6 +24,21 @@ for (const locale of ['ru-RU', 'en-US']) for (const viewport of [{width:320,heig
       };
       await check();
       await page.locator('[data-guide-skip]').click();
+      if (viewport.width > viewport.height) {
+        const scene = (await page.locator('.sandbox-stage').boundingBox())!;
+        const nav = (await page.locator('.craft-sections').boundingBox())!;
+        const controls = (await page.locator('.sandbox-controls').boundingBox())!;
+        // A reachable Save button alone does not establish a playable scene.
+        expect(scene.width).toBeGreaterThanOrEqual(260);
+        expect(scene.height).toBeGreaterThanOrEqual(viewport.height - 80);
+        expect(nav.x).toBeGreaterThanOrEqual(scene.x + scene.width);
+        expect(controls.y - nav.y - nav.height).toBeGreaterThanOrEqual(8);
+        expect(controls.x).toBeGreaterThanOrEqual(scene.x + scene.width);
+      } else {
+        const top = (await page.locator('.sandbox-topbar').boundingBox())!;
+        const nav = (await page.locator('.craft-sections').boundingBox())!;
+        expect(nav.y - top.y - top.height).toBeGreaterThanOrEqual(8);
+      }
       for (const section of ['paint','mixins','decor','shape']) {
         await page.locator(`[data-craft-section="${section}"]`).click(); await check();
       }
