@@ -50,6 +50,7 @@ for (const locale of ['ru-RU', 'en-US']) for (const viewport of [{width:320,heig
       await expect(page.locator('[data-action="exit-cancel"]')).not.toBeVisible();
       await page.locator('.craft-actions [data-action="save"]').click();
       await expect(page.locator('[data-sandbox-app]')).toHaveAttribute('data-save-complete','true');
+      await page.screenshot({path:info.outputPath('saved-squeeze.png')});
       await page.locator('[data-action="home"]').click();
       await expect(page.locator('[data-sandbox-library]')).toBeVisible();
       await page.screenshot({path:info.outputPath('room-with-banner-reservation.png')});

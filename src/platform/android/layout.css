@@ -22,7 +22,7 @@
    this viewport. Spend the remaining height on the toy, not a second header. */
 @media (orientation: portrait) {
   body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) {
-    row-gap: 10px;
+    row-gap: 8px;
   }
 }
 @media (orientation: landscape) and (max-height: 520px) {
@@ -67,6 +67,7 @@
     margin: 0;
     padding: 6px;
     border-radius: 16px;
+    scroll-padding-top: 64px;
     gap: 8px;
     display: flex;
     flex-direction: column;
@@ -97,4 +98,55 @@
   }
   body[data-release-platform='android'] #app .sandbox-shell:has([data-guide-hint]) .sandbox-stage { margin-bottom: 44px; }
   body[data-release-platform='android'] #app [data-try-on='true'][data-craft-workspace] .sandbox-stage { grid-column: 1 / -1 !important; }
+}
+
+/* Short portrait needs a smaller tray, not a smaller toy. */
+@media (orientation: portrait) and (max-height: 620px) {
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) {
+    --studio-controls-height: clamp(200px, 44dvh, 260px);
+  }
+}
+/* Once saved, the tool column is gone: play across the width with one action row. */
+@media (orientation: landscape) and (max-height: 520px) {
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) {
+    grid-template-columns: minmax(0,1fr);
+    grid-template-rows: 44px minmax(0,1fr) 44px;
+    gap: 8px;
+  }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-stage { grid-area: 2 / 1; }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-controls { grid-area: 3 / 1; }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-copy {
+    grid-area: 1 / 1;
+    width: calc(100% - 160px);
+    justify-self: start;
+    align-items: start;
+    pointer-events: none;
+  }
+  body[data-release-platform='android'] #app [data-crafting='false'][data-craft-workspace] .sandbox-copy > p { display: none; }
+  body[data-release-platform='android'] #app[data-jelly-ui-ready] [data-crafting='false'][data-craft-workspace] [data-panel='squeeze'] {
+    display: flex;
+    width: 100%;
+    padding: 0;
+    gap: 8px;
+    background: none;
+    border: 0;
+    box-shadow: none;
+  }
+  body[data-release-platform='android'] #app [data-crafting='false'][data-craft-workspace] [data-panel='squeeze'] button {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px !important;
+    max-height: 44px;
+  }
+  body[data-release-platform='android'] #app .sandbox-shell > .first-room-decor-hint {
+    top: 60px;
+    bottom: auto;
+    left: auto;
+    right: 12px;
+    width: min(220px, 40%);
+    height: auto;
+    flex-wrap: wrap;
+    font-size: 12px;
+  }
+  body[data-release-platform='android'] #app .first-room-decor-hint p { font-size: 12px; }
 }
