@@ -44,4 +44,5 @@ manifest = manifest.replace('android:allowBackup="true"', 'android:allowBackup="
 if (!manifest.includes('AUTOMATIC_SDK_INITIALIZATION')) manifest = manifest.replace('</application>', '<meta-data android:name="com.yandex.mobile.ads.AUTOMATIC_SDK_INITIALIZATION" android:value="false" /></application>');
 writeFileSync(manifestPath, manifest);
 execFileSync('npx', ['cap', 'sync', 'android'], { stdio: 'inherit' });
+execFileSync(process.execPath, ['scripts/prepare-android-icon.mjs'], { stdio: 'inherit' });
 console.log(`Android ${release ? 'release' : 'preview'} prepared; ${live ? 'live' : 'demo'} ads. Configuration values are not logged.`);
