@@ -15,7 +15,7 @@ async function checkLanguage(page: Page, ru: boolean) {
 }
 
 for (const locale of ['ru-RU', 'en-US']) test(`localized catalogs, dialogs and ads ${locale}`, async ({ browser, baseURL }, info) => {
-  test.setTimeout(120_000);
+  test.setTimeout(60_000);
   const context = await browser.newContext({ baseURL, locale, viewport: { width: 390, height: 724 }, reducedMotion: 'reduce' });
   const page = await context.newPage();
   const ru = locale.startsWith('ru');
@@ -60,7 +60,7 @@ for (const locale of ['ru-RU', 'en-US']) test(`localized catalogs, dialogs and a
     await page.locator('[data-pedestal-restore]').click();
     await page.locator('[data-room-editor-tab="decor"]').click();
     for (const category of ['furniture', 'shelves', 'posters', 'rugs', 'details']) {
-      await page.locator('[data-room-category-select]').selectOption(category); await checkLanguage(page, ru);
+      await page.locator(`[data-room-category="${category}"]`).click(); await checkLanguage(page, ru);
     }
     await page.locator('[data-room-edit-cancel]').click();
     await page.locator('[data-room-collection]').click();
