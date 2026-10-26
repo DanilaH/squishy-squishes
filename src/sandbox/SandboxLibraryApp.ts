@@ -134,7 +134,7 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     rewardExpanded: 'One permanent place added',
     rewardUnavailable: 'No shelf change. Try again when you want.',
     studioLoading: 'Opening the studio…',
-    studioUnavailable: 'The studio could not start. Try again or use another browser.',
+    studioUnavailable: 'The studio could not start. Try again or restart the game.',
   },
   ru: {
     studio: 'СКВИШ-СТУДИЯ',
@@ -169,7 +169,7 @@ const COPY: Readonly<Record<SandboxLanguage, LibraryCopy>> = {
     rewardExpanded: 'Добавлено одно постоянное место',
     rewardUnavailable: 'Полка не изменилась. Можно попробовать позже.',
     studioLoading: 'Открываем студию…',
-    studioUnavailable: 'Не удалось открыть студию. Попробуй ещё раз или открой игру в другом браузере.',
+    studioUnavailable: 'Не удалось открыть студию. Попробуй ещё раз или перезапусти игру.',
   },
 };
 

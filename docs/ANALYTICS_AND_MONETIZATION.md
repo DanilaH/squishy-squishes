@@ -1,378 +1,61 @@
-# Squishy Squishes — Analytics & Monetization
-
-**Status:** HISTORICAL PRE-DEVELOPMENT PROPOSAL
-
-Current forward plan: [15 October release monetization and scalable collection](MONETIZATION_RELEASE_ROADMAP_2026-10-15.md). This older proposal does not define the current ad cadence or item ownership.
-
-The game should not acquire an economy merely to create ad hooks. Monetization fits between completed tactile loops.
-
----
-
-## 1. Analytics principles
-
-- Keep the event contract compact.
-- Every event should answer a concrete activation, retention, content, performance or monetization question.
-- Never emit PII.
-- Never log raw pointer movement.
-- Keep transport/platform details outside gameplay modules.
-- Prefer semantic stage/result events over animation events.
-- Do not create analytics events merely because a callback exists.
-
-Production transport is expected through the shared runtime / Metrica adapter.
-
----
-
-## 2. Primary activation funnel
-
-Recommended first-session funnel:
-
-```text
-platform_ready
-→ first_tactile_interaction
-→ craft_started
-→ first_reveal_complete
-→ first_result_squeeze
-→ result_collected
-→ second_craft_started
-```
-
-The most useful product question is whether players move from first reward into another craft.
-
----
-
-## 3. Core event contract
-
-### Platform / activation
-
-#### `platform_ready`
-One-shot playable runtime marker aligned with platform ready semantics.
-
-Suggested params:
-
-- `runtime`: `mock | yandex`
-- `language`
-
-#### `first_tactile_interaction`
-First successful meaningful player interaction for a fresh save.
-
-Suggested params:
-
-- `stage`
-- `recipeId`
-
-Emit once.
-
----
-
-### Recipe / crafting
-
-#### `recipe_selected`
-Player selects a recipe.
-
-Params:
-
-- `recipeId`
-- `shapeId`
-- `tier`
-- `completedBefore`
-
-#### `craft_started`
-First semantic interaction of a craft instance.
-
-Params:
-
-- `recipeId`
-- `shapeId`
-- `tier`
-- `isRepeat`
-
-#### `craft_stage_complete`
-One event per completed semantic stage, not per visual beat.
-
-Params:
-
-- `recipeId`
-- `stage`
-- optional `elapsedMs` if measured reliably
-
-Do not log high-frequency progress.
-
-#### `reveal_complete`
-Finished result reaches stable revealed state.
-
-Params:
-
-- `recipeId`
-- `shapeId`
-- `tier`
-- `isFirstCompletion`
-
-#### `first_result_squeeze`
-First meaningful test squeeze on the current revealed result.
-
-Params:
-
-- `recipeId`
-- `tier`
-
-One event per craft at most.
-
-#### `result_collected`
-Player accepts/exits completed result.
-
-Params:
-
-- `recipeId`
-- `tier`
-- `isFirstCompletion`
-- `labXpAwarded`
-- `rankAfter`
-- `unlockedCount`
-
-This is the natural post-loop monetization eligibility boundary.
-
----
-
-### Progression / collection
-
-#### `lab_rank_up`
-Params:
-
-- `rankBefore`
-- `rankAfter`
-- `unlockCount`
-
-#### `recipe_unlocked`
-Only if per-recipe unlock analysis is useful; otherwise rank-up params may be enough.
-
-Params:
-
-- `recipeId`
-- `shapeId`
-- `tier`
-- `source`: `rank | other`
-
-#### `collection_open`
-Params:
-
-- `completed`
-- `total`
-
-#### `collection_item_open`
-Player opens a completed item for revisit squeeze.
-
-Params:
-
-- `recipeId`
-- `shapeId`
-- `tier`
-
-#### `collection_milestone`
-Params:
-
-- `kind`
-- `current`
-- `total`
-
-Avoid separate events for every decorative celebration.
-
----
-
-## 4. Useful product cuts
-
-Questions the contract should answer:
-
-### Activation
-
-`platform_ready → craft_started → reveal_complete → result_collected`
-
-Where do first-time players disappear?
-
-### Core repeat
-
-`result_collected(first) → second_craft_started`
-
-Does the first reward create “one more” behavior?
-
-### Tactile reward use
-
-`reveal_complete → first_result_squeeze → result_collected`
-
-Do players actually touch the finished object or immediately skip past it?
-
-### Content desirability
-
-Compare recipe selection/completion/replay rates by:
-
-- shape;
-- tier;
-- material family.
-
-### Collection engagement
-
-`collection_open → collection_item_open`
-
-Is collection a useful replay destination or dead UI?
-
-### Monetization
-
-Compare ad eligibility/request/grant behavior against loop continuation, but avoid overfitting the first small traffic sample.
-
----
-
-## 5. Interstitial strategy
-
-### Placement
-
-Only request interstitials at a natural boundary after a completed result is accepted/collected and before the next craft becomes active.
-
-Never interrupt:
-
-- pour;
-- mix/squish;
-- mold press;
-- reveal impact;
-- result squeeze;
-- collection revisit squeeze.
-
-### Local eligibility
-
-Use shared `ActionInterstitialGate` or an equally small policy around it.
-
-Requirements:
-
-- initial grace period after game ready;
-- minimum wall-clock interval between requests;
-- minimum number of collected craft results between requests;
-- consume eligibility on ad **request**, not only successful impression, so no-fill/error does not cause SDK hammering;
-- request synchronously from the player's result-exit action rather than a delayed background timer.
-
-### Starting tuning prior
-
-Signal 2000 used a deliberately conservative policy around roughly:
-
-- 180 seconds initial grace;
-- 180 seconds minimum request interval;
-- 4 meaningful results between requests.
-
-For Squishy these are **starting reference values only**, not locked balance. Craft duration differs and must be measured first.
-
-A plausible first Squishy test is similarly conservative: no interstitial during the first several crafts and never on every result.
-
----
-
-## 6. Rewarded strategy
-
-The original Lab XP proposal is superseded by the sandbox pivot. S4 deliberately keeps titles as derived meta with no XP/rank authority, so rewarded monetization must not resurrect XP.
-
-### S5 selected MVP: permanent shelf expansion
-
-One explicit rewarded offer is allowed:
-
-`8 saved slots → watch one rewarded video → 10 saved slots permanently`
-
-Why this fits the current product:
-
-- free creation remains unchanged;
-- the existing free replace/delete flow remains available at full capacity;
-- value is durable and easy to explain;
-- SaveState V3 already has `libraryCapacity` and `unlockedRewardIds`;
-- no currency, shop, random reward or new cosmetic production is required;
-- the CTA can appear only when the free 8-slot shelf is actually full.
-
-S5 must not add a second rewarded offer. Cosmetic/material/accessory packs remain later candidates after the rewarded lifecycle itself is proven.
-
-### Explicitly avoid for S5
-
-- rewarded XP or title progress;
-- ad-only Ideas or core creation tools;
-- random chests;
-- energy refill;
-- skip-stage ads;
-- rewarded quality boosts;
-- repeated shelf-expansion tiers;
-- rewarded prompts during active creation or first-result Squeeze.
-
-## 7. Reward grant contract
-
-Rewarded-ad reward semantics must be durable domain work, not presentation work.
-
-Conceptually:
-
-```text
-show rewarded
-→ adapter confirms reward earned
-→ compute exact XP grant from authoritative state
-→ persist state
-→ analytics grant event
-→ animate already-owned XP to destination
-```
-
-If the callback can retry or ambiguity becomes possible, use an idempotent reward ID / existing adapter contract and test the exact lifecycle.
-
-Do not grant from a tween completion callback.
-
----
-
-## 8. Ad lifecycle analytics
-
-Reuse shared adapter lifecycle events where available / useful rather than duplicating them in every scene.
-
-Expected diagnostic vocabulary can include:
-
-- `ad_interstitial_request`
-- `ad_interstitial_open`
-- `ad_interstitial_close`
-- `ad_interstitial_error`
-- `ad_rewarded_request`
-- `ad_rewarded_open`
-- `ad_rewarded_grant`
-- `ad_rewarded_close`
-- `ad_rewarded_error`
-
-Squishy may add one semantic rewarded-offer event if needed, e.g. `xp_reward_offer_shown` / `xp_reward_offer_accepted`, but only if it answers conversion questions not already observable from request/grant events.
-
----
-
-## 9. Ads and activity
-
-Ad adapter / activity coordinator must own gameplay blocking edges.
-
-While an ad owns foreground:
-
-- stop new tactile input;
-- release pointer capture;
-- quiet/pause owned audio;
-- stop or pause expensive hero simulation as appropriate;
-- never resume until all blockers are clear.
-
-Test visibility + platform pause + ad overlap, not only happy-path ad close.
-
----
-
-## 10. Sticky/banner ads
-
-Default MVP position: **no sticky banner over the tactile lab**.
-
-Reasons:
-
-- hero object benefits from visual breathing room;
-- input area is large;
-- permanent ad chrome undermines premium-toy presentation;
-- interstitial + one rewarded offer may be sufficient for the first release.
-
-Reconsider only with product/revenue evidence after launch or if Yandex economics require it.
-
----
-
-## 11. No monetization-led scope growth
-
-Do not add:
-
-- currency merely to sell/boost it;
-- shop merely to host rewarded ads;
-- luck system merely to create a rewarded luck boost;
-- inventory limits merely to sell convenience;
-- randomization merely to create rerolls.
-
-The project's advantage is a cheap tactile loop. Monetization should parasitize natural boundaries minimally, not redesign the game around ads.
+# Release analytics contract — 26 October 2026
+
+This is the current sandbox/Android contract. The superseded recipe/XP proposal
+is recoverable at commit `6bb013fa7473b0071a02b5ed8a0819ceaf87cb9c` in this path.
+Monetization policy remains in [MONETIZATION_RELEASE_ROADMAP_2026-10-15.md](MONETIZATION_RELEASE_ROADMAP_2026-10-15.md);
+native integration and validation boundaries are in [RUSTORE_MIGRATION.md](RUSTORE_MIGRATION.md).
+
+## Product events
+
+| Event | Meaning / parameters |
+| --- | --- |
+| `session_ready` | Once per mounted game, not per Android foreground: platform, language, mode. AppMetrica owns native session lifecycle. |
+| `screen_view` | Changed visible screen: room, collection, ideas, room_editor, shape, paint, mixins, decor, squeeze (legacy stages may also occur). Re-rendering the same screen does not emit again. |
+| `tutorial_start` | Active first-craft guide at startup; resumed indicates an existing draft. |
+| `tutorial_result` | Guide status changes to skipped/done. Repeated draft checkpoints do not emit. |
+| `craft_start` | Enter a new craft from room/collection, Ideas or saved play. Section navigation is not another craft. |
+| `craft_save` | Successful durable new-toy write only, including replacement: shape, material, mode=create/replace, completedCrafts, count. Preview, cancellation and failed writes do not count. |
+| `craft_edit_save` | Successful durable edit: shape, material, mode=edit, completedCrafts, count. Does not increment new crafts. |
+| `first_result_squeeze` | First counted interaction in each saved Squeeze visit; shape, material. Free try-on does not count. |
+| `mute_toggle` | Actual resulting muted boolean. |
+| `session_end_mid_craft` | Best-effort disposal marker with stage. Process termination can omit it; do not use it as an authoritative abandonment count. |
+| `collection_write_failed` | Failed durable write; count, capacity. No serialized save, user text or raw error included. |
+
+## Reward and ad events
+
+| Event | Meaning / parameters |
+| --- | --- |
+| `catalog_preview`, `catalog_unlock`, `catalog_use` | Stable catalog item key. Unlock is successful offer UI completion; use is durable craft usage, with mode and legacy flags. |
+| `reward_offer_click` | Explicit offer request, item key (capacity or catalog key). |
+| `reward_result` | Normal result: item, earned, capacity. A storage/SDK/ack exception instead has status=storage-or-sdk-error, outcome=unknown, **no earned=false claim**: the grant may already be saved. |
+| `reward_recovered` | Native receipt durably applied and acknowledged: item, capacity. May recover an already applied idempotent grant; not a new ad/impression. |
+| `interstitial_request`, `interstitial_result` | Product eligible request and result, completedCrafts/status/wasShown. Separate from SDK preloads. |
+| `banner_visibility_result` | Requested UI policy. Android reports managed=native and deliberately omits showing: bridge completion cannot prove an impression. |
+| `ad_request`, `ad_loaded`, `ad_load_error` | Native SDK load lifecycle; format=banner/interstitial/rewarded. Requests can be preloads, not explicit player offers. |
+| `ad_shown`, `ad_impression`, `ad_clicked`, `ad_closed`, `ad_show_error` | Native SDK callbacks, format. Use impression callbacks for actual ad impressions. |
+| `ad_reward_earned` | SDK reward callback, before persistence; not proof of a saved entitlement. |
+| `ad_reward_persisted`, `ad_reward_persist_error` | Immediate native receipt write result. A later recovery can succeed after a persist error. |
+
+Native events add `test` from build configuration. Live service IDs are not sent
+as event parameters. Preview has no analytics key by default; a separate test
+key is required. `VITE_ANALYTICS=none` omits the native key and disables JS reports.
+The runtime does not manually send pointer coordinates, saved toy IDs, receipt
+tokens, drafts, names or other player-authored content.
+
+## Transport and evidence
+
+Application initialization activates AppMetrica and enables activity auto-tracking;
+JS reports pass through the Capacitor plugin as JSON event parameters. This matches
+[official custom-event guidance](https://appmetrica.yandex.com/docs/en/sdk/android/analytics/android-operations.html)
+and [lifecycle guidance](https://appmetrica.yandex.com/docs/en/sdk/android/analytics/android-listen).
+
+`tests/android/localization-analytics.spec.ts` exercises the production Android
+web bundle with a test-only native transport: RU/EN catalogs/dialogs/offers,
+page bounds, tutorial/start counts, try-on, failed write/retry, new save vs edit,
+first saved squeeze, unavailable ad and acknowledgement-failure recovery.
+The existing viewport suite covers RU/EN portrait and short landscape.
+
+These tests prove event generation and bridge payloads, not delivery to the live
+AppMetrica project. Final service acceptance still requires one installed live
+APK session and checking its events in that project's reports. Ads and analytics
+service delivery must not be claimed from an emulator demo or mocked bridge.

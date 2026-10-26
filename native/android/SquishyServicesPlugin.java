@@ -184,13 +184,14 @@ public class SquishyServicesPlugin extends Plugin {
           @Override public void onAdImpression(@Nullable ImpressionData data) { event("ad_impression", "rewarded"); }
           @Override public void onRewarded(@NonNull Reward reward) {
             if (showing != call || rewardIssued || receipt() != null) return;
+            event("ad_reward_earned", "rewarded");
             String token = UUID.randomUUID().toString();
             try {
               unsavedReward = new JSObject().put("token", token).put("attempt", showingAttempt);
               store.set("native.reward", unsavedReward.toString());
               unsavedReward = null;
               rewardIssued = true;
-              event("ad_reward_earned", "rewarded");
+              event("ad_reward_persisted", "rewarded");
             } catch (Exception error) {
               event("ad_reward_persist_error", "rewarded");
               // Do not report an uncommitted reward to JavaScript as durable.

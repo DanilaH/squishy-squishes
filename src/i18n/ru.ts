@@ -124,6 +124,6 @@ export const ru = {
   },
   fatal: {
     title: 'Не удалось запустить Сквиши',
-    retry: 'Перезагрузи страницу и попробуй ещё раз.',
+    retry: 'Перезапусти игру и попробуй ещё раз.',
   },
 } satisfies StringShape<typeof en>;

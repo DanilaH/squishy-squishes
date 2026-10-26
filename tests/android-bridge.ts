@@ -20,11 +20,12 @@ export async function installAndroidBridge(page: Page) {
         if (plugin === 'App') return method === 'getState' ? { isActive: true } : {};
         if (method === 'initialize') return { enabled: true, test: true };
         if (method === 'storageGet') return { value: localStorage.getItem(data.key) };
-        if (method === 'storageSet') { localStorage.setItem(data.key, data.value); return {}; }
+        if (method === 'storageSet') { if (win.__failCollectionWrite && data.key === 'squishy.collection.v1') throw new Error('Injected collection write failure'); localStorage.setItem(data.key, data.value); return {}; }
         if (method === 'storageRemove') { localStorage.removeItem(data.key); return {}; }
         if (method === 'pending') return JSON.parse(localStorage.getItem('test.native.pending') ?? '{}');
         if (method === 'acknowledge') { if (win.__failNativeAck) throw new Error('Injected acknowledgement failure'); localStorage.removeItem('test.native.pending'); return {}; }
         if (method === 'show') {
+          if (win.__adUnavailable) return { status: 'unavailable', shown: false };
           const reward = { token: crypto.randomUUID(), attempt: data.attempt };
           if (data.kind === 'rewarded') localStorage.setItem('test.native.pending', JSON.stringify({ reward }));
           return { status: 'closed', shown: true, ...(data.kind === 'rewarded' ? { reward } : {}) };
