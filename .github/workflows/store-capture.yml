@@ -1,0 +1,28 @@
+name: RuStore screenshot capture
+on:
+  push:
+    branches: [media/rustore-screenshots]
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      QA_CHROMIUM_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:android
+      - run: npx playwright test --config=playwright.store.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rustore-screenshots
+          path: |
+            test-results/
+            playwright-report/
