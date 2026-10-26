@@ -121,6 +121,6 @@ export const en = {
   },
   fatal: {
     title: 'Squishies could not start',
-    retry: 'Reload the page to try again.',
+    retry: 'Restart the game and try again.',
   },
 } as const;

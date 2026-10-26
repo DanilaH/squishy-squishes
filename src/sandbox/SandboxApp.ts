@@ -166,7 +166,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     finish: 'FINISH IT',
     home: 'YOUR SQUISHY',
     squeeze: 'SQUEEZE IT',
-    chooseShape: 'Pick any one. They are all yours.',
+    chooseShape: 'Pick a shape. You can try every one for free.',
     paintHint: 'Draw freely. Tap Brush ▾ for palettes and stamps.',
     mixinsHint: 'Tap or drag to scatter. Skip it if you want.',
     mixHint: 'Grab the squishy and really move it around.',
@@ -225,7 +225,7 @@ const COPY: Readonly<Record<SandboxLanguage, SandboxCopy>> = {
     finish: 'ГОТОВО!',
     home: 'ТВОЙ СКВИШ',
     squeeze: 'ЖМЯКАЙ',
-    chooseShape: 'Выбирай любую. Все формы уже открыты.',
+    chooseShape: 'Выбери форму. Любую можно примерить бесплатно.',
     paintHint: 'Рисуй свободно. Кисть ▾ открывает палитры и штампы.',
     mixinsHint: 'Тапай или веди пальцем. Можно вообще пропустить.',
     mixHint: 'Хватай сквиш и хорошенько потяни его.',
@@ -432,6 +432,7 @@ export class SandboxApp {
   private selectedMixIn: MixInId = 'glitter';
   private mixinErase = false;
   private tryOn = false;
+  private resultSqueezed = false;
   private selectedSticker: StickerId = 'heart';
   private decorSection: DecorSection = 'face';
   private authoredPointerId: number | null = null;
@@ -2181,6 +2182,7 @@ export class SandboxApp {
     if (this.toolsOpen) this.setToolsOpen(false);
     this.releasedAt = -Infinity; this.gestureStrength = 0; this.gestureActive = false;
     const overlayChanged = this.options.rendererBackend === 'phaser' && (next === 'squeeze') !== (this.stage === 'squeeze');
+    if (next === 'squeeze' && this.stage !== 'squeeze') this.resultSqueezed = false;
     this.stage = next;
     this.shell.dataset.stage = next;
     const crafting = next === 'shape' || next === 'paint' || next === 'mixins' || next === 'decor';
@@ -2338,6 +2340,10 @@ export class SandboxApp {
     this.gestureStrength = metrics.active ? (this.options.rendererBackend === 'phaser'
       ? heldFaceStrength(metrics.pressDepth, metrics.compression, metrics.maxDisplacement, performance.now() - this.gestureBeganAt)
       : Math.min(1, Math.max(metrics.pressDepth * 2, metrics.compression * 3, metrics.maxDisplacement * 1.5))) : 0;
+    if (this.stage === 'squeeze' && !this.resultSqueezed && metrics.squeezes > Number(this.shell.dataset.sandboxSqueezes ?? 0)) {
+      this.resultSqueezed = true;
+      this.shell.dispatchEvent(new CustomEvent('squishy:result-squeeze', { bubbles: true }));
+    }
     this.shell.dataset.sandboxSqueezes = String(metrics.squeezes);
     this.shell.dataset.fps = String(Math.round(metrics.fps));
     this.shell.dataset.squishMaxDisplacement = metrics.maxDisplacement.toFixed(3);

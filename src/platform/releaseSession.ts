@@ -41,7 +41,7 @@ export const installReleaseSession = (
   const getLegacyShell = (): HTMLElement | null =>
     root.querySelector<HTMLElement>('.lab-shell');
   const currentStage = (): string => {
-    if (sandboxMode) return getSandboxShell()?.dataset.stage ?? getLibraryShell()?.dataset.stage ?? 'library';
+    if (sandboxMode) return getSandboxShell()?.dataset.stage ?? getLibraryShell()?.dataset.stage ?? root.querySelector<HTMLElement>('[data-sandbox-ideas]')?.dataset.stage ?? 'library';
     return getLegacyShell()?.dataset.stage ?? 'select';
   };
 
@@ -68,7 +68,7 @@ export const installReleaseSession = (
   const showInterstitialIfEligible = async (eligibleActions = 1): Promise<void> => {
     if (
       disposed
-      || runtime.kind !== 'yandex'
+      || !(runtime.capabilities?.interstitial ?? runtime.kind === 'yandex')
       || adInFlight
       || !isNaturalBreak()
       || performance.now() - Number(root.dataset.lastRewardAt ?? -Infinity) < 150_000
@@ -105,34 +105,49 @@ export const installReleaseSession = (
   let bannerDesired: boolean | null = null;
   let bannerQueue = Promise.resolve();
   const syncBanner = (): void => {
-    if (runtime.kind !== 'yandex' || import.meta.env.VITE_STICKY_BANNER_CONTROL !== '1') return;
-    const visible = ['library', 'squeeze'].includes(currentStage());
+    if (!(runtime.capabilities?.banner ?? (runtime.kind === 'yandex' && import.meta.env.VITE_STICKY_BANNER_CONTROL === '1'))) return;
+    const modal = [...root.querySelectorAll<HTMLElement>('[role="dialog"], dialog[open], [data-room-editing="true"]')].some(node => node.getClientRects().length > 0);
+    const tutorial = root.querySelector('[data-guide-skip], [data-room-decor-hint]');
+    const visible = runtime.kind === 'android'
+      ? !modal && !tutorial && !runtime.activity.isBlocked()
+      : ['library', 'squeeze'].includes(currentStage());
     if (bannerDesired === visible) return;
     bannerDesired = visible;
     bannerQueue = bannerQueue.then(async () => {
       if (disposed || bannerDesired !== visible) return;
       const result = await runtime.ads.setStickyBannerVisible(visible);
-      runtime.analytics.track('banner_visibility_result', { requested: visible, showing: result.isShowing });
+      runtime.analytics.track('banner_visibility_result', runtime.kind === 'android'
+        ? { requested: visible, managed: 'native' }
+        : { requested: visible, showing: result.isShowing });
     }).catch(error => console.error('[squishy:banner]', error));
   };
+  const unsubscribeBanner = runtime.activity.onBlockedChange(() => syncBanner());
   syncBanner();
+  let previousScreen = '';
+  const trackScreen = (): void => {
+    const library = getLibraryShell();
+    const screen = library?.dataset.roomEditing === 'true' ? 'room_editor'
+      : library?.dataset.roomView ?? currentStage();
+    if (screen === previousScreen) return;
+    previousScreen = screen;
+    runtime.analytics.track('screen_view', { screen });
+  };
+  trackScreen();
   const handleStageChange = (): void => {
     syncBanner();
+    trackScreen();
     const stage = currentStage();
     if (stage === previousStage) return;
 
     if (sandboxMode) {
       const sandboxShell = getSandboxShell();
-      if (stage === 'shape' && ['library', 'squeeze', 'home'].includes(previousStage) && sandboxShell?.dataset.saveKind !== 'edit') {
+      if (stage === 'shape' && ['library', 'ideas', 'squeeze', 'home'].includes(previousStage) && sandboxShell?.dataset.saveKind !== 'edit') {
         runtime.analytics.track('craft_start', selectionParams(sandboxShell));
       }
-      if (SANDBOX_ACTIVE_CRAFT_STAGES.has(previousStage) && stage === 'squeeze' && sandboxShell?.dataset.saveKind !== 'edit') {
+      if (SANDBOX_ACTIVE_CRAFT_STAGES.has(previousStage) && stage === 'squeeze' && sandboxShell?.dataset.saveComplete === 'true' && sandboxShell?.dataset.saveKind !== 'edit') {
         completedCrafts += 1;
         pendingCompletedSaveActions += 1;
-        runtime.analytics.track('craft_save', {
-          ...selectionParams(sandboxShell),
-          completedCrafts,
-        });
+        // craft_save is emitted by bootstrap only after durable persistence.
       }
 
       const enteredLibrary = stage === 'library' && previousStage !== 'library';
@@ -164,7 +179,7 @@ export const installReleaseSession = (
     subtree: true,
     childList: true,
     attributes: true,
-    attributeFilter: ['data-stage', 'hidden'],
+    attributeFilter: ['data-stage', 'hidden', 'data-room-editing', 'data-room-view'],
   });
 
   const handleClick = (event: MouseEvent): void => {
@@ -187,14 +202,19 @@ export const installReleaseSession = (
     }
   };
 
+  const handleSqueeze = (): void => runtime.analytics.track('first_result_squeeze', selectionParams(getSandboxShell()));
+  root.addEventListener('squishy:result-squeeze', handleSqueeze);
   root.addEventListener('click', handleClick);
 
   return {
     dispose() {
       if (disposed) return;
       disposed = true;
+      unsubscribeBanner();
+      void runtime.ads.setStickyBannerVisible(false).catch(() => undefined);
       stageObserver.disconnect();
       root.removeEventListener('click', handleClick);
+      root.removeEventListener('squishy:result-squeeze', handleSqueeze);
       const stage = currentStage();
       const activeStages = sandboxMode ? SANDBOX_ACTIVE_CRAFT_STAGES : LEGACY_ACTIVE_CRAFT_STAGES;
       if (activeStages.has(stage)) runtime.analytics.track('session_end_mid_craft', { stage });

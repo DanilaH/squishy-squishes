@@ -55,7 +55,7 @@ export const bootstrapSquishyApp = async (
   document.body.dataset.releaseBuild = import.meta.env.PROD ? 'production' : 'development';
 
   if (
-    import.meta.env.VITE_PLATFORM !== 'yandex'
+    import.meta.env.VITE_PLATFORM !== 'yandex' && import.meta.env.VITE_PLATFORM !== 'android'
     && new URLSearchParams(window.location.search).get('appearanceProbe') === '1'
     && !options.makerRendererOptions
     && !options.loadMakerRendererOptions
@@ -88,7 +88,12 @@ export const bootstrapSquishyApp = async (
   const onboardingRepository = createOnboardingRepository(runtime.storage, freshPlayer);
   const onboarding = onboardingEnabled ? await onboardingRepository.loadOrDefault(error => reportError('onboarding-load', error)) : undefined;
   let onboardingWrites = Promise.resolve();
+  let previousTutorialStatus = onboarding?.status;
   const persistOnboarding = (state: NonNullable<typeof onboarding>): void => {
+    if (state.status !== previousTutorialStatus) {
+      runtime.analytics.track('tutorial_result', { status: state.status });
+      previousTutorialStatus = state.status;
+    }
     onboardingWrites = onboardingWrites.then(async () => { await onboardingRepository.write(state); await onboardingRepository.flush(); })
       .catch(error => reportError('onboarding-save', error));
   };
@@ -129,7 +134,20 @@ export const bootstrapSquishyApp = async (
   }
 
   const grants = new RewardGrants(runtime.storage, () => saveState, persistSave);
-  try { await withStorageLock('squishy.reward.v1', async () => { saveState = await saveRepository.load(); await grants.recover(); }); } catch (error) { reportError('reward-recovery', error); }
+  const recoverNativeReward = async (): Promise<string | undefined> => {
+    const receipt = await runtime.receipts?.pending();
+    if (!receipt) return undefined;
+    await grants.recoverExternal(receipt.attempt);
+    await runtime.receipts!.acknowledge(receipt.token);
+    const key = (JSON.parse(receipt.attempt) as { key: string }).key;
+    runtime.analytics.track('reward_recovered', { item: key, capacity: saveState.libraryCapacity });
+    return key;
+  };
+  const recoverRewards = async (): Promise<void> => {
+    await grants.recover();
+    await recoverNativeReward();
+  };
+  try { await withStorageLock('squishy.reward.v1', async () => { saveState = await saveRepository.load(); await recoverRewards(); }); } catch (error) { reportError('reward-recovery', error); }
   const requestReward = async (key: string): Promise<boolean> => {
     root.dataset.lastRewardAt = String(performance.now());
     runtime.analytics.track('reward_offer_click', { item: key });
@@ -137,12 +155,13 @@ export const bootstrapSquishyApp = async (
     try {
       const earned = await withStorageLock('squishy.reward.v1', async () => {
         saveState = await saveRepository.load();
-        return grants.request(key, onReward => runtime.ads.showRewarded({ rewardId: key, onReward }));
+        if (await recoverNativeReward() === key) return true;
+        return grants.request(key, (onReward, grant) => runtime.ads.showRewarded({ rewardId: key, onReward, context: JSON.stringify(grant) }));
       });
       runtime.analytics.track('reward_result', { item: key, earned, capacity: saveState.libraryCapacity });
       return earned;
     } catch(error) {
-      runtime.analytics.track('reward_result', { item: key, earned: false, status: 'storage-or-sdk-error' });
+      runtime.analytics.track('reward_result', { item: key, status: 'storage-or-sdk-error', outcome: 'unknown' });
       throw error;
     } finally { root.dataset.lastRewardAt = String(performance.now()); runtime.activity.setBlocked('reward-transaction', false); }
   };
@@ -150,6 +169,13 @@ export const bootstrapSquishyApp = async (
     owns: (key: string) => ownsCatalogItem(saveState, key),
     unlock: requestReward,
     track: (event: string, key: string) => runtime.analytics.track(event, { item: key }),
+  };
+  let completedCrafts = 0;
+  const trackSaved = (draft: Parameters<typeof createSavedSquishy>[0], mode: 'create' | 'replace' | 'edit'): void => {
+    if (mode !== 'edit') completedCrafts += 1;
+    runtime.analytics.track(mode === 'edit' ? 'craft_edit_save' : 'craft_save', {
+      shape: draft.shapeId, material: draft.materialId, mode, completedCrafts, count: saveState.library.length,
+    });
   };
   const trackCatalogUse = (draft: Parameters<typeof createSavedSquishy>[0], mode: string): void => {
     for (const item of draftLockedKeys(draft)) runtime.analytics.track('catalog_use', { item, mode, legacy: saveState.legacyCatalogAccess === true });
@@ -219,6 +245,7 @@ export const bootstrapSquishyApp = async (
       let nextState = appendSavedSquishy(saveState, savedSquishy);
       nextState = completeMatchingIdea(nextState, draft, ideaId);
       await persistSave(nextState);
+      trackSaved(draft, 'create');
       trackCatalogUse(draft, 'create');
       return { savedSquishy, library: saveState.library, completedRecipeIds: saveState.completedRecipeIds, libraryCapacity:saveState.libraryCapacity };
     },
@@ -229,6 +256,7 @@ export const bootstrapSquishyApp = async (
       let nextState = replaceSavedSquishy(saveState, targetId, savedSquishy);
       nextState = completeMatchingIdea(nextState, draft, ideaId);
       await persistSave(nextState);
+      trackSaved(draft, 'replace');
       trackCatalogUse(draft, 'create');
       return { savedSquishy, library: saveState.library, completedRecipeIds: saveState.completedRecipeIds, libraryCapacity:saveState.libraryCapacity };
     },
@@ -237,6 +265,7 @@ export const bootstrapSquishyApp = async (
       assertOwned(draft);
       const nextState = updateSavedSquishy(saveState, targetId, draft);
       await persistSave(nextState);
+      trackSaved(draft, 'edit');
       trackCatalogUse(draft, 'edit');
       const savedSquishy = nextState.library.find(toy => toy.id === targetId)!;
       return { savedSquishy, library: saveState.library, completedRecipeIds: saveState.completedRecipeIds, libraryCapacity:saveState.libraryCapacity };
@@ -255,6 +284,7 @@ export const bootstrapSquishyApp = async (
 
   markStartup('shellRendered');
   const releaseSession = installReleaseSession(root, runtime);
+  if (previousTutorialStatus === 'active') runtime.analytics.track('tutorial_start', { resumed: !!onboarding?.draft });
   const unsubscribeActivity = runtime.activity.onBlockedChange((blocked) => app.setActivityBlocked(blocked));
   runtime.activity.setGameplayDesired(true);
   runtime.markReady();

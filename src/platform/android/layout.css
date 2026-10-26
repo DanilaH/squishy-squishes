@@ -1,0 +1,159 @@
+/* Android's native banner shrinks the WebView. Keep the action row fixed even
+   when short landscape leaves less height than the authored catalog contents. */
+@media (max-height: 520px) {
+  body[data-release-platform='android'] #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-panel {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: 100%;
+    align-self: stretch;
+    align-content: start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+  body[data-release-platform='android'] #app [data-crafting='true'] .craft-actions {
+    position: relative;
+    z-index: 2;
+    min-height: 44px;
+  }
+}
+
+/* Android has already removed native system bars and the advertising dock from
+   this viewport. Spend the remaining height on the toy, not a second header. */
+@media (orientation: portrait) {
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) {
+    row-gap: 12px;
+  }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, .95fr);
+    grid-template-rows: 44px minmax(0, 1fr);
+    gap: 12px;
+    padding: 8px 12px;
+  }
+  body[data-release-platform='android'] #app[data-jelly-ui-ready] .sandbox-shell[data-craft-workspace]:not([data-library-live]) .sandbox-topbar {
+    grid-area: 1 / 1;
+    width: 100%;
+  }
+  body[data-release-platform='android'] #app [data-craft-workspace]:not([data-library-live]) [data-sandbox-brand] { display: none; }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) .sandbox-copy {
+    grid-area: 1 / 2;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 44px;
+  }
+  body[data-release-platform='android'] #app [data-crafting='true'] .craft-sections { width: 100%; gap: 6px; }
+  body[data-release-platform='android'] #app .craft-sections button { font-size: 11px; padding: 4px 2px; }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) .sandbox-stage {
+    grid-area: 2 / 1;
+    padding: 0;
+    min-height: 0;
+  }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) .sandbox-canvas {
+    --squish-seat-size: min(125cqh, 110cqw, 420px);
+    top: 50%;
+  }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) .sandbox-controls {
+    grid-area: 2 / 2;
+    min-height: 0;
+    width: 100%;
+    gap: 8px;
+  }
+  body[data-release-platform='android'] #app [data-craft-workspace]:not([data-library-live]) .sandbox-status { display: none; }
+  body[data-release-platform='android'] #app[data-jelly-ui-ready] .sandbox-shell[data-stage][data-crafting='true'] .sandbox-panel {
+    width: 100%;
+    margin: 0;
+    padding: 6px;
+    border-radius: 16px;
+    scroll-padding-top: 64px;
+    gap: 8px;
+    display: flex;
+    flex-direction: column;
+  }
+  body[data-release-platform='android'] #app [data-crafting='true'] .sandbox-panel > * { flex-shrink: 0; }
+  body[data-release-platform='android'] #app [data-crafting='true'] :is(.free-shape-catalog,.free-mixin-catalog,[data-base-panel='material'],[data-base-panel='light'],.sandbox-decor-section,.sandbox-palette-grid) {
+    height: auto !important;
+    max-height: none;
+    overflow: visible;
+  }
+  body[data-release-platform='android'] #app [data-crafting='true'] :is(.craft-base-tabs,.sandbox-decor-tabs) {
+    position: sticky;
+    top: -6px;
+    z-index: 3;
+    padding-block: 6px;
+    background: #fff8f0;
+  }
+  body[data-release-platform='android'] #app [data-crafting='true'] .craft-scroll-rail { display: none; }
+  body[data-release-platform='android'] #app [data-crafting='true'] [data-catalog-scroll] { padding-right: 0; }
+  body[data-release-platform='android'] #app .sandbox-shell > [data-guide-hint] {
+    left: 12px;
+    right: auto;
+    width: calc((100% - 36px) / 1.95 - 8px);
+    bottom: 8px;
+    height: auto;
+    min-height: 36px;
+    font-size: 12px;
+  }
+  body[data-release-platform='android'] #app .sandbox-shell:has([data-guide-hint]) .sandbox-stage { margin-bottom: 44px; }
+  body[data-release-platform='android'] #app [data-try-on='true'][data-craft-workspace] .sandbox-stage { grid-column: 1 / -1 !important; }
+}
+
+/* Short portrait needs a smaller tray, not a smaller toy. */
+@media (orientation: portrait) and (max-height: 620px) {
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-craft-workspace]:not([data-library-live]) {
+    --studio-controls-height: clamp(200px, 44dvh, 260px);
+  }
+}
+/* Once saved, the tool column is gone: play across the width with one action row. */
+@media (orientation: landscape) and (max-height: 520px) {
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) {
+    grid-template-columns: minmax(0,1fr);
+    grid-template-rows: 44px minmax(0,1fr) 44px;
+    gap: 8px;
+  }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-stage { grid-area: 1 / 1 / 3 / 2; }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-controls { grid-area: 3 / 1; }
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-copy {
+    grid-area: 1 / 1;
+    width: calc(100% - 160px);
+    justify-self: start;
+    align-items: start;
+    pointer-events: none;
+  }
+  body[data-release-platform='android'] #app [data-crafting='false'][data-craft-workspace] .sandbox-copy > p { display: none; }
+  body[data-release-platform='android'] #app[data-jelly-ui-ready] [data-crafting='false'][data-craft-workspace] [data-panel='squeeze'] {
+    display: flex;
+    width: 100%;
+    padding: 0;
+    gap: 8px;
+    background: none;
+    border: 0;
+    box-shadow: none;
+  }
+  body[data-release-platform='android'] #app [data-crafting='false'][data-craft-workspace] [data-panel='squeeze'] button {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px !important;
+    max-height: 44px;
+  }
+  body[data-release-platform='android'] #app .sandbox-shell > .first-room-decor-hint {
+    top: 60px;
+    bottom: auto;
+    left: auto;
+    right: 12px;
+    width: min(220px, 40%);
+    height: auto;
+    flex-wrap: wrap;
+    font-size: 12px;
+  }
+  body[data-release-platform='android'] #app .first-room-decor-hint p { font-size: 12px; }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  body[data-release-platform='android'] #app[data-studio-env-ready] .sandbox-shell.studio-env-active[data-crafting='false'][data-craft-workspace]:not([data-library-live]) .sandbox-canvas {
+    --squish-seat-size: min(110cqh, 90cqw, 420px);
+  }
+  body[data-release-platform='android'] #app .first-room-decor-hint p { flex-basis: 100%; margin: 0; }
+}

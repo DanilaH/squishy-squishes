@@ -1,0 +1,168 @@
+name: Android RuStore
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Build signed RuStore release using live service configuration
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  android-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      QA_CHROMIUM_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:android
+      - run: /usr/bin/google-chrome --version
+      - run: npx playwright test --config=playwright.android.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-ui-evidence
+          path: |
+            test-results/
+            playwright-report/
+  android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v4
+      - run: npm ci
+      - name: Prepare preview with demo ads
+        if: inputs.release != true
+        run: npm run android:prepare
+      - name: Prepare live release
+        if: inputs.release == true
+        run: npm run android:prepare
+        env:
+          SQUISHY_BUILD_FLAVOR: release
+          ADS_MODE: live
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          APPMETRICA_API_KEY: ${{ secrets.APPMETRICA_API_KEY }}
+          YANDEX_BANNER_AD_UNIT_ID: ${{ secrets.YANDEX_BANNER_AD_UNIT_ID }}
+          YANDEX_INTERSTITIAL_AD_UNIT_ID: ${{ secrets.YANDEX_INTERSTITIAL_AD_UNIT_ID }}
+          YANDEX_REWARDED_AD_UNIT_ID: ${{ secrets.YANDEX_REWARDED_AD_UNIT_ID }}
+      - name: Compile APK
+        working-directory: android
+        run: ./gradlew --no-daemon ${{ inputs.release == true && 'assembleRelease' || 'assembleDebug' }}
+      - name: Sign and verify RuStore APK
+        id: signing
+        if: inputs.release == true
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          bash scripts/sign-android.sh
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.signing.outputs.signed == 'true'
+        with:
+          name: squishy-rustore-signed
+          path: release-android/
+      - uses: actions/upload-artifact@v4
+        if: inputs.release != true
+        with:
+          name: squishy-android-${{ inputs.release == true && 'unsigned-live' || 'demo-preview' }}
+          path: android/app/build/outputs/apk/**/*.apk
+
+      - name: Enable emulator acceleration
+        if: inputs.release != true
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Native WebView acceptance
+        if: inputs.release != true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            python3 -m pip install websocket-client
+            adb install android/app/build/outputs/apk/debug/app-debug.apk
+            python3 scripts/android-smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-native-evidence
+          path: test-results/android-native/
+
+  android-live-config:
+    # Same-repository PRs only; fork code must never receive service credentials.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v4
+      - run: npm ci
+      - name: Validate live configuration and prepare release
+        run: npm run android:prepare
+        env:
+          SQUISHY_BUILD_FLAVOR: release
+          ADS_MODE: live
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          APPMETRICA_API_KEY: ${{ secrets.APPMETRICA_API_KEY }}
+          YANDEX_BANNER_AD_UNIT_ID: ${{ secrets.YANDEX_BANNER_AD_UNIT_ID }}
+          YANDEX_INTERSTITIAL_AD_UNIT_ID: ${{ secrets.YANDEX_INTERSTITIAL_AD_UNIT_ID }}
+          YANDEX_REWARDED_AD_UNIT_ID: ${{ secrets.YANDEX_REWARDED_AD_UNIT_ID }}
+      - name: Compile unsigned live APK
+        working-directory: android
+        run: ./gradlew --no-daemon assembleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: squishy-android-unsigned-live
+          path: android/app/build/outputs/apk/release/*.apk
+      - name: Sign and verify RuStore APK
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -z "$ANDROID_KEYSTORE_BASE64$ANDROID_KEYSTORE_PASSWORD$ANDROID_KEY_ALIAS$ANDROID_KEY_PASSWORD" ]]; then
+            echo 'Signing not configured; only unsigned live validation is available.'
+            exit 0
+          fi
+          bash scripts/sign-android.sh
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.signing.outputs.signed == 'true'
+        with:
+          name: squishy-rustore-signed
+          path: release-android/

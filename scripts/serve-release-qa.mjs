@@ -5,6 +5,7 @@ import { extname, resolve, sep } from 'node:path';
 const PORT = Number(process.env.RELEASE_QA_PORT ?? 4177);
 const HOST = '127.0.0.1';
 const roots = {
+  '/android/': resolve('dist-android'),
   '/squishy-squishes/': resolve('dist'),
   '/yandex/': resolve('dist-yandex'),
 };
